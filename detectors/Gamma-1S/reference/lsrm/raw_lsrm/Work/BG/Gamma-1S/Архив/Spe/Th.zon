@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<!--Zones markup file © LSRM 2005-2020-->
+<zonesfile zonescount="5" zonesenergy="true" fittype="4" dbversion="24">
+  <zone begin="184.640" end="289.620" minimize="Position Linear" background="2" step="0">
+    <peaks count="2">
+      <peak left="158.7740" right="263.1510" position="210.48558" channel="53.8948" fitoptions="FwNone PosAlone" fitgroupposition="-8" fitgroupfwhm="0" id="7" linetype="0"/>
+      <peak left="180.1620" right="297.1770" position="238.63200" channel="63.31553" nuclide="Th-232" intens="44.6" dintens="1" fitoptions="FwNone PosAlone" fitgroupposition="-1" fitgroupfwhm="0" id="0" linetype="0" dbidentifiers="Pb-212_35"/>
+    </peaks>
+  </zone>
+  <zone begin="426.910" end="664.190" minimize="Position Linear" background="2" step="0">
+    <peaks count="3">
+      <peak left="365.5840" right="563.8820" position="463.00700" channel="135.13879" nuclide="Th-232" intens="4.9" dintens="0.4" fitoptions="FwNone PosTogether" fitgroupposition="2" fitgroupfwhm="0" id="1" linetype="0" dbidentifiers="Ac-228_101"/>
+      <peak left="406.2210" right="617.9410" position="510.74000" channel="150.27293" nuclide="Th-232" intens="8.1" dintens="0.4" fitoptions="FwNone PosTogether" fitgroupposition="2" fitgroupfwhm="0" id="2" linetype="0" dbidentifiers="Tl-208_30"/>
+      <peak left="469.0340" right="701.0210" position="583.19100" channel="173.13282" nuclide="Th-232" intens="27.5862068965517" dintens="0.77934339577437" fitoptions="FwNone PosTogether" fitgroupposition="2" fitgroupfwhm="0" id="3" linetype="0" dbidentifiers="Tl-208_32"/>
+    </peaks>
+  </zone>
+  <zone begin="785.740" end="1154.500" minimize="Position Linear" background="2" step="0">
+    <peaks count="3">
+      <peak left="758.8020" right="1066.6800" position="911.20500" channel="275.74344" nuclide="Th-232" intens="27.7" dintens="2.2" fitoptions="FwNone PosTogether" fitgroupposition="3" fitgroupfwhm="0" id="4" linetype="0" dbidentifiers="Ac-228_192"/>
+      <peak left="807.1040" right="1125.4600" position="964.75700" channel="292.24304" nuclide="Th-232" intens="5.2" dintens="0.6" fitoptions="FwNone PosTogether" fitgroupposition="3" fitgroupfwhm="0" id="5" linetype="0" dbidentifiers="Ac-228_206"/>
+      <peak left="965.7450" right="1312.1900" position="1137.06810" channel="344.5522" fitoptions="FwNone PosAlone" fitgroupposition="-9" fitgroupfwhm="0" id="8" linetype="0"/>
+    </peaks>
+  </zone>
+  <zone begin="1409.100" end="1818.300" minimize="Position Linear" background="1" step="0">
+    <peaks count="1">
+      <peak left="1407.4400" right="1831.2300" position="1618.99140" channel="491.3512" fitoptions="FwNone PosAlone" fitgroupposition="-10" fitgroupfwhm="0" id="9" linetype="0"/>
+    </peaks>
+  </zone>
+  <zone begin="1883.700" end="2887.600" minimize="Position Linear" background="3" step="0">
+    <peaks count="3">
+      <peak left="1890.1800" right="2386.0000" position="2139.92060" channel="650.6292" fitoptions="FwNone PosAlone" fitgroupposition="-11" fitgroupfwhm="0" id="10" linetype="0"/>
+      <peak left="2053.4000" right="2567.1500" position="2311.78790" channel="703.8540" fitoptions="FwNone PosAlone" fitgroupposition="-12" fitgroupfwhm="0" id="11" linetype="0"/>
+      <peak left="2344.3600" right="2890.4000" position="2614.53300" channel="801.13210" nuclide="Th-232" intens="31.3013100436681" dintens="1.30400764068117" fitoptions="FwNone PosAlone" fitgroupposition="-7" fitgroupfwhm="0" id="6" linetype="0" dbidentifiers="Tl-208_69"/>
+    </peaks>
+  </zone>
+</zonesfile>

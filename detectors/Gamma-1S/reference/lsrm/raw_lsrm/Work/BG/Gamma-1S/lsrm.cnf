@@ -1,0 +1,165 @@
+[General]
+Name=Gamma-1S
+Detector=УДС-ГЦ-63х63-USB №SN-01
+Type=NaI
+DetectorType=NaI
+Visible=1
+[MCA]
+Manufacturer=Aspect
+Descriptor=Aspect:SCAR:SCARMBus.Net.1|Net1|ADC1|0
+ULD=0
+LLD=5
+Amplification=0
+BufferSize=1024
+ZeroShift=0
+Enabled=1
+[Spectrometer]
+DifferentialNonlinearity=0
+IntegralNonlinearity=0.3
+TimeInstability=0.03
+HighLoadCorrection=0
+HighLoadA=0
+HighLoadB=0
+HighLoadError=0
+HighLoadGeneratorFrequency=0
+HighLoadPeakLeftBound=0
+HighLoadPeakRightBound=0
+SummCorrection=1
+SummCoeffA=0
+SummCoeffB=0
+SummError=0
+EffDistanceDefault=0
+dEffDistanceDefault=0.5
+MaxAllowableLoad=500000
+EffDistanceFile=
+DetectorInFile=
+UseInadequacy=0
+GeneralEfficiency=
+EnergyRangeBegin=0
+EnergyRangeEnd=0
+[Detector]
+XEscCorrection=1
+XEscCoeffA=0
+XEscCoeffB=0
+ComptonPeakCalibr=
+UseSingleEscape=1
+UseDoubleEscape=1
+UseTrueSummation=1
+EscapeProbability=0
+[GeneralDetector]
+CalibrSpectrum=
+[CalibrationFiles]
+EnergyCalibration=..\Work\Гамма-1С_\Data\Фон Петри с водой 27-09-2025.cen
+FWHMCalibration=..\Work\BG\Gamma-1S\Data\Calibr.cfw
+FWHMLibrary=
+SpecialPeakCalibration=
+EnrichmentCalibration=
+ReferenceAutoCalibrFile=
+[Processing]
+ChBegin=10
+ChEnd=1024
+LeftPeakBound=2.5
+RightPeakBound=2.5
+Sensitivity=5
+Background=..\Work\BG\Gamma-1S\Spe\Фон\Фон Маринелли с водой_1_1.spe
+BackgroundSubType=2
+SavedBackgroundSubType=2
+MarkupMethod=Standard
+MaxZoneLength=10
+ConsiderApparatusPeaks=1
+ConsiderBackScattering=0
+ConsiderSideScattering=0
+ConsiderCompton=1
+[Identification]
+IdWin=3
+Library=..\Work\BG\Gamma-1S\Data\Библиотека радионуклидов\УДС-ГЦ 2024 для 1_7.lib
+UseCorrection=0
+CorrectionFile=
+DeleteWeakLines=0
+JoinNearestLines=0
+ConsiderUncompletness=0
+[Representation]
+MinActivity=0
+MinActivityErr=1
+SyseffErr=5
+ErrorUpperLevel(%)=30
+Sigma=2
+UseChiSquare=1
+ConsiderMeasTime=0
+ConsiderChainDecay=0
+ResultFormat=0
+Probability MDA=5
+Background MDA=1
+CovellPeakArea=0
+CooperMDA=0
+[Activity]
+EffFile=..\Work\BG\Gamma-1S\Data\УДС-ГЦ-63х63-USB_№SN-01 2024Опер-05.efa
+EtalonSpectra=..\Work\Гамма-1С_\Data\УДС-ГЦ-63х63-USB_№SN-01_2024.etl
+DozeMatrix=
+Nuclides=
+FilterNuclides=
+NuclideVectorsFile=
+AutoRetryCalc=1
+[Fitting]
+Minimize=FWHM, Position, Linear
+Step=0
+StepFromPattern=1
+BackgrPower=2
+GroupByNucl=0
+ApplZone=50
+IntRatio=1
+Pattern=..\Work\BG\Gamma-1S\Data\УДС-ГЦ-63х63-USB.cpt
+AutoBackground=1
+MaxFitIterations=0
+UseComptonData=0
+UseOwnSection=1
+[FilePaths]
+SpectraDir=..\Work\Гамма-1С_\Spe
+Etalons=..\Work\BG\Gamma-1S\Data\Паспорт эталонов\АСПЕКТ_ОСГИ_2024.src
+DataDir=C:\Lsrm\Work\Гамма-1С_\Data
+Report=
+ReportsDirectory=
+ScenarioDir=C:\Lsrm\Work\Гамма-1С_\Scenario
+[CalibrationSettings]
+PeakMethod=0
+FWHMMethod=1
+[Report]
+UseFile=0
+FileName=
+[TemplateCalc]
+FPeakSplainN=100
+FPeakSplainPower=4
+FConSplainN=100
+FConSplainPower=4
+UseUndefined=0
+MaxChiSquare=20
+[Radiometer]
+AlphaBegin=0
+AlphaEnd=0
+BetaBegin=0
+BetaEnd=0
+AlphaCoeff=0
+BetaCoeff=0
+AlphaBackground=0
+BetaBackground=0
+DetectorArea=0
+[Other]
+Visible=1
+AppealDateTime=2026.06.04 13:19:34
+[CalcPlugins]
+Air pollution=False
+DeclareNucls=False
+Extensive objects=False
+Fallout nuclides=False
+Special reports=True
+Surface pollution=False
+Plutonium=False
+Uranium=False
+[Default]
+ActivityCalcMethod=3
+[MeasuringTypes]
+Калиброка=
+Фон=
+Временная нестабильность=
+Калибровка=
+Образец=

@@ -1,0 +1,66 @@
+# Фон: однородное изотропное поле от ЕРН ограждающих конструкций.
+#
+# Поле задаётся источником по поверхности сферы с косинусным законом внутрь —
+# это даёт строго однородный изотропный флюенс внутри. Для ЛЮБОЙ выпуклой
+# охватывающей поверхности Ф = 4N/S (средняя хорда 4V/S), для сферы Ф = N/(pi R²).
+# R = 140 мм: охватывает и сосуд, и хвост прибора (z = +111), и не выходит за мир.
+#
+# Прогоняется в нескольких конфигурациях, чтобы получить не только фон пустого
+# сосуда, но и ослабление внешнего фона самой пробой: холостой отсчёт снимается
+# с пустым сосудом, а измеряется проба, которая часть внешнего фона экранирует.
+/run/verbose 0
+/event/verbose 0
+/tracking/verbose 0
+/run/printProgress 0
+
+/gps/particle gamma
+/gps/ene/type Mono
+/gps/pos/type Surface
+/gps/pos/shape Sphere
+/gps/pos/centre 0 0 0 mm
+/gps/pos/radius 140 mm
+/gps/ang/type cos
+
+/gps/ene/mono 100 keV
+/rc/outFile bg_E0000100.csv
+/run/beamOn 2500000
+/gps/ene/mono 186 keV
+/rc/outFile bg_E0000186.csv
+/run/beamOn 2500000
+/gps/ene/mono 295.2 keV
+/rc/outFile bg_E0000295.csv
+/run/beamOn 2500000
+/gps/ene/mono 351.9 keV
+/rc/outFile bg_E0000352.csv
+/run/beamOn 2500000
+/gps/ene/mono 583.2 keV
+/rc/outFile bg_E0000583.csv
+/run/beamOn 2500000
+/gps/ene/mono 609.3 keV
+/rc/outFile bg_E0000609.csv
+/run/beamOn 2500000
+/gps/ene/mono 661.7 keV
+/rc/outFile bg_E0000662.csv
+/run/beamOn 2500000
+/gps/ene/mono 911.2 keV
+/rc/outFile bg_E0000911.csv
+/run/beamOn 2500000
+/gps/ene/mono 1120.3 keV
+/rc/outFile bg_E0001120.csv
+/run/beamOn 2500000
+/gps/ene/mono 1460.8 keV
+/rc/outFile bg_E0001461.csv
+/run/beamOn 2500000
+/gps/ene/mono 1764.5 keV
+/rc/outFile bg_E0001764.csv
+/run/beamOn 2500000
+/gps/ene/mono 2614.5 keV
+/rc/outFile bg_E0002615.csv
+/run/beamOn 2500000
+
+# --- проверка нормировки поля: тот же отклик при другом радиусе сферы ---
+# Эффективная площадь A = (счёт/N) * pi R² не должна зависеть от R.
+/gps/pos/radius 120 mm
+/gps/ene/mono 661.7 keV
+/rc/outFile bg_check_R120_662.csv
+/run/beamOn 2500000

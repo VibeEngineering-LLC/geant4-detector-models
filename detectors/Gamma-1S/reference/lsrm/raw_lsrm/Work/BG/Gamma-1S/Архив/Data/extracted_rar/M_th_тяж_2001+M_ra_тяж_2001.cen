@@ -1,0 +1,23 @@
+[General]
+Version=1.0
+[Spectra]
+Spectrum1=C:\LSRM\SpectraLineBG\NaI\Spe\M_th_тяж_2001.spe
+Spectrum2=C:\LSRM\SpectraLineBG\NaI\Spe\M_ra_тяж_2001.spe
+[CalibrationData]
+63.154= 239.000
+64.339= 241.987
+81.442= 295.238
+99.579= 351.939
+173.005= 582.500
+180.664= 609.337
+275.103= 911.205
+292.668= 968.000
+535.984=1764.568
+670.472=2204.117
+744.635=2447.017
+799.083=2614.533
+[Calibration]
+ZonesCount=1
+ZonesBound=0
+LowZonePower=3
+LowZoneCoeff=46.64303,3.008911,0.0006009326,-4.313128E-07,0,0,0

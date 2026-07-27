@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<!--SpectraLine Nuclear Data Information file © LSRM 2005-2020-->
+<Library library_type="gamma" library_version="2.0" database_version="24">
+  <Comment></Comment>
+  <Nuclide name="Th-232" half_life_value="14050000000" half_life_unit="year" gamma_constant="11.04" atomic_mass="232">
+    <Line energy="238.632" d_energy="0.002" intensity="43.3" d_intensity="0.346" dbid="Pb-212_35"/>
+    <Line energy="583.191" d_energy="0.0040000000000191" intensity="30.363" d_intensity="0.694" dbid="Tl-208_32"/>
+    <Line energy="1600" d_energy="9.41000000000008" intensity="5" d_intensity="5" dbid="Ac-228_290"/>
+    <Line energy="2614.533" d_energy="0.0219999999999345" intensity="35.638" d_intensity="17.819" dbid="Tl-208_69"/>
+  </Nuclide>
+</Library>

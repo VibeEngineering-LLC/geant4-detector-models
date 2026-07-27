@@ -1,0 +1,26 @@
+[General]
+Version=3
+[SpectraOrt]
+Spectrum1=C:\Lsrm\Work\Гамма-1С_\Spe\Картошка Тула_1_Петри-60мл_0cm.spe
+Spectrum2=C:\Lsrm\Work\Гамма-1С_\Spe\Креветки сушеные_1_Маринелли_0cm.spe
+Spectrum3=
+[CalibrationOrt]
+CoeffO={"Polynomials":[{"Version":1,"Power":1,"Quality":1.59017763426731,"Vector":[7.76602895465096,12.8241572185678],"Matrix":[[0.215038904139431,-1.4621009766241],[1]],"LeftBound":5.56776436283003,"RightBound":25.7487863791675}],"SewType":1}
+[Spectra]
+Spectrum1=C:\Lsrm\Work\Гамма-1С_\Spe\Картошка Тула_1_Петри-60мл_0cm.spe
+Spectrum2=C:\Lsrm\Work\Гамма-1С_\Spe\Креветки сушеные_1_Маринелли_0cm.spe
+Spectrum3=
+[CalibrationData]
+2=3.831
+303.4=30.558
+604.8=42.539
+906.2=51.742
+1207.6=59.503
+1509=66.342
+1810.4=72.526
+2111.8=78.213
+2413.2=83.507
+2714.6=88.479
+[Calibration]
+Power=1
+Coeff=1.4694386994816,1.6699983559232

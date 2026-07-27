@@ -58,11 +58,45 @@ THETA = 60.0                              # конус точечной 5 см
 FRAC = (1 - math.cos(math.radians(THETA))) / 2
 
 
-def mac_vol(tag, lines):
+# --- Область розыгрыша объёмного источника ----------------------------------
+# /gps/pos/confine отбрасывает точки вне пробы, но НЕ добавляет точки, которых
+# в области розыгрыша не было. Значит цилиндр обязан объемлеть пробу целиком,
+# иначе часть её просто не облучается — молча, без единого предупреждения.
+#
+# Именно это здесь и происходило: цилиндр был записан константами (r=73,
+# halfz=45, центр z=16) под ШТАТНУЮ глубину колодца 74 мм. Но весь смысл этого
+# прогона — менять глубину. Чем мельче колодец, тем выше поднимается уровень
+# засыпки, и тем большая часть пробы оказывается за верхней границей области:
+# 2,7 % при 65 мм, 13,9 % при 55, 25,1 % при 45.
+#
+# Хуже того, теряется ВЕРХ пробы — самый дальний от кристалла и потому наименее
+# эффективный. Выбрасывая его, мы завышаем эффективность мелкого колодца, то
+# есть смещаем результат ПРОТИВ проверяемой гипотезы (мельче колодец — ниже
+# эффективность). Скан нашёл бы оптимум там, где его нет.
+#
+# Поэтому габарит считается из тех же формул, что и G1SDetector::BuildVessel,
+# и печатается в лог: расхождение с «объём пробы» из вывода модели сразу видно.
+WALL, Z_FACE, R_IN, R_WELL_OUT, SAMPLE_CM3 = 2.0, 43.0, 73.0, 42.0, 1000.0
+
+
+def sample_span(well):
+    """(центр, полувысота) цилиндра, объемлющего пробу, мм. См. BuildVessel."""
+    z_lo = Z_FACE - well + 2 * WALL              # низ пробы (над дном сосуда)
+    ring = math.pi * (R_IN ** 2 - R_WELL_OUT ** 2) * (well - WALL) / 1000.0
+    top_h = (SAMPLE_CM3 - ring) * 1000.0 / (math.pi * R_IN ** 2)
+    z_hi = Z_FACE + WALL + top_h                 # уровень засыпки
+    return 0.5 * (z_lo + z_hi), 0.5 * (z_hi - z_lo)
+
+
+def mac_vol(tag, lines, well):
+    zc, hz = sample_span(well)
+    hz += 0.5                                    # запас на округления
+    print("    колодец %.0f мм: розыгрыш z = %.2f +- %.2f мм"
+          % (well, zc, hz), flush=True)
     t = ["/run/initialize", "/control/verbose 0", "/run/verbose 0",
          "/gps/particle gamma", "/gps/pos/type Volume",
-         "/gps/pos/shape Cylinder", "/gps/pos/centre 0 0 16 mm",
-         "/gps/pos/radius 73 mm", "/gps/pos/halfz 45 mm",
+         "/gps/pos/shape Cylinder", "/gps/pos/centre 0 0 %.2f mm" % zc,
+         "/gps/pos/radius %.1f mm" % R_IN, "/gps/pos/halfz %.2f mm" % hz,
          "/gps/pos/confine Sample", "/gps/ang/type iso"]
     for e in lines:
         t += ["/gps/energy %.3f keV" % e,
@@ -104,7 +138,7 @@ if __name__ == "__main__":
         for w in WELLS:
             tag = "well%.0f" % w
             # маринелли, ОИСН-16 ро=1,6 — как в сверке с .efr
-            run(mac_vol(tag, E_WELL),
+            run(mac_vol(tag, E_WELL, w),
                 ["vessel:marinelli", "1.6", "OISN16", "1000", "2.0", str(w)],
                 "колодец %.0f мм" % w)
     if what in ("all", "mgo"):

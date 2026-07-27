@@ -298,7 +298,7 @@ if __name__ == "__main__":
     print("%-13s %-8s %9s %8s %11s %9s %8s" %
           ("геометрия", "нуклид", "E, кэВ", "имп/с", "eps/распад",
            "A, Бк/кг", "A/пасп"))
-    missing = []
+    missing, rows = [], []
     for geom, mask, nuc, aspec, dpct, d0, mass, vol in VOLUME_RECORDS:
         # Раскладка комплекта — reference_spectra/reference_kits*/<геометрия>/
         # <нуклид>/sample_*.xml, а не <геометрия>/* прямо в корне эталонов.
@@ -342,6 +342,8 @@ if __name__ == "__main__":
             A = rate / eps
             print("%-13s %-8s %9.1f %8.3f %11.4e %9.1f %8.3f"
                   % (geom, nuc, E, rate, eps, A / (mass / 1000.0), A / A0))
+            rows.append((geom, nuc, E, rate, eps, A / (mass / 1000.0),
+                         aspec, A / A0, dpct, RUNBASE[(geom, ckey)]))
         # Соответствие фона геометрии. У Денты и Петри опорный фон —
         # «пустая защита»: кювета мала, водяной маринелльной защиты нет, и
         # empty_shield — правильный выбор (в имени файла стоит «point5cm»
@@ -352,6 +354,32 @@ if __name__ == "__main__":
         bad = (want not in bgref) and ("Фон закр" not in bgref)
         print("   фон: %s%s" % (bgref, "   <- НЕ СООТВЕТСТВУЕТ ГЕОМЕТРИИ" if bad
                                 else ""))
+
+    # Числа — файлом, а не только в консоли (пункт 12 протокола проверок).
+    if rows:
+        out = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                           "..", "results", "kit_recalc_volume.csv")
+        out = os.path.abspath(out)
+        with open(out, "w", encoding="utf-8", newline="") as fh:
+            fh.write("# Пересчёт объёмных записей комплекта поверки.\n"
+                     "# A_изм = R_пика / eps_на_распад; A_пасп приведена на "
+                     "дату измерения.\n"
+                     "# ratio = A_изм / A_пасп: меньше единицы — модель "
+                     "ЗАВЫШАЕТ эффективность.\n"
+                     "# run — прогон распада, из которого взята "
+                     "eps_на_распад.\n")
+            fh.write("geometry,nuclide,E_keV,rate_cps,eps_per_decay,"
+                     "A_meas_Bq_kg,A_pass_Bq_kg,ratio,d_pass_pct,run\n")
+            for r in rows:
+                fh.write("%s,%s,%.3f,%.4f,%.6e,%.1f,%.0f,%.4f,%.1f,%s\n" % r)
+        print("\nтаблица: %s (%d строк)" % (out, len(rows)))
+        for g in ("Marinelli_1L", "Denta_120mL", "Petri_60mL"):
+            rr = [r[7] for r in rows if r[0] == g]
+            if rr:
+                rr.sort()
+                print("   %-13s строк %2d, медиана A/пасп %.3f, "
+                      "разброс %.3f..%.3f"
+                      % (g, len(rr), rr[len(rr) // 2], rr[0], rr[-1]))
 
     # Ненайденные записи — вслух. Пустая таблица не должна выглядеть как
     # «всё сошлось»: именно так этот пересчёт и простоял незамеченным.

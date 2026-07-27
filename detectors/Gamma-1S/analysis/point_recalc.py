@@ -210,9 +210,17 @@ def decay_factor(nuc, d0, d1):
 
 
 def record(geom, nuc):
-    """Найти XML записи по геометрии и нуклиду."""
-    pat = os.path.join(KIT, geom, "*%s*" % nuc.replace("-", "-"))
-    hits = [p for p in glob.glob(pat) if p.endswith(".xml")]
+    """Найти XML записи по геометрии и нуклиду.
+
+    Раскладка комплекта — reference_spectra/reference_kits_becqmoni/
+    <геометрия>/<нуклид>/sample_*.xml. Стоял плоский glob по
+    <корень эталонов>/<геометрия>/, который не находил ничего, и пересчёт
+    молча печатал пустую таблицу. Тот же дефект был в kit_recalc.py.
+    """
+    kd = paths.kit_dir(geom)
+    if kd is None:
+        return None
+    hits = sorted(str(p) for p in kd.rglob("*%s*" % nuc) if p.suffix == ".xml")
     return hits[0] if hits else None
 
 
@@ -222,7 +230,7 @@ if __name__ == "__main__":
     print("%-11s %-8s %9s %9s %11s %6s %9s %8s" %
           ("геометрия", "нуклид", "E, кэВ", "имп/с", "eps/распад", "C",
            "A, Бк", "A/пасп"))
-    ratios = []
+    ratios, rows = [], []
     for geom in ("Point_5cm", "Point_25cm"):
         for nuc, (tag, lines) in NUC.items():
             key = (geom, nuc)
@@ -281,6 +289,7 @@ if __name__ == "__main__":
                     continue
                 A = rate / ed
                 ratios.append((geom, nuc, E, A / A0))
+                rows.append((geom, nuc, E, rate, ed, Cshow, A, A0, A / A0))
                 print("%-11s %-8s %9.1f %9.3f %11.4e %6s %9.3e %8.3f"
                       % (geom, nuc, E, rate, ed, Cshow, A, A / A0))
     if ratios:
@@ -290,3 +299,24 @@ if __name__ == "__main__":
             if v:
                 print("\n%s: %d линий, медиана A/пасп = %.3f, разброс %.3f..%.3f"
                       % (g, len(v), statistics.median(v), min(v), max(v)))
+
+    # Числа — файлом (пункт 12 протокола проверок).
+    if rows:
+        out = os.path.abspath(os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", "results",
+            "kit_recalc_point.csv"))
+        with open(out, "w", encoding="utf-8", newline="") as fh:
+            fh.write("# Пересчёт точечных записей комплекта поверки.\n"
+                     "# A_изм = R_пика / eps_на_распад; A_пасп приведена на "
+                     "дату измерения.\n"
+                     "# ratio = A_изм / A_пасп: больше единицы — модель "
+                     "ЗАНИЖАЕТ эффективность.\n"
+                     "# C — поправка на суммирование; «прям.» значит, что "
+                     "она уже внутри прогона распада.\n"
+                     "# Линии с загрязнёнными полками исключены и в файл не "
+                     "попадают, их список — в выводе скрипта.\n")
+            fh.write("geometry,nuclide,E_keV,rate_cps,eps_per_decay,C,"
+                     "A_meas_Bq,A_pass_Bq,ratio\n")
+            for r in rows:
+                fh.write("%s,%s,%.3f,%.4f,%.6e,%s,%.4e,%.4e,%.4f\n" % r)
+        print("\nтаблица: %s (%d строк)" % (out, len(rows)))

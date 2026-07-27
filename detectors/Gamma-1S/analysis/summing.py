@@ -73,8 +73,11 @@ def area(hist, E0, sub=True):
     """Площадь пика с вычетом континуума по левой полке."""
     gross = sum(c for e, c in hist.items() if abs(e - E0) <= WIN)
     side = sum(c for e, c in hist.items() if E0 - BG0 <= e <= E0 - BG1)
-    nside = BG0 - BG1
-    n = 2 * WIN + 1
+    # Центры каналов полуцелые ((i+0,5)·bin в main.cc), поэтому окно шириной
+    # 2·WIN содержит 2·WIN каналов, а не 2·WIN+1: считаем по факту, иначе
+    # подложка вычитается с лишними 8 %.
+    n = math.floor(E0 + WIN - 0.5) - math.ceil(E0 - WIN - 0.5) + 1
+    nside = math.floor(E0 - BG1 - 0.5) - math.ceil(E0 - BG0 - 0.5) + 1
     bg = side / nside * n if sub else 0.0
     # D(bg) = (n/nside)^2 * side = (n/nside)*bg; вывод — в export_curves.py
     return gross - bg, math.sqrt(max(gross + (n / nside) * bg, 1.0))

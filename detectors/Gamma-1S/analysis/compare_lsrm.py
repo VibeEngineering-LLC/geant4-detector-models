@@ -61,8 +61,10 @@ def read_run(path):
             hist[float(e)] = int(c)
     gross = sum(c for e, c in hist.items() if abs(e - E0) <= WIN)
     side = sum(c for e, c in hist.items() if E0 - BG0 <= e <= E0 - BG1)
-    nside = BG0 - BG1                      # ширина полки в каналах по 1 кэВ
-    n = 2 * WIN + 1
+    # Каналов в окне — по факту: центры полуцелые, окно 2·WIN содержит 2·WIN
+    # каналов, а не 2·WIN+1. См. nchan() в export_curves.py.
+    n = math.floor(E0 + WIN - 0.5) - math.ceil(E0 - WIN - 0.5) + 1
+    nside = math.floor(E0 - BG1 - 0.5) - math.ceil(E0 - BG0 - 0.5) + 1
     bg = side / nside * n if SUBTRACT_BG else 0.0
     # D(bg) = (n/nside)^2 * side = (n/nside)*bg; вывод — в export_curves.py
     var = gross + (n / nside) * bg

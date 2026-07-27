@@ -82,6 +82,19 @@ GRIDS = [
 ]
 
 
+def nchan(lo, hi):
+    """Сколько каналов модельного спектра попадает в [lo, hi].
+
+    Центры каналов — полуцелые: main.cc пишет (i + 0,5)·bin. Окно шириной
+    2·WIN = 12 кэВ содержит поэтому ровно 12 каналов, а не 13, как считала
+    формула (2·WIN + 1). Разница в один канал из тринадцати — это 8 % лишнего
+    вычета подложки; там, где подложка сравнима с пиком (мягкий край, 88–166
+    кэВ, по которому подгоняется плотность MgO), она съедала около 2 %
+    площади. Считаем по факту, чтобы смена WIN ничего не сломала.
+    """
+    return math.floor(hi - 0.5) - math.ceil(lo - 0.5) + 1
+
+
 def read_run(path):
     """(E0, чистая площадь, погрешность, N первичных, полная площадь)."""
     N = E0 = None
@@ -100,8 +113,8 @@ def read_run(path):
         return None
     gross = sum(c for e, c in hist.items() if abs(e - E0) <= WIN)
     side = sum(c for e, c in hist.items() if E0 - BG0 <= e <= E0 - BG1)
-    nside = BG0 - BG1                      # ширина полки в каналах по 1 кэВ
-    n = 2 * WIN + 1                        # каналов в окне пика
+    n = nchan(E0 - WIN, E0 + WIN)          # каналов в окне пика — по факту
+    nside = nchan(E0 - BG0, E0 - BG1)      # и в полке тоже по факту
     bg = side / nside * n
     # Дисперсия чистой площади: пуассон окна плюс перенесённый шум полки.
     # bg = side*(n/nside), значит D(bg) = (n/nside)^2 * side = (n/nside)*bg.
@@ -262,8 +275,8 @@ def export_summing():
         for E in lines:
             peak = sum(c for e, c in hist.items() if abs(e - E) <= WIN)
             side = sum(c for e, c in hist.items() if E - BG0 <= e <= E - BG1)
-            nside = BG0 - BG1
-            n = 2 * WIN + 1
+            n = nchan(E - WIN, E + WIN)          # см. nchan()
+            nside = nchan(E - BG0, E - BG1)
             bg = side / nside * n
             net = peak - bg
             dnet = math.sqrt(max(peak + (n / nside) * bg, 1.0))  # см. read_run

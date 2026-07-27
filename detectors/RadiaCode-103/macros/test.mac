@@ -1,0 +1,18 @@
+# Проверка геометрии и один короткий прогон: Cs-137 (662 кэВ), объёмный
+# источник в пробе сосуда Маринелли.
+/run/initialize
+
+/gps/particle gamma
+/gps/energy 662 keV
+/gps/ang/type iso
+
+# объёмный источник: цилиндр по габариту полости, отсечённый по телу пробы
+/gps/pos/type Volume
+/gps/pos/shape Cylinder
+/gps/pos/radius 33.24 mm
+/gps/pos/halfz 33.25 mm
+/gps/pos/centre 0 0 -0.44 mm
+/gps/pos/confine sample
+
+/rc/outFile test_662keV.csv
+/run/beamOn 20000

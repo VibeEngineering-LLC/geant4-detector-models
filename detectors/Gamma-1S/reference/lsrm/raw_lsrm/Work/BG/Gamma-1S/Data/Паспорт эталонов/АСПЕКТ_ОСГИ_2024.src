@@ -1,0 +1,673 @@
+[General]
+Sigma=2
+[Sets]
+ÎÑÃÈ ¹SRC-07=
+11_2013=
+Th-232 ¹SRC-21=
+Th-232 ¹SRC-22=
+Am-241 ¹SRC-24=
+ÎÑÃÈ ¹SRC-25=
+Co-57 ¹SRC-A04 02.2019=
+Y-88 ¹SRC-A05=
+Co-60 ¹SRC-10 02.2019=
+Na-22 ¹SRC-A06 05.18=
+Eu-152 ¹SRC-A07 04.2017=
+Co-60 ¹SRC-A08=
+Am-241 ¹SRC-17 02.2019=
+Y-88 ¹SRC-18=
+Th-228 ¹SRC-14=
+Îïåð-06 Cs-137 ¹SRC-A09 09.2011=
+Eu-152 ¹SRC-09=
+Eu-152 ¹SRC-09+Eu-152 ¹SRC-A07 04.2017=
+Y-88 ¹SRC-18+ Y-88 ¹SRC-19=
+Îïåð-06 Th-228 ¹SRC-20=
+Îïåð-06 Th-228 ¹SRC-A10=
+Îïåð-06 Y-88 ¹SRC-19=
+Am-241 ¹SRC-A11+¹SRC-17 02.2019=
+Th-228 ¹SRC-14+¹SRC-20=
+Îïåð-06 Ñe-139#SRC-A12=
+Îïåð-06 Ñd-109#SRC-12=
+Cs-137 ¹SRC-01=
+Na-22#SRC-12=
+Co-60 ¹SRC-A13 09.2016=
+Na-22 ¹SRC-12=
+Îïåð-06 Mn-54#SRC-A14=
+Y-88 ¹SRC-02=
+Th-228 ¹SRC-13=
+Zn-65 ¹SRC-08=
+[ÎÑÃÈ ¹SRC-07]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=01.10.2008
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[ÎÑÃÈ ¹SRC-07,structure]
+Ba-133 #SRC-07=
+Cs-137 #SRC-07=
+Eu-152 #SRC-07=
+Co-60 #SRC-07=
+[ÎÑÃÈ ¹SRC-07,Ba-133 #SRC-07,Act]
+Mass,g=
+Ba-133=44100,2
+[ÎÑÃÈ ¹SRC-07,Cs-137 #SRC-07,Act]
+Mass,g=
+Cs-137=94200,2
+[ÎÑÃÈ ¹SRC-07,Eu-152 #SRC-07,Act]
+Mass,g=
+Eu-152=46700,2
+[ÎÑÃÈ ¹SRC-07,Co-60 #SRC-07,Act]
+Mass,g=
+Co-60=107800,2
+[11_2013]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=01.12.2013
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[11_2013,structure]
+Na-22_585=
+[11_2013,Na-22_585,Act]
+Mass,g=
+Na-22=133000,3
+[Th-232 ¹SRC-21]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=30.07.2003
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Th-232 ¹SRC-21,structure]
+Th-232 3064=
+[Th-232 ¹SRC-21,Th-232 3064,Act]
+Mass,g=
+Th-232=3600,10
+[Th-232 ¹SRC-22]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=30.07.2003
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Th-232 ¹SRC-22,structure]
+Th-232 3071=
+[Th-232 ¹SRC-22,Th-232 3071,Act]
+Mass,g=
+Th-232=3600,10
+[Am-241 ¹SRC-24]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=03.12.2013
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Am-241 ¹SRC-24,structure]
+Am-241 ¹SRC-24=
+[Am-241 ¹SRC-24,Am-241 ¹SRC-24,Act]
+Mass,g=
+Am-241=118000,5
+[ÎÑÃÈ ¹SRC-25]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=25.05.2017
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[ÎÑÃÈ ¹SRC-25,structure]
+Ti-44 #SRC-A15 04.2017=
+Cd-109 #SRC-15 04.2017=
+Bi-207 #SRC-11 04.2017=
+Th-228 #SRC-A16 04.2017=
+[ÎÑÃÈ ¹SRC-25,Ti-44 #SRC-A15 04.2017,Act]
+Mass,g=0
+Ti-44=95000,3
+[ÎÑÃÈ ¹SRC-25,Cd-109 #SRC-15 04.2017,Act]
+Mass,g=0
+Cd-109=395000,3
+[ÎÑÃÈ ¹SRC-25,Bi-207 #SRC-11 04.2017,Act]
+Mass,g=0
+Bi-207=97000,3
+[ÎÑÃÈ ¹SRC-25,Th-228 #SRC-A16 04.2017,Act]
+Mass,g=0
+Th-228=49000,3
+[Co-57 ¹SRC-A04 02.2019]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=25.02.2019
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=0
+ShieldMaterial=
+ShieldThickness,mm=0
+[Co-57 ¹SRC-A04 02.2019,structure]
+Co-57 ¹SRC-A04 02.19=
+[Co-57 ¹SRC-A04 02.2019,Co-57 ¹SRC-A04 02.19,Act]
+Mass,g=0
+Co-57=221000,3
+[Y-88 ¹SRC-A05]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=01.08.2019
+Time=12:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=0
+ShieldMaterial=
+ShieldThickness,mm=0
+[Y-88 ¹SRC-A05,structure]
+Y-88 ¹SRC-A05=
+[Y-88 ¹SRC-A05,Y-88 ¹SRC-A05,Act]
+Mass,g=0
+Y-88=191000,3
+[Co-60 ¹SRC-10 02.2019]
+Geometry=Òî÷å÷íàÿ
+Mass,g=
+Volume,ml=
+Material=not essential
+Date=25.02.2019
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=0
+ShieldMaterial=
+ShieldThickness,mm=0
+[Co-60 ¹SRC-10 02.2019,structure]
+Co-60 ¹SRC-10 02.2019=
+[Co-60 ¹SRC-10 02.2019,Co-60 ¹SRC-10 02.2019,Act]
+Mass,g=
+Co-60=105000,3
+[Na-22 ¹SRC-A06 05.18]
+Geometry=Òî÷å÷íàÿ
+Mass,g=
+Volume,ml=
+Material=not essential
+Date=11.08.2020
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=0
+ShieldMaterial=
+ShieldThickness,mm=0
+[Na-22 ¹SRC-A06 05.18,structure]
+Na-22 ¹SRC-A06 05.18=
+[Na-22 ¹SRC-A06 05.18,Na-22 ¹SRC-A06 05.18,Act]
+Mass,g=
+Na-22=110000,3
+[Eu-152 ¹SRC-A07 04.2017]
+Geometry=Òî÷å÷íàÿ
+Mass,g=
+Volume,ml=
+Material=not essential
+Date=19.05.2017
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=0
+ShieldMaterial=
+ShieldThickness,mm=0
+[Eu-152 ¹SRC-A07 04.2017,structure]
+Eu-152 ¹SRC-A07 04.2017=
+[Eu-152 ¹SRC-A07 04.2017,Eu-152 ¹SRC-A07 04.2017,Act]
+Mass,g=
+Eu-152=99000,3
+[Co-60 ¹SRC-A08]
+Geometry=Òî÷å÷íàÿ
+Mass,g=
+Volume,ml=
+Material=not essential
+Date=29.04.2019
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=0
+ShieldMaterial=
+ShieldThickness,mm=0
+[Co-60 ¹SRC-A08,structure]
+Co-60 ¹SRC-A08=
+[Co-60 ¹SRC-A08,Co-60 ¹SRC-A08,Act]
+Mass,g=
+Co-60=509000,3
+[Am-241 ¹SRC-17 02.2019]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=30.03.2021
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Am-241 ¹SRC-17 02.2019,structure]
+Am-241 ¹SRC-17 02.2019=
+[Am-241 ¹SRC-17 02.2019,Am-241 ¹SRC-17 02.2019,Act]
+Mass,g=
+Am-241=103100,3
+[Y-88 ¹SRC-18]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=26.04.2021
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Y-88 ¹SRC-18,structure]
+Y-88 ¹SRC-18=
+[Y-88 ¹SRC-18,Y-88 ¹SRC-18,Act]
+Mass,g=
+Y-88=330000,3
+[Th-228 ¹SRC-14]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=26.04.2021
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Th-228 ¹SRC-14,structure]
+Th-228 ¹SRC-14=
+[Th-228 ¹SRC-14,Th-228 ¹SRC-14,Act]
+Mass,g=
+Th-228=104000,3
+[Îïåð-06 Cs-137 ¹SRC-A09 09.2011]
+Geometry=Òî÷å÷íàÿ
+Mass,g=
+Volume,ml=
+Material=not essential
+Date=10.10.2011
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=0
+ShieldMaterial=
+ShieldThickness,mm=0
+[Îïåð-06 Cs-137 ¹SRC-A09 09.2011,structure]
+Cs-137 ¹SRC-A09 09.2011=
+[Îïåð-06 Cs-137 ¹SRC-A09 09.2011,Cs-137 ¹SRC-A09 09.2011,Act]
+Mass,g=
+Cs-137=1047000,3
+[Eu-152 ¹SRC-09]
+Geometry=Òî÷å÷íàÿ
+Mass,g=
+Volume,ml=
+Material=not essential
+Date=11.08.2021
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=0
+ShieldMaterial=
+ShieldThickness,mm=0
+[Eu-152 ¹SRC-09,structure]
+Eu-152 ¹SRC-09=
+[Eu-152 ¹SRC-09,Eu-152 ¹SRC-09,Act]
+Mass,g=
+Eu-152=142000,4
+[Eu-152 ¹SRC-09+Eu-152 ¹SRC-A07 04.2017]
+Geometry=Òî÷å÷íàÿ
+Mass,g=
+Volume,ml=
+Material=not essential
+Date=07.09.2021
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=0
+ShieldMaterial=
+ShieldThickness,mm=0
+[Eu-152 ¹SRC-09+Eu-152 ¹SRC-A07 04.2017,structure]
+Eu-152 ¹SRC-09+Eu152 ¹SRC-A07 04.2017=
+[Eu-152 ¹SRC-09+Eu-152 ¹SRC-A07 04.2017,Eu-152 ¹SRC-09+Eu152 ¹SRC-A07 04.2017,Act]
+Mass,g=
+Eu-152=220845,4
+[Y-88 ¹SRC-18+ Y-88 ¹SRC-19]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=26.04.2021
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Y-88 ¹SRC-18+ Y-88 ¹SRC-19,structure]
+Y-88 ¹SRC-18+Y-88 ¹SRC-19=
+[Y-88 ¹SRC-18+ Y-88 ¹SRC-19,Y-88 ¹SRC-18+Y-88 ¹SRC-19,Act]
+Mass,g=0
+Y-88=650000,3
+[Îïåð-06 Th-228 ¹SRC-20]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=26.04.2021
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Îïåð-06 Th-228 ¹SRC-20,structure]
+Th-228 ¹SRC-20=
+[Îïåð-06 Th-228 ¹SRC-20,Th-228 ¹SRC-20,Act]
+Mass,g=
+Th-228=100000,3
+[Îïåð-06 Th-228 ¹SRC-A10]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=01.08.2019
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Îïåð-06 Th-228 ¹SRC-A10,structure]
+Th-228 ¹SRC-A10=
+[Îïåð-06 Th-228 ¹SRC-A10,Th-228 ¹SRC-A10,Act]
+Mass,g=
+Th-228=107700,3
+[Îïåð-06 Y-88 ¹SRC-19]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=26.04.2021
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Îïåð-06 Y-88 ¹SRC-19,structure]
+Y-88 ¹SRC-19=
+[Îïåð-06 Y-88 ¹SRC-19,Y-88 ¹SRC-19,Act]
+Mass,g=
+Y-88=320000,3
+[Am-241 ¹SRC-A11+¹SRC-17 02.2019]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=21.09.2021
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Am-241 ¹SRC-A11+¹SRC-17 02.2019,structure]
+Am-241 ¹SRC-A11+¹SRC-17 02.2019=
+[Am-241 ¹SRC-A11+¹SRC-17 02.2019,Am-241 ¹SRC-A11+¹SRC-17 02.2019,Act]
+Mass,g=
+Am-241=219555,5
+[Th-228 ¹SRC-14+¹SRC-20]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=26.04.2021
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Th-228 ¹SRC-14+¹SRC-20,structure]
+Th-228 ¹SRC-14+¹SRC-20=
+[Th-228 ¹SRC-14+¹SRC-20,Th-228 ¹SRC-14+¹SRC-20,Act]
+Mass,g=
+Th-228=204000,3
+[Îïåð-06 Ñe-139#SRC-A12]
+Geometry=Òî÷å÷íàÿ
+Mass,g=
+Volume,ml=
+Material=not essential
+Date=26.04.2021
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=0
+ShieldMaterial=
+ShieldThickness,mm=0
+[Îïåð-06 Ñe-139#SRC-A12,structure]
+Ce-139#SRC-A12=
+[Îïåð-06 Ñe-139#SRC-A12,Ce-139#SRC-A12,Act]
+Mass,g=
+Ce-139=215000,3
+[Îïåð-06 Ñd-109#SRC-12]
+Geometry=Òî÷å÷íàÿ
+Mass,g=
+Volume,ml=
+Material=not essential
+Date=28.05.2022
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=0
+ShieldMaterial=
+ShieldThickness,mm=0
+[Îïåð-06 Ñd-109#SRC-12,structure]
+Cd-109#SRC-12=
+[Îïåð-06 Ñd-109#SRC-12,Cd-109#SRC-12,Act]
+Mass,g=
+Cd-109=460000,15
+[Cs-137 ¹SRC-01]
+Geometry=Òî÷å÷íàÿ
+Mass,g=
+Volume,ml=
+Material=not essential
+Date=19.05.2017
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=0
+ShieldMaterial=
+ShieldThickness,mm=0
+[Cs-137 ¹SRC-01,structure]
+Cs-137 ¹SRC-01=
+[Cs-137 ¹SRC-01,Cs-137 ¹SRC-01,Act]
+Mass,g=
+Cs-137=106000,3
+[Na-22#SRC-12]
+Geometry=Òî÷å÷íàÿ
+Mass,g=
+Volume,ml=
+Material=not essential
+Date=14.11.2022
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=0
+ShieldMaterial=
+ShieldThickness,mm=0
+[Na-22#SRC-12,structure]
+Na-22 #SRC-12=
+[Na-22#SRC-12,Na-22 #SRC-12,Act]
+Mass,g=
+Na-22=229000,5
+[Co-60 ¹SRC-A13 09.2016]
+Geometry=Òî÷å÷íàÿ
+Mass,g=
+Volume,ml=
+Material=not essential
+Date=13.09.2021
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=0
+ShieldMaterial=
+ShieldThickness,mm=0
+[Co-60 ¹SRC-A13 09.2016,structure]
+Co-60 ¹SRC-A13 09.2016=
+[Co-60 ¹SRC-A13 09.2016,Co-60 ¹SRC-A13 09.2016,Act]
+Mass,g=
+Co-60=55000,5
+[Na-22 ¹SRC-12]
+Geometry=Òî÷å÷íàÿ
+Mass,g=
+Volume,ml=
+Material=not essential
+Date=14.11.2022
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=0
+ShieldMaterial=
+ShieldThickness,mm=0
+[Na-22 ¹SRC-12,structure]
+Na-22 ¹SRC-12=
+[Na-22 ¹SRC-12,Na-22 ¹SRC-12,Act]
+Mass,g=
+Na-22=229000,5
+[Îïåð-06 Mn-54#SRC-A14]
+Geometry=Òî÷å÷íàÿ
+Mass,g=
+Volume,ml=
+Material=not essential
+Date=09.04.2021
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=0
+ShieldMaterial=
+ShieldThickness,mm=0
+[Îïåð-06 Mn-54#SRC-A14,structure]
+Mn-54#SRC-A14=
+[Îïåð-06 Mn-54#SRC-A14,Mn-54#SRC-A14,Act]
+Mass,g=
+Mn-54=225000,3
+[Y-88 ¹SRC-02]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=09.10.2023
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Y-88 ¹SRC-02,structure]
+Y-88 ¹SRC-02=
+[Y-88 ¹SRC-02,Y-88 ¹SRC-02,Act]
+Mass,g=
+Y-88=350000,3
+[Th-228 ¹SRC-13]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=09.10.2023
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Th-228 ¹SRC-13,structure]
+Th-228 ¹SRC-13=
+[Th-228 ¹SRC-13,Th-228 ¹SRC-13,Act]
+Mass,g=
+Th-228=129000,3
+[Zn-65 ¹SRC-08]
+Geometry=Òî÷å÷íàÿ
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=02.08.2023
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Zn-65 ¹SRC-08,structure]
+Zn-65 #SRC-08=
+[Zn-65 ¹SRC-08,Zn-65 #SRC-08,Act]
+Mass,g=
+Zn-65=3100,3

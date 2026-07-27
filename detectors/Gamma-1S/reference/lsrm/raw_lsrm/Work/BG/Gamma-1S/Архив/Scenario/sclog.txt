@@ -1,0 +1,9 @@
+Clear all peaks successful.
+Energy calibration successful.
+Clear all peaks successful.
+Energy calibration successful.
+Clear all peaks successful.
+Load and fit ROI is successful.
+Energy calibration successful.
+Clear all peaks successful.
+Load and fit ROI successful.

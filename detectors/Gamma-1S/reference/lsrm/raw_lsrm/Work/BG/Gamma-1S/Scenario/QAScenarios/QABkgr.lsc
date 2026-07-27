@@ -1,0 +1,6 @@
+clear
+messagebox(Уберите все радиоактивные источники., Контроль качества,48)
+clearbuffer
+$spemestype=Background
+querystart(300,0)
+savetodb(QA)

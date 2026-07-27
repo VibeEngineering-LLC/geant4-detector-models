@@ -1,0 +1,12 @@
+;Очистка разметки пиков в спектре
+;clear
+;Поиск пиков и подгонка (чувствительность из конфигурации)
+;searchandfit()
+;Расчет активности (методом - Matrix)
+;activity(Matrix)
+;Расчет активности (методом - ZoneByZone)
+;activity(ZoneByZone)
+;Расчет активности (методом - AllZones)
+;activity(AllZones)
+;Расчет активности (методом - AllZonesSew)
+;activity(AllZonesSew)

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<!--SpectraLine Nuclear Data Information file © LSRM 2005-2020-->
+<Library library_type="gamma" library_version="2.0" database_version="0">
+  <Comment></Comment>
+  <Nuclide name="Rn-222" half_life_value="3.8222" half_life_unit="day" gamma_constant="0.00222358854477915" atomic_mass="222.017578" d_atomic_mass="3E-6" nuc_num="3349">
+    <Line energy="510" d_energy="2" intensity="0.076" d_intensity="0.001" dbid="Rn-222_1"/>
+  </Nuclide>
+  <Nuclide name="Pb-214" half_life_value="26.8" half_life_unit="min" gamma_constant="1.30847930856643" atomic_mass="213.999806" d_atomic_mass="2E-6" nuc_num="3306">
+    <Line energy="74.815" d_energy="0" intensity="6.47532467532467" d_intensity="0.305125688358272" line_type="X" width="70.1" dbid="Pb-214_20"/>
+    <Line energy="77.107" d_energy="0" intensity="10.8" d_intensity="0.498525401880169" line_type="X" width="69.4" dbid="Pb-214_21"/>
+    <Line energy="86.83" d_energy="0" intensity="1.30675324675325" d_intensity="0.0604287731584685" line_type="X" dbid="Pb-214_22"/>
+    <Line energy="87.349" d_energy="0" intensity="2.5012987012987" d_intensity="0.115613566022767" line_type="X" dbid="Pb-214_23"/>
+    <Line energy="89.784" d_energy="0" intensity="0.918701298701299" d_intensity="0.0427527796039117" line_type="X" dbid="Pb-214_25"/>
+    <Line energy="241.995" d_energy="0.0023" intensity="7.251" d_intensity="0.016" dbid="Pb-214_40"/>
+    <Line energy="258.86" d_energy="0.03" intensity="0.531" d_intensity="0.004" dbid="Pb-214_41"/>
+    <Line energy="295.2228" d_energy="0.0018" intensity="18.42" d_intensity="0.04" dbid="Pb-214_43"/>
+    <Line energy="351.9321" d_energy="0.0018" intensity="35.6" d_intensity="0.07" dbid="Pb-214_48"/>
+    <Line energy="487.14" d_energy="0.06" intensity="0.432" d_intensity="0.005" dbid="Pb-214_53"/>
+    <Line energy="580.14" d_energy="0.03" intensity="0.37" d_intensity="0.004" dbid="Pb-214_58"/>
+    <Line energy="785.96" d_energy="0.08" intensity="1.06" d_intensity="0.03" dbid="Pb-214_63"/>
+    <Line energy="839.07" d_energy="0.08" intensity="0.583" d_intensity="0.008" dbid="Pb-214_64"/>
+  </Nuclide>
+  <Nuclide name="Bi-214" half_life_value="19.9" half_life_unit="min" gamma_constant="7.42329503554262" atomic_mass="213.998712" d_atomic_mass="1.2E-5" nuc_num="3243">
+    <Line energy="79.29" d_energy="0.005" intensity="0.68" d_intensity="0.0281687267543694" line_type="X" width="72.7" dbid="Bi-214_21"/>
+    <Line energy="609.32" d_energy="0.005" intensity="45.489998" d_intensity="0.160003" dbid="Bi-214_121"/>
+    <Line energy="665.447" d_energy="0.009" intensity="1.531" d_intensity="0.006" dbid="Bi-214_136"/>
+    <Line energy="703.11" d_energy="0.04" intensity="0.472" d_intensity="0.009" dbid="Bi-214_143"/>
+    <Line energy="768.36" d_energy="0.005" intensity="4.894" d_intensity="0.011001" dbid="Bi-214_159"/>
+    <Line energy="806.18" d_energy="0.009" intensity="1.264" d_intensity="0.005" dbid="Bi-214_166"/>
+    <Line energy="934.056" d_energy="0.006" intensity="3.107" d_intensity="0.01" dbid="Bi-214_185"/>
+    <Line energy="1120.294" d_energy="0.006" intensity="14.919999" d_intensity="0.030002" dbid="Bi-214_222"/>
+    <Line energy="1155.21" d_energy="0.008" intensity="1.633" d_intensity="0.006" dbid="Bi-214_227"/>
+    <Line energy="1238.122" d_energy="0.007" intensity="5.834" d_intensity="0.015001" dbid="Bi-214_238"/>
+    <Line energy="1280.976" d_energy="0.01" intensity="1.434" d_intensity="0.006" dbid="Bi-214_244"/>
+    <Line energy="1377.669" d_energy="0.008" intensity="3.988" d_intensity="0.011" dbid="Bi-214_257"/>
+    <Line energy="1385.31" d_energy="0.013" intensity="0.793" d_intensity="0.005" dbid="Bi-214_259"/>
+    <Line energy="1401.515" d_energy="0.012" intensity="1.33" d_intensity="0.005" dbid="Bi-214_262"/>
+    <Line energy="1407.988" d_energy="0.011" intensity="2.394" d_intensity="0.007" dbid="Bi-214_263"/>
+    <Line energy="1415.8" d_energy="0" intensity="0.481" d_intensity="0.016" dbid="Bi-214_264"/>
+    <Line energy="1509.21" d_energy="0.01" intensity="2.13" d_intensity="0.01" dbid="Bi-214_273"/>
+    <Line energy="1583.204" d_energy="0.015" intensity="0.705" d_intensity="0.005" dbid="Bi-214_281"/>
+    <Line energy="1661.274" d_energy="0.016" intensity="1.047" d_intensity="0.006" dbid="Bi-214_291"/>
+    <Line energy="1729.595" d_energy="0.011" intensity="2.878" d_intensity="0.008" dbid="Bi-214_300"/>
+    <Line energy="1764.491" d_energy="0.01" intensity="15.299999" d_intensity="0.030002" dbid="Bi-214_304"/>
+    <Line energy="1847.429" d_energy="0.013" intensity="2.025" d_intensity="0.009" dbid="Bi-214_309"/>
+    <Line energy="2118.514" d_energy="0.019" intensity="1.16" d_intensity="0.006" dbid="Bi-214_329"/>
+    <Line energy="2204.059" d_energy="0.022" intensity="4.924" d_intensity="0.018" dbid="Bi-214_337"/>
+    <Line energy="2447.7" d_energy="0.03" intensity="1.548" d_intensity="0.007" dbid="Bi-214_364"/>
+  </Nuclide>
+  <Nuclide name="Pb-210" half_life_value="22.2" half_life_unit="year" atomic_mass="209.984189" d_atomic_mass="2E-6" nuc_num="3170">
+    <Line energy="46.539" d_energy="0.001" intensity="4.25" d_intensity="0.04" dbid="Pb-210_16"/>
+  </Nuclide>
+  <Nuclide name="K-40" half_life_value="1248000000" half_life_unit="year" gamma_constant="0.763349723883162" atomic_mass="39.963998" nuc_num="225">
+    <Line energy="511.003" d_energy="0" intensity="0.002" d_intensity="0.0001304" line_type="An" dbid="K-40_6"/>
+    <Line energy="1460.82" d_energy="0.005" intensity="10.661876" d_intensity="0.169927" dbid="K-40_8"/>
+  </Nuclide>
+  <Nuclide name="Th-232" half_life_value="14000000000" half_life_unit="year" gamma_constant="11.4364276290767" atomic_mass="232.038055" d_atomic_mass="1E-6" nuc_num="3420" with_daughter="true" daughter_recalculation_time="63072000000">
+    <Line energy="74.815" d_energy="0" intensity="10.4924242424242" d_intensity="0.428137315036888" line_type="X" width="70.1" dbid="Pb-212_21"/>
+    <Line energy="74.969" d_energy="0.0009" intensity="1.22555400067183" d_intensity="0.0421058435823323" line_type="X" width="66.2" dbid="Tl-208_17"/>
+    <Line energy="77.107" d_energy="0" intensity="17.5" d_intensity="0.694577581360733" line_type="X" width="69.4" dbid="Pb-212_22"/>
+    <Line energy="84.373" d_energy="0.003" intensity="1.188" d_intensity="0.038953" dbid="Th-228_16"/>
+    <Line energy="86.83" d_energy="0" intensity="2.11742424242424" d_intensity="0.0842468988151225" line_type="X" dbid="Pb-212_23"/>
+    <Line energy="87.349" d_energy="0" intensity="4.0530303030303" d_intensity="0.161155928603499" line_type="X" dbid="Pb-212_24"/>
+    <Line energy="89.784" d_energy="0" intensity="1.48863636363636" d_intensity="0.0597348323995847" line_type="X" dbid="Pb-212_26"/>
+    <Line energy="89.957" d_energy="0" intensity="1.98061674008811" d_intensity="0.254213557979906" line_type="X" width="96.2" dbid="Ac-228_22"/>
+    <Line energy="93.35" d_energy="0.002" intensity="3.2" d_intensity="0.409936926234817" line_type="X" width="95.2" dbid="Ac-228_23"/>
+    <Line energy="99.509" d_energy="0.006" intensity="1.26" d_intensity="0.07" dbid="Ac-228_25"/>
+    <Line energy="105.604" d_energy="0" intensity="0.754185022026432" d_intensity="0.0965921390711232" line_type="X" dbid="Ac-228_29"/>
+    <Line energy="115.183" d_energy="0.005" intensity="0.596448" d_intensity="0.009213" dbid="Pb-212_30"/>
+    <Line energy="129.065" d_energy="0.001" intensity="2.42" d_intensity="0.09" dbid="Ac-228_39"/>
+    <Line energy="153.977" d_energy="0.01" intensity="0.722" d_intensity="0.021" dbid="Ac-228_45"/>
+    <Line energy="209.253" d_energy="0.006" intensity="3.89" d_intensity="0.07" dbid="Ac-228_57"/>
+    <Line energy="238.632" d_energy="0.002" intensity="43.6" d_intensity="0.530718" dbid="Pb-212_35"/>
+    <Line energy="240.986" d_energy="0.006" intensity="4.1" d_intensity="0.05" dbid="Ra-224_25"/>
+    <Line energy="270.245" d_energy="0.002" intensity="3.46" d_intensity="0.06" dbid="Ac-228_67"/>
+    <Line energy="277.371" d_energy="0.005" intensity="2.37204000130031" d_intensity="0.107820007331225" dbid="Tl-208_28"/>
+    <Line energy="300.087" d_energy="0.01" intensity="3.30052" d_intensity="0.042992" dbid="Pb-212_36"/>
+    <Line energy="328" d_energy="0.006" intensity="2.95" d_intensity="0.12" dbid="Ac-228_74"/>
+    <Line energy="338.32" d_energy="0.003" intensity="11.27" d_intensity="0.19" dbid="Ac-228_77"/>
+    <Line energy="409.462" d_energy="0.006" intensity="1.92" d_intensity="0.04" dbid="Ac-228_91"/>
+    <Line energy="463.004" d_energy="0.006" intensity="4.4" d_intensity="0.07" dbid="Ac-228_102"/>
+    <Line energy="508.959" d_energy="0.017" intensity="0.45" d_intensity="0.05" dbid="Ac-228_116"/>
+    <Line energy="510.77" d_energy="0.1" intensity="8.12244000445258" d_intensity="0.0718801279424616" dbid="Tl-208_30"/>
+    <Line energy="562.5" d_energy="0.004" intensity="0.87" d_intensity="0.03" dbid="Ac-228_125"/>
+    <Line energy="583.187" d_energy="0.002" intensity="30.5490000167464" d_intensity="0.107821206229321" dbid="Tl-208_32"/>
+    <Line energy="674.75" d_energy="0" intensity="2.1" d_intensity="0.7" dbid="Ac-228_148"/>
+    <Line energy="726.863" d_energy="0.015" intensity="0.62" d_intensity="0.08" dbid="Ac-228_161"/>
+    <Line energy="727.33" d_energy="0.009" intensity="6.668646" d_intensity="0.089684" dbid="Bi-212_52"/>
+    <Line energy="755.315" d_energy="0.004" intensity="1" d_intensity="0.03" dbid="Ac-228_163"/>
+    <Line energy="763.13" d_energy="0.08" intensity="0.64332600035266" d_intensity="0.010782005354991" dbid="Tl-208_43"/>
+    <Line energy="772.291" d_energy="0.005" intensity="1.49" d_intensity="0.03" dbid="Ac-228_165"/>
+    <Line energy="782.142" d_energy="0.005" intensity="0.485" d_intensity="0.019" dbid="Ac-228_169"/>
+    <Line energy="785.37" d_energy="0.08" intensity="1.101832" d_intensity="0.012812" dbid="Bi-212_54"/>
+    <Line energy="794.947" d_energy="0.005" intensity="4.25" d_intensity="0.07" dbid="Ac-228_174"/>
+    <Line energy="830.486" d_energy="0.008" intensity="0.54" d_intensity="0.021" dbid="Ac-228_178"/>
+    <Line energy="835.71" d_energy="0.006" intensity="1.61" d_intensity="0.06" dbid="Ac-228_179"/>
+    <Line energy="840.377" d_energy="0.007" intensity="0.91" d_intensity="0.04" dbid="Ac-228_181"/>
+    <Line energy="860.557" d_energy="0.004" intensity="4.49250000246271" d_intensity="0.0359400782750422" dbid="Tl-208_48"/>
+    <Line energy="904.2" d_energy="0.04" intensity="0.77" d_intensity="0.03" dbid="Ac-228_191"/>
+    <Line energy="911.204" d_energy="0.004" intensity="25.8" d_intensity="0.4" dbid="Ac-228_193"/>
+    <Line energy="964.766" d_energy="0.01" intensity="4.99" d_intensity="0.09" dbid="Ac-228_206"/>
+    <Line energy="968.971" d_energy="0.017" intensity="15.8" d_intensity="0.3" dbid="Ac-228_208"/>
+    <Line energy="1078.62" d_energy="0.1" intensity="0.563728" d_intensity="0.019218" dbid="Bi-212_58"/>
+    <Line energy="1247.08" d_energy="0.04" intensity="0.5" d_intensity="0.03" dbid="Ac-228_254"/>
+    <Line energy="1459.138" d_energy="0.015" intensity="0.83" d_intensity="0.08" dbid="Ac-228_276"/>
+    <Line energy="1495.91" d_energy="0.02" intensity="0.86" d_intensity="0.04" dbid="Ac-228_279"/>
+    <Line energy="1501.57" d_energy="0.05" intensity="0.46" d_intensity="0.03" dbid="Ac-228_280"/>
+    <Line energy="1580.53" d_energy="0.03" intensity="0.6" d_intensity="0.04" dbid="Ac-228_288"/>
+    <Line energy="1588.2" d_energy="0.03" intensity="3.22" d_intensity="0.08" dbid="Ac-228_289"/>
+    <Line energy="1620.5" d_energy="0.1" intensity="1.466974" d_intensity="0.03203" dbid="Bi-212_61"/>
+    <Line energy="1630.627" d_energy="0.01" intensity="1.51" d_intensity="0.04" dbid="Ac-228_293"/>
+    <Line energy="1638.281" d_energy="0.01" intensity="0.47" d_intensity="0.03" dbid="Ac-228_294"/>
+    <Line energy="2614.511" d_energy="0.01" intensity="35.8515876196532" d_intensity="0.00155721698591898" dbid="Tl-208_69"/>
+  </Nuclide>
+</Library>

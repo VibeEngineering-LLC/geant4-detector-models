@@ -1,0 +1,17 @@
+# Замер скорости: 100k фотонов 662 кэВ объёмным источником в пробе.
+/run/verbose 0
+/event/verbose 0
+/tracking/verbose 0
+/run/printProgress 0
+/gps/particle gamma
+/gps/ene/type Mono
+/gps/ene/mono 662 keV
+/gps/pos/type Volume
+/gps/pos/shape Cylinder
+/gps/pos/radius 33.24 mm
+/gps/pos/halfz 33.25 mm
+/gps/pos/centre 0 0 -0.44 mm
+/gps/pos/confine sample
+/gps/ang/type iso
+/rc/outFile bench.csv
+/run/beamOn 100000

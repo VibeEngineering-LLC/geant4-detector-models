@@ -1,0 +1,68 @@
+[General]
+Sigma=2
+[Sets]
+Европий-152=
+Цезий-137, висмут-207, олово-113=
+Стронций-90=
+[Европий-152]
+Geometry=Фильтр-АФА-РСП-20
+Mass,g=0
+Volume,ml=0
+Material=
+Date=29.03.2017
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Европий-152,structure]
+ИМН-Г-2 №SRC-A174=
+[Европий-152,ИМН-Г-2 №SRC-A174,Act]
+Mass,g=0
+Eu-152=3470,6
+[Цезий-137, висмут-207, олово-113]
+Geometry=Фильтр-АФА-РСП-20
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=28.02.2018
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Цезий-137, висмут-207, олово-113,structure]
+ИМН-Г-2 №SRC-A189=
+ИМН-Г-2 №SRC-A188=
+ИМН-Г-2 №SRC-A187=
+[Цезий-137, висмут-207, олово-113,ИМН-Г-2 №SRC-A189,Act]
+Mass,g=0
+Cs-137=9220,6
+[Цезий-137, висмут-207, олово-113,ИМН-Г-2 №SRC-A188,Act]
+Mass,g=0
+Bi-207=10100,6
+[Цезий-137, висмут-207, олово-113,ИМН-Г-2 №SRC-A187,Act]
+Mass,g=0
+Sn-113=30100,6
+[Стронций-90]
+Geometry=Фильтр-АФА-РСП-20
+Mass,g=0
+Volume,ml=0
+Material=not essential
+Date=26.10.2010
+Time=0:00:00
+Units=Bq
+Thick,mm=0,0
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Стронций-90,structure]
+ОИСН №SRC-A196=
+[Стронций-90,ОИСН №SRC-A196,Act]
+Mass,g=0
+Sr-90=2475,8

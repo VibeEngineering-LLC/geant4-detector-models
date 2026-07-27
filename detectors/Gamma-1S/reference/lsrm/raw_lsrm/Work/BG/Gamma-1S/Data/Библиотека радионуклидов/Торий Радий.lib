@@ -1,0 +1,1100 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<!--SpectraLine Nuclear Data Information file © LSRM 2005-2020-->
+<Library library_type="gamma" library_version="2.0" database_version="26">
+  <Comment></Comment>
+  <Nuclide name="Ra-226" half_life_value="1600" half_life_unit="year" gamma_constant="0,036690996914394" atomic_mass="226,02541" d_atomic_mass="2E-6" nuc_num="3374" source="ENSDF">
+    <Line energy="10,137" d_energy="0" intensity="0,0222896356728419" d_intensity="0,00156027449709893" line_type="X" dbid="Ra-226_1" xline_type="LL" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="11,598" d_energy="0" intensity="0,0412099078137425" d_intensity="0,00247259446882455" line_type="X" dbid="Ra-226_2" xline_type="LA2" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="11,726" d_energy="0" intensity="0,36803817041204" d_intensity="0,0439660643551947" line_type="X" dbid="Ra-226_3" xline_type="LA1" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="12,855" d_energy="0" intensity="0,00616852708155391" d_intensity="8,01908520602009E-5" line_type="X" dbid="Ra-226_4" xline_type="LN" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="13,52" d_energy="0" intensity="0,00619444526256885" d_intensity="5,57500073631196E-5" line_type="X" dbid="Ra-226_5" xline_type="LB6" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="13,898" d_energy="0" intensity="0,00256589992047831" d_intensity="3,84884988071746E-5" line_type="X" dbid="Ra-226_6" xline_type="LB4" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="14,066" d_energy="0" intensity="0,0946013607045033" d_intensity="0,011567918929339" line_type="X" dbid="Ra-226_7" xline_type="LB2" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="14,316" d_energy="0" intensity="0,251406355844844" d_intensity="0,0314891197610344" line_type="X" dbid="Ra-226_8" xline_type="LB1" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="14,519" d_energy="0" intensity="0,00274732718758284" d_intensity="4,39572350013254E-5" line_type="X" dbid="Ra-226_9" xline_type="LB3" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="14,565" d_energy="0" intensity="0,0156804995140341" d_intensity="0,000360651488822784" line_type="X" dbid="Ra-226_10" xline_type="LB5" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="16,77" d_energy="0" intensity="0,0557240891821047" d_intensity="0,00719834334260627" line_type="X" dbid="Ra-226_11" xline_type="LG1" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="17,104" d_energy="0" intensity="0,000933054516537567" d_intensity="5,5983270992254E-6" line_type="X" dbid="Ra-226_12" xline_type="LG2" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="17,258" d_energy="0" intensity="0,0010367272405973" d_intensity="7,25709068418108E-6" line_type="X" dbid="Ra-226_13" xline_type="LG3" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="17,28" d_energy="0" intensity="0,0114039996465703" d_intensity="0,00045615998586281" line_type="X" dbid="Ra-226_14" xline_type="LG6" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="80,349" d_energy="0" intensity="0,000439234782608696" d_intensity="8,34546086956522E-7" line_type="X" dbid="Ra-226_16" xline_type="KA3" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="81,069" d_energy="0" intensity="0,198939130434783" d_intensity="0,00929658528969292" line_type="X" width="80,5" dbid="Ra-226_17" xline_type="KA2" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="83,787" d_energy="0,02" intensity="0,328" d_intensity="0,0150454585276168" line_type="X" width="79,7" dbid="Ra-226_18" xline_type="KA1" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="94,247" d_energy="0" intensity="0,0396452173913043" d_intensity="0,00182225748076181" line_type="X" dbid="Ra-226_19" xline_type="KB3" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="94,868" d_energy="0" intensity="0,0755826086956522" d_intensity="0,00347497169870324" line_type="X" dbid="Ra-226_20" xline_type="KB1" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="95,449" d_energy="0" intensity="0,00248852173913043" d_intensity="3,48393043478261E-5" line_type="X" dbid="Ra-226_21" xline_type="KB5" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="97,53" d_energy="0" intensity="0,0283791304347826" d_intensity="0,00130831082487128" line_type="X" dbid="Ra-226_22" xline_type="KB2" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="97,853" d_energy="0" intensity="0,00071304347826087" d_intensity="3,56521739130435E-5" line_type="X" dbid="Ra-226_23" xline_type="KB4" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="98,257" d_energy="0" intensity="0,00577565217391304" d_intensity="0,000462052173913044" line_type="X" dbid="Ra-226_24" xline_type="KO" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="98,389" d_energy="0" intensity="0,000670260869565217" d_intensity="6,70260869565217E-6" line_type="X" dbid="Ra-226_25" xline_type="KP" xray_child_nuclide="Rn-222" source="ENSDF"/>
+    <Line energy="186,211" d_energy="0,013" intensity="3,64" d_intensity="0,04" dbid="Ra-226_26" source="ENSDF"/>
+    <Line energy="262,27" d_energy="0,05" intensity="0,005" d_intensity="0,0005" dbid="Ra-226_28" source="ENSDF"/>
+    <Line energy="414,6" d_energy="0,05" intensity="0,0003" d_intensity="0" dbid="Ra-226_29" source="ENSDF"/>
+    <Line energy="449,37" d_energy="0,1" intensity="0,00019" d_intensity="0" dbid="Ra-226_30" source="ENSDF"/>
+    <Line energy="600,66" d_energy="0,05" intensity="0,00049" d_intensity="0" dbid="Ra-226_31" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Rn-222" half_life_value="3,8222" half_life_unit="day" gamma_constant="0,00222358854477915" atomic_mass="222,017578" d_atomic_mass="3E-6" nuc_num="3349" source="ENSDF">
+    <Line energy="510" d_energy="2" intensity="0,076" d_intensity="0,001" dbid="Rn-222_1" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Pb-214" half_life_value="26,8" half_life_unit="min" gamma_constant="1,30847930856643" atomic_mass="213,999806" d_atomic_mass="2E-6" nuc_num="3306" source="ENSDF">
+    <Line energy="9,42" d_energy="0" intensity="0,345353135741617" d_intensity="0,0241747195019132" line_type="X" dbid="Pb-214_1" xline_type="LL" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="10,731" d_energy="0" intensity="0,681496854530125" d_intensity="0,0408898112718075" line_type="X" dbid="Pb-214_3" xline_type="LA2" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="10,839" d_energy="0" intensity="6,07821518905247" d_intensity="0,303910759452623" line_type="X" dbid="Pb-214_4" xline_type="LA1" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="11,712" d_energy="0" intensity="0,0953174654646864" d_intensity="0,00104849212011155" line_type="X" dbid="Pb-214_5" xline_type="LN" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="12,48" d_energy="0" intensity="0,0966988780076529" d_intensity="0,000773591024061223" line_type="X" dbid="Pb-214_6" xline_type="LB6" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="12,691" d_energy="0" intensity="0,0382190803554057" d_intensity="0,000496848044620274" line_type="X" dbid="Pb-214_7" xline_type="LB4" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="12,967" d_energy="0" intensity="1,51034438031001" d_intensity="0,211448213243401" line_type="X" dbid="Pb-214_8" xline_type="LB2" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="13,024" d_energy="0" intensity="4,05214345936831" d_intensity="0,591050803396077" line_type="X" dbid="Pb-214_9" xline_type="LB1" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="13,211" d_energy="0" intensity="0,044205201374927" d_intensity="0,000663078020623905" line_type="X" dbid="Pb-214_10" xline_type="LB3" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="13,393" d_energy="0" intensity="0,210895648226214" d_intensity="0,00358522601984564" line_type="X" dbid="Pb-214_11" xline_type="LB5" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="15,248" d_energy="0" intensity="0,861080485115766" d_intensity="0,00947188533627343" line_type="X" dbid="Pb-214_12" xline_type="LG1" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="15,582" d_energy="0" intensity="0,0133536545820092" d_intensity="6,67682729100461E-5" line_type="X" dbid="Pb-214_13" xline_type="LG2" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="15,685" d_energy="0" intensity="0,156560088202867" d_intensity="0,004696802646086" line_type="X" dbid="Pb-214_14" xline_type="LG6" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="15,709" d_energy="0" intensity="0,0161164796679422" d_intensity="9,66988780076529E-5" line_type="X" dbid="Pb-214_15" xline_type="LG3" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="53,2284" d_energy="0,0018" intensity="1,075" d_intensity="0,007" dbid="Pb-214_16" source="ENSDF"/>
+    <Line energy="74,138" d_energy="0" intensity="0,0110805194805195" d_intensity="1,55127272727273E-5" line_type="X" dbid="Pb-214_19" xline_type="KA3" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="74,815" d_energy="0" intensity="6,47532467532467" d_intensity="0,305125688358272" line_type="X" width="70,1" dbid="Pb-214_20" xline_type="KA2" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="77,107" d_energy="0" intensity="10,8" d_intensity="0,498525401880169" line_type="X" width="69,4" dbid="Pb-214_21" xline_type="KA1" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="86,83" d_energy="0" intensity="1,30675324675325" d_intensity="0,0604287731584685" line_type="X" dbid="Pb-214_22" xline_type="KB3" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="87,349" d_energy="0" intensity="2,5012987012987" d_intensity="0,115613566022767" line_type="X" dbid="Pb-214_23" xline_type="KB1" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="87,892" d_energy="0" intensity="0,075038961038961" d_intensity="0,000975506493506493" line_type="X" dbid="Pb-214_24" xline_type="KB5" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="89,784" d_energy="0" intensity="0,918701298701299" d_intensity="0,0427527796039117" line_type="X" dbid="Pb-214_25" xline_type="KB2" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="90,074" d_energy="0" intensity="0,021038961038961" d_intensity="0,000841558441558442" line_type="X" dbid="Pb-214_26" xline_type="KB4" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="90,421" d_energy="0" intensity="0,170649350649351" d_intensity="0,013651948051948" line_type="X" dbid="Pb-214_27" xline_type="KO" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="90,522" d_energy="0" intensity="0,00724675324675325" d_intensity="2,17402597402597E-5" line_type="X" dbid="Pb-214_28" xline_type="KP" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="107,22" d_energy="0,09" intensity="0,0068" d_intensity="0,0014" dbid="Pb-214_29" source="ENSDF"/>
+    <Line energy="118,17" d_energy="0" intensity="0,094" d_intensity="0,021" dbid="Pb-214_30" source="ENSDF"/>
+    <Line energy="137,45" d_energy="0,3" intensity="0,053" d_intensity="0,014" dbid="Pb-214_31" source="ENSDF"/>
+    <Line energy="141,3" d_energy="0,6" intensity="0,058" d_intensity="0,018" dbid="Pb-214_32" source="ENSDF"/>
+    <Line energy="170,07" d_energy="0,06" intensity="0,015" d_intensity="0,003" dbid="Pb-214_33" source="ENSDF"/>
+    <Line energy="181,5" d_energy="0" intensity="0,0009" d_intensity="0,0005" dbid="Pb-214_35" source="ENSDF"/>
+    <Line energy="196,19" d_energy="0,05" intensity="0,067" d_intensity="0,008" dbid="Pb-214_36" source="ENSDF"/>
+    <Line energy="205,68" d_energy="0,09" intensity="0,0114" d_intensity="0,0013" dbid="Pb-214_37" source="ENSDF"/>
+    <Line energy="216,47" d_energy="0,07" intensity="0,01" d_intensity="0,0023" dbid="Pb-214_38" source="ENSDF"/>
+    <Line energy="238,4" d_energy="0" intensity="0,016" d_intensity="0,001" dbid="Pb-214_39" source="ENSDF"/>
+    <Line energy="241,995" d_energy="0,0023" intensity="7,251" d_intensity="0,016" dbid="Pb-214_40" source="ENSDF"/>
+    <Line energy="258,86" d_energy="0,03" intensity="0,531" d_intensity="0,004" dbid="Pb-214_41" source="ENSDF"/>
+    <Line energy="274,8" d_energy="0,04" intensity="0,355" d_intensity="0,01" dbid="Pb-214_42" source="ENSDF"/>
+    <Line energy="295,2228" d_energy="0,0018" intensity="18,42" d_intensity="0,04" dbid="Pb-214_43" source="ENSDF"/>
+    <Line energy="298,76" d_energy="0" intensity="0,026" d_intensity="0,005" dbid="Pb-214_44" source="ENSDF"/>
+    <Line energy="305,26" d_energy="0,03" intensity="0,0312" d_intensity="0,0021" dbid="Pb-214_45" source="ENSDF"/>
+    <Line energy="314,33" d_energy="0,07" intensity="0,078" d_intensity="0,006" dbid="Pb-214_46" source="ENSDF"/>
+    <Line energy="323,84" d_energy="0,04" intensity="0,029" d_intensity="0,003" dbid="Pb-214_47" source="ENSDF"/>
+    <Line energy="351,9321" d_energy="0,0018" intensity="35,6" d_intensity="0,07" dbid="Pb-214_48" source="ENSDF"/>
+    <Line energy="462,02" d_energy="0,06" intensity="0,212" d_intensity="0,005" dbid="Pb-214_49" source="ENSDF"/>
+    <Line energy="470,6" d_energy="0,8" intensity="0,011" d_intensity="0,003" dbid="Pb-214_50" source="ENSDF"/>
+    <Line energy="480,432" d_energy="0,02" intensity="0,337" d_intensity="0,004" dbid="Pb-214_51" source="ENSDF"/>
+    <Line energy="487,14" d_energy="0,06" intensity="0,432" d_intensity="0,005" dbid="Pb-214_53" source="ENSDF"/>
+    <Line energy="511" d_energy="0,09" intensity="0,033" d_intensity="0,009" dbid="Pb-214_54" source="ENSDF"/>
+    <Line energy="533,66" d_energy="0,02" intensity="0,181" d_intensity="0,006" dbid="Pb-214_55" source="ENSDF"/>
+    <Line energy="538,42" d_energy="0,08" intensity="0,02" d_intensity="0,003" dbid="Pb-214_56" source="ENSDF"/>
+    <Line energy="543,83" d_energy="0,07" intensity="0,044" d_intensity="0,004" dbid="Pb-214_57" source="ENSDF"/>
+    <Line energy="580,14" d_energy="0,03" intensity="0,37" d_intensity="0,004" dbid="Pb-214_58" source="ENSDF"/>
+    <Line energy="765,97" d_energy="0,19" intensity="0,053" d_intensity="0,004" dbid="Pb-214_62" source="ENSDF"/>
+    <Line energy="785,96" d_energy="0,08" intensity="1,06" d_intensity="0,03" dbid="Pb-214_63" source="ENSDF"/>
+    <Line energy="839,07" d_energy="0,08" intensity="0,583" d_intensity="0,008" dbid="Pb-214_64" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Bi-214" half_life_value="19,9" half_life_unit="min" gamma_constant="7,42329503554262" atomic_mass="213,998712" d_atomic_mass="1,2E-5" nuc_num="3243" source="ENSDF">
+    <Line energy="9,658" d_energy="0" intensity="0,0155730780061954" d_intensity="0,00109011546043368" line_type="X" dbid="Bi-214_1" xline_type="LL" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="11,016" d_energy="0" intensity="0,0299633905941988" d_intensity="0,00179780343565193" line_type="X" dbid="Bi-214_2" xline_type="LA2" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="11,13" d_energy="0" intensity="0,2680934947902" d_intensity="0,0315166519724025" line_type="X" dbid="Bi-214_3" xline_type="LA1" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="12,085" d_energy="0" intensity="0,00429738101943115" d_intensity="5,15685722331738E-5" line_type="X" dbid="Bi-214_4" xline_type="LN" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="12,823" d_energy="0" intensity="0,00433680653337088" d_intensity="3,46944522669671E-5" line_type="X" dbid="Bi-214_5" xline_type="LB6" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="13,084" d_energy="0" intensity="0,00187271191213743" d_intensity="2,6217966769924E-5" line_type="X" dbid="Bi-214_6" xline_type="LB4" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="13,328" d_energy="0" intensity="0,06702337369755" d_intensity="0,00804691151218271" line_type="X" dbid="Bi-214_7" xline_type="LB2" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="13,443" d_energy="0" intensity="0,179386088425796" d_intensity="0,0223242375218098" line_type="X" dbid="Bi-214_8" xline_type="LB1" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="13,635" d_energy="0" intensity="0,00210926499577584" d_intensity="3,37482399324134E-5" line_type="X" dbid="Bi-214_9" xline_type="LB3" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="13,778" d_energy="0" intensity="0,00997465502675303" d_intensity="0,000189518445508308" line_type="X" dbid="Bi-214_10" xline_type="LB5" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="15,742" d_energy="0" intensity="0,0384398760912419" d_intensity="0,00422838637003661" line_type="X" dbid="Bi-214_11" xline_type="LG1" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="16,077" d_energy="0" intensity="0,000650520980005632" d_intensity="3,25260490002816E-6" line_type="X" dbid="Bi-214_12" xline_type="LG2" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="16,203" d_energy="0" intensity="0,0074908476485497" d_intensity="0,000299633905941988" line_type="X" dbid="Bi-214_13" xline_type="LG6" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="16,213" d_energy="0" intensity="0,000788510278794706" d_intensity="4,73106167276824E-6" line_type="X" dbid="Bi-214_14" xline_type="LG3" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="76,172" d_energy="0" intensity="0,00289110629067245" d_intensity="1,73466377440347E-5" line_type="X" dbid="Bi-214_19" xline_type="KA3" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="76,863" d_energy="0" intensity="0,408590021691974" d_intensity="0,01735446029107" line_type="X" width="73,4" dbid="Bi-214_20" xline_type="KA2" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="79,29" d_energy="0,005" intensity="0,68" d_intensity="0,0281687267543694" line_type="X" width="72,7" dbid="Bi-214_21" xline_type="KA1" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="89,256" d_energy="0" intensity="0,0821605206073753" d_intensity="0,00341225198719753" line_type="X" dbid="Bi-214_23" xline_type="KB3" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="89,807" d_energy="0" intensity="0,157830802603037" d_intensity="0,00654578400435253" line_type="X" dbid="Bi-214_24" xline_type="KB1" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="90,363" d_energy="0" intensity="0,00486767895878525" d_intensity="6,32798264642083E-5" line_type="X" dbid="Bi-214_25" xline_type="KB5" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="92,317" d_energy="0" intensity="0,0582646420824295" d_intensity="0,00243393469396318" line_type="X" dbid="Bi-214_26" xline_type="KB2" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="92,618" d_energy="0" intensity="0,00132754880694143" d_intensity="5,31019522776573E-5" line_type="X" dbid="Bi-214_27" xline_type="KB4" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="92,983" d_energy="0" intensity="0,0112104121475054" d_intensity="0,000896832971800434" line_type="X" dbid="Bi-214_28" xline_type="KO" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="93,095" d_energy="0" intensity="0,000722776572668113" d_intensity="3,61388286334056E-6" line_type="X" dbid="Bi-214_29" xline_type="KP" xray_child_nuclide="Po-214" source="ENSDF"/>
+    <Line energy="221" d_energy="1" intensity="0,003" d_intensity="0,001" dbid="Bi-214_39" source="ENSDF"/>
+    <Line energy="230" d_energy="0,707106781186547" intensity="0,008" d_intensity="0" dbid="Bi-214_41;Bi-214_40" source="ENSDF"/>
+    <Line energy="252,8" d_energy="0,06" intensity="0,003" d_intensity="0,001" dbid="Bi-214_43" source="ENSDF"/>
+    <Line energy="268,8" d_energy="0,2" intensity="0,017" d_intensity="0,002" dbid="Bi-214_47" source="ENSDF"/>
+    <Line energy="273,8" d_energy="0,05" intensity="0,128" d_intensity="0,007" dbid="Bi-214_49" source="ENSDF"/>
+    <Line energy="280,97" d_energy="0,04" intensity="0,067" d_intensity="0,007" dbid="Bi-214_51" source="ENSDF"/>
+    <Line energy="286,9" d_energy="0,6" intensity="0,0027" d_intensity="0,0005" dbid="Bi-214_54" source="ENSDF"/>
+    <Line energy="304,2" d_energy="0,14142135623731" intensity="0,076" d_intensity="0" dbid="Bi-214_57;Bi-214_58" source="ENSDF"/>
+    <Line energy="333,37" d_energy="0,05" intensity="0,065" d_intensity="0,004" dbid="Bi-214_62" source="ENSDF"/>
+    <Line energy="334,78" d_energy="0,0565685424949238" intensity="0,074" d_intensity="0" dbid="Bi-214_64;Bi-214_63" source="ENSDF"/>
+    <Line energy="338,5" d_energy="0,6" intensity="0,11" d_intensity="0,04" dbid="Bi-214_66" source="ENSDF"/>
+    <Line energy="348,92" d_energy="0,06" intensity="0,104" d_intensity="0,012" dbid="Bi-214_69" source="ENSDF"/>
+    <Line energy="351,9" d_energy="0,5" intensity="0,07" d_intensity="0,01" dbid="Bi-214_71" source="ENSDF"/>
+    <Line energy="356" d_energy="0,17" intensity="0,007" d_intensity="0,002" dbid="Bi-214_72" source="ENSDF"/>
+    <Line energy="363,47" d_energy="0,12" intensity="0,0069" d_intensity="0,0009" dbid="Bi-214_73" source="ENSDF"/>
+    <Line energy="375,59" d_energy="0,15" intensity="0,0043" d_intensity="0,0011" dbid="Bi-214_75" source="ENSDF"/>
+    <Line energy="386,78" d_energy="0,05" intensity="0,295" d_intensity="0,005" dbid="Bi-214_77" source="ENSDF"/>
+    <Line energy="388,89" d_energy="0,05" intensity="0,402" d_intensity="0,01" dbid="Bi-214_78" source="ENSDF"/>
+    <Line energy="394,05" d_energy="0,08" intensity="0,0126" d_intensity="0,0009" dbid="Bi-214_80" source="ENSDF"/>
+    <Line energy="396,02" d_energy="0,06" intensity="0,026" d_intensity="0,004" dbid="Bi-214_81" source="ENSDF"/>
+    <Line energy="405,72" d_energy="0,02" intensity="0,169" d_intensity="0,006" dbid="Bi-214_83" source="ENSDF"/>
+    <Line energy="426,5" d_energy="0,5" intensity="0,012" d_intensity="0,004" dbid="Bi-214_86" source="ENSDF"/>
+    <Line energy="428,07" d_energy="0,08" intensity="0,0011" d_intensity="0,0001" dbid="Bi-214_87" source="ENSDF"/>
+    <Line energy="439,34" d_energy="0,08" intensity="0,009" d_intensity="0,002" dbid="Bi-214_88" source="ENSDF"/>
+    <Line energy="452,92" d_energy="0,1" intensity="0,03" d_intensity="0,004" dbid="Bi-214_90" source="ENSDF"/>
+    <Line energy="454,79" d_energy="0,02" intensity="0,292" d_intensity="0,004" dbid="Bi-214_91" source="ENSDF"/>
+    <Line energy="461,08" d_energy="0,11" intensity="0,051" d_intensity="0,006" dbid="Bi-214_92" source="ENSDF"/>
+    <Line energy="469,77" d_energy="0,04" intensity="0,132" d_intensity="0,005" dbid="Bi-214_93" source="ENSDF"/>
+    <Line energy="474,44" d_energy="0,04" intensity="0,099" d_intensity="0,006" dbid="Bi-214_94" source="ENSDF"/>
+    <Line energy="485,92" d_energy="0,11" intensity="0,022" d_intensity="0,004" dbid="Bi-214_96" source="ENSDF"/>
+    <Line energy="486,7" d_energy="0,3" intensity="0,006" d_intensity="0,001" dbid="Bi-214_97" source="ENSDF"/>
+    <Line energy="487,95" d_energy="0,13" intensity="0,028" d_intensity="0,009" dbid="Bi-214_98" source="ENSDF"/>
+    <Line energy="494,2" d_energy="0,09" intensity="0,0104" d_intensity="0,001" dbid="Bi-214_99" source="ENSDF"/>
+    <Line energy="496,9" d_energy="0,18" intensity="0,0068" d_intensity="0,0018" dbid="Bi-214_100" source="ENSDF"/>
+    <Line energy="501,99" d_energy="0,14" intensity="0,018" d_intensity="0,002" dbid="Bi-214_102" source="ENSDF"/>
+    <Line energy="519,9" d_energy="0,05" intensity="0,0165" d_intensity="0,0017" dbid="Bi-214_103" source="ENSDF"/>
+    <Line energy="524,6" d_energy="0,08" intensity="0,0168" d_intensity="0,0017" dbid="Bi-214_104" source="ENSDF"/>
+    <Line energy="528" d_energy="1" intensity="0,005" d_intensity="0,002" dbid="Bi-214_105" source="ENSDF"/>
+    <Line energy="536,78" d_energy="0,04" intensity="0,065" d_intensity="0,006" dbid="Bi-214_106" source="ENSDF"/>
+    <Line energy="542,83" d_energy="0,07" intensity="0,077" d_intensity="0,006" dbid="Bi-214_108" source="ENSDF"/>
+    <Line energy="547,6" d_energy="0,3" intensity="0,004" d_intensity="0,001" dbid="Bi-214_109" source="ENSDF"/>
+    <Line energy="572,78" d_energy="0,06" intensity="0,078" d_intensity="0,005" dbid="Bi-214_113" source="ENSDF"/>
+    <Line energy="595,24" d_energy="0,07" intensity="0,017" d_intensity="0,002" dbid="Bi-214_117" source="ENSDF"/>
+    <Line energy="600" d_energy="0,5" intensity="0,008" d_intensity="0,002" dbid="Bi-214_119" source="ENSDF"/>
+    <Line energy="609,32" d_energy="0,005" intensity="45,489998" d_intensity="0,160003" dbid="Bi-214_121" source="ENSDF"/>
+    <Line energy="615,77" d_energy="0,05" intensity="0,054" d_intensity="0,007" dbid="Bi-214_122" source="ENSDF"/>
+    <Line energy="617,1" d_energy="0,2" intensity="0,034" d_intensity="0,004" dbid="Bi-214_123" source="ENSDF"/>
+    <Line energy="626,4" d_energy="0,6" intensity="0,004" d_intensity="0,001" dbid="Bi-214_124" source="ENSDF"/>
+    <Line energy="630,8" d_energy="0,0707106781186548" intensity="0,036" d_intensity="0" dbid="Bi-214_125;Bi-214_126" source="ENSDF"/>
+    <Line energy="633,1" d_energy="0,04" intensity="0,056" d_intensity="0,003" dbid="Bi-214_127" source="ENSDF"/>
+    <Line energy="634,72" d_energy="0,21" intensity="0,0064" d_intensity="0,0023" dbid="Bi-214_128" source="ENSDF"/>
+    <Line energy="639,62" d_energy="0,08" intensity="0,033" d_intensity="0,003" dbid="Bi-214_130" source="ENSDF"/>
+    <Line energy="649,22" d_energy="0,05" intensity="0,057" d_intensity="0,005" dbid="Bi-214_131" source="ENSDF"/>
+    <Line energy="651,5" d_energy="0,16" intensity="0,002" d_intensity="0,001" dbid="Bi-214_132" source="ENSDF"/>
+    <Line energy="658,7" d_energy="0,2" intensity="0,014" d_intensity="0,002" dbid="Bi-214_133" source="ENSDF"/>
+    <Line energy="660,94" d_energy="0,13" intensity="0,053" d_intensity="0,004" dbid="Bi-214_134" source="ENSDF"/>
+    <Line energy="665,447" d_energy="0,009" intensity="1,531" d_intensity="0,006" dbid="Bi-214_136" source="ENSDF"/>
+    <Line energy="677,41" d_energy="0,15" intensity="0,006" d_intensity="0,003" dbid="Bi-214_137" source="ENSDF"/>
+    <Line energy="683,23" d_energy="0,05" intensity="0,082" d_intensity="0,005" dbid="Bi-214_138" source="ENSDF"/>
+    <Line energy="687,6" d_energy="0,19" intensity="0,0065" d_intensity="0,0013" dbid="Bi-214_139" source="ENSDF"/>
+    <Line energy="693,3" d_energy="0,3" intensity="0,0056" d_intensity="0,0015" dbid="Bi-214_140" source="ENSDF"/>
+    <Line energy="697,93" d_energy="0,08" intensity="0,067" d_intensity="0,004" dbid="Bi-214_141" source="ENSDF"/>
+    <Line energy="699,82" d_energy="0,13" intensity="0,016" d_intensity="0,005" dbid="Bi-214_142" source="ENSDF"/>
+    <Line energy="703,11" d_energy="0,04" intensity="0,472" d_intensity="0,009" dbid="Bi-214_143" source="ENSDF"/>
+    <Line energy="704,96" d_energy="0,22" intensity="0,047" d_intensity="0,007" dbid="Bi-214_144" source="ENSDF"/>
+    <Line energy="708,87" d_energy="0,21" intensity="0,0121" d_intensity="0,0012" dbid="Bi-214_146" source="ENSDF"/>
+    <Line energy="710,71" d_energy="0,08" intensity="0,074" d_intensity="0,002" dbid="Bi-214_148" source="ENSDF"/>
+    <Line energy="719,87" d_energy="0,03" intensity="0,392" d_intensity="0,008" dbid="Bi-214_150" source="ENSDF"/>
+    <Line energy="723,08" d_energy="0,1" intensity="0,037" d_intensity="0,003" dbid="Bi-214_151" source="ENSDF"/>
+    <Line energy="727" d_energy="1" intensity="0,036" d_intensity="0,014" dbid="Bi-214_153" source="ENSDF"/>
+    <Line energy="733,81" d_energy="0,07" intensity="0,041" d_intensity="0,003" dbid="Bi-214_154" source="ENSDF"/>
+    <Line energy="740,76" d_energy="0,13" intensity="0,043" d_intensity="0,002" dbid="Bi-214_155" source="ENSDF"/>
+    <Line energy="752,85" d_energy="0,03" intensity="0,128" d_intensity="0,007" dbid="Bi-214_156" source="ENSDF"/>
+    <Line energy="768,36" d_energy="0,005" intensity="4,894" d_intensity="0,011001" dbid="Bi-214_159" source="ENSDF"/>
+    <Line energy="769,7" d_energy="0,5" intensity="0,03" d_intensity="0,01" dbid="Bi-214_160" source="ENSDF"/>
+    <Line energy="786,35" d_energy="0,14" intensity="0,32" d_intensity="0,04" dbid="Bi-214_161" source="ENSDF"/>
+    <Line energy="788,6" d_energy="0,4" intensity="0,013" d_intensity="0,002" dbid="Bi-214_163" source="ENSDF"/>
+    <Line energy="799,3" d_energy="0,3" intensity="0,036" d_intensity="0,007" dbid="Bi-214_164" source="ENSDF"/>
+    <Line energy="803,1" d_energy="0" intensity="0,005" d_intensity="0,001" dbid="Bi-214_165" source="ENSDF"/>
+    <Line energy="806,18" d_energy="0,009" intensity="1,264" d_intensity="0,005" dbid="Bi-214_166" source="ENSDF"/>
+    <Line energy="814,96" d_energy="0,09" intensity="0,039" d_intensity="0,003" dbid="Bi-214_167" source="ENSDF"/>
+    <Line energy="821,18" d_energy="0,03" intensity="0,161" d_intensity="0,008" dbid="Bi-214_168" source="ENSDF"/>
+    <Line energy="826,45" d_energy="0,1" intensity="0,117" d_intensity="0,013" dbid="Bi-214_170" source="ENSDF"/>
+    <Line energy="832,36" d_energy="0,09" intensity="0,028" d_intensity="0,002" dbid="Bi-214_171" source="ENSDF"/>
+    <Line energy="840,4" d_energy="0,5" intensity="0,01" d_intensity="0,002" dbid="Bi-214_172" source="ENSDF"/>
+    <Line energy="847,16" d_energy="0,11" intensity="0,024" d_intensity="0,003" dbid="Bi-214_174" source="ENSDF"/>
+    <Line energy="873,06" d_energy="0,18" intensity="0,018" d_intensity="0,003" dbid="Bi-214_176" source="ENSDF"/>
+    <Line energy="878,03" d_energy="0,12" intensity="0,012" d_intensity="0,003" dbid="Bi-214_177" source="ENSDF"/>
+    <Line energy="904,31" d_energy="0,08" intensity="0,076" d_intensity="0,007" dbid="Bi-214_179" source="ENSDF"/>
+    <Line energy="915,75" d_energy="0,13" intensity="0,023" d_intensity="0,002" dbid="Bi-214_181" source="ENSDF"/>
+    <Line energy="917,7" d_energy="0,3" intensity="0,005" d_intensity="0,003" dbid="Bi-214_182" source="ENSDF"/>
+    <Line energy="930,2" d_energy="0,2" intensity="0,026" d_intensity="0,004" dbid="Bi-214_184" source="ENSDF"/>
+    <Line energy="934,056" d_energy="0,006" intensity="3,107" d_intensity="0,01" dbid="Bi-214_185" source="ENSDF"/>
+    <Line energy="934,1" d_energy="0,2" intensity="0,05" d_intensity="0,01" dbid="Bi-214_186" source="ENSDF"/>
+    <Line energy="934,5" d_energy="0,5" intensity="0,01" d_intensity="0,003" dbid="Bi-214_187" source="ENSDF"/>
+    <Line energy="938,65" d_energy="0,16" intensity="0,013" d_intensity="0,004" dbid="Bi-214_188" source="ENSDF"/>
+    <Line energy="939,6" d_energy="0,5" intensity="0,017" d_intensity="0,006" dbid="Bi-214_189" source="ENSDF"/>
+    <Line energy="943,33" d_energy="0,11" intensity="0,017" d_intensity="0,002" dbid="Bi-214_190" source="ENSDF"/>
+    <Line energy="949,8" d_energy="0,5" intensity="0,0055" d_intensity="0,0023" dbid="Bi-214_191" source="ENSDF"/>
+    <Line energy="952,2" d_energy="0,8" intensity="0,0059" d_intensity="0,0023" dbid="Bi-214_192" source="ENSDF"/>
+    <Line energy="961,62" d_energy="0,17" intensity="0,0101" d_intensity="0,0013" dbid="Bi-214_193" source="ENSDF"/>
+    <Line energy="964,08" d_energy="0,03" intensity="0,365" d_intensity="0,01" dbid="Bi-214_194" source="ENSDF"/>
+    <Line energy="965" d_energy="0,1" intensity="0,011" d_intensity="0,003" dbid="Bi-214_196;Bi-214_195" source="ENSDF"/>
+    <Line energy="976,18" d_energy="0,12" intensity="0,0154" d_intensity="0,0021" dbid="Bi-214_197" source="ENSDF"/>
+    <Line energy="989,34" d_energy="0,17" intensity="0,01" d_intensity="0,003" dbid="Bi-214_199" source="ENSDF"/>
+    <Line energy="991,49" d_energy="0,19" intensity="0,011" d_intensity="0,002" dbid="Bi-214_200" source="ENSDF"/>
+    <Line energy="1013,4" d_energy="0,7" intensity="0,013" d_intensity="0,004" dbid="Bi-214_203" source="ENSDF"/>
+    <Line energy="1021,36" d_energy="0,17" intensity="0,015" d_intensity="0,0023" dbid="Bi-214_204" source="ENSDF"/>
+    <Line energy="1032,38" d_energy="0,07" intensity="0,063" d_intensity="0,004" dbid="Bi-214_205" source="ENSDF"/>
+    <Line energy="1033,3" d_energy="0,2" intensity="0,02" d_intensity="0,003" dbid="Bi-214_206" source="ENSDF"/>
+    <Line energy="1038" d_energy="0,2" intensity="0,0084" d_intensity="0,0011" dbid="Bi-214_208;Bi-214_207" source="ENSDF"/>
+    <Line energy="1045,7" d_energy="0,2" intensity="0,023" d_intensity="0,002" dbid="Bi-214_209" source="ENSDF"/>
+    <Line energy="1051,96" d_energy="0,03" intensity="0,313" d_intensity="0,007" dbid="Bi-214_210" source="ENSDF"/>
+    <Line energy="1058,1" d_energy="0" intensity="0,008" d_intensity="0,003" dbid="Bi-214_211" source="ENSDF"/>
+    <Line energy="1062,4" d_energy="0" intensity="0,013" d_intensity="0,008" dbid="Bi-214_212" source="ENSDF"/>
+    <Line energy="1067,39" d_energy="0,24" intensity="0,025" d_intensity="0,006" dbid="Bi-214_214" source="ENSDF"/>
+    <Line energy="1069,96" d_energy="0,07" intensity="0,272" d_intensity="0,009" dbid="Bi-214_215" source="ENSDF"/>
+    <Line energy="1087,4" d_energy="0" intensity="0,015" d_intensity="0,007" dbid="Bi-214_217" source="ENSDF"/>
+    <Line energy="1103,7" d_energy="0,13" intensity="0,098" d_intensity="0,012" dbid="Bi-214_218" source="ENSDF"/>
+    <Line energy="1104,71" d_energy="0,13" intensity="0,078" d_intensity="0,004" dbid="Bi-214_219" source="ENSDF"/>
+    <Line energy="1108,8" d_energy="0" intensity="0,015" d_intensity="0,005" dbid="Bi-214_220" source="ENSDF"/>
+    <Line energy="1118,9" d_energy="0,5" intensity="0,04" d_intensity="0,01" dbid="Bi-214_221" source="ENSDF"/>
+    <Line energy="1120,294" d_energy="0,006" intensity="14,919999" d_intensity="0,030002" dbid="Bi-214_222" source="ENSDF"/>
+    <Line energy="1130,45" d_energy="0,16" intensity="0,036" d_intensity="0,003" dbid="Bi-214_224" source="ENSDF"/>
+    <Line energy="1133,66" d_energy="0,03" intensity="0,2512" d_intensity="0,001" dbid="Bi-214_225" source="ENSDF"/>
+    <Line energy="1155,21" d_energy="0,008" intensity="1,633" d_intensity="0,006" dbid="Bi-214_227" source="ENSDF"/>
+    <Line energy="1155,6" d_energy="0,5" intensity="0,016" d_intensity="0,004" dbid="Bi-214_228" source="ENSDF"/>
+    <Line energy="1156" d_energy="1" intensity="0,007" d_intensity="0,003" dbid="Bi-214_229" source="ENSDF"/>
+    <Line energy="1167,3" d_energy="0,2" intensity="0,012" d_intensity="0,002" dbid="Bi-214_230" source="ENSDF"/>
+    <Line energy="1173" d_energy="0,08" intensity="0,055" d_intensity="0,003" dbid="Bi-214_231" source="ENSDF"/>
+    <Line energy="1207,68" d_energy="0,03" intensity="0,451" d_intensity="0,01" dbid="Bi-214_234" source="ENSDF"/>
+    <Line energy="1226,7" d_energy="0,212132034355964" intensity="0,036" d_intensity="0" dbid="Bi-214_236;Bi-214_235" source="ENSDF"/>
+    <Line energy="1230,6" d_energy="0,3" intensity="0,008" d_intensity="0,003" dbid="Bi-214_237" source="ENSDF"/>
+    <Line energy="1238,122" d_energy="0,007" intensity="5,834" d_intensity="0,015001" dbid="Bi-214_238" source="ENSDF"/>
+    <Line energy="1279" d_energy="0,7" intensity="0,013" d_intensity="0,002" dbid="Bi-214_243" source="ENSDF"/>
+    <Line energy="1280,976" d_energy="0,01" intensity="1,434" d_intensity="0,006" dbid="Bi-214_244" source="ENSDF"/>
+    <Line energy="1284" d_energy="1" intensity="0,011" d_intensity="0,001" dbid="Bi-214_245" source="ENSDF"/>
+    <Line energy="1285,1" d_energy="0,5" intensity="0,016" d_intensity="0,003" dbid="Bi-214_246" source="ENSDF"/>
+    <Line energy="1303,75" d_energy="0,07" intensity="0,107" d_intensity="0,005" dbid="Bi-214_247" source="ENSDF"/>
+    <Line energy="1316,99" d_energy="0,09" intensity="0,081" d_intensity="0,006" dbid="Bi-214_248" source="ENSDF"/>
+    <Line energy="1321,5" d_energy="0" intensity="0,005" d_intensity="0,002" dbid="Bi-214_250" source="ENSDF"/>
+    <Line energy="1329,94" d_energy="0,16" intensity="0,081" d_intensity="0,006" dbid="Bi-214_251" source="ENSDF"/>
+    <Line energy="1341,49" d_energy="0,13" intensity="0,021" d_intensity="0,003" dbid="Bi-214_252" source="ENSDF"/>
+    <Line energy="1370,5" d_energy="0" intensity="0,01" d_intensity="0,002" dbid="Bi-214_256" source="ENSDF"/>
+    <Line energy="1377,669" d_energy="0,008" intensity="3,988" d_intensity="0,011" dbid="Bi-214_257" source="ENSDF"/>
+    <Line energy="1385,31" d_energy="0,013" intensity="0,793" d_intensity="0,005" dbid="Bi-214_259" source="ENSDF"/>
+    <Line energy="1392,5" d_energy="0,4" intensity="0,009" d_intensity="0,002" dbid="Bi-214_261" source="ENSDF"/>
+    <Line energy="1401,515" d_energy="0,012" intensity="1,33" d_intensity="0,005" dbid="Bi-214_262" source="ENSDF"/>
+    <Line energy="1407,988" d_energy="0,011" intensity="2,394" d_intensity="0,007" dbid="Bi-214_263" source="ENSDF"/>
+    <Line energy="1415,8" d_energy="0" intensity="0,481" d_intensity="0,016" dbid="Bi-214_264" source="ENSDF"/>
+    <Line energy="1419,7" d_energy="0,24" intensity="0,0053" d_intensity="0,0008" dbid="Bi-214_265" source="ENSDF"/>
+    <Line energy="1449,2" d_energy="0" intensity="0,018" d_intensity="0,009" dbid="Bi-214_267" source="ENSDF"/>
+    <Line energy="1470,9" d_energy="0,3" intensity="0,0092" d_intensity="0,0014" dbid="Bi-214_268" source="ENSDF"/>
+    <Line energy="1479,17" d_energy="0,09" intensity="0,055" d_intensity="0,004" dbid="Bi-214_269" source="ENSDF"/>
+    <Line energy="1481,3" d_energy="0" intensity="0,0009" d_intensity="0,0003" dbid="Bi-214_270" source="ENSDF"/>
+    <Line energy="1483,5" d_energy="0" intensity="0,013" d_intensity="0,005" dbid="Bi-214_271" source="ENSDF"/>
+    <Line energy="1509,21" d_energy="0,01" intensity="2,13" d_intensity="0,01" dbid="Bi-214_273" source="ENSDF"/>
+    <Line energy="1515,5" d_energy="0,3" intensity="0,0068" d_intensity="0,001" dbid="Bi-214_274" source="ENSDF"/>
+    <Line energy="1538,53" d_energy="0,05" intensity="0,398" d_intensity="0,011" dbid="Bi-214_277" source="ENSDF"/>
+    <Line energy="1543,34" d_energy="0,05" intensity="0,303" d_intensity="0,01" dbid="Bi-214_279" source="ENSDF"/>
+    <Line energy="1583,204" d_energy="0,015" intensity="0,705" d_intensity="0,005" dbid="Bi-214_281" source="ENSDF"/>
+    <Line energy="1594,75" d_energy="0,07" intensity="0,267" d_intensity="0,012" dbid="Bi-214_282" source="ENSDF"/>
+    <Line energy="1595" d_energy="1" intensity="0,005" d_intensity="0,003" dbid="Bi-214_283" source="ENSDF"/>
+    <Line energy="1598" d_energy="0,5" intensity="0,006" d_intensity="0,003" dbid="Bi-214_284" source="ENSDF"/>
+    <Line energy="1599,37" d_energy="0,05" intensity="0,324" d_intensity="0,012" dbid="Bi-214_285" source="ENSDF"/>
+    <Line energy="1636,36" d_energy="0,16" intensity="0,0115" d_intensity="0,0013" dbid="Bi-214_287" source="ENSDF"/>
+    <Line energy="1637" d_energy="1" intensity="0,006" d_intensity="0,003" dbid="Bi-214_288" source="ENSDF"/>
+    <Line energy="1657,07" d_energy="0,17" intensity="0,048" d_intensity="0,004" dbid="Bi-214_290" source="ENSDF"/>
+    <Line energy="1661,274" d_energy="0,016" intensity="1,047" d_intensity="0,006" dbid="Bi-214_291" source="ENSDF"/>
+    <Line energy="1665,9" d_energy="0,2" intensity="0,0067" d_intensity="0,0011" dbid="Bi-214_292" source="ENSDF"/>
+    <Line energy="1676,1" d_energy="0" intensity="0,005" d_intensity="0,001" dbid="Bi-214_293" source="ENSDF"/>
+    <Line energy="1684,012" d_energy="0,02" intensity="0,214" d_intensity="0,005" dbid="Bi-214_294" source="ENSDF"/>
+    <Line energy="1711" d_energy="0,8" intensity="0,0018" d_intensity="0,0009" dbid="Bi-214_296" source="ENSDF"/>
+    <Line energy="1729,595" d_energy="0,011" intensity="2,878" d_intensity="0,008" dbid="Bi-214_300" source="ENSDF"/>
+    <Line energy="1751,6" d_energy="0,6" intensity="0,001" d_intensity="0,0005" dbid="Bi-214_303" source="ENSDF"/>
+    <Line energy="1764,491" d_energy="0,01" intensity="15,299999" d_intensity="0,030002" dbid="Bi-214_304" source="ENSDF"/>
+    <Line energy="1813,72" d_energy="0,13" intensity="0,011" d_intensity="0,001" dbid="Bi-214_306" source="ENSDF"/>
+    <Line energy="1819,2" d_energy="0,4" intensity="0,0014" d_intensity="0,0001" dbid="Bi-214_307" source="ENSDF"/>
+    <Line energy="1838,36" d_energy="0,04" intensity="0,35" d_intensity="0,01" dbid="Bi-214_308" source="ENSDF"/>
+    <Line energy="1847,429" d_energy="0,013" intensity="2,025" d_intensity="0,009" dbid="Bi-214_309" source="ENSDF"/>
+    <Line energy="1873,16" d_energy="0,05" intensity="0,214" d_intensity="0,008" dbid="Bi-214_311" source="ENSDF"/>
+    <Line energy="1890,32" d_energy="0,09" intensity="0,084" d_intensity="0,008" dbid="Bi-214_312" source="ENSDF"/>
+    <Line energy="1896,05" d_energy="0,12" intensity="0,149" d_intensity="0,008" dbid="Bi-214_314" source="ENSDF"/>
+    <Line energy="1898,68" d_energy="0,14" intensity="0,05" d_intensity="0,007" dbid="Bi-214_315" source="ENSDF"/>
+    <Line energy="1935,62" d_energy="0,16" intensity="0,032" d_intensity="0,003" dbid="Bi-214_316" source="ENSDF"/>
+    <Line energy="1994,6" d_energy="0,5" intensity="0,007" d_intensity="0,003" dbid="Bi-214_319" source="ENSDF"/>
+    <Line energy="2004,5" d_energy="1" intensity="0,005" d_intensity="0,002" dbid="Bi-214_320" source="ENSDF"/>
+    <Line energy="2010,82" d_energy="0,09" intensity="0,0444" d_intensity="0,0015" dbid="Bi-214_321" source="ENSDF"/>
+    <Line energy="2016" d_energy="1" intensity="0,017" d_intensity="0,003" dbid="Bi-214_322" source="ENSDF"/>
+    <Line energy="2016,7" d_energy="0" intensity="0,006" d_intensity="0,001" dbid="Bi-214_323" source="ENSDF"/>
+    <Line energy="2021,55" d_energy="0,1" intensity="0,0205" d_intensity="0,0016" dbid="Bi-214_324" source="ENSDF"/>
+    <Line energy="2052,97" d_energy="0,09" intensity="0,069" d_intensity="0,004" dbid="Bi-214_325" source="ENSDF"/>
+    <Line energy="2085,19" d_energy="0,14" intensity="0,044" d_intensity="0,002" dbid="Bi-214_326" source="ENSDF"/>
+    <Line energy="2089,67" d_energy="0,1" intensity="0,0453" d_intensity="0,0021" dbid="Bi-214_327" source="ENSDF"/>
+    <Line energy="2109,98" d_energy="0,08" intensity="0,085" d_intensity="0,003" dbid="Bi-214_328" source="ENSDF"/>
+    <Line energy="2118,514" d_energy="0,019" intensity="1,16" d_intensity="0,006" dbid="Bi-214_329" source="ENSDF"/>
+    <Line energy="2120" d_energy="1" intensity="0,007" d_intensity="0,002" dbid="Bi-214_330" source="ENSDF"/>
+    <Line energy="2147,99" d_energy="0,11" intensity="0,0137" d_intensity="0,0009" dbid="Bi-214_331" source="ENSDF"/>
+    <Line energy="2160,4" d_energy="0,3" intensity="0,0018" d_intensity="0,0005" dbid="Bi-214_332" source="ENSDF"/>
+    <Line energy="2176,54" d_energy="0,17" intensity="0,0033" d_intensity="0,0004" dbid="Bi-214_333" source="ENSDF"/>
+    <Line energy="2192,59" d_energy="0,11" intensity="0,042" d_intensity="0,013" dbid="Bi-214_335" source="ENSDF"/>
+    <Line energy="2204,059" d_energy="0,022" intensity="4,924" d_intensity="0,018" dbid="Bi-214_337" source="ENSDF"/>
+    <Line energy="2251,51" d_energy="0,13" intensity="0,0058" d_intensity="0,0004" dbid="Bi-214_338" source="ENSDF"/>
+    <Line energy="2260,27" d_energy="0,12" intensity="0,0087" d_intensity="0,0004" dbid="Bi-214_339" source="ENSDF"/>
+    <Line energy="2266,53" d_energy="0,11" intensity="0,0166" d_intensity="0,0008" dbid="Bi-214_340" source="ENSDF"/>
+    <Line energy="2270,9" d_energy="0,4" intensity="0,0013" d_intensity="0,0002" dbid="Bi-214_341" source="ENSDF"/>
+    <Line energy="2284,34" d_energy="0,17" intensity="0,005" d_intensity="0,0002" dbid="Bi-214_342" source="ENSDF"/>
+    <Line energy="2287,65" d_energy="0,23" intensity="0,0045" d_intensity="0,0005" dbid="Bi-214_343" source="ENSDF"/>
+    <Line energy="2293,38" d_energy="0,03" intensity="0,307" d_intensity="0,003" dbid="Bi-214_344" source="ENSDF"/>
+    <Line energy="2310,2" d_energy="0,3" intensity="0,0014" d_intensity="0,0009" dbid="Bi-214_345" source="ENSDF"/>
+    <Line energy="2312,42" d_energy="0,13" intensity="0,0088" d_intensity="0,0008" dbid="Bi-214_346" source="ENSDF"/>
+    <Line energy="2319,3" d_energy="0,3" intensity="0,0004" d_intensity="0,0002" dbid="Bi-214_347" source="ENSDF"/>
+    <Line energy="2325,16" d_energy="0,24" intensity="0,0017" d_intensity="0,0002" dbid="Bi-214_348" source="ENSDF"/>
+    <Line energy="2331,36" d_energy="0,1" intensity="0,0217" d_intensity="0,0012" dbid="Bi-214_349" source="ENSDF"/>
+    <Line energy="2348" d_energy="1,3" intensity="0,00014" d_intensity="9E-5" dbid="Bi-214_350" source="ENSDF"/>
+    <Line energy="2353,5" d_energy="0,7" intensity="0,0004" d_intensity="0,0002" dbid="Bi-214_351" source="ENSDF"/>
+    <Line energy="2360,98" d_energy="0,17" intensity="0,0016" d_intensity="0,0002" dbid="Bi-214_353" source="ENSDF"/>
+    <Line energy="2369,54" d_energy="0,16" intensity="0,0028" d_intensity="0,0004" dbid="Bi-214_354" source="ENSDF"/>
+    <Line energy="2376,91" d_energy="0,1" intensity="0,0089" d_intensity="0,0004" dbid="Bi-214_355" source="ENSDF"/>
+    <Line energy="2390,83" d_energy="0,19" intensity="0,00158" d_intensity="0,00013" dbid="Bi-214_356" source="ENSDF"/>
+    <Line energy="2405,1" d_energy="0,5" intensity="0,00041" d_intensity="0,00014" dbid="Bi-214_358" source="ENSDF"/>
+    <Line energy="2423,34" d_energy="0,11" intensity="0,0049" d_intensity="0,0004" dbid="Bi-214_361" source="ENSDF"/>
+    <Line energy="2444,7" d_energy="0,5" intensity="0,0082" d_intensity="0,0004" dbid="Bi-214_363" source="ENSDF"/>
+    <Line energy="2447,7" d_energy="0,03" intensity="1,548" d_intensity="0,007" dbid="Bi-214_364" source="ENSDF"/>
+    <Line energy="2472,9" d_energy="0" intensity="0,0023" d_intensity="0,0008" dbid="Bi-214_367" source="ENSDF"/>
+    <Line energy="2479" d_energy="0" intensity="0,017" d_intensity="0,001" dbid="Bi-214_368" source="ENSDF"/>
+    <Line energy="2482,8" d_energy="0,4" intensity="0,002" d_intensity="0,0009" dbid="Bi-214_369;Bi-214_370" source="ENSDF"/>
+    <Line energy="2505,48" d_energy="0,1" intensity="0,0056" d_intensity="0,0004" dbid="Bi-214_371" source="ENSDF"/>
+    <Line energy="2550,7" d_energy="0,5" intensity="0,00032" d_intensity="9E-5" dbid="Bi-214_374" source="ENSDF"/>
+    <Line energy="2553" d_energy="0,6" intensity="0,0001" d_intensity="0,0001" dbid="Bi-214_375" source="ENSDF"/>
+    <Line energy="2562" d_energy="0,6" intensity="0,00018" d_intensity="9E-5" dbid="Bi-214_377" source="ENSDF"/>
+    <Line energy="2564" d_energy="0,6" intensity="0,00014" d_intensity="9E-5" dbid="Bi-214_378" source="ENSDF"/>
+    <Line energy="2574,2" d_energy="0" intensity="0,00048" d_intensity="1E-5" dbid="Bi-214_379" source="ENSDF"/>
+    <Line energy="2604,5" d_energy="0,4" intensity="0,0004" d_intensity="7E-5" dbid="Bi-214_380" source="ENSDF"/>
+    <Line energy="2630,9" d_energy="0,2" intensity="0,00086" d_intensity="0,00013" dbid="Bi-214_381" source="ENSDF"/>
+    <Line energy="2662,3" d_energy="0,5" intensity="0,0002" d_intensity="4E-5" dbid="Bi-214_383" source="ENSDF"/>
+    <Line energy="2694,66" d_energy="0,1" intensity="0,0303" d_intensity="0,0009" dbid="Bi-214_384" source="ENSDF"/>
+    <Line energy="2699,26" d_energy="0,14" intensity="0,0028" d_intensity="0,0002" dbid="Bi-214_385" source="ENSDF"/>
+    <Line energy="2719,33" d_energy="0,14" intensity="0,0017" d_intensity="0,0002" dbid="Bi-214_386" source="ENSDF"/>
+    <Line energy="2769,93" d_energy="0,11" intensity="0,0246" d_intensity="0,0011" dbid="Bi-214_387" source="ENSDF"/>
+    <Line energy="2785,95" d_energy="0,11" intensity="0,0056" d_intensity="0,0004" dbid="Bi-214_388" source="ENSDF"/>
+    <Line energy="2826,97" d_energy="0,14" intensity="0,0023" d_intensity="0,0002" dbid="Bi-214_389" source="ENSDF"/>
+    <Line energy="2861" d_energy="0,3" intensity="0,0004" d_intensity="8E-5" dbid="Bi-214_390" source="ENSDF"/>
+    <Line energy="2880,35" d_energy="0,12" intensity="0,0101" d_intensity="0,0006" dbid="Bi-214_391" source="ENSDF"/>
+    <Line energy="2893,53" d_energy="0,1" intensity="0,0058" d_intensity="0,0004" dbid="Bi-214_392" source="ENSDF"/>
+    <Line energy="2918" d_energy="0" intensity="0,0016" d_intensity="0,0001" dbid="Bi-214_393" source="ENSDF"/>
+    <Line energy="2921,98" d_energy="0,11" intensity="0,0137" d_intensity="0,0004" dbid="Bi-214_394" source="ENSDF"/>
+    <Line energy="2928,54" d_energy="0,21" intensity="0,0011" d_intensity="0,0001" dbid="Bi-214_395" source="ENSDF"/>
+    <Line energy="2934,57" d_energy="0,23" intensity="0,00047" d_intensity="9E-5" dbid="Bi-214_396" source="ENSDF"/>
+    <Line energy="2963" d_energy="0" intensity="0,0011" d_intensity="0,0001" dbid="Bi-214_398" source="ENSDF"/>
+    <Line energy="2978,93" d_energy="0,11" intensity="0,014" d_intensity="0,0004" dbid="Bi-214_399" source="ENSDF"/>
+    <Line energy="2988,7" d_energy="1" intensity="0,0011" d_intensity="0,0003" dbid="Bi-214_400" source="ENSDF"/>
+    <Line energy="2999,97" d_energy="0,14" intensity="0,0088" d_intensity="0,0004" dbid="Bi-214_401" source="ENSDF"/>
+    <Line energy="3053,93" d_energy="0,15" intensity="0,0211" d_intensity="0,0007" dbid="Bi-214_402" source="ENSDF"/>
+    <Line energy="3081,77" d_energy="0,15" intensity="0,005" d_intensity="0,0004" dbid="Bi-214_403" source="ENSDF"/>
+    <Line energy="3094" d_energy="0,3" intensity="0,00038" d_intensity="4E-5" dbid="Bi-214_404" source="ENSDF"/>
+    <Line energy="3136,3" d_energy="1" intensity="0,0003" d_intensity="0,0001" dbid="Bi-214_405" source="ENSDF"/>
+    <Line energy="3142,56" d_energy="0,22" intensity="0,0012" d_intensity="9E-5" dbid="Bi-214_406" source="ENSDF"/>
+    <Line energy="3149" d_energy="0,5" intensity="8,6E-5" d_intensity="1E-6" dbid="Bi-214_407" source="ENSDF"/>
+    <Line energy="3160,5" d_energy="0,4" intensity="0,00047" d_intensity="8E-5" dbid="Bi-214_408" source="ENSDF"/>
+    <Line energy="3182,8" d_energy="1" intensity="0,00053" d_intensity="0,00021" dbid="Bi-214_409" source="ENSDF"/>
+    <Line energy="3183,63" d_energy="0,23" intensity="0,00133" d_intensity="9E-5" dbid="Bi-214_410" source="ENSDF"/>
+    <Line energy="3233,2" d_energy="2,4" intensity="0,00023" d_intensity="0,00014" dbid="Bi-214_411" source="ENSDF"/>
+    <Line energy="3269,7" d_energy="1,5" intensity="0,00018" d_intensity="0,00014" dbid="Bi-214_412" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Tl-210" half_life_value="1,3" half_life_unit="min" gamma_constant="13,9127640687326" atomic_mass="209,990074" d_atomic_mass="1,3E-5" nuc_num="3244" source="ENSDF">
+    <Line energy="9,184" d_energy="0" intensity="0,507842676250294" d_intensity="0,0304705605750176" line_type="X" dbid="Tl-210_1" xline_type="LL" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="10,45" d_energy="0" intensity="1,01568535250059" d_intensity="0,0507842676250294" line_type="X" dbid="Tl-210_2" xline_type="LA2" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="10,551" d_energy="0" intensity="9,02831424444967" d_intensity="2,18109923088778" line_type="X" dbid="Tl-210_3" xline_type="LA1" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="11,349" d_energy="0" intensity="0,138246061868136" d_intensity="0,00152070668054949" line_type="X" dbid="Tl-210_4" xline_type="LN" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="12,142" d_energy="0" intensity="0,141067410069526" d_intensity="0,00112853928055621" line_type="X" dbid="Tl-210_5" xline_type="LB6" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="12,307" d_energy="0" intensity="0,0564269640278104" d_intensity="0,000677123568333725" line_type="X" dbid="Tl-210_6" xline_type="LB4" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="12,611" d_energy="0" intensity="2,24297182010546" d_intensity="0,314016054814765" line_type="X" dbid="Tl-210_7" xline_type="LB2" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="12,614" d_energy="0" intensity="5,99536492795486" d_intensity="1,47219254634138" line_type="X" dbid="Tl-210_8" xline_type="LB1" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="12,794" d_energy="0" intensity="0,0670070197830249" d_intensity="0,000938098276962348" line_type="X" dbid="Tl-210_9" xline_type="LB3" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="13,015" d_energy="0" intensity="0,289893527692876" d_intensity="0,00434840291539314" line_type="X" dbid="Tl-210_10" xline_type="LB5" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="14,765" d_energy="0" intensity="1,25549994961878" d_intensity="0,125549994961878" line_type="X" dbid="Tl-210_11" xline_type="LG1" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="15,097" d_energy="0" intensity="0,019044100359386" d_intensity="7,61764014375441E-5" line_type="X" dbid="Tl-210_12" xline_type="LG2" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="15,178" d_energy="0" intensity="0,218654485607765" d_intensity="0,00655963456823296" line_type="X" dbid="Tl-210_13" xline_type="LG6" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="15,216" d_energy="0" intensity="0,0239814597118194" d_intensity="0,000143888758270917" line_type="X" dbid="Tl-210_14" xline_type="LG3" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="72,144" d_energy="0" intensity="0,00407619047619048" d_intensity="5,29904761904762E-6" line_type="X" dbid="Tl-210_15" xline_type="KA3" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="72,805" d_energy="0" intensity="2,63809523809524" d_intensity="0,426675444852076" line_type="X" width="66,8" dbid="Tl-210_16" xline_type="KA2" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="74,969" d_energy="0,0009" intensity="4,4" d_intensity="0,71041810052322" line_type="X" width="66,2" dbid="Tl-210_17" xline_type="KA1" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="83" d_energy="30" intensity="1,9792" d_intensity="0,39584" dbid="Tl-210_18" source="ENSDF"/>
+    <Line energy="84,45" d_energy="0" intensity="0,531428571428571" d_intensity="0,0584571428571429" line_type="X" dbid="Tl-210_19" xline_type="KB3" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="84,938" d_energy="0" intensity="1,01904761904762" d_intensity="0,164670503723013" line_type="X" dbid="Tl-210_20" xline_type="KB1" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="85,47" d_energy="0" intensity="0,0297142857142857" d_intensity="0,000356571428571429" line_type="X" dbid="Tl-210_21" xline_type="KB5" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="87,3" d_energy="0" intensity="0,372380952380952" d_intensity="0,0297904761904762" line_type="X" dbid="Tl-210_22" xline_type="KB2" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="87,58" d_energy="0" intensity="0,00857142857142857" d_intensity="0,000342857142857143" line_type="X" dbid="Tl-210_23" xline_type="KB4" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="87,911" d_energy="0" intensity="0,0666666666666667" d_intensity="0,00466666666666667" line_type="X" dbid="Tl-210_24" xline_type="KO" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="88,003" d_energy="0" intensity="0,00157142857142857" d_intensity="2,67142857142857E-6" line_type="X" dbid="Tl-210_25" xline_type="KP" xray_child_nuclide="Pb-210" source="ENSDF"/>
+    <Line energy="97" d_energy="30" intensity="3,9584" d_intensity="1,9792" dbid="Tl-210_26" source="ENSDF"/>
+    <Line energy="296" d_energy="3" intensity="79,168" d_intensity="9,896029" dbid="Tl-210_27" source="ENSDF"/>
+    <Line energy="356" d_energy="10" intensity="3,9584" d_intensity="1,9792" dbid="Tl-210_28" source="ENSDF"/>
+    <Line energy="382" d_energy="10" intensity="2,9688" d_intensity="1,9792" dbid="Tl-210_29" source="ENSDF"/>
+    <Line energy="480" d_energy="20" intensity="1,9792" d_intensity="0,9896" dbid="Tl-210_30" source="ENSDF"/>
+    <Line energy="670" d_energy="20" intensity="1,9792" d_intensity="0,9896" dbid="Tl-210_31" source="ENSDF"/>
+    <Line energy="799,6" d_energy="0,3" intensity="98,96" d_intensity="0,03" dbid="Tl-210_32" source="ENSDF"/>
+    <Line energy="860" d_energy="30" intensity="6,9272" d_intensity="1,979201" dbid="Tl-210_33" source="ENSDF"/>
+    <Line energy="910" d_energy="30" intensity="2,9688" d_intensity="1,9792" dbid="Tl-210_34" source="ENSDF"/>
+    <Line energy="1070" d_energy="10" intensity="11,8752" d_intensity="4,948001" dbid="Tl-210_35" source="ENSDF"/>
+    <Line energy="1110" d_energy="20" intensity="6,9272" d_intensity="1,979201" dbid="Tl-210_36" source="ENSDF"/>
+    <Line energy="1210" d_energy="20" intensity="16,8232" d_intensity="3,958403" dbid="Tl-210_37" source="ENSDF"/>
+    <Line energy="1316" d_energy="13" intensity="20,7816" d_intensity="4,948004" dbid="Tl-210_38" source="ENSDF"/>
+    <Line energy="1410" d_energy="20" intensity="4,948" d_intensity="1,979201" dbid="Tl-210_40" source="ENSDF"/>
+    <Line energy="1490" d_energy="20" intensity="1,9792" d_intensity="0,9896" dbid="Tl-210_41" source="ENSDF"/>
+    <Line energy="1540" d_energy="30" intensity="1,9792" d_intensity="0,9896" dbid="Tl-210_42" source="ENSDF"/>
+    <Line energy="1590" d_energy="30" intensity="1,9792" d_intensity="0,9896" dbid="Tl-210_43" source="ENSDF"/>
+    <Line energy="1650" d_energy="30" intensity="1,9792" d_intensity="0,9896" dbid="Tl-210_45" source="ENSDF"/>
+    <Line energy="2010" d_energy="30" intensity="6,9272" d_intensity="1,979201" dbid="Tl-210_47" source="ENSDF"/>
+    <Line energy="2090" d_energy="30" intensity="4,948" d_intensity="1,979201" dbid="Tl-210_49" source="ENSDF"/>
+    <Line energy="2270" d_energy="13" intensity="2,9688" d_intensity="1,9792" dbid="Tl-210_50" source="ENSDF"/>
+    <Line energy="2360" d_energy="30" intensity="7,9168" d_intensity="2,968801" dbid="Tl-210_51" source="ENSDF"/>
+    <Line energy="2430" d_energy="30" intensity="8,9064" d_intensity="2,968801" dbid="Tl-210_53" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Po-214" half_life_value="0,0001636" half_life_unit="sec" gamma_constant="0,000458808819393238" atomic_mass="213,995202" d_atomic_mass="1E-6" nuc_num="3245" source="ENSDF">
+    <Line energy="298" d_energy="1" intensity="5,22E-5" d_intensity="1,756E-5" dbid="Po-214_1" source="ENSDF"/>
+    <Line energy="799,7" d_energy="0,1" intensity="0,010353" d_intensity="0,0006448" dbid="Po-214_2" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Pb-210" half_life_value="22,2" half_life_unit="year" atomic_mass="209,984189" d_atomic_mass="2E-6" nuc_num="3170" source="ENSDF">
+    <Line energy="8,722" d_energy="0" intensity="0,586092476375965" d_intensity="0,0351655485825579" line_type="X" dbid="Pb-210_1" xline_type="LL" xray_child_nuclide="Hg-206" source="ENSDF"/>
+    <Line energy="9,899" d_energy="0" intensity="1,21726898939623" d_intensity="0,0608634494698117" line_type="X" dbid="Pb-210_2" xline_type="LA2" xray_child_nuclide="Hg-206" source="ENSDF"/>
+    <Line energy="9,989" d_energy="0" intensity="10,8201687946332" d_intensity="1,38216814459441" line_type="X" dbid="Pb-210_3" xline_type="LA1" xray_child_nuclide="Hg-206" source="ENSDF"/>
+    <Line energy="10,647" d_energy="0" intensity="0,162302531919498" d_intensity="0,00162302531919498" line_type="X" dbid="Pb-210_4" xline_type="LN" xray_child_nuclide="Hg-206" source="ENSDF"/>
+    <Line energy="11,481" d_energy="0" intensity="0,162302531919498" d_intensity="0,00113611772343649" line_type="X" dbid="Pb-210_5" xline_type="LB6" xray_child_nuclide="Hg-206" source="ENSDF"/>
+    <Line energy="11,561" d_energy="0" intensity="0,0694294164322297" d_intensity="0,000833152997186756" line_type="X" dbid="Pb-210_6" xline_type="LB4" xray_child_nuclide="Hg-206" source="ENSDF"/>
+    <Line energy="11,824" d_energy="0" intensity="7,2134458630888" d_intensity="0,942767056365446" line_type="X" dbid="Pb-210_7" xline_type="LB1" xray_child_nuclide="Hg-206" source="ENSDF"/>
+    <Line energy="11,915" d_energy="0" intensity="2,65094135468513" d_intensity="0,340896991132514" line_type="X" dbid="Pb-210_8" xline_type="LB2" xray_child_nuclide="Hg-206" source="ENSDF"/>
+    <Line energy="11,992" d_energy="0" intensity="0,0874630310899517" d_intensity="0,00131194546634927" line_type="X" dbid="Pb-210_9" xline_type="LB3" xray_child_nuclide="Hg-206" source="ENSDF"/>
+    <Line energy="12,275" d_energy="0" intensity="0,284029430859121" d_intensity="0,00340835317030946" line_type="X" dbid="Pb-210_10" xline_type="LB5" xray_child_nuclide="Hg-206" source="ENSDF"/>
+    <Line energy="13,83" d_energy="0" intensity="1,46973959460434" d_intensity="0,146973959460434" line_type="X" dbid="Pb-210_11" xline_type="LG1" xray_child_nuclide="Hg-206" source="ENSDF"/>
+    <Line energy="14,158" d_energy="0" intensity="0,0225420183221525" d_intensity="9,016807328861E-5" line_type="X" dbid="Pb-210_12" xline_type="LG2" xray_child_nuclide="Hg-206" source="ENSDF"/>
+    <Line energy="14,199" d_energy="0" intensity="0,223616821755753" d_intensity="0,00514318690038231" line_type="X" dbid="Pb-210_13" xline_type="LG6" xray_child_nuclide="Hg-206" source="ENSDF"/>
+    <Line energy="14,262" d_energy="0" intensity="0,0306571449181274" d_intensity="0,000183942869508764" line_type="X" dbid="Pb-210_14" xline_type="LG3" xray_child_nuclide="Hg-206" source="ENSDF"/>
+    <Line energy="46,539" d_energy="0,001" intensity="4,25" d_intensity="0,04" dbid="Pb-210_16" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Hg-206" half_life_value="8,32" half_life_unit="min" gamma_constant="0,565162829018305" atomic_mass="205,977515" d_atomic_mass="2,1E-5" nuc_num="3171" source="ENSDF">
+    <Line energy="8,953" d_energy="0" intensity="0,0944772490448072" d_intensity="0,00566863494268843" line_type="X" dbid="Hg-206_1" xline_type="LL" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="10,172" d_energy="0" intensity="0,193122612018062" d_intensity="0,00965613060090309" line_type="X" dbid="Hg-206_2" xline_type="LA2" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="10,268" d_energy="0" intensity="1,72282042375825" d_intensity="0,735799045201708" line_type="X" dbid="Hg-206_3" xline_type="LA1" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="10,994" d_energy="0" intensity="0,0261201806182702" d_intensity="0,000261201806182702" line_type="X" dbid="Hg-206_4" xline_type="LN" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="11,812" d_energy="0" intensity="0,0263980548801667" d_intensity="0,000184786384161167" line_type="X" dbid="Hg-206_5" xline_type="LB6" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="11,931" d_energy="0" intensity="0,0106981590830149" d_intensity="0,000128377908996179" line_type="X" dbid="Hg-206_6" xline_type="LB4" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="12,213" d_energy="0" intensity="1,15317818687044" d_intensity="0,461271274748176" line_type="X" dbid="Hg-206_7" xline_type="LB1" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="12,261" d_energy="0" intensity="0,425147620701632" d_intensity="0,0552691906912122" line_type="X" dbid="Hg-206_8" xline_type="LB2" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="12,39" d_energy="0" intensity="0,0130600903091351" d_intensity="0,000182841264327892" line_type="X" dbid="Hg-206_9" xline_type="LB3" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="12,643" d_energy="0" intensity="0,050295241403265" d_intensity="0,000653838138242445" line_type="X" dbid="Hg-206_10" xline_type="LB5" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="14,291" d_energy="0" intensity="0,2375824939215" d_intensity="0,02375824939215" line_type="X" dbid="Hg-206_11" xline_type="LG1" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="14,625" d_energy="0" intensity="0,00361236540465439" d_intensity="1,44494616186176E-5" line_type="X" dbid="Hg-206_12" xline_type="LG2" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="14,683" d_energy="0" intensity="0,0389023966655089" d_intensity="0,00116707189996527" line_type="X" dbid="Hg-206_13" xline_type="LG6" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="14,738" d_energy="0" intensity="0,00458492532129211" d_intensity="2,29246266064606E-5" line_type="X" dbid="Hg-206_14" xline_type="LG3" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="70,184" d_energy="0" intensity="0,00409503239740821" d_intensity="4,91403887688985E-6" line_type="X" dbid="Hg-206_15" xline_type="KA3" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="70,832" d_energy="0" intensity="2,86133909287257" d_intensity="1,433100886087" line_type="X" width="63,8" dbid="Hg-206_16" xline_type="KA2" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="72,873" d_energy="0,0009" intensity="4,8" d_intensity="2,40362465304817" line_type="X" width="63,1" dbid="Hg-206_17" xline_type="KA1" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="82,115" d_energy="0" intensity="0,579524838012959" d_intensity="0,0637477321814255" line_type="X" dbid="Hg-206_18" xline_type="KB3" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="82,574" d_energy="0" intensity="1,10928725701944" d_intensity="0,244043196544276" line_type="X" dbid="Hg-206_19" xline_type="KB1" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="83,093" d_energy="0" intensity="0,0314125269978402" d_intensity="0,000376950323974082" line_type="X" dbid="Hg-206_20" xline_type="KB5" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="84,865" d_energy="0" intensity="0,404319654427646" d_intensity="0,0323455723542117" line_type="X" dbid="Hg-206_21" xline_type="KB2" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="85,134" d_energy="0" intensity="0,0093304535637149" d_intensity="0,000373218142548596" line_type="X" dbid="Hg-206_22" xline_type="KB4" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="85,444" d_energy="0" intensity="0,0694600431965443" d_intensity="0,0048622030237581" line_type="X" dbid="Hg-206_23" xline_type="KO" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="85,53" d_energy="0" intensity="0,000611663066954644" d_intensity="3,66997840172786E-7" line_type="X" dbid="Hg-206_24" xline_type="KP" xray_child_nuclide="Tl-206" source="ENSDF"/>
+    <Line energy="265,832" d_energy="0,005" intensity="0,0035" d_intensity="0,0007" dbid="Hg-206_25" source="ENSDF"/>
+    <Line energy="304,896" d_energy="0,006" intensity="26" d_intensity="5" dbid="Hg-206_26" source="ENSDF"/>
+    <Line energy="344,52" d_energy="0,17" intensity="0,55" d_intensity="0,11" dbid="Hg-206_27" source="ENSDF"/>
+    <Line energy="383,59" d_energy="0,06" intensity="0,0035" d_intensity="0,0005" dbid="Hg-206_28" source="ENSDF"/>
+    <Line energy="649,42" d_energy="0,05" intensity="2,2" d_intensity="0,3" dbid="Hg-206_29" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Bi-210" half_life_value="5,012" half_life_unit="day" atomic_mass="209,98412" d_atomic_mass="2E-6" nuc_num="3174" source="ENSDF"/>
+  <Nuclide name="Tl-206" half_life_value="4,202" half_life_unit="min" gamma_constant="0,00671888423029593" atomic_mass="205,97611" d_atomic_mass="1E-6" nuc_num="3172" source="ENSDF">
+    <Line energy="9,184" d_energy="0" intensity="4,83659691666947E-7" d_intensity="2,90195815000168E-8" line_type="X" dbid="Tl-206_1" xline_type="LL" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="10,45" d_energy="0" intensity="9,67319383333893E-7" d_intensity="4,83659691666947E-8" line_type="X" dbid="Tl-206_2" xline_type="LA2" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="10,551" d_energy="0" intensity="8,59839451852349E-6" d_intensity="1,75528690481438E-6" line_type="X" dbid="Tl-206_3" xline_type="LA1" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="11,349" d_energy="0" intensity="1,31662916064891E-7" d_intensity="1,4482920767138E-9" line_type="X" dbid="Tl-206_4" xline_type="LN" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="12,142" d_energy="0" intensity="1,3434991435193E-7" d_intensity="1,07479931481544E-9" line_type="X" dbid="Tl-206_5" xline_type="LB6" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="12,307" d_energy="0" intensity="5,37399657407718E-8" d_intensity="6,44879588889262E-10" line_type="X" dbid="Tl-206_6" xline_type="LB4" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="12,611" d_energy="0" intensity="2,13616363819568E-6" d_intensity="2,99062909347395E-7" line_type="X" dbid="Tl-206_7" xline_type="LB2" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="12,614" d_energy="0" intensity="5,70987135995701E-6" d_intensity="1,1923651619499E-6" line_type="X" dbid="Tl-206_8" xline_type="LB1" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="12,794" d_energy="0" intensity="6,38162093171666E-8" d_intensity="8,93426930440332E-10" line_type="X" dbid="Tl-206_9" xline_type="LB3" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="13,015" d_energy="0" intensity="2,76089073993215E-7" d_intensity="4,14133610989823E-9" line_type="X" dbid="Tl-206_10" xline_type="LB5" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="14,765" d_energy="0" intensity="1,19571423773217E-6" d_intensity="1,19571423773217E-7" line_type="X" dbid="Tl-206_11" xline_type="LG1" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="15,097" d_energy="0" intensity="1,81372384375105E-8" d_intensity="7,2548953750042E-11" line_type="X" dbid="Tl-206_12" xline_type="LG2" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="15,178" d_energy="0" intensity="2,08242367245491E-7" d_intensity="6,24727101736473E-9" line_type="X" dbid="Tl-206_13" xline_type="LG6" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="15,216" d_energy="0" intensity="2,2839485439828E-8" d_intensity="1,37036912638968E-10" line_type="X" dbid="Tl-206_14" xline_type="LG3" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="72,144" d_energy="0" intensity="2,03809523809524E-8" d_intensity="2,64952380952381E-11" line_type="X" dbid="Tl-206_15" xline_type="KA3" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="72,805" d_energy="0" intensity="1,31904761904762E-5" d_intensity="2,42885796863574E-6" line_type="X" width="66,8" dbid="Tl-206_16" xline_type="KA2" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="74,969" d_energy="0,0009" intensity="2,2E-5" d_intensity="4,04565778814466E-6" line_type="X" width="66,2" dbid="Tl-206_17" xline_type="KA1" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="84,45" d_energy="0" intensity="2,65714285714286E-6" d_intensity="2,92285714285714E-7" line_type="X" dbid="Tl-206_18" xline_type="KB3" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="84,938" d_energy="0" intensity="5,09523809523809E-6" d_intensity="9,3758038466748E-7" line_type="X" dbid="Tl-206_19" xline_type="KB1" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="85,47" d_energy="0" intensity="1,48571428571429E-7" d_intensity="1,78285714285714E-9" line_type="X" dbid="Tl-206_20" xline_type="KB5" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="87,3" d_energy="0" intensity="1,86190476190476E-6" d_intensity="1,48952380952381E-7" line_type="X" dbid="Tl-206_21" xline_type="KB2" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="87,58" d_energy="0" intensity="4,28571428571429E-8" d_intensity="1,71428571428571E-9" line_type="X" dbid="Tl-206_22" xline_type="KB4" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="87,911" d_energy="0" intensity="3,33333333333333E-7" d_intensity="2,33333333333333E-8" line_type="X" dbid="Tl-206_23" xline_type="KO" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="88,003" d_energy="0" intensity="7,85714285714286E-9" d_intensity="1,33571428571429E-11" line_type="X" dbid="Tl-206_24" xline_type="KP" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="363,3" d_energy="0,5" intensity="0,00013" d_intensity="0,00013" dbid="Tl-206_25" source="ENSDF"/>
+    <Line energy="803,06" d_energy="0,03" intensity="0,005" d_intensity="0,0005" dbid="Tl-206_28" source="ENSDF"/>
+    <Line energy="1166,4" d_energy="0,5" intensity="0,11" d_intensity="0,014" dbid="Tl-206_29" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Po-210" half_life_value="138,376" half_life_unit="day" gamma_constant="4,57602729788289E-5" atomic_mass="209,982874" d_atomic_mass="1E-6" nuc_num="3180" source="ENSDF">
+    <Line energy="9,184" d_energy="0" intensity="9,9150236791724E-8" d_intensity="5,94901420750344E-9" line_type="X" dbid="Po-210_1" xline_type="LL" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="10,45" d_energy="0" intensity="1,98300473583448E-7" d_intensity="9,91502367917241E-9" line_type="X" dbid="Po-210_2" xline_type="LA2" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="10,551" d_energy="0" intensity="1,76267087629732E-6" d_intensity="2,26732822341923E-7" line_type="X" dbid="Po-210_3" xline_type="LA1" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="11,349" d_energy="0" intensity="2,69908977933027E-8" d_intensity="2,96899875726329E-10" line_type="X" dbid="Po-210_4" xline_type="LN" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="12,142" d_energy="0" intensity="2,75417324421456E-8" d_intensity="2,20333859537165E-10" line_type="X" dbid="Po-210_5" xline_type="LB6" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="12,307" d_energy="0" intensity="1,10166929768582E-8" d_intensity="1,32200315722299E-10" line_type="X" dbid="Po-210_6" xline_type="LB4" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="12,611" d_energy="0" intensity="4,37913545830115E-7" d_intensity="5,70265013774441E-8" line_type="X" dbid="Po-210_7" xline_type="LB2" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="12,614" d_energy="0" intensity="1,17052362879119E-6" d_intensity="1,5912266219121E-7" line_type="X" dbid="Po-210_8" xline_type="LB1" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="12,794" d_energy="0" intensity="1,30823229100191E-8" d_intensity="1,83152520740268E-10" line_type="X" dbid="Po-210_9" xline_type="LB3" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="13,015" d_energy="0" intensity="5,65982601686091E-8" d_intensity="8,48973902529137E-10" line_type="X" dbid="Po-210_10" xline_type="LB5" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="14,765" d_energy="0" intensity="2,45121418735096E-7" d_intensity="2,45121418735096E-8" line_type="X" dbid="Po-210_11" xline_type="LG1" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="15,097" d_energy="0" intensity="3,71813387968965E-9" d_intensity="1,48725355187586E-11" line_type="X" dbid="Po-210_12" xline_type="LG2" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="15,178" d_energy="0" intensity="4,26896852853256E-8" d_intensity="1,28069055855977E-9" line_type="X" dbid="Po-210_13" xline_type="LG6" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="15,216" d_energy="0" intensity="4,68209451516475E-9" d_intensity="2,80925670909885E-11" line_type="X" dbid="Po-210_14" xline_type="LG3" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="72,144" d_energy="0" intensity="4,35411255411255E-9" d_intensity="5,66034632034632E-12" line_type="X" dbid="Po-210_15" xline_type="KA3" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="72,805" d_energy="0" intensity="2,81796536796537E-6" d_intensity="1,45322025832835E-7" line_type="X" width="66,8" dbid="Po-210_16" xline_type="KA2" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="74,969" d_energy="0,0009" intensity="4,7E-6" d_intensity="2,38255947336517E-7" line_type="X" width="66,2" dbid="Po-210_17" xline_type="KA1" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="84,45" d_energy="0" intensity="5,67662337662338E-7" d_intensity="2,88273971911297E-8" line_type="X" dbid="Po-210_18" xline_type="KB3" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="84,938" d_energy="0" intensity="1,08852813852814E-6" d_intensity="5,56429466116436E-8" line_type="X" dbid="Po-210_19" xline_type="KB1" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="85,47" d_energy="0" intensity="3,17402597402597E-8" d_intensity="3,80883116883117E-10" line_type="X" dbid="Po-210_20" xline_type="KB5" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="87,3" d_energy="0" intensity="3,97770562770563E-7" d_intensity="2,03170480076715E-8" line_type="X" dbid="Po-210_21" xline_type="KB2" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="87,58" d_energy="0" intensity="9,15584415584415E-9" d_intensity="3,66233766233766E-10" line_type="X" dbid="Po-210_22" xline_type="KB4" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="87,911" d_energy="0" intensity="7,12121212121212E-8" d_intensity="4,98484848484849E-9" line_type="X" dbid="Po-210_23" xline_type="KO" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="88,003" d_energy="0" intensity="1,67857142857143E-9" d_intensity="2,85357142857143E-12" line_type="X" dbid="Po-210_24" xline_type="KP" xray_child_nuclide="Pb-206" source="ENSDF"/>
+    <Line energy="803,06" d_energy="0,03" intensity="0,00103" d_intensity="6E-5" dbid="Po-210_25" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Th-232" half_life_value="14000000000" half_life_unit="year" gamma_constant="0,00103861497575202" atomic_mass="232,038055" d_atomic_mass="1E-6" nuc_num="3420" source="ENSDF">
+    <Line energy="10,622" d_energy="0" intensity="0,204469553601247" d_intensity="0,0163575642880997" line_type="X" dbid="Th-232_1" xline_type="LL" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="12,196" d_energy="0" intensity="0,367165757542024" d_intensity="0,0220299454525214" line_type="X" dbid="Th-232_2" xline_type="LA2" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="12,339" d_energy="0" intensity="3,27591005232105" d_intensity="0,43644065877084" line_type="X" dbid="Th-232_3" xline_type="LA1" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="13,662" d_energy="0" intensity="0,0560642324390515" d_intensity="0,000784899254146722" line_type="X" dbid="Th-232_4" xline_type="LN" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="14,236" d_energy="0" intensity="0,0578231103194924" d_intensity="0,000578231103194924" line_type="X" dbid="Th-232_5" xline_type="LB6" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="14,749" d_energy="0" intensity="0,0239647111210063" d_intensity="0,000383435377936102" line_type="X" dbid="Th-232_6" xline_type="LB4" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="14,825" d_energy="0" intensity="0,848658577312702" d_intensity="0,114073145556365" line_type="X" dbid="Th-232_7" xline_type="LB2" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="15,236" d_energy="0" intensity="2,24256929756206" d_intensity="0,313864963683941" line_type="X" dbid="Th-232_8" xline_type="LB1" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="15,375" d_energy="0" intensity="0,156100411889124" d_intensity="0,00468301235667372" line_type="X" dbid="Th-232_9" xline_type="LB5" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="15,447" d_energy="0" intensity="0,0241845708560614" d_intensity="0,000411137704553045" line_type="X" dbid="Th-232_10" xline_type="LB3" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="17,848" d_energy="0" intensity="0,514471780028944" d_intensity="0,0720260492040521" line_type="X" dbid="Th-232_11" xline_type="LG1" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="18,177" d_energy="0" intensity="0,00901424913725927" d_intensity="6,30997439608149E-5" line_type="X" dbid="Th-232_12" xline_type="LG2" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="18,353" d_energy="0" intensity="0,00967382834242458" d_intensity="6,77167983969721E-5" line_type="X" dbid="Th-232_13" xline_type="LG3" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="18,412" d_energy="0" intensity="0,109929867527552" d_intensity="0,0054964933763776" line_type="X" dbid="Th-232_14" xline_type="LG6" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="63,81" d_energy="0,01" intensity="0,263" d_intensity="0,013" dbid="Th-232_15" source="ENSDF"/>
+    <Line energy="84,683" d_energy="0" intensity="4,48490153172867E-6" d_intensity="9,86678336980307E-9" line_type="X" dbid="Th-232_16" xline_type="KA3" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="85,431" d_energy="0" intensity="0,00171553610503282" d_intensity="0,000370989952401399" line_type="X" width="88,1" dbid="Th-232_17" xline_type="KA2" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="88,471" d_energy="0,01" intensity="0,0028" d_intensity="0,000605046553157937" line_type="X" width="87,2" dbid="Th-232_18" xline_type="KA1" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="99,432" d_energy="0" intensity="0,000342494529540481" d_intensity="3,7674398249453E-5" line_type="X" dbid="Th-232_19" xline_type="KB3" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="100,13" d_energy="0" intensity="0,000655579868708972" d_intensity="0,000137671772428884" line_type="X" dbid="Th-232_20" xline_type="KB1" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="100,738" d_energy="0" intensity="2,21794310722101E-5" d_intensity="3,32691466083151E-7" line_type="X" dbid="Th-232_21" xline_type="KB5" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="102,948" d_energy="0" intensity="0,000247527352297593" d_intensity="1,98021881838074E-5" line_type="X" dbid="Th-232_22" xline_type="KB2" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="103,295" d_energy="0" intensity="6,73960612691466E-6" d_intensity="3,36980306345733E-7" line_type="X" dbid="Th-232_23" xline_type="KB4" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="103,74" d_energy="0" intensity="5,2691466083151E-5" d_intensity="4,74223194748359E-6" line_type="X" dbid="Th-232_24" xline_type="KO" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="103,899" d_energy="0" intensity="8,08752735229759E-6" d_intensity="1,05137855579869E-7" line_type="X" dbid="Th-232_25" xline_type="KP" xray_child_nuclide="Ra-228" source="ENSDF"/>
+    <Line energy="140,88" d_energy="0,01" intensity="0,021" d_intensity="0,004" dbid="Th-232_26" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Ra-228" half_life_value="5,75" half_life_unit="year" atomic_mass="228,03107" d_atomic_mass="3E-6" nuc_num="3419" source="ENSDF">
+    <Line energy="10,871" d_energy="0" intensity="0,0292045947117469" d_intensity="0,00233636757693975" line_type="X" dbid="Ra-228_3" xline_type="LL" xray_child_nuclide="Ac-228" source="ENSDF"/>
+    <Line energy="12,5" d_energy="0" intensity="0,0509590377113134" d_intensity="0,0030575422626788" line_type="X" dbid="Ra-228_4" xline_type="LA2" xray_child_nuclide="Ac-228" source="ENSDF"/>
+    <Line energy="12,651" d_energy="0" intensity="0,455949284785436" d_intensity="0,24938083895523" line_type="X" dbid="Ra-228_5" xline_type="LA1" xray_child_nuclide="Ac-228" source="ENSDF"/>
+    <Line energy="12,75" d_energy="0,05" intensity="0,304" d_intensity="0,066761" dbid="Ra-228_7" source="ENSDF"/>
+    <Line energy="13,52" d_energy="0,02" intensity="1,6" d_intensity="0,1" dbid="Ra-228_8" source="ENSDF"/>
+    <Line energy="14,082" d_energy="0" intensity="0,00792696142175986" d_intensity="0,000110977459904638" line_type="X" dbid="Ra-228_9" xline_type="LN" xray_child_nuclide="Ac-228" source="ENSDF"/>
+    <Line energy="14,601" d_energy="0" intensity="0,00813556566970091" d_intensity="8,13556566970091E-5" line_type="X" dbid="Ra-228_10" xline_type="LB6" xray_child_nuclide="Ac-228" source="ENSDF"/>
+    <Line energy="15,15" d_energy="0,08" intensity="0,048" d_intensity="0,016279" dbid="Ra-228_11" source="ENSDF"/>
+    <Line energy="15,191" d_energy="0" intensity="0,0033674685739055" d_intensity="5,72469657563936E-5" line_type="X" dbid="Ra-228_12" xline_type="LB4" xray_child_nuclide="Ac-228" source="ENSDF"/>
+    <Line energy="15,212" d_energy="0" intensity="0,118308409189423" d_intensity="0,020112429562202" line_type="X" dbid="Ra-228_13" xline_type="LB2" xray_child_nuclide="Ac-228" source="ENSDF"/>
+    <Line energy="15,5" d_energy="0,2" intensity="0,16" d_intensity="0,033526" dbid="Ra-228_14" source="ENSDF"/>
+    <Line energy="15,711" d_energy="0" intensity="0,309926311226701" d_intensity="0,170020315135653" line_type="X" dbid="Ra-228_15" xline_type="LB1" xray_child_nuclide="Ac-228" source="ENSDF"/>
+    <Line energy="15,79" d_energy="0" intensity="0,0226484612050282" d_intensity="0,000679453836150845" line_type="X" dbid="Ra-228_16" xline_type="LB5" xray_child_nuclide="Ac-228" source="ENSDF"/>
+    <Line energy="15,931" d_energy="0" intensity="0,00330786736020806" d_intensity="5,62337451235371E-5" line_type="X" dbid="Ra-228_17" xline_type="LB3" xray_child_nuclide="Ac-228" source="ENSDF"/>
+    <Line energy="16,2" d_energy="0,1" intensity="0,72" d_intensity="0,091788" dbid="Ra-228_18" source="ENSDF"/>
+    <Line energy="18,405" d_energy="0" intensity="0,0721174685739055" d_intensity="0,0100964456003468" line_type="X" dbid="Ra-228_19" xline_type="LG1" xray_child_nuclide="Ac-228" source="ENSDF"/>
+    <Line energy="18,734" d_energy="0" intensity="0,00131122670134374" d_intensity="9,17858690940616E-6" line_type="X" dbid="Ra-228_20" xline_type="LG2" xray_child_nuclide="Ac-228" source="ENSDF"/>
+    <Line energy="18,922" d_energy="0" intensity="0,00134102730819246" d_intensity="9,3871911573472E-6" line_type="X" dbid="Ra-228_21" xline_type="LG3" xray_child_nuclide="Ac-228" source="ENSDF"/>
+    <Line energy="18,997" d_energy="0" intensity="0,0154963155613351" d_intensity="0,000774815778066753" line_type="X" dbid="Ra-228_22" xline_type="LG6" xray_child_nuclide="Ac-228" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Ac-228" half_life_value="6,15" half_life_unit="hour" gamma_constant="4,65626753879572" atomic_mass="228,031021" d_atomic_mass="3E-6" nuc_num="3421" source="ENSDF">
+    <Line energy="11,118" d_energy="0" intensity="0,99556821779044" d_intensity="0,00896011396011396" line_type="X" dbid="Ac-228_2" xline_type="LL" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="12,809" d_energy="0" intensity="1,70808272660124" d_intensity="0,1366466181281" line_type="X" dbid="Ac-228_3" xline_type="LA2" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="12,968" d_energy="0" intensity="15,2263374485597" d_intensity="1,79102326902081" line_type="X" dbid="Ac-228_4" xline_type="LA1" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="14,511" d_energy="0" intensity="0,273293236256199" d_intensity="0,00819879708768598" line_type="X" dbid="Ac-228_5" xline_type="LN" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="14,97" d_energy="0" intensity="0,277197425345573" d_intensity="0,00360356652949245" line_type="X" dbid="Ac-228_6" xline_type="LB6" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="15,605" d_energy="0" intensity="3,99203334388519" d_intensity="0,480021660863791" line_type="X" dbid="Ac-228_7" xline_type="LB2" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="15,641" d_energy="0" intensity="0,119077767225915" d_intensity="0,00250063311174422" line_type="X" dbid="Ac-228_8" xline_type="LB4" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="16,202" d_energy="0" intensity="10,4437058140762" d_intensity="1,56276239195251" line_type="X" dbid="Ac-228_9" xline_type="LB1" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="16,209" d_energy="0" intensity="0,790598290598291" d_intensity="0,0316239316239316" line_type="X" dbid="Ac-228_10" xline_type="LB5" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="16,426" d_energy="0" intensity="0,113221483591854" d_intensity="0,00226442967183708" line_type="X" dbid="Ac-228_11" xline_type="LB3" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="18,4" d_energy="0" intensity="0,014" d_intensity="0,004" dbid="Ac-228_12" source="ENSDF"/>
+    <Line energy="18,98" d_energy="0" intensity="2,44011818085892" d_intensity="0,395137597209259" line_type="X" dbid="Ac-228_13" xline_type="LG1" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="19,304" d_energy="0" intensity="0,0468502690724913" d_intensity="0,000421652421652422" line_type="X" dbid="Ac-228_14" xline_type="LG2" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="19,505" d_energy="0" intensity="0,0468502690724913" d_intensity="0,000421652421652422" line_type="X" dbid="Ac-228_15" xline_type="LG3" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="19,599" d_energy="0" intensity="0,527065527065527" d_intensity="0,0368945868945869" line_type="X" dbid="Ac-228_16" xline_type="LG6" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="42,46" d_energy="0,05" intensity="0,009" d_intensity="0,003" dbid="Ac-228_17" source="ENSDF"/>
+    <Line energy="56,96" d_energy="0,05" intensity="0,019" d_intensity="0,004" dbid="Ac-228_18" source="ENSDF"/>
+    <Line energy="57,766" d_energy="0,005" intensity="0,47" d_intensity="0,03" dbid="Ac-228_19" source="ENSDF"/>
+    <Line energy="77,34" d_energy="0,03" intensity="0,026" d_intensity="0,005" dbid="Ac-228_20" source="ENSDF"/>
+    <Line energy="89,178" d_energy="0" intensity="0,00599118942731278" d_intensity="1,79735682819383E-5" line_type="X" dbid="Ac-228_21" xline_type="KA3" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="89,957" d_energy="0" intensity="1,98061674008811" d_intensity="0,254213557979906" line_type="X" width="96,2" dbid="Ac-228_22" xline_type="KA2" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="93,35" d_energy="0,002" intensity="3,2" d_intensity="0,409936926234817" line_type="X" width="95,2" dbid="Ac-228_23" xline_type="KA1" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="99,509" d_energy="0,006" intensity="1,26" d_intensity="0,07" dbid="Ac-228_25" source="ENSDF"/>
+    <Line energy="100,41" d_energy="0,03" intensity="0,093" d_intensity="0,013" dbid="Ac-228_26" source="ENSDF"/>
+    <Line energy="104,819" d_energy="0" intensity="0,395418502202643" d_intensity="0,0434960352422908" line_type="X" dbid="Ac-228_28" xline_type="KB3" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="105,604" d_energy="0" intensity="0,754185022026432" d_intensity="0,0965921390711232" line_type="X" dbid="Ac-228_29" xline_type="KB1" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="106,239" d_energy="0" intensity="0,026784140969163" d_intensity="0,000401762114537445" line_type="X" dbid="Ac-228_30" xline_type="KB5" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="108,582" d_energy="0" intensity="0,288986784140969" d_intensity="0,0231189427312775" line_type="X" dbid="Ac-228_31" xline_type="KB2" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="108,955" d_energy="0" intensity="0,00775330396475771" d_intensity="0,000387665198237886" line_type="X" dbid="Ac-228_32" xline_type="KB4" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="109,442" d_energy="0" intensity="0,0634361233480176" d_intensity="0,00570925110132159" line_type="X" dbid="Ac-228_33" xline_type="KO" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="109,63" d_energy="0" intensity="0,0112775330396476" d_intensity="0,000180440528634361" line_type="X" dbid="Ac-228_34" xline_type="KP" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="114,56" d_energy="0,07" intensity="0,0098" d_intensity="0,0021" dbid="Ac-228_36" source="ENSDF"/>
+    <Line energy="129,065" d_energy="0,001" intensity="2,42" d_intensity="0,09" dbid="Ac-228_39" source="ENSDF"/>
+    <Line energy="135,54" d_energy="0,05" intensity="0,018" d_intensity="0,004" dbid="Ac-228_40" source="ENSDF"/>
+    <Line energy="137,91" d_energy="0,05" intensity="0,024" d_intensity="0,005" dbid="Ac-228_41" source="ENSDF"/>
+    <Line energy="141,02" d_energy="0,03" intensity="0,05" d_intensity="0,008" dbid="Ac-228_42" source="ENSDF"/>
+    <Line energy="145,849" d_energy="0,01" intensity="0,158" d_intensity="0,008" dbid="Ac-228_43" source="ENSDF"/>
+    <Line energy="153,977" d_energy="0,01" intensity="0,722" d_intensity="0,021" dbid="Ac-228_45" source="ENSDF"/>
+    <Line energy="168,65" d_energy="0,0803100500685427" intensity="0,013" d_intensity="0,00308058436014987" dbid="Ac-228_46;Ac-228_47" source="ENSDF"/>
+    <Line energy="173,964" d_energy="0,013" intensity="0,035" d_intensity="0,005" dbid="Ac-228_48" source="ENSDF"/>
+    <Line energy="184,54" d_energy="0,02" intensity="0,07" d_intensity="0,008" dbid="Ac-228_50" source="ENSDF"/>
+    <Line energy="191,353" d_energy="0,01" intensity="0,123" d_intensity="0,008" dbid="Ac-228_52" source="ENSDF"/>
+    <Line energy="199,407" d_energy="0,01" intensity="0,315" d_intensity="0,005" dbid="Ac-228_54" source="ENSDF"/>
+    <Line energy="204,026" d_energy="0,01" intensity="0,112" d_intensity="0,015" dbid="Ac-228_55" source="ENSDF"/>
+    <Line energy="209,253" d_energy="0,006" intensity="3,89" d_intensity="0,07" dbid="Ac-228_57" source="ENSDF"/>
+    <Line energy="214,85" d_energy="0,048302277872717" intensity="0,789" d_intensity="0,110072703246536" dbid="Ac-228_59;Ac-228_58" source="ENSDF"/>
+    <Line energy="223,85" d_energy="0,1" intensity="0,054" d_intensity="0,005" dbid="Ac-228_60" source="ENSDF"/>
+    <Line energy="231,42" d_energy="0,1" intensity="0,025" d_intensity="0,004" dbid="Ac-228_62" source="ENSDF"/>
+    <Line energy="257,52" d_energy="0,1" intensity="0,03" d_intensity="0,003" dbid="Ac-228_65" source="ENSDF"/>
+    <Line energy="263,58" d_energy="0,1" intensity="0,04" d_intensity="0,004" dbid="Ac-228_66" source="ENSDF"/>
+    <Line energy="270,245" d_energy="0,002" intensity="3,46" d_intensity="0,06" dbid="Ac-228_67" source="ENSDF"/>
+    <Line energy="278,95" d_energy="0,0426637325327657" intensity="0,191" d_intensity="0,0215870331449229" dbid="Ac-228_68;Ac-228_69" source="ENSDF"/>
+    <Line energy="282" d_energy="0,03" intensity="0,072" d_intensity="0,019" dbid="Ac-228_70" source="ENSDF"/>
+    <Line energy="321,646" d_energy="0,008" intensity="0,226" d_intensity="0,011" dbid="Ac-228_71" source="ENSDF"/>
+    <Line energy="326,04" d_energy="0,2" intensity="0,033" d_intensity="0,005" dbid="Ac-228_72" source="ENSDF"/>
+    <Line energy="327,44" d_energy="0" intensity="0,12" d_intensity="0,04" dbid="Ac-228_73" source="ENSDF"/>
+    <Line energy="328" d_energy="0,006" intensity="2,95" d_intensity="0,12" dbid="Ac-228_74" source="ENSDF"/>
+    <Line energy="332,37" d_energy="0,004" intensity="0,4" d_intensity="0,04" dbid="Ac-228_75" source="ENSDF"/>
+    <Line energy="338,32" d_energy="0,003" intensity="11,27" d_intensity="0,19" dbid="Ac-228_77" source="ENSDF"/>
+    <Line energy="340,96" d_energy="0,05" intensity="0,369" d_intensity="0,021" dbid="Ac-228_79" source="ENSDF"/>
+    <Line energy="356,94" d_energy="0,1" intensity="0,017" d_intensity="0,0018" dbid="Ac-228_80" source="ENSDF"/>
+    <Line energy="372,57" d_energy="0,2" intensity="0,0067" d_intensity="0,0015" dbid="Ac-228_81" source="ENSDF"/>
+    <Line energy="377,99" d_energy="0,1" intensity="0,025" d_intensity="0,003" dbid="Ac-228_84" source="ENSDF"/>
+    <Line energy="384,63" d_energy="0,2" intensity="0,0067" d_intensity="0,0015" dbid="Ac-228_85" source="ENSDF"/>
+    <Line energy="389,12" d_energy="0,15" intensity="0,0103" d_intensity="0,0015" dbid="Ac-228_86" source="ENSDF"/>
+    <Line energy="397,94" d_energy="0,1" intensity="0,027" d_intensity="0,003" dbid="Ac-228_88" source="ENSDF"/>
+    <Line energy="399,62" d_energy="0,1" intensity="0,029" d_intensity="0,003" dbid="Ac-228_90" source="ENSDF"/>
+    <Line energy="409,462" d_energy="0,006" intensity="1,92" d_intensity="0,04" dbid="Ac-228_91" source="ENSDF"/>
+    <Line energy="416,3" d_energy="0,2" intensity="0,0132" d_intensity="0,0021" dbid="Ac-228_93" source="ENSDF"/>
+    <Line energy="419,42" d_energy="0,1" intensity="0,021" d_intensity="0,003" dbid="Ac-228_94" source="ENSDF"/>
+    <Line energy="440,44" d_energy="0,05" intensity="0,121" d_intensity="0,008" dbid="Ac-228_95" source="ENSDF"/>
+    <Line energy="449,15" d_energy="0,05" intensity="0,048" d_intensity="0,005" dbid="Ac-228_97" source="ENSDF"/>
+    <Line energy="452,47" d_energy="0,1" intensity="0,015" d_intensity="0,005" dbid="Ac-228_100" source="ENSDF"/>
+    <Line energy="457,17" d_energy="0,15" intensity="0,015" d_intensity="0,0023" dbid="Ac-228_101" source="ENSDF"/>
+    <Line energy="463,004" d_energy="0,006" intensity="4,4" d_intensity="0,07" dbid="Ac-228_102" source="ENSDF"/>
+    <Line energy="466,4" d_energy="0,1" intensity="0,029" d_intensity="0,003" dbid="Ac-228_103" source="ENSDF"/>
+    <Line energy="470,25" d_energy="0,2" intensity="0,013" d_intensity="0,003" dbid="Ac-228_104" source="ENSDF"/>
+    <Line energy="471,76" d_energy="0,15" intensity="0,033" d_intensity="0,003" dbid="Ac-228_105" source="ENSDF"/>
+    <Line energy="474,75" d_energy="0,1" intensity="0,022" d_intensity="0,003" dbid="Ac-228_106" source="ENSDF"/>
+    <Line energy="478,33" d_energy="0,05" intensity="0,209" d_intensity="0,015" dbid="Ac-228_107" source="ENSDF"/>
+    <Line energy="480,94" d_energy="0,2" intensity="0,023" d_intensity="0,005" dbid="Ac-228_108" source="ENSDF"/>
+    <Line energy="490,33" d_energy="0,15" intensity="0,0111" d_intensity="0,0023" dbid="Ac-228_110" source="ENSDF"/>
+    <Line energy="492,37" d_energy="0,1" intensity="0,0235" d_intensity="0,0023" dbid="Ac-228_112" source="ENSDF"/>
+    <Line energy="497,49" d_energy="0,15" intensity="0,0059" d_intensity="0,0018" dbid="Ac-228_114" source="ENSDF"/>
+    <Line energy="503,823" d_energy="0,013" intensity="0,182" d_intensity="0,012" dbid="Ac-228_115" source="ENSDF"/>
+    <Line energy="508,959" d_energy="0,017" intensity="0,45" d_intensity="0,05" dbid="Ac-228_116" source="ENSDF"/>
+    <Line energy="515,06" d_energy="0,1" intensity="0,049" d_intensity="0,005" dbid="Ac-228_117" source="ENSDF"/>
+    <Line energy="520,151" d_energy="0,016" intensity="0,067" d_intensity="0,005" dbid="Ac-228_119" source="ENSDF"/>
+    <Line energy="523,131" d_energy="0,016" intensity="0,103" d_intensity="0,008" dbid="Ac-228_120" source="ENSDF"/>
+    <Line energy="540,76" d_energy="0,1" intensity="0,026" d_intensity="0,003" dbid="Ac-228_121" source="ENSDF"/>
+    <Line energy="546,47" d_energy="0,05" intensity="0,201" d_intensity="0,013" dbid="Ac-228_122" source="ENSDF"/>
+    <Line energy="548,73" d_energy="0,15" intensity="0,023" d_intensity="0,003" dbid="Ac-228_123" source="ENSDF"/>
+    <Line energy="555,12" d_energy="0,1" intensity="0,046" d_intensity="0,005" dbid="Ac-228_124" source="ENSDF"/>
+    <Line energy="562,5" d_energy="0,004" intensity="0,87" d_intensity="0,03" dbid="Ac-228_125" source="ENSDF"/>
+    <Line energy="570,91" d_energy="0,1" intensity="0,182" d_intensity="0,024" dbid="Ac-228_126" source="ENSDF"/>
+    <Line energy="572,14" d_energy="0,08" intensity="0,15" d_intensity="0,016" dbid="Ac-228_127" source="ENSDF"/>
+    <Line energy="583,41" d_energy="0,05" intensity="0,111" d_intensity="0,01" dbid="Ac-228_128" source="ENSDF"/>
+    <Line energy="590,4" d_energy="0" intensity="0,017" d_intensity="0,003" dbid="Ac-228_129" source="ENSDF"/>
+    <Line energy="610,64" d_energy="0,1" intensity="0,023" d_intensity="0,005" dbid="Ac-228_131" source="ENSDF"/>
+    <Line energy="616,22" d_energy="0,03" intensity="0,08" d_intensity="0,005" dbid="Ac-228_132" source="ENSDF"/>
+    <Line energy="620,38" d_energy="0,05" intensity="0,08" d_intensity="0,005" dbid="Ac-228_133" source="ENSDF"/>
+    <Line energy="623,27" d_energy="0,2" intensity="0,011" d_intensity="0,003" dbid="Ac-228_134" source="ENSDF"/>
+    <Line energy="627,23" d_energy="0,2" intensity="0,014" d_intensity="0,003" dbid="Ac-228_135" source="ENSDF"/>
+    <Line energy="629,4" d_energy="0,05" intensity="0,045" d_intensity="0,005" dbid="Ac-228_136" source="ENSDF"/>
+    <Line energy="634,18" d_energy="0,1" intensity="0,0106" d_intensity="0,0021" dbid="Ac-228_137" source="ENSDF"/>
+    <Line energy="640,34" d_energy="0,03" intensity="0,054" d_intensity="0,005" dbid="Ac-228_138" source="ENSDF"/>
+    <Line energy="648,84" d_energy="0,0707106781186548" intensity="0,08" d_intensity="0,00565685424949238" dbid="Ac-228_139;Ac-228_140" source="ENSDF"/>
+    <Line energy="651,51" d_energy="0,03" intensity="0,09" d_intensity="0,008" dbid="Ac-228_141" source="ENSDF"/>
+    <Line energy="660,1" d_energy="0,3" intensity="0,005" d_intensity="0,001" dbid="Ac-228_142" source="ENSDF"/>
+    <Line energy="663,82" d_energy="0,1" intensity="0,028" d_intensity="0,006" dbid="Ac-228_143" source="ENSDF"/>
+    <Line energy="666,45" d_energy="0,0922885129091611" intensity="0,062" d_intensity="0,00632455532033676" dbid="Ac-228_144;Ac-228_145" source="ENSDF"/>
+    <Line energy="672" d_energy="0,15" intensity="0,026" d_intensity="0,008" dbid="Ac-228_146" source="ENSDF"/>
+    <Line energy="674,16" d_energy="0" intensity="0,109" d_intensity="0,001" dbid="Ac-228_147" source="ENSDF"/>
+    <Line energy="674,75" d_energy="0" intensity="2,1" d_intensity="0,7" dbid="Ac-228_148" source="ENSDF"/>
+    <Line energy="677,11" d_energy="0,1" intensity="0,062" d_intensity="0,005" dbid="Ac-228_149" source="ENSDF"/>
+    <Line energy="684" d_energy="0" intensity="0,019" d_intensity="0,005" dbid="Ac-228_151" source="ENSDF"/>
+    <Line energy="688,1" d_energy="0,0353553390593274" intensity="0,134" d_intensity="0,00707106781186548" dbid="Ac-228_153;Ac-228_152" source="ENSDF"/>
+    <Line energy="692,5" d_energy="0" intensity="0,0056" d_intensity="0,0007" dbid="Ac-228_154" source="ENSDF"/>
+    <Line energy="699,08" d_energy="0,15" intensity="0,037" d_intensity="0,005" dbid="Ac-228_155" source="ENSDF"/>
+    <Line energy="701,747" d_energy="0,014" intensity="0,173" d_intensity="0,01" dbid="Ac-228_156" source="ENSDF"/>
+    <Line energy="707,41" d_energy="0,05" intensity="0,155" d_intensity="0,015" dbid="Ac-228_158" source="ENSDF"/>
+    <Line energy="718,48" d_energy="0,15" intensity="0,019" d_intensity="0,004" dbid="Ac-228_160" source="ENSDF"/>
+    <Line energy="726,863" d_energy="0,015" intensity="0,62" d_intensity="0,08" dbid="Ac-228_161" source="ENSDF"/>
+    <Line energy="737,72" d_energy="0,05" intensity="0,037" d_intensity="0,004" dbid="Ac-228_162" source="ENSDF"/>
+    <Line energy="755,315" d_energy="0,004" intensity="1" d_intensity="0,03" dbid="Ac-228_163" source="ENSDF"/>
+    <Line energy="770,04" d_energy="0" intensity="0,0063" d_intensity="0,0008" dbid="Ac-228_164" source="ENSDF"/>
+    <Line energy="772,291" d_energy="0,005" intensity="1,49" d_intensity="0,03" dbid="Ac-228_165" source="ENSDF"/>
+    <Line energy="774,1" d_energy="0,2" intensity="0,06" d_intensity="0,01" dbid="Ac-228_166" source="ENSDF"/>
+    <Line energy="776,56" d_energy="0,1" intensity="0,019" d_intensity="0,006" dbid="Ac-228_167" source="ENSDF"/>
+    <Line energy="778,23" d_energy="0" intensity="0,022" d_intensity="0,006" dbid="Ac-228_168" source="ENSDF"/>
+    <Line energy="782,142" d_energy="0,005" intensity="0,485" d_intensity="0,019" dbid="Ac-228_169" source="ENSDF"/>
+    <Line energy="791,49" d_energy="0,178274124639747" intensity="0,023" d_intensity="0,00424264068711928" dbid="Ac-228_171;Ac-228_172" source="ENSDF"/>
+    <Line energy="792,8" d_energy="0" intensity="0,08" d_intensity="0,01" dbid="Ac-228_173" source="ENSDF"/>
+    <Line energy="794,947" d_energy="0,005" intensity="4,25" d_intensity="0,07" dbid="Ac-228_174" source="ENSDF"/>
+    <Line energy="813,77" d_energy="0,15" intensity="0,007" d_intensity="0,0016" dbid="Ac-228_175" source="ENSDF"/>
+    <Line energy="816,71" d_energy="0,1" intensity="0,03" d_intensity="0,003" dbid="Ac-228_176" source="ENSDF"/>
+    <Line energy="824,934" d_energy="0,023" intensity="0,05" d_intensity="0,005" dbid="Ac-228_177" source="ENSDF"/>
+    <Line energy="830,486" d_energy="0,008" intensity="0,54" d_intensity="0,021" dbid="Ac-228_178" source="ENSDF"/>
+    <Line energy="835,71" d_energy="0,006" intensity="1,61" d_intensity="0,06" dbid="Ac-228_179" source="ENSDF"/>
+    <Line energy="840,377" d_energy="0,007" intensity="0,91" d_intensity="0,04" dbid="Ac-228_181" source="ENSDF"/>
+    <Line energy="853,17" d_energy="0,0784038567179717" intensity="0,0119" d_intensity="0,00184390889145858" dbid="Ac-228_183;Ac-228_182" source="ENSDF"/>
+    <Line energy="870,46" d_energy="0,04" intensity="0,044" d_intensity="0,004" dbid="Ac-228_184" source="ENSDF"/>
+    <Line energy="873,17" d_energy="0,15" intensity="0,031" d_intensity="0,006" dbid="Ac-228_185" source="ENSDF"/>
+    <Line energy="874,44" d_energy="0,07" intensity="0,047" d_intensity="0,01" dbid="Ac-228_186" source="ENSDF"/>
+    <Line energy="877,46" d_energy="0,1" intensity="0,014" d_intensity="0,003" dbid="Ac-228_187" source="ENSDF"/>
+    <Line energy="880,76" d_energy="0,1" intensity="0,0062" d_intensity="0,0018" dbid="Ac-228_188" source="ENSDF"/>
+    <Line energy="887,33" d_energy="0,1" intensity="0,027" d_intensity="0,003" dbid="Ac-228_189" source="ENSDF"/>
+    <Line energy="901,23" d_energy="0,15" intensity="0,016" d_intensity="0,003" dbid="Ac-228_190" source="ENSDF"/>
+    <Line energy="904,2" d_energy="0,04" intensity="0,77" d_intensity="0,03" dbid="Ac-228_191" source="ENSDF"/>
+    <Line energy="911,204" d_energy="0,004" intensity="25,8" d_intensity="0,4" dbid="Ac-228_193" source="ENSDF"/>
+    <Line energy="918,97" d_energy="0,1" intensity="0,027" d_intensity="0,003" dbid="Ac-228_194" source="ENSDF"/>
+    <Line energy="921,98" d_energy="0,0707106781186548" intensity="0,0294" d_intensity="0,0029698484809835" dbid="Ac-228_195;Ac-228_196" source="ENSDF"/>
+    <Line energy="924,03" d_energy="0" intensity="0,0075" d_intensity="0,001" dbid="Ac-228_197" source="ENSDF"/>
+    <Line energy="930,93" d_energy="0,0707106781186548" intensity="0,0248" d_intensity="0,00254558441227157" dbid="Ac-228_198;Ac-228_199" source="ENSDF"/>
+    <Line energy="939,87" d_energy="0,15" intensity="0,009" d_intensity="0,003" dbid="Ac-228_200" source="ENSDF"/>
+    <Line energy="944,196" d_energy="0,014" intensity="0,095" d_intensity="0,008" dbid="Ac-228_201" source="ENSDF"/>
+    <Line energy="947,982" d_energy="0,011" intensity="0,106" d_intensity="0,008" dbid="Ac-228_202" source="ENSDF"/>
+    <Line energy="958,61" d_energy="0,04" intensity="0,28" d_intensity="0,04" dbid="Ac-228_204" source="ENSDF"/>
+    <Line energy="964,766" d_energy="0,01" intensity="4,99" d_intensity="0,09" dbid="Ac-228_206" source="ENSDF"/>
+    <Line energy="968,971" d_energy="0,017" intensity="15,8" d_intensity="0,3" dbid="Ac-228_208" source="ENSDF"/>
+    <Line energy="975,96" d_energy="0,05" intensity="0,05" d_intensity="0,005" dbid="Ac-228_209" source="ENSDF"/>
+    <Line energy="979,48" d_energy="0,1" intensity="0,026" d_intensity="0,003" dbid="Ac-228_210" source="ENSDF"/>
+    <Line energy="987,71" d_energy="0,2" intensity="0,077" d_intensity="0,013" dbid="Ac-228_212" source="ENSDF"/>
+    <Line energy="988,63" d_energy="0,2" intensity="0,077" d_intensity="0,013" dbid="Ac-228_213" source="ENSDF"/>
+    <Line energy="1000,69" d_energy="0,15" intensity="0,005" d_intensity="0" dbid="Ac-228_214" source="ENSDF"/>
+    <Line energy="1013,58" d_energy="0,2" intensity="0,0046" d_intensity="0,0013" dbid="Ac-228_216" source="ENSDF"/>
+    <Line energy="1016,44" d_energy="0,106066017177982" intensity="0,038" d_intensity="0,00424264068711928" dbid="Ac-228_217;Ac-228_218" source="ENSDF"/>
+    <Line energy="1017,92" d_energy="0,2" intensity="0,0057" d_intensity="0,0013" dbid="Ac-228_219" source="ENSDF"/>
+    <Line energy="1019,86" d_energy="0,1" intensity="0,021" d_intensity="0,004" dbid="Ac-228_220" source="ENSDF"/>
+    <Line energy="1033,248" d_energy="0,009" intensity="0,201" d_intensity="0,013" dbid="Ac-228_221" source="ENSDF"/>
+    <Line energy="1039,65" d_energy="0,15" intensity="0,044" d_intensity="0,009" dbid="Ac-228_222" source="ENSDF"/>
+    <Line energy="1040,92" d_energy="0,15" intensity="0,044" d_intensity="0,009" dbid="Ac-228_223" source="ENSDF"/>
+    <Line energy="1053,09" d_energy="0,2" intensity="0,013" d_intensity="0,004" dbid="Ac-228_225" source="ENSDF"/>
+    <Line energy="1054,11" d_energy="0,2" intensity="0,018" d_intensity="0,005" dbid="Ac-228_226" source="ENSDF"/>
+    <Line energy="1062,55" d_energy="0,15" intensity="0,01" d_intensity="0,003" dbid="Ac-228_227" source="ENSDF"/>
+    <Line energy="1065,18" d_energy="0,04" intensity="0,132" d_intensity="0,01" dbid="Ac-228_228" source="ENSDF"/>
+    <Line energy="1074,71" d_energy="0,15" intensity="0,01" d_intensity="0,003" dbid="Ac-228_230" source="ENSDF"/>
+    <Line energy="1088,18" d_energy="0,15" intensity="0,0059" d_intensity="0,0013" dbid="Ac-228_231" source="ENSDF"/>
+    <Line energy="1095,679" d_energy="0,02" intensity="0,129" d_intensity="0,01" dbid="Ac-228_232" source="ENSDF"/>
+    <Line energy="1103,41" d_energy="0,1" intensity="0,015" d_intensity="0,0023" dbid="Ac-228_233" source="ENSDF"/>
+    <Line energy="1110,61" d_energy="0,00939581023648307" intensity="0,304" d_intensity="0,0250798724079689" dbid="Ac-228_235;Ac-228_234" source="ENSDF"/>
+    <Line energy="1117,63" d_energy="0,1" intensity="0,054" d_intensity="0,008" dbid="Ac-228_238" source="ENSDF"/>
+    <Line energy="1135,24" d_energy="0,15" intensity="0,0098" d_intensity="0,0015" dbid="Ac-228_239" source="ENSDF"/>
+    <Line energy="1142,85" d_energy="0,15" intensity="0,0103" d_intensity="0,0021" dbid="Ac-228_240" source="ENSDF"/>
+    <Line energy="1148,12" d_energy="0,15" intensity="0,0059" d_intensity="0,0013" dbid="Ac-228_241" source="ENSDF"/>
+    <Line energy="1153,52" d_energy="0,04" intensity="0,139" d_intensity="0,01" dbid="Ac-228_242" source="ENSDF"/>
+    <Line energy="1157,14" d_energy="0,15" intensity="0,007" d_intensity="0,0013" dbid="Ac-228_244" source="ENSDF"/>
+    <Line energy="1164,5" d_energy="0,08" intensity="0,065" d_intensity="0,005" dbid="Ac-228_245" source="ENSDF"/>
+    <Line energy="1175,31" d_energy="0,1" intensity="0,024" d_intensity="0,003" dbid="Ac-228_248" source="ENSDF"/>
+    <Line energy="1190,81" d_energy="0,2" intensity="0,0062" d_intensity="0,0016" dbid="Ac-228_250" source="ENSDF"/>
+    <Line energy="1217,03" d_energy="0,1" intensity="0,021" d_intensity="0,003" dbid="Ac-228_251" source="ENSDF"/>
+    <Line energy="1229,4" d_energy="0,15" intensity="0,0075" d_intensity="0,0023" dbid="Ac-228_252" source="ENSDF"/>
+    <Line energy="1245,05" d_energy="0,2" intensity="0,095" d_intensity="0,018" dbid="Ac-228_253" source="ENSDF"/>
+    <Line energy="1247,08" d_energy="0,04" intensity="0,5" d_intensity="0,03" dbid="Ac-228_254" source="ENSDF"/>
+    <Line energy="1250,04" d_energy="0,1" intensity="0,062" d_intensity="0,005" dbid="Ac-228_255" source="ENSDF"/>
+    <Line energy="1276,69" d_energy="0,1" intensity="0,014" d_intensity="0,003" dbid="Ac-228_257" source="ENSDF"/>
+    <Line energy="1286,27" d_energy="0,2" intensity="0,05" d_intensity="0,01" dbid="Ac-228_258" source="ENSDF"/>
+    <Line energy="1287,68" d_energy="0,2" intensity="0,08" d_intensity="0,015" dbid="Ac-228_259" source="ENSDF"/>
+    <Line energy="1309,71" d_energy="0,2" intensity="0,019" d_intensity="0,006" dbid="Ac-228_260" source="ENSDF"/>
+    <Line energy="1315,34" d_energy="0,1" intensity="0,015" d_intensity="0,003" dbid="Ac-228_261" source="ENSDF"/>
+    <Line energy="1337,33" d_energy="0,2" intensity="0,0049" d_intensity="0,0015" dbid="Ac-228_262" source="ENSDF"/>
+    <Line energy="1344,59" d_energy="0,15" intensity="0,009" d_intensity="0,0018" dbid="Ac-228_263" source="ENSDF"/>
+    <Line energy="1347,5" d_energy="0,15" intensity="0,015" d_intensity="0,003" dbid="Ac-228_264" source="ENSDF"/>
+    <Line energy="1357,78" d_energy="0,15" intensity="0,02" d_intensity="0,004" dbid="Ac-228_265" source="ENSDF"/>
+    <Line energy="1365,7" d_energy="0,15" intensity="0,014" d_intensity="0,003" dbid="Ac-228_266" source="ENSDF"/>
+    <Line energy="1374,19" d_energy="0,1" intensity="0,014" d_intensity="0,004" dbid="Ac-228_267" source="ENSDF"/>
+    <Line energy="1378,23" d_energy="0,1" intensity="0,0059" d_intensity="0,0018" dbid="Ac-228_268" source="ENSDF"/>
+    <Line energy="1385,39" d_energy="0,1" intensity="0,0106" d_intensity="0,0021" dbid="Ac-228_269" source="ENSDF"/>
+    <Line energy="1401,49" d_energy="0,1" intensity="0,012" d_intensity="0,003" dbid="Ac-228_270" source="ENSDF"/>
+    <Line energy="1415,66" d_energy="0,1" intensity="0,021" d_intensity="0,004" dbid="Ac-228_271" source="ENSDF"/>
+    <Line energy="1430,95" d_energy="0,1" intensity="0,035" d_intensity="0,007" dbid="Ac-228_272" source="ENSDF"/>
+    <Line energy="1434,22" d_energy="0,15" intensity="0,008" d_intensity="0,0023" dbid="Ac-228_273" source="ENSDF"/>
+    <Line energy="1438,01" d_energy="0,1" intensity="0,0059" d_intensity="0,0015" dbid="Ac-228_274" source="ENSDF"/>
+    <Line energy="1451,4" d_energy="0,15" intensity="0,0106" d_intensity="0,0021" dbid="Ac-228_275" source="ENSDF"/>
+    <Line energy="1459,138" d_energy="0,015" intensity="0,83" d_intensity="0,08" dbid="Ac-228_276" source="ENSDF"/>
+    <Line energy="1469,71" d_energy="0,15" intensity="0,02" d_intensity="0,004" dbid="Ac-228_277" source="ENSDF"/>
+    <Line energy="1480,37" d_energy="0,15" intensity="0,016" d_intensity="0,003" dbid="Ac-228_278" source="ENSDF"/>
+    <Line energy="1495,91" d_energy="0,02" intensity="0,86" d_intensity="0,04" dbid="Ac-228_279" source="ENSDF"/>
+    <Line energy="1501,57" d_energy="0,05" intensity="0,46" d_intensity="0,03" dbid="Ac-228_280" source="ENSDF"/>
+    <Line energy="1529,05" d_energy="0,1" intensity="0,057" d_intensity="0,006" dbid="Ac-228_281" source="ENSDF"/>
+    <Line energy="1537,89" d_energy="0,1" intensity="0,047" d_intensity="0,005" dbid="Ac-228_282" source="ENSDF"/>
+    <Line energy="1548,65" d_energy="0,04" intensity="0,038" d_intensity="0,004" dbid="Ac-228_283" source="ENSDF"/>
+    <Line energy="1557,11" d_energy="0,04" intensity="0,178" d_intensity="0,013" dbid="Ac-228_284" source="ENSDF"/>
+    <Line energy="1559,85" d_energy="0,2" intensity="0,02" d_intensity="0,004" dbid="Ac-228_285" source="ENSDF"/>
+    <Line energy="1571,52" d_energy="0,2" intensity="0,0057" d_intensity="0,0016" dbid="Ac-228_286" source="ENSDF"/>
+    <Line energy="1573,26" d_energy="0,05" intensity="0,033" d_intensity="0,003" dbid="Ac-228_287" source="ENSDF"/>
+    <Line energy="1580,53" d_energy="0,03" intensity="0,6" d_intensity="0,04" dbid="Ac-228_288" source="ENSDF"/>
+    <Line energy="1588,2" d_energy="0,03" intensity="3,22" d_intensity="0,08" dbid="Ac-228_289" source="ENSDF"/>
+    <Line energy="1609,41" d_energy="0,15" intensity="0,0077" d_intensity="0,0015" dbid="Ac-228_290" source="ENSDF"/>
+    <Line energy="1625,06" d_energy="0,05" intensity="0,255" d_intensity="0,018" dbid="Ac-228_292" source="ENSDF"/>
+    <Line energy="1630,627" d_energy="0,01" intensity="1,51" d_intensity="0,04" dbid="Ac-228_293" source="ENSDF"/>
+    <Line energy="1638,281" d_energy="0,01" intensity="0,47" d_intensity="0,03" dbid="Ac-228_294" source="ENSDF"/>
+    <Line energy="1666,523" d_energy="0,013" intensity="0,178" d_intensity="0,013" dbid="Ac-228_295" source="ENSDF"/>
+    <Line energy="1671,64" d_energy="0,15" intensity="0,0041" d_intensity="0,0013" dbid="Ac-228_296" source="ENSDF"/>
+    <Line energy="1677,67" d_energy="0,03" intensity="0,054" d_intensity="0,005" dbid="Ac-228_297" source="ENSDF"/>
+    <Line energy="1684,01" d_energy="0,2" intensity="0,015" d_intensity="0,005" dbid="Ac-228_298" source="ENSDF"/>
+    <Line energy="1686,09" d_energy="0,07" intensity="0,095" d_intensity="0,008" dbid="Ac-228_299" source="ENSDF"/>
+    <Line energy="1700,59" d_energy="0,2" intensity="0,0101" d_intensity="0,0023" dbid="Ac-228_300" source="ENSDF"/>
+    <Line energy="1702,43" d_energy="0,05" intensity="0,048" d_intensity="0,005" dbid="Ac-228_301" source="ENSDF"/>
+    <Line energy="1706,19" d_energy="0,1" intensity="0,0085" d_intensity="0,001" dbid="Ac-228_302" source="ENSDF"/>
+    <Line energy="1713,47" d_energy="0,2" intensity="0,0054" d_intensity="0,001" dbid="Ac-228_303" source="ENSDF"/>
+    <Line energy="1721,4" d_energy="0,3" intensity="0,0057" d_intensity="0,0021" dbid="Ac-228_304" source="ENSDF"/>
+    <Line energy="1724,21" d_energy="0,04" intensity="0,029" d_intensity="0,003" dbid="Ac-228_305" source="ENSDF"/>
+    <Line energy="1738,22" d_energy="0,25" intensity="0,018" d_intensity="0,004" dbid="Ac-228_307" source="ENSDF"/>
+    <Line energy="1740,4" d_energy="0,3" intensity="0,011" d_intensity="0,003" dbid="Ac-228_308" source="ENSDF"/>
+    <Line energy="1742" d_energy="0,3" intensity="0,008" d_intensity="0,0023" dbid="Ac-228_309" source="ENSDF"/>
+    <Line energy="1745,28" d_energy="0,2" intensity="0,0065" d_intensity="0,0008" dbid="Ac-228_310" source="ENSDF"/>
+    <Line energy="1750,54" d_energy="0,2" intensity="0,008" d_intensity="0,0008" dbid="Ac-228_311" source="ENSDF"/>
+    <Line energy="1758,11" d_energy="0,1" intensity="0,035" d_intensity="0,004" dbid="Ac-228_313" source="ENSDF"/>
+    <Line energy="1772,2" d_energy="0,3" intensity="0,0018" d_intensity="0,0005" dbid="Ac-228_314" source="ENSDF"/>
+    <Line energy="1784,4" d_energy="0,3" intensity="0,0059" d_intensity="0,001" dbid="Ac-228_315" source="ENSDF"/>
+    <Line energy="1787,3" d_energy="0,5" intensity="0,0013" d_intensity="0,0005" dbid="Ac-228_316" source="ENSDF"/>
+    <Line energy="1795,1" d_energy="0,5" intensity="0,0021" d_intensity="0,0008" dbid="Ac-228_317" source="ENSDF"/>
+    <Line energy="1797,5" d_energy="0,5" intensity="0,0021" d_intensity="0,0008" dbid="Ac-228_318" source="ENSDF"/>
+    <Line energy="1800,86" d_energy="0,2" intensity="0,0044" d_intensity="0,0008" dbid="Ac-228_319" source="ENSDF"/>
+    <Line energy="1823,22" d_energy="0,1" intensity="0,044" d_intensity="0,004" dbid="Ac-228_321" source="ENSDF"/>
+    <Line energy="1826,7" d_energy="0,3" intensity="0,0021" d_intensity="0,0008" dbid="Ac-228_322" source="ENSDF"/>
+    <Line energy="1835,43" d_energy="0,1" intensity="0,038" d_intensity="0,004" dbid="Ac-228_323" source="ENSDF"/>
+    <Line energy="1842,13" d_energy="0,1" intensity="0,042" d_intensity="0,004" dbid="Ac-228_324" source="ENSDF"/>
+    <Line energy="1850,13" d_energy="0,2" intensity="0,0044" d_intensity="0,0008" dbid="Ac-228_325" source="ENSDF"/>
+    <Line energy="1870,83" d_energy="0,1" intensity="0,0243" d_intensity="0,0023" dbid="Ac-228_326" source="ENSDF"/>
+    <Line energy="1879,6" d_energy="0,3" intensity="0,0013" d_intensity="0,0005" dbid="Ac-228_327" source="ENSDF"/>
+    <Line energy="1887,1" d_energy="0,05" intensity="0,09" d_intensity="0,008" dbid="Ac-228_328" source="ENSDF"/>
+    <Line energy="1900,07" d_energy="0,2" intensity="0,0028" d_intensity="0,0005" dbid="Ac-228_329" source="ENSDF"/>
+    <Line energy="1907,18" d_energy="0,2" intensity="0,0119" d_intensity="0,001" dbid="Ac-228_330" source="ENSDF"/>
+    <Line energy="1915,9" d_energy="0,4" intensity="0,0008" d_intensity="0,0003" dbid="Ac-228_331" source="ENSDF"/>
+    <Line energy="1919,5" d_energy="0,3" intensity="0,0021" d_intensity="0,0005" dbid="Ac-228_332" source="ENSDF"/>
+    <Line energy="1929,78" d_energy="0,2" intensity="0,0199" d_intensity="0,0021" dbid="Ac-228_333" source="ENSDF"/>
+    <Line energy="1936,3" d_energy="0,3" intensity="0,0021" d_intensity="0,0005" dbid="Ac-228_334" source="ENSDF"/>
+    <Line energy="1944,2" d_energy="0,2" intensity="0,0021" d_intensity="0,0005" dbid="Ac-228_335" source="ENSDF"/>
+    <Line energy="1952,33" d_energy="0,15" intensity="0,059" d_intensity="0,005" dbid="Ac-228_337" source="ENSDF"/>
+    <Line energy="1955,9" d_energy="0,5" intensity="0,0008" d_intensity="0,0003" dbid="Ac-228_338" source="ENSDF"/>
+    <Line energy="1958,4" d_energy="0,3" intensity="0,0015" d_intensity="0,0005" dbid="Ac-228_339" source="ENSDF"/>
+    <Line energy="1965,24" d_energy="0,2" intensity="0,0204" d_intensity="0,0018" dbid="Ac-228_340" source="ENSDF"/>
+    <Line energy="1971,9" d_energy="0,3" intensity="0,0036" d_intensity="0,0008" dbid="Ac-228_341" source="ENSDF"/>
+    <Line energy="1979,3" d_energy="0,3" intensity="0,0018" d_intensity="0,0005" dbid="Ac-228_342" source="ENSDF"/>
+    <Line energy="2000,9" d_energy="0,5" intensity="0,001" d_intensity="0,0003" dbid="Ac-228_343" source="ENSDF"/>
+    <Line energy="2029,4" d_energy="0,5" intensity="0,0018" d_intensity="0,0005" dbid="Ac-228_344" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Th-228" half_life_value="1,9125" half_life_unit="year" gamma_constant="0,00920665439768413" atomic_mass="228,028741" d_atomic_mass="2E-6" nuc_num="3391" source="ENSDF">
+    <Line energy="10,622" d_energy="0" intensity="0,251057553155961" d_intensity="0,0200846042524769" line_type="X" dbid="Th-228_1" xline_type="LL" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="12,196" d_energy="0" intensity="0,450823778247801" d_intensity="0,0270494266948681" line_type="X" dbid="Th-228_2" xline_type="LA2" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="12,339" d_energy="0" intensity="4,02231993766002" d_intensity="0,485793489963274" line_type="X" dbid="Th-228_3" xline_type="LA1" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="13,662" d_energy="0" intensity="0,0688383613492152" d_intensity="0,000963737058889012" line_type="X" dbid="Th-228_4" xline_type="LN" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="14,236" d_energy="0" intensity="0,0709979962150729" d_intensity="0,000709979962150729" line_type="X" dbid="Th-228_5" xline_type="LB6" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="14,749" d_energy="0" intensity="0,0294250250473116" d_intensity="0,000470800400756985" line_type="X" dbid="Th-228_6" xline_type="LB4" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="14,825" d_energy="0" intensity="1,04202382277636" d_intensity="0,127214719031101" line_type="X" dbid="Th-228_7" xline_type="LB2" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="15,236" d_energy="0" intensity="2,75353445396861" d_intensity="0,352894500127927" line_type="X" dbid="Th-228_8" xline_type="LB1" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="15,375" d_energy="0" intensity="0,191667594344874" d_intensity="0,00575002783034621" line_type="X" dbid="Th-228_9" xline_type="LB5" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="15,447" d_energy="0" intensity="0,0296949794055438" d_intensity="0,000504814649894245" line_type="X" dbid="Th-228_10" xline_type="LB3" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="17,848" d_energy="0" intensity="0,631693198263386" d_intensity="0,0812516497859271" line_type="X" dbid="Th-228_11" xline_type="LG1" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="18,177" d_energy="0" intensity="0,0110681286875209" d_intensity="7,74769008126461E-5" line_type="X" dbid="Th-228_12" xline_type="LG2" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="18,353" d_energy="0" intensity="0,0118779917622175" d_intensity="8,31459423355226E-5" line_type="X" dbid="Th-228_13" xline_type="LG3" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="18,412" d_energy="0" intensity="0,134977179116108" d_intensity="0,00674885895580541" line_type="X" dbid="Th-228_14" xline_type="LG6" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="74,4" d_energy="0,1" intensity="0,000392" d_intensity="0,000143" dbid="Th-228_15" source="ENSDF"/>
+    <Line energy="84,373" d_energy="0,003" intensity="1,188" d_intensity="0,038953" dbid="Th-228_16" source="ENSDF"/>
+    <Line energy="84,683" d_energy="0" intensity="4,98144420131291E-5" d_intensity="1,09591772428884E-7" line_type="X" dbid="Th-228_17" xline_type="KA3" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="85,431" d_energy="0" intensity="0,019054704595186" d_intensity="0,000701056607476923" line_type="X" width="88,1" dbid="Th-228_18" xline_type="KA2" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="88,471" d_energy="0,01" intensity="0,0311" d_intensity="0,00111366309464182" line_type="X" width="87,2" dbid="Th-228_19" xline_type="KA1" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="99,432" d_energy="0" intensity="0,00380413566739606" d_intensity="0,000136189935704765" line_type="X" dbid="Th-228_20" xline_type="KB3" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="100,13" d_energy="0" intensity="0,0072816192560175" d_intensity="0,000260478319592624" line_type="X" dbid="Th-228_21" xline_type="KB1" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="100,738" d_energy="0" intensity="0,00024635010940919" d_intensity="3,69525164113785E-6" line_type="X" dbid="Th-228_22" xline_type="KB5" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="102,948" d_energy="0" intensity="0,00274932166301969" d_intensity="9,86148468552092E-5" line_type="X" dbid="Th-228_23" xline_type="KB2" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="103,295" d_energy="0" intensity="7,48577680525164E-5" d_intensity="3,74288840262582E-6" line_type="X" dbid="Th-228_24" xline_type="KB4" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="103,74" d_energy="0" intensity="0,000585251641137855" d_intensity="5,2672647702407E-5" line_type="X" dbid="Th-228_25" xline_type="KO" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="103,899" d_energy="0" intensity="8,98293216630197E-5" d_intensity="1,16778118161926E-6" line_type="X" dbid="Th-228_26" xline_type="KP" xray_child_nuclide="Ra-224" source="ENSDF"/>
+    <Line energy="131,613" d_energy="0,004" intensity="0,127116" d_intensity="0,004051" dbid="Th-228_27" source="ENSDF"/>
+    <Line energy="142" d_energy="0,5" intensity="1,307E-6" d_intensity="4,767E-7" dbid="Th-228_28" source="ENSDF"/>
+    <Line energy="166,41" d_energy="0,004" intensity="0,100861" d_intensity="0,003219" dbid="Th-228_29" source="ENSDF"/>
+    <Line energy="182,2" d_energy="0,2" intensity="5,108E-6" d_intensity="1,788E-6" dbid="Th-228_30" source="ENSDF"/>
+    <Line energy="205,93" d_energy="0,05" intensity="0,019127" d_intensity="0,0008078" dbid="Th-228_31" source="ENSDF"/>
+    <Line energy="215,983" d_energy="0,005" intensity="0,246866" d_intensity="0,007664" dbid="Th-228_32" source="ENSDF"/>
+    <Line energy="228,5" d_energy="0,2" intensity="1,782E-5" d_intensity="3,6E-6" dbid="Th-228_33" source="ENSDF"/>
+    <Line energy="700,5" d_energy="0,5" intensity="2,97E-6" d_intensity="1,461E-7" dbid="Th-228_34" source="ENSDF"/>
+    <Line energy="742,2" d_energy="0,5" intensity="1,426E-6" d_intensity="4,769E-7" dbid="Th-228_35" source="ENSDF"/>
+    <Line energy="832" d_energy="0,2" intensity="1,426E-5" d_intensity="2,411E-6" dbid="Th-228_36" source="ENSDF"/>
+    <Line energy="908,1" d_energy="0,1" intensity="1,663E-6" d_intensity="1,28E-7" dbid="Th-228_37" source="ENSDF"/>
+    <Line energy="992,9" d_energy="1" intensity="1,426E-6" d_intensity="1,256E-7" dbid="Th-228_38" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Ra-224" half_life_value="3,66" half_life_unit="day" gamma_constant="0,0518327199681002" atomic_mass="224,020212" d_atomic_mass="2E-6" nuc_num="3364" source="ENSDF">
+    <Line energy="10,137" d_energy="0" intensity="0,0103849438930286" d_intensity="0,000726946072512002" line_type="X" dbid="Ra-224_1" xline_type="LL" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="11,598" d_energy="0" intensity="0,0192000706859482" d_intensity="0,00115200424115689" line_type="X" dbid="Ra-224_2" xline_type="LA2" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="11,726" d_energy="0" intensity="0,171472329396519" d_intensity="0,0218448709305232" line_type="X" dbid="Ra-224_3" xline_type="LA1" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="12,855" d_energy="0" intensity="0,00287397284481489" d_intensity="3,73616469825936E-5" line_type="X" dbid="Ra-224_4" xline_type="LN" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="13,52" d_energy="0" intensity="0,00288604836096958" d_intensity="2,59744352487262E-5" line_type="X" dbid="Ra-224_5" xline_type="LB6" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="13,898" d_energy="0" intensity="0,00119547609931376" d_intensity="1,79321414897064E-5" line_type="X" dbid="Ra-224_6" xline_type="LB4" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="14,066" d_energy="0" intensity="0,0440756339645981" d_intensity="0,0057317717631413" line_type="X" dbid="Ra-224_7" xline_type="LB2" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="14,316" d_energy="0" intensity="0,117132506700439" d_intensity="0,0155600786826411" line_type="X" dbid="Ra-224_8" xline_type="LB1" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="14,519" d_energy="0" intensity="0,00128000471239655" d_intensity="2,04800753983448E-5" line_type="X" dbid="Ra-224_9" xline_type="LB3" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="14,565" d_energy="0" intensity="0,00730568727358407" d_intensity="0,000168030807292434" line_type="X" dbid="Ra-224_10" xline_type="LB5" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="16,77" d_energy="0" intensity="0,0259623597325715" d_intensity="0,0033751067652343" line_type="X" dbid="Ra-224_11" xline_type="LG1" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="17,104" d_energy="0" intensity="0,000434718581568639" d_intensity="2,60831148941183E-6" line_type="X" dbid="Ra-224_12" xline_type="LG2" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="17,258" d_energy="0" intensity="0,000483020646187377" d_intensity="3,38114452331164E-6" line_type="X" dbid="Ra-224_13" xline_type="LG3" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="17,28" d_energy="0" intensity="0,00531322710806114" d_intensity="0,000212529084322446" line_type="X" dbid="Ra-224_14" xline_type="LG6" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="80,349" d_energy="0" intensity="0,000290591304347826" d_intensity="5,5212347826087E-7" line_type="X" dbid="Ra-224_15" xline_type="KA3" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="81,069" d_energy="0" intensity="0,131615217391304" d_intensity="0,00617948149118017" line_type="X" width="80,5" dbid="Ra-224_16" xline_type="KA2" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="83,787" d_energy="0,02" intensity="0,217" d_intensity="0,0100025559115511" line_type="X" width="79,7" dbid="Ra-224_17" xline_type="KA1" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="94,247" d_energy="0" intensity="0,0262286956521739" d_intensity="0,00121145336118908" line_type="X" dbid="Ra-224_18" xline_type="KB3" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="94,868" d_energy="0" intensity="0,050004347826087" d_intensity="0,00231018713482964" line_type="X" dbid="Ra-224_19" xline_type="KB1" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="95,449" d_energy="0" intensity="0,00164636956521739" d_intensity="2,30491739130435E-5" line_type="X" dbid="Ra-224_20" xline_type="KB5" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="97,53" d_energy="0" intensity="0,0187752173913043" d_intensity="0,000869751968629301" line_type="X" dbid="Ra-224_21" xline_type="KB2" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="97,853" d_energy="0" intensity="0,000471739130434783" d_intensity="2,35869565217391E-5" line_type="X" dbid="Ra-224_22" xline_type="KB4" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="98,257" d_energy="0" intensity="0,00382108695652174" d_intensity="0,000305686956521739" line_type="X" dbid="Ra-224_23" xline_type="KO" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="98,389" d_energy="0" intensity="0,000443434782608696" d_intensity="4,43434782608696E-6" line_type="X" dbid="Ra-224_24" xline_type="KP" xray_child_nuclide="Rn-220" source="ENSDF"/>
+    <Line energy="240,986" d_energy="0,006" intensity="4,1" d_intensity="0,05" dbid="Ra-224_25" source="ENSDF"/>
+    <Line energy="292,7" d_energy="0,1" intensity="0,0062" d_intensity="0,0007" dbid="Ra-224_26" source="ENSDF"/>
+    <Line energy="404,2" d_energy="0,2" intensity="0,0022" d_intensity="0,0005" dbid="Ra-224_27" source="ENSDF"/>
+    <Line energy="422,04" d_energy="0,1" intensity="0,003" d_intensity="0,0005" dbid="Ra-224_28" source="ENSDF"/>
+    <Line energy="645,5" d_energy="0,1" intensity="0,0054" d_intensity="0,0009" dbid="Ra-224_29" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Rn-220" half_life_value="55,6" half_life_unit="sec" gamma_constant="0,00358027946815212" atomic_mass="220,011394" d_atomic_mass="2E-6" nuc_num="3331" source="ENSDF">
+    <Line energy="549,73" d_energy="0,05" intensity="0,114" d_intensity="0,017" dbid="Rn-220_1" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Po-216" half_life_value="0,145" half_life_unit="sec" gamma_constant="8,45143478160087E-5" atomic_mass="216,001914" d_atomic_mass="2E-6" nuc_num="3275" source="ENSDF">
+    <Line energy="804,9" d_energy="0,5" intensity="0,0019" d_intensity="0,0003" dbid="Po-216_1" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Pb-212" half_life_value="10,64" half_life_unit="hour" gamma_constant="0,712311347114718" atomic_mass="211,991898" d_atomic_mass="2E-6" nuc_num="3274" source="ENSDF">
+    <Line energy="9,42" d_energy="0" intensity="0,367241714767495" d_intensity="0,0257069200337246" line_type="X" dbid="Pb-212_1" xline_type="LL" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="10,731" d_energy="0" intensity="0,724690317141189" d_intensity="0,0434814190284714" line_type="X" dbid="Pb-212_2" xline_type="LA2" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="10,839" d_energy="0" intensity="6,46345417990791" d_intensity="0,323172708995395" line_type="X" dbid="Pb-212_3" xline_type="LA1" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="11,712" d_energy="0" intensity="0,101358713275829" d_intensity="0,00111494584603411" line_type="X" dbid="Pb-212_4" xline_type="LN" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="12,48" d_energy="0" intensity="0,102827680134898" d_intensity="0,000822621441079188" line_type="X" dbid="Pb-212_5" xline_type="LB6" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="12,691" d_energy="0" intensity="0,0406414164342694" d_intensity="0,000528338413645502" line_type="X" dbid="Pb-212_6" xline_type="LB4" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="12,967" d_energy="0" intensity="1,60607043258318" d_intensity="0,184477456917259" line_type="X" dbid="Pb-212_7" xline_type="LB2" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="13,024" d_energy="0" intensity="4,30896945327194" d_intensity="0,520652885857172" line_type="X" dbid="Pb-212_8" xline_type="LB1" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="13,211" d_energy="0" intensity="0,0470069394902393" d_intensity="0,00070510409235359" line_type="X" dbid="Pb-212_9" xline_type="LB3" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="13,393" d_energy="0" intensity="0,224262273818017" d_intensity="0,00381245865490628" line_type="X" dbid="Pb-212_10" xline_type="LB5" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="15,248" d_energy="0" intensity="0,915656008820287" d_intensity="0,0100722160970232" line_type="X" dbid="Pb-212_11" xline_type="LG1" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="15,582" d_energy="0" intensity="0,0142000129710098" d_intensity="7,1000064855049E-5" line_type="X" dbid="Pb-212_12" xline_type="LG2" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="15,685" d_energy="0" intensity="0,166482910694598" d_intensity="0,00499448732083793" line_type="X" dbid="Pb-212_13" xline_type="LG6" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="15,709" d_energy="0" intensity="0,0171379466891498" d_intensity="0,000102827680134899" line_type="X" dbid="Pb-212_14" xline_type="LG3" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="74,138" d_energy="0" intensity="0,0179545454545455" d_intensity="2,51363636363636E-5" line_type="X" dbid="Pb-212_20" xline_type="KA3" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="74,815" d_energy="0" intensity="10,4924242424242" d_intensity="0,428137315036888" line_type="X" width="70,1" dbid="Pb-212_21" xline_type="KA2" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="77,107" d_energy="0" intensity="17,5" d_intensity="0,694577581360733" line_type="X" width="69,4" dbid="Pb-212_22" xline_type="KA1" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="86,83" d_energy="0" intensity="2,11742424242424" d_intensity="0,0842468988151225" line_type="X" dbid="Pb-212_23" xline_type="KB3" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="87,349" d_energy="0" intensity="4,0530303030303" d_intensity="0,161155928603499" line_type="X" dbid="Pb-212_24" xline_type="KB1" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="87,892" d_energy="0" intensity="0,121590909090909" d_intensity="0,00158068181818182" line_type="X" dbid="Pb-212_25" xline_type="KB5" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="89,784" d_energy="0" intensity="1,48863636363636" d_intensity="0,0597348323995847" line_type="X" dbid="Pb-212_26" xline_type="KB2" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="90,074" d_energy="0" intensity="0,0340909090909091" d_intensity="0,00136363636363636" line_type="X" dbid="Pb-212_27" xline_type="KB4" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="90,421" d_energy="0" intensity="0,276515151515151" d_intensity="0,0221212121212121" line_type="X" dbid="Pb-212_28" xline_type="KO" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="90,522" d_energy="0" intensity="0,0117424242424242" d_intensity="3,52272727272727E-5" line_type="X" dbid="Pb-212_29" xline_type="KP" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="115,183" d_energy="0,005" intensity="0,596448" d_intensity="0,009213" dbid="Pb-212_30" source="ENSDF"/>
+    <Line energy="176,68" d_energy="0,05" intensity="0,05232" d_intensity="0,006123" dbid="Pb-212_34" source="ENSDF"/>
+    <Line energy="238,632" d_energy="0,002" intensity="43,6" d_intensity="0,530718" dbid="Pb-212_35" source="ENSDF"/>
+    <Line energy="300,087" d_energy="0,01" intensity="3,30052" d_intensity="0,042992" dbid="Pb-212_36" source="ENSDF"/>
+    <Line energy="415,2" d_energy="0" intensity="0,01308" d_intensity="0,002183" dbid="Pb-212_38" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Bi-212" half_life_value="60,55" half_life_unit="min" gamma_constant="0,54602303966837" atomic_mass="211,991286" d_atomic_mass="2E-6" nuc_num="3210" source="ENSDF">
+    <Line energy="8,953" d_energy="0" intensity="0,188954498089614" d_intensity="0,0113372698853769" line_type="X" dbid="Bi-212_1" xline_type="LL" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="10,172" d_energy="0" intensity="0,386245224036124" d_intensity="0,0193122612018062" line_type="X" dbid="Bi-212_2" xline_type="LA2" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="10,268" d_energy="0" intensity="3,4456408475165" d_intensity="0,495585155100555" line_type="X" dbid="Bi-212_3" xline_type="LA1" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="10,994" d_energy="0" intensity="0,0522403612365405" d_intensity="0,000522403612365405" line_type="X" dbid="Bi-212_4" xline_type="LN" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="11,812" d_energy="0" intensity="0,0527961097603334" d_intensity="0,000369572768322334" line_type="X" dbid="Bi-212_5" xline_type="LB6" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="11,931" d_energy="0" intensity="0,0213963181660299" d_intensity="0,000256755817992358" line_type="X" dbid="Bi-212_6" xline_type="LB4" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="12,213" d_energy="0" intensity="2,30635637374088" d_intensity="0,337261445591437" line_type="X" dbid="Bi-212_7" xline_type="LB1" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="12,261" d_energy="0" intensity="0,850295241403265" d_intensity="0,110538381382424" line_type="X" dbid="Bi-212_8" xline_type="LB2" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="12,39" d_energy="0" intensity="0,0261201806182702" d_intensity="0,000365682528655783" line_type="X" dbid="Bi-212_9" xline_type="LB3" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="12,643" d_energy="0" intensity="0,10059048280653" d_intensity="0,00130767627648489" line_type="X" dbid="Bi-212_10" xline_type="LB5" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="14,291" d_energy="0" intensity="0,475164987843001" d_intensity="0,0475164987843001" line_type="X" dbid="Bi-212_11" xline_type="LG1" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="14,625" d_energy="0" intensity="0,00722473080930879" d_intensity="2,88989232372351E-5" line_type="X" dbid="Bi-212_12" xline_type="LG2" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="14,683" d_energy="0" intensity="0,0778047933310177" d_intensity="0,00233414379993053" line_type="X" dbid="Bi-212_13" xline_type="LG6" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="14,738" d_energy="0" intensity="0,00916985064258423" d_intensity="4,58492532129211E-5" line_type="X" dbid="Bi-212_14" xline_type="LG3" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="39,857" d_energy="0,004" intensity="1,063824" d_intensity="0,086274" dbid="Bi-212_15" source="ENSDF"/>
+    <Line energy="70,184" d_energy="0" intensity="8,34362850971922E-5" d_intensity="1,00123542116631E-7" line_type="X" dbid="Bi-212_16" xline_type="KA3" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="70,832" d_energy="0" intensity="0,0582997840172786" d_intensity="0,00218411113909187" line_type="X" width="63,8" dbid="Bi-212_17" xline_type="KA2" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="72,873" d_energy="0,0009" intensity="0,0978" d_intensity="0,00353810820578446" line_type="X" width="63,1" dbid="Bi-212_18" xline_type="KA1" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="76,172" d_energy="0" intensity="0,000284433839479393" d_intensity="1,70660303687636E-6" line_type="X" dbid="Bi-212_19" xline_type="KA3" xray_child_nuclide="Po-212" source="ENSDF"/>
+    <Line energy="76,863" d_energy="0" intensity="0,0401980477223427" d_intensity="0,00155480966143725" line_type="X" width="73,4" dbid="Bi-212_20" xline_type="KA2" xray_child_nuclide="Po-212" source="ENSDF"/>
+    <Line energy="79,29" d_energy="0,005" intensity="0,0669" d_intensity="0,0025103101989682" line_type="X" width="72,7" dbid="Bi-212_21" xline_type="KA1" xray_child_nuclide="Po-212" source="ENSDF"/>
+    <Line energy="82,115" d_energy="0" intensity="0,011807818574514" d_intensity="0,00042869764089081" line_type="X" dbid="Bi-212_22" xline_type="KB3" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="82,574" d_energy="0" intensity="0,0226017278617711" d_intensity="0,000831566917196234" line_type="X" dbid="Bi-212_23" xline_type="KB1" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="83,093" d_energy="0" intensity="0,000640030237580994" d_intensity="7,68036285097192E-6" line_type="X" dbid="Bi-212_24" xline_type="KB5" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="84,865" d_energy="0" intensity="0,00823801295896328" d_intensity="0,00030287401920253" line_type="X" dbid="Bi-212_25" xline_type="KB2" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="85,134" d_energy="0" intensity="0,000190107991360691" d_intensity="7,60431965442765E-6" line_type="X" dbid="Bi-212_26" xline_type="KB4" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="85,444" d_energy="0" intensity="0,00141524838012959" d_intensity="9,90673866090713E-5" line_type="X" dbid="Bi-212_27" xline_type="KO" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="85,53" d_energy="0" intensity="1,24626349892009E-5" d_intensity="7,47758099352052E-9" line_type="X" dbid="Bi-212_28" xline_type="KP" xray_child_nuclide="Tl-208" source="ENSDF"/>
+    <Line energy="89,256" d_energy="0" intensity="0,0080831453362256" d_intensity="0,000304260387389796" line_type="X" dbid="Bi-212_29" xline_type="KB3" xray_child_nuclide="Po-212" source="ENSDF"/>
+    <Line energy="89,807" d_energy="0" intensity="0,0155277657266811" d_intensity="0,000583490239274911" line_type="X" dbid="Bi-212_30" xline_type="KB1" xray_child_nuclide="Po-212" source="ENSDF"/>
+    <Line energy="90,363" d_energy="0" intensity="0,000478893709327549" d_intensity="6,22561822125813E-6" line_type="X" dbid="Bi-212_31" xline_type="KB5" xray_child_nuclide="Po-212" source="ENSDF"/>
+    <Line energy="92,317" d_energy="0" intensity="0,0057322125813449" d_intensity="0,000217299364640036" line_type="X" dbid="Bi-212_32" xline_type="KB2" xray_child_nuclide="Po-212" source="ENSDF"/>
+    <Line energy="92,618" d_energy="0" intensity="0,00013060737527115" d_intensity="5,22429501084599E-6" line_type="X" dbid="Bi-212_33" xline_type="KB4" xray_child_nuclide="Po-212" source="ENSDF"/>
+    <Line energy="92,983" d_energy="0" intensity="0,00110290672451193" d_intensity="8,82325379609544E-5" line_type="X" dbid="Bi-212_34" xline_type="KO" xray_child_nuclide="Po-212" source="ENSDF"/>
+    <Line energy="93,095" d_energy="0" intensity="7,11084598698482E-5" d_intensity="3,55542299349241E-7" line_type="X" dbid="Bi-212_35" xline_type="KP" xray_child_nuclide="Po-212" source="ENSDF"/>
+    <Line energy="180,2" d_energy="0" intensity="0,003203" d_intensity="0,001281" dbid="Bi-212_39" source="ENSDF"/>
+    <Line energy="288,2" d_energy="0,04" intensity="0,337117" d_intensity="0,00293" dbid="Bi-212_40" source="ENSDF"/>
+    <Line energy="328,03" d_energy="0,04" intensity="0,125431" d_intensity="0,006113" dbid="Bi-212_41" source="ENSDF"/>
+    <Line energy="433,7" d_energy="0,5" intensity="0,016892" d_intensity="0,003235" dbid="Bi-212_42" source="ENSDF"/>
+    <Line energy="452,98" d_energy="0,05" intensity="0,362994" d_intensity="0,003291" dbid="Bi-212_45" source="ENSDF"/>
+    <Line energy="473" d_energy="0,7" intensity="0,050316" d_intensity="0,003595" dbid="Bi-212_46" source="ENSDF"/>
+    <Line energy="493,3" d_energy="0,7" intensity="0,003594" d_intensity="0,003594" dbid="Bi-212_47" source="ENSDF"/>
+    <Line energy="576" d_energy="0" intensity="0,0003594" d_intensity="0,0003594" dbid="Bi-212_49" source="ENSDF"/>
+    <Line energy="620" d_energy="0" intensity="0,001078" d_intensity="0,0003594" dbid="Bi-212_50" source="ENSDF"/>
+    <Line energy="727,33" d_energy="0,009" intensity="6,668646" d_intensity="0,089684" dbid="Bi-212_52" source="ENSDF"/>
+    <Line energy="785,37" d_energy="0,08" intensity="1,101832" d_intensity="0,012812" dbid="Bi-212_54" source="ENSDF"/>
+    <Line energy="893,408" d_energy="0,005" intensity="0,377954" d_intensity="0,019218" dbid="Bi-212_55" source="ENSDF"/>
+    <Line energy="952,12" d_energy="0,011" intensity="0,166556" d_intensity="0,03203" dbid="Bi-212_56" source="ENSDF"/>
+    <Line energy="1073,6" d_energy="0,2" intensity="0,016015" d_intensity="0,001922" dbid="Bi-212_57" source="ENSDF"/>
+    <Line energy="1078,62" d_energy="0,1" intensity="0,563728" d_intensity="0,019218" dbid="Bi-212_58" source="ENSDF"/>
+    <Line energy="1512,7" d_energy="0,3" intensity="0,28827" d_intensity="0,038436" dbid="Bi-212_59" source="ENSDF"/>
+    <Line energy="1620,5" d_energy="0,1" intensity="1,466974" d_intensity="0,03203" dbid="Bi-212_61" source="ENSDF"/>
+    <Line energy="1679,7" d_energy="0,5" intensity="0,057654" d_intensity="0,012812" dbid="Bi-212_62" source="ENSDF"/>
+    <Line energy="1800,2" d_energy="0" intensity="0,0041" d_intensity="0,0003844" dbid="Bi-212_63" source="ENSDF"/>
+    <Line energy="1806" d_energy="0,5" intensity="0,089684" d_intensity="0,019218" dbid="Bi-212_64" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Tl-208" half_life_value="3,053" half_life_unit="min" gamma_constant="15,1810876943501" atomic_mass="207,982019" d_atomic_mass="1E-6" nuc_num="3209" source="ENSDF">
+    <Line energy="9,184" d_energy="0" intensity="0,0701306552917072" d_intensity="0,00420783931750243" line_type="X" dbid="Tl-208_1" xline_type="LL" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="10,45" d_energy="0" intensity="0,140261310583414" d_intensity="0,00701306552917072" line_type="X" dbid="Tl-208_2" xline_type="LA2" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="10,551" d_energy="0" intensity="1,24676720518591" d_intensity="0,138695166083686" line_type="X" dbid="Tl-208_3" xline_type="LA1" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="11,349" d_energy="0" intensity="0,0190911228294092" d_intensity="0,000210002351123501" line_type="X" dbid="Tl-208_4" xline_type="LN" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="12,142" d_energy="0" intensity="0,0194807375810298" d_intensity="0,000155845900648238" line_type="X" dbid="Tl-208_5" xline_type="LB6" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="12,307" d_energy="0" intensity="0,00779229503241192" d_intensity="9,3507540388943E-5" line_type="X" dbid="Tl-208_6" xline_type="LB4" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="12,611" d_energy="0" intensity="0,309743727538374" d_intensity="0,0350264235055421" line_type="X" dbid="Tl-208_7" xline_type="LB2" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="12,614" d_energy="0" intensity="0,827931347193766" d_intensity="0,0990391385844166" line_type="X" dbid="Tl-208_8" xline_type="LB1" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="12,794" d_energy="0" intensity="0,00925335035098915" d_intensity="0,000129546904913848" line_type="X" dbid="Tl-208_9" xline_type="LB3" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="13,015" d_energy="0" intensity="0,0400329157290162" d_intensity="0,000600493735935243" line_type="X" dbid="Tl-208_10" xline_type="LB5" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="14,765" d_energy="0" intensity="0,173378564471165" d_intensity="0,0173378564471165" line_type="X" dbid="Tl-208_11" xline_type="LG1" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="15,097" d_energy="0" intensity="0,00262989957343902" d_intensity="1,05195982937561E-5" line_type="X" dbid="Tl-208_12" xline_type="LG2" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="15,178" d_energy="0" intensity="0,0301951432505962" d_intensity="0,000905854297517885" line_type="X" dbid="Tl-208_13" xline_type="LG6" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="15,216" d_energy="0" intensity="0,00331172538877506" d_intensity="1,98703523326504E-5" line_type="X" dbid="Tl-208_14" xline_type="LG3" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="72,144" d_energy="0" intensity="0,00315904761904762" d_intensity="4,1067619047619E-6" line_type="X" dbid="Tl-208_15" xline_type="KA3" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="72,805" d_energy="0" intensity="2,04452380952381" d_intensity="0,0728627495837801" line_type="X" width="66,8" dbid="Tl-208_16" xline_type="KA2" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="74,969" d_energy="0,0009" intensity="3,41" d_intensity="0,117155922616322" line_type="X" width="66,2" dbid="Tl-208_17" xline_type="KA1" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="84,45" d_energy="0" intensity="0,411857142857143" d_intensity="0,0142045720957768" line_type="X" dbid="Tl-208_18" xline_type="KB3" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="84,938" d_energy="0" intensity="0,789761904761905" d_intensity="0,0276261828679019" line_type="X" dbid="Tl-208_19" xline_type="KB1" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="85,47" d_energy="0" intensity="0,0230285714285714" d_intensity="0,000276342857142857" line_type="X" dbid="Tl-208_20" xline_type="KB5" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="87,3" d_energy="0" intensity="0,288595238095238" d_intensity="0,0100781733745017" line_type="X" dbid="Tl-208_21" xline_type="KB2" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="87,58" d_energy="0" intensity="0,00664285714285714" d_intensity="0,000265714285714286" line_type="X" dbid="Tl-208_22" xline_type="KB4" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="87,911" d_energy="0" intensity="0,0516666666666667" d_intensity="0,00361666666666667" line_type="X" dbid="Tl-208_23" xline_type="KO" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="88,003" d_energy="0" intensity="0,00121785714285714" d_intensity="2,07035714285714E-6" line_type="X" dbid="Tl-208_24" xline_type="KP" xray_child_nuclide="Pb-208" source="ENSDF"/>
+    <Line energy="211,4" d_energy="0,15" intensity="0,18" d_intensity="0,01" dbid="Tl-208_25" source="ENSDF"/>
+    <Line energy="233,36" d_energy="0,15" intensity="0,31" d_intensity="0,01" dbid="Tl-208_26" source="ENSDF"/>
+    <Line energy="252,61" d_energy="0,1" intensity="0,78" d_intensity="0,02" dbid="Tl-208_27" source="ENSDF"/>
+    <Line energy="277,371" d_energy="0,005" intensity="6,6" d_intensity="0,3" dbid="Tl-208_28" source="ENSDF"/>
+    <Line energy="485,95" d_energy="0,15" intensity="0,049" d_intensity="0,004" dbid="Tl-208_29" source="ENSDF"/>
+    <Line energy="510,77" d_energy="0,1" intensity="22,6" d_intensity="0,2" dbid="Tl-208_30" source="ENSDF"/>
+    <Line energy="583,187" d_energy="0,002" intensity="85" d_intensity="0,3" dbid="Tl-208_32" source="ENSDF"/>
+    <Line energy="587,7" d_energy="0" intensity="0,06" d_intensity="0,02" dbid="Tl-208_33" source="ENSDF"/>
+    <Line energy="650,1" d_energy="0,3" intensity="0,05" d_intensity="0,02" dbid="Tl-208_36" source="ENSDF"/>
+    <Line energy="705,2" d_energy="0,3" intensity="0,022" d_intensity="0,004" dbid="Tl-208_39" source="ENSDF"/>
+    <Line energy="722,04" d_energy="0,12" intensity="0,24" d_intensity="0,04" dbid="Tl-208_40" source="ENSDF"/>
+    <Line energy="748,7" d_energy="0,2" intensity="0,046" d_intensity="0,003" dbid="Tl-208_42" source="ENSDF"/>
+    <Line energy="763,13" d_energy="0,08" intensity="1,79" d_intensity="0,03" dbid="Tl-208_43" source="ENSDF"/>
+    <Line energy="808,3" d_energy="0,2" intensity="0,03" d_intensity="0,007" dbid="Tl-208_44" source="ENSDF"/>
+    <Line energy="821,2" d_energy="0,2" intensity="0,041" d_intensity="0,004" dbid="Tl-208_46" source="ENSDF"/>
+    <Line energy="835,9" d_energy="0,2" intensity="0,076" d_intensity="0,011" dbid="Tl-208_47" source="ENSDF"/>
+    <Line energy="860,557" d_energy="0,004" intensity="12,5" d_intensity="0,1" dbid="Tl-208_48" source="ENSDF"/>
+    <Line energy="883,3" d_energy="0,2" intensity="0,031" d_intensity="0,003" dbid="Tl-208_50" source="ENSDF"/>
+    <Line energy="927,6" d_energy="0,2" intensity="0,125" d_intensity="0,011" dbid="Tl-208_51" source="ENSDF"/>
+    <Line energy="982,7" d_energy="0,2" intensity="0,205" d_intensity="0,008" dbid="Tl-208_52" source="ENSDF"/>
+    <Line energy="1004" d_energy="0" intensity="0,005" d_intensity="0,001" dbid="Tl-208_54" source="ENSDF"/>
+    <Line energy="1093,9" d_energy="0,2" intensity="0,43" d_intensity="0,02" dbid="Tl-208_58" source="ENSDF"/>
+    <Line energy="1125,7" d_energy="0,4" intensity="0,005" d_intensity="0,002" dbid="Tl-208_59" source="ENSDF"/>
+    <Line energy="1160,8" d_energy="0,3" intensity="0,011" d_intensity="0,003" dbid="Tl-208_60" source="ENSDF"/>
+    <Line energy="1185,2" d_energy="0,3" intensity="0,017" d_intensity="0,005" dbid="Tl-208_61" source="ENSDF"/>
+    <Line energy="1282,8" d_energy="0,3" intensity="0,052" d_intensity="0,005" dbid="Tl-208_62" source="ENSDF"/>
+    <Line energy="1381,1" d_energy="0,5" intensity="0,007" d_intensity="0,003" dbid="Tl-208_64" source="ENSDF"/>
+    <Line energy="1647,5" d_energy="0,7" intensity="0,002" d_intensity="0,001" dbid="Tl-208_66" source="ENSDF"/>
+    <Line energy="1744" d_energy="0,7" intensity="0,002" d_intensity="0,001" dbid="Tl-208_67" source="ENSDF"/>
+    <Line energy="2614,511" d_energy="0,01" intensity="99,754" d_intensity="0,004" dbid="Tl-208_69" source="ENSDF"/>
+    <Line energy="3197,7" d_energy="0" intensity="0,007" d_intensity="0,001" dbid="Tl-208_70" source="ENSDF"/>
+    <Line energy="3475,1" d_energy="0" intensity="0,003" d_intensity="0,001" dbid="Tl-208_71" source="ENSDF"/>
+    <Line energy="3708,4" d_energy="0" intensity="0,004" d_intensity="0,001" dbid="Tl-208_72" source="ENSDF"/>
+    <Line energy="3960,9" d_energy="0" intensity="0,003" d_intensity="0,001" dbid="Tl-208_73" source="ENSDF"/>
+  </Nuclide>
+</Library>

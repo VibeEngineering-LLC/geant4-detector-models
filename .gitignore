@@ -1,0 +1,32 @@
+# Сборка и расчётные спектры: сотни файлов, десятки мегабайт.
+# Вместо них коммитится манифест прогонов в detectors/*/results/.
+build/
+*.obj
+*.exe
+*.pdb
+*.ninja*
+CMakeCache.txt
+CMakeFiles/
+
+# Эталонные данные Гамма-1С лежат в репозитории целиком (reference/lsrm/),
+# сюда качаются только обновления и данные других детекторов
+detectors/*/reference/data/
+
+# Служебные файлы Windows и облачных дисков
+desktop.ini
+Thumbs.db
+.DS_Store
+
+# Расчётные спектры где бы то ни было. ВАЖНО: не задевать эталонные
+# ИЗМЕРЕННЫЕ спектры в detectors/*/reference/lsrm/ — они коммитятся.
+build/**/*.csv
+*_emit.csv
+!detectors/*/reference/lsrm/**
+
+# Рабочее состояние и временные файлы — не для публикации
+STATUS.md
+sanitize.py
+*.log
+__pycache__/
+*.pyc
+.venv/

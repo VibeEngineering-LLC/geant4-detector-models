@@ -1,0 +1,22 @@
+;Очищаем
+clear
+;Поиск пиков чувствительность по умолчанию
+search(10)
+$idwin=30
+;Калибровка по энергии
+encalibr(1,0,..\Data\ThCalibr.lib ,,)
+reset(idwin)
+clear
+search()
+$idwin=5
+;Калибровка по энергии
+encalibr(1,0,..\Data\ThCalibr.lib ,,)
+reset(idwin)
+clear
+encalibr(2,1,..\Data\Th.zon,..\Work\BG\Gamma-1S\Data\Th.cen,1)
+clear
+loadzones(..\Work\BG\Gamma-1S\Data\Th.zon)
+
+
+;Сохраняем в конфигурации
+$energyfile=..\Work\BG\Gamma-1S\Data\Th.cen

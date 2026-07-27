@@ -1,0 +1,40 @@
+# Полные цепочки Th-232 и Ra-226 в равновесии.
+#
+# Зачем. В комплекте поверки паспортная активность задана на РОДИТЕЛЯ (Th-232,
+# Ra-226), а линии 2614,5 и 609,3 испускают дочерние Tl-208 и Bi-214. Перевод
+# требует коэффициентов ветвления. Вместо того чтобы вписывать их из
+# справочника, гоняем цепочку целиком: счётчик испускания сразу даёт выход
+# линии НА РАСПАД РОДИТЕЛЯ, со всеми ветвлениями внутри.
+#
+# ЛОВУШКА: без поднятого порога долгоживущие звенья не распадаются вовсе —
+# Geant4 убивает их по времени. Для Th-232 это Ra-228 (5,75 г) и Th-228 (1,9 г),
+# для Ra-226 — сам родитель (1600 лет).
+/run/initialize
+/control/verbose 0
+/run/verbose 0
+/process/had/rdm/verbose 0
+/process/had/rdm/thresholdForVeryLongDecayTime 1.0e+30 ns
+
+/gps/particle ion
+/gps/energy 0 keV
+/gps/pos/type Volume
+/gps/pos/shape Cylinder
+/gps/pos/centre 0 0 16 mm
+/gps/pos/radius 73 mm
+/gps/pos/halfz 45 mm
+/gps/pos/confine Sample
+/gps/ang/type iso
+
+# --- Ряд тория: Th-232 -> ... -> Pb-208 (стабилен) --------------------------
+/process/had/rdm/nucleusLimits 208 232 81 90
+/gps/ion 90 232 0 0
+/g1s/outFile chain_Th232.csv
+/run/beamOn 300000
+
+# --- Ряд радия: Ra-226 -> ... -> Po-214, обрыв перед Pb-210 -----------------
+# Pb-210 (22 г) в запаянном источнике не обязан быть в равновесии, а выше
+# 50 кэВ он всё равно ничего не даёт. Окно A = 214..226 его не пропускает.
+/process/had/rdm/nucleusLimits 214 226 82 88
+/gps/ion 88 226 0 0
+/g1s/outFile chain_Ra226.csv
+/run/beamOn 300000

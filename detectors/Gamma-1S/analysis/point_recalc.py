@@ -1,0 +1,292 @@
+"""Пересчёт 25 точечных записей комплекта (5 и 25 см).
+
+Схема на 5 см — самая чистая из всех в этой работе: эффективность НА РАСПАД
+берётся прямо из прогона полного распада того же нуклида в той же геометрии
+(p5_<нукл>.csv). В ней уже сидят выход линии, каскадное суммирование и
+аннигиляция (Na-22, Y-88, Bi-207, Ti-44) — ничего не берётся из справочника
+и ничего не надо перемножать руками:
+
+    A_изм = R_пика * exp(2*тау*R_полн) / eps_на_распад
+
+На 25 см отдельных прогонов распада нет (эффективность там в 30 раз ниже,
+и та же статистика стоила бы в 30 раз дороже). Там:
+
+    eps_на_распад(25) = eps_моно(25) * p_gamma / C(25),
+
+где eps_моно — сетка с конусом (делённая на долю телесного угла), p_gamma —
+из файлов испускания прогонов на 5 см (выход линии от геометрии не зависит),
+а C(25) масштабируется: C-1 пропорциональна полной эффективности партнёра по
+каскаду, то есть телесному углу, отношение углов 25/5 см = 0,057. Для C(5)=1,2
+это даёт C(25)=1,011 — то есть на 25 см суммирование практически исчезает,
+чего и следует ожидать.
+
+Геометрия источника (замечание оператора: «для точечного модель другая»):
+крышка защиты на 5 см ЗАКРЫТА (источник внутри полости, фон
+empty_shield_point5cm), на 25 см ОТКРЫТА (источник над защитой, фон
+open_lid_point25cm) — это разные прогоны и разные фоновые файлы, соответствие
+проверяется по полю BackgroundSpectrumFile каждой записи.
+Конструкция ОСГИ (кольцо Al Ø25x3, активный слой в плёнке ~100 мкм) и держатель
+НЕ моделируются: плёнка 0,01 г/см² даёт менее 0,3 % поглощения даже на
+59,5 кэВ, кольцо стоит вне пучка на детектор.
+"""
+import glob
+import math
+import os
+import re
+import sys
+from datetime import date
+
+# Корни путей — из переменных окружения (common/py/paths.py), чтобы в коде не
+# было ни одного пути, привязанного к конкретной машине.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "..", "..", "..", "common", "py"))
+import paths  # noqa: E402
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import becqmoni as bm  # noqa: E402
+from contam import dirty_shelves  # noqa: E402
+
+BUILD = str(paths.build("Gamma-1S"))
+
+if not os.path.isdir(BUILD):
+    raise SystemExit(
+        "Нет каталога расчётных спектров %s.\n"
+        "Они не коммитятся (сотни файлов), а воспроизводятся драйверами:\n"
+        "    python detectors/Gamma-1S/drivers/run_grid.py\n"
+        "    python detectors/Gamma-1S/drivers/run_all_grids.py\n"
+        "Либо укажите G4MODELS_BUILD_GAMMA_1S на готовый каталог."
+        % BUILD)
+KIT = str(paths.ref("Gamma-1S"))
+TAU_SHAPE = 3.0e-6
+
+T12 = {"Am-241": 432.6, "Ba-133": 10.551, "Bi-207": 31.55,
+       "Cd-109": 461.9 / 365.25, "Ce-139": 137.64 / 365.25,
+       "Co-57": 271.74 / 365.25, "Co-60": 5.2712, "Cs-137": 30.08,
+       "Eu-152": 13.517, "Mn-54": 312.2 / 365.25, "Na-22": 2.6018,
+       "Th-228": 1.9116, "Y-88": 106.63 / 365.25, "Zn-65": 243.93 / 365.25}
+
+# нуклид -> (метка прогона распада, аналитические линии кэВ)
+# Линии — те, по которым ЛСРМ строил кривую (секции .efr), плюс сильные
+# изолированные там, где секции нет (Bi-207).
+NUC = {
+    "Am-241": ("Am241", [59.54]),
+    "Ba-133": ("Ba133", [80.99, 302.85, 356.01]),
+    "Bi-207": ("Bi207", [569.70, 1063.66]),
+    "Cd-109": ("Cd109", [88.03]),
+    "Ce-139": ("Ce139", [165.86]),
+    "Co-57": ("Co57", [122.06]),
+    "Co-60": ("Co60", [1173.23, 1332.49]),
+    "Cs-137": ("Cs137", [661.657]),
+    "Eu-152": ("Eu152", [121.78, 244.70, 344.28, 964.06, 1408.01]),
+    "Mn-54": ("Mn54", [834.85]),
+    "Na-22": ("Na22", [1274.54]),
+    "Th-228": ("Th228", [238.63, 583.19, 2614.51]),
+    "Y-88": ("Y88", [898.04, 1836.06]),
+    "Zn-65": ("Zn65", [1115.55]),
+}
+
+# паспортные активности: (геометрия, нуклид) -> (A Бк, dA %, дата)
+PASSPORT = {
+    ("Point_5cm", "Am-241"): (118000, 5, "2013-12-03"),
+    ("Point_5cm", "Ba-133"): (44100, 2, "2008-10-01"),
+    ("Point_5cm", "Bi-207"): (97000, 3, "2017-05-25"),
+    ("Point_5cm", "Cd-109"): (1.033e6, 2, "2008-10-01"),
+    ("Point_5cm", "Ce-139"): (191000, 3, "2013-12-01"),
+    ("Point_5cm", "Co-57"): (99500, 2, "2008-10-01"),
+    ("Point_5cm", "Co-60"): (107800, 2, "2008-10-01"),
+    ("Point_5cm", "Cs-137"): (94200, 2, "2008-10-01"),
+    ("Point_5cm", "Eu-152"): (46700, 2, "2008-10-01"),
+    ("Point_5cm", "Mn-54"): (224000, 3, "2013-12-01"),
+    ("Point_5cm", "Na-22"): (133000, 3, "2013-12-01"),
+    ("Point_5cm", "Th-228"): (37700, 2, "2008-10-01"),
+    ("Point_5cm", "Y-88"): (234000, 3, "2013-12-01"),
+    ("Point_5cm", "Zn-65"): (3100, 3, "2023-08-02"),
+    ("Point_25cm", "Am-241"): (118000, 5, "2013-12-03"),
+    ("Point_25cm", "Ba-133"): (44100, 2, "2008-10-01"),
+    ("Point_25cm", "Cd-109"): (1.033e6, 2, "2008-10-01"),
+    ("Point_25cm", "Ce-139"): (191000, 3, "2013-12-01"),
+    ("Point_25cm", "Co-60"): (107800, 2, "2008-10-01"),
+    ("Point_25cm", "Cs-137"): (106000, 3, "2017-05-19"),
+    ("Point_25cm", "Eu-152"): (46700, 2, "2008-10-01"),
+    ("Point_25cm", "Mn-54"): (224000, 3, "2013-12-01"),
+    ("Point_25cm", "Na-22"): (229000, 5, "2022-11-14"),
+    ("Point_25cm", "Th-228"): (100000, 3, "2021-04-26"),
+    ("Point_25cm", "Y-88"): (350000, 3, "2023-10-09"),
+}
+
+# отношение телесных углов 25 см / 5 см — для масштабирования C
+OMEGA_RATIO = ((1 - math.cos(math.atan(39.15 / 250.0))) / 2) / \
+              ((1 - math.cos(math.atan(39.15 / 50.0))) / 2)
+
+
+def load_hist(path):
+    hist, N = {}, None
+    for line in open(path, encoding="utf-8"):
+        if line.startswith("#"):
+            if "N_primaries" in line:
+                N = int(line.split("=")[1])
+            continue
+        if line and line[0].isdigit():
+            e, c = line.split(",")
+            hist[float(e)] = int(c)
+    return hist, N
+
+
+FWHM662 = 49.9        # измерено по пику 662 записи цезия (7,5 %), паспорт ≤8 %
+_BROAD = {}
+
+
+def fwhm(E):
+    return FWHM662 * math.sqrt(E / 661.657)
+
+
+def area_sim(hist, E, key=None, broad=True, win=6.0, bg0=30.0, bg1=10.0):
+    """Площадь пика в модельном спектре.
+
+    broad=True — спектр уширяется до разрешения прибора и площадь берётся ТЕМ
+    ЖЕ окном (±1 ПШПВ + полки), что и в измерении. Обязательно там, где линии
+    сливаются: у Eu-152 в NaI почти всё поле — бленды, у Th-228 линия 583,2
+    соседствует с 510,7. Узкое окно по модели против широкого по измерению
+    завышает активность (проверено на Ac-228 911+969: ошибка 1,5 раза).
+    broad=False — узкое окно, годится только для сеток моноэнергий.
+    """
+    if broad:
+        if key not in _BROAD:
+            _BROAD[key] = bm.broaden(hist, FWHM662)
+        a, _ = bm.area_broadened(_BROAD[key], E, fwhm(E))
+        return a
+    gross = sum(c for e, c in hist.items() if abs(e - E) <= win)
+    side = sum(c for e, c in hist.items() if E - bg0 <= e <= E - bg1)
+    return gross - side / (bg0 - bg1) * (2 * win + 1)
+
+
+def eps_decay_5cm(tag, E):
+    """Эффективность на распад из прогона распада на 5 см (всё внутри)."""
+    p = os.path.join(BUILD, "p5_%s.csv" % tag)
+    if not os.path.exists(p):
+        return None, None
+    hist, N = load_hist(p)
+    a = area_sim(hist, E, key="p5:" + tag)
+    if a <= 0 or not N:
+        return None, None
+    return a / N, math.sqrt(max(abs(a), 1.0)) / N
+
+
+def yield_5cm(tag, E):
+    p = os.path.join(BUILD, "p5_%s_emit.csv" % tag)
+    if not os.path.exists(p):
+        return None
+    em, N = load_hist(p)
+    tot = sum(c for e, c in em.items() if abs(e - E) <= 2.0)
+    return tot / N if (N and tot > 50) else None
+
+
+def eps_mono_point(gtag, E):
+    """Сетка с конусом: делим на долю телесного угла, записанную рядом."""
+    saf = os.path.join(BUILD, "grid", "%s_solidangle.txt" % gtag)
+    if not os.path.exists(saf):
+        return None
+    frac = float(open(saf).read().strip())
+    best = None
+    for p in glob.glob(os.path.join(BUILD, "grid", gtag + "_E*.csv")):
+        m = re.search(r"_E(\d+\.\d)\.csv$", p)
+        if m and abs(float(m.group(1)) - E) < 1.0:
+            best = p
+    if not best:
+        return None
+    hist, N = load_hist(best)
+    # сетка моноэнергий: блендов нет по построению, узкое окно корректно
+    a = area_sim(hist, E, broad=False)
+    return (a / N) * frac if (N and a > 0) else None
+
+
+def decay_factor(nuc, d0, d1):
+    if not d0 or not d1:
+        return 1.0
+    y0, m0, dd0 = (int(x) for x in d0.split("-"))
+    y1, m1, dd1 = (int(x) for x in d1.split("-"))
+    dt = (date(y1, m1, dd1) - date(y0, m0, dd0)).days / 365.25
+    return 0.5 ** (dt / T12[nuc])
+
+
+def record(geom, nuc):
+    """Найти XML записи по геометрии и нуклиду."""
+    pat = os.path.join(KIT, geom, "*%s*" % nuc.replace("-", "-"))
+    hits = [p for p in glob.glob(pat) if p.endswith(".xml")]
+    return hits[0] if hits else None
+
+
+if __name__ == "__main__":
+    print("Пересчёт точечных записей комплекта. Отношение телесных углов "
+          "25/5 см = %.4f\n" % OMEGA_RATIO)
+    print("%-11s %-8s %9s %9s %11s %6s %9s %8s" %
+          ("геометрия", "нуклид", "E, кэВ", "имп/с", "eps/распад", "C",
+           "A, Бк", "A/пасп"))
+    ratios = []
+    for geom in ("Point_5cm", "Point_25cm"):
+        for nuc, (tag, lines) in NUC.items():
+            key = (geom, nuc)
+            if key not in PASSPORT:
+                continue
+            p = record(geom, nuc)
+            if not p:
+                continue
+            s, b = bm.read(p)
+            txt = open(p, encoding="utf-8", errors="replace").read()
+            md = re.search(r"<StartTime>(\d{4}-\d{2}-\d{2})", txt)
+            md = md.group(1) if md else None
+            bgref = re.search(r"<BackgroundSpectrumFile>([^<]*)</", txt)
+            bgref = os.path.basename(bgref.group(1)) if bgref else "?"
+            want = "point5cm" if geom == "Point_5cm" else "point25cm"
+            if want not in bgref:
+                print("   !! %s %s: фон «%s» не соответствует геометрии"
+                      % (geom, nuc, bgref))
+            A0raw, dpct, d0 = PASSPORT[key]
+            A0 = A0raw * decay_factor(nuc, d0, md)
+            R = float(s.n.sum()) / s.live
+            pile = math.exp(2 * TAU_SHAPE * R)
+            for E in lines:
+                # ПШПВ по единому закону, а не по своему пику: окна модели и
+                # измерения должны совпадать в точности, а у слабых линий пик
+                # не находится
+                fw = fwhm(E)
+                r = bm.net_rate(s, b, E, fw, roi=1.0, side=1.0)
+                if r is None or r[0] <= 0:
+                    continue
+                rate = r[0] * pile
+                if geom == "Point_5cm":
+                    # площадь модели снимается ТЕМ ЖЕ окном по уширенному
+                    # спектру распада -> загрязнение полок сокращается
+                    ed, _ = eps_decay_5cm(tag, E)
+                    Cshow = "прям."
+                else:
+                    # на 25 см модельная сторона — сетка МОНОЭНЕРГИЙ, у неё
+                    # полки чистые, а у измерения нет: сокращения не будет
+                    bad = dirty_shelves(nuc, E, fw)
+                    if bad:
+                        print("%-11s %-8s %9.1f  полка загрязнена (%s) — "
+                              "исключено"
+                              % (geom, nuc, E,
+                                 ", ".join("%.1f" % x for x in bad)))
+                        continue
+                    em = eps_mono_point("p25cm", E)
+                    pg = yield_5cm(tag, E)
+                    ed5, _ = eps_decay_5cm(tag, E)
+                    em5 = eps_mono_point("p5cm", E)
+                    C5 = (em5 / (ed5 / pg)) if (ed5 and em5 and pg) else None
+                    C25 = 1 + (C5 - 1) * OMEGA_RATIO if C5 else 1.0
+                    ed = (em * pg / C25) if (em and pg) else None
+                    Cshow = "%.3f" % C25 if C5 else "1.000"
+                if not ed:
+                    continue
+                A = rate / ed
+                ratios.append((geom, nuc, E, A / A0))
+                print("%-11s %-8s %9.1f %9.3f %11.4e %6s %9.3e %8.3f"
+                      % (geom, nuc, E, rate, ed, Cshow, A, A / A0))
+    if ratios:
+        import statistics
+        for g in ("Point_5cm", "Point_25cm"):
+            v = [x[3] for x in ratios if x[0] == g]
+            if v:
+                print("\n%s: %d линий, медиана A/пасп = %.3f, разброс %.3f..%.3f"
+                      % (g, len(v), statistics.median(v), min(v), max(v)))

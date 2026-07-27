@@ -74,8 +74,10 @@ def area(hist, E0, sub=True):
     gross = sum(c for e, c in hist.items() if abs(e - E0) <= WIN)
     side = sum(c for e, c in hist.items() if E0 - BG0 <= e <= E0 - BG1)
     nside = BG0 - BG1
-    bg = side / nside * (2 * WIN + 1) if sub else 0.0
-    return gross - bg, math.sqrt(max(gross + (bg / nside) * bg, 1.0))
+    n = 2 * WIN + 1
+    bg = side / nside * n if sub else 0.0
+    # D(bg) = (n/nside)^2 * side = (n/nside)*bg; вывод — в export_curves.py
+    return gross - bg, math.sqrt(max(gross + (n / nside) * bg, 1.0))
 
 
 def mono_curve(tag="rho1.60"):

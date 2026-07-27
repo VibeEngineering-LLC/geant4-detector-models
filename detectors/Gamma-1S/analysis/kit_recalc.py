@@ -298,9 +298,17 @@ if __name__ == "__main__":
     print("%-13s %-8s %9s %8s %11s %9s %8s" %
           ("геометрия", "нуклид", "E, кэВ", "имп/с", "eps/распад",
            "A, Бк/кг", "A/пасп"))
+    missing = []
     for geom, mask, nuc, aspec, dpct, d0, mass, vol in VOLUME_RECORDS:
-        files = glob.glob(os.path.join(KIT, geom, mask))
+        # Раскладка комплекта — reference_spectra/reference_kits*/<геометрия>/
+        # <нуклид>/sample_*.xml, а не <геометрия>/* прямо в корне эталонов.
+        # Стоял плоский glob по корню, он не находил НИЧЕГО, и скрипт молча
+        # печатал пустую таблицу: ни одной записи, ни одной жалобы. Каталог
+        # ищет paths.kit_dir(), он же выбирает нужный формат.
+        kd = paths.kit_dir(geom)
+        files = sorted(str(p) for p in kd.rglob(mask)) if kd else []
         if not files:
+            missing.append("%s / %s (%s)" % (geom, mask, nuc))
             continue
         s, b = bm.read(files[0])
         # дата измерения и опорный фон
@@ -344,3 +352,14 @@ if __name__ == "__main__":
         bad = (want not in bgref) and ("Фон закр" not in bgref)
         print("   фон: %s%s" % (bgref, "   <- НЕ СООТВЕТСТВУЕТ ГЕОМЕТРИИ" if bad
                                 else ""))
+
+    # Ненайденные записи — вслух. Пустая таблица не должна выглядеть как
+    # «всё сошлось»: именно так этот пересчёт и простоял незамеченным.
+    if missing:
+        print("\nНЕ НАЙДЕНЫ спектры для записей (%d):" % len(missing))
+        for m in missing:
+            print("   ", m)
+        print("Комплект ищется через paths.kit_dir(); проверьте G4MODELS_REF\n"
+              "или наличие reference_spectra/reference_kits* в эталонах.")
+    if len(missing) == len(VOLUME_RECORDS):
+        raise SystemExit("Не найдено НИ ОДНОЙ записи комплекта — считать нечего.")

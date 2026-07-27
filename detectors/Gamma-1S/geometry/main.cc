@@ -62,6 +62,10 @@ public:
   void GeneratePrimaries(G4Event* e) override { fGPS.GeneratePrimaryVertex(e); }
 };
 
+// Время разрешения тракта: энерговыделения, разнесённые больше чем на столько,
+// считаются РАЗНЫМИ срабатываниями спектрометра. Подробно — перед EventAct.
+constexpr double kResolvingTimeNs = 1000.0;
+
 // --- Накопление спектра -----------------------------------------------------
 // 1024 канала — как у самого спектрометра (паспорт, п. 2.12), но шкала здесь
 // линейная по энергии и без уширения: разрешение навешивается в постобработке.
@@ -99,8 +103,13 @@ public:
     ++fEmit[b];
   }
 
-  void Fill(double edepKeV, double eprim) {
-    fSumEprim += eprim;
+  // Энергия первичной частицы учитывается ОДИН раз на событие Geant4, а Fill()
+  // вызывается по разу на каждое РАЗДЕЛЁННОЕ ВО ВРЕМЕНИ срабатывание внутри
+  // события (см. EventAct). Раньше это было одной функцией, и при переходе к
+  // разделению E_prim_keV множился бы на число срабатываний.
+  void FillPrimary(double eprim) { fSumEprim += eprim; }
+
+  void Fill(double edepKeV) {
     if (edepKeV <= 0) return;
     ++fWithSignal;
     int b = static_cast<int>(edepKeV / kBinKeV);
@@ -121,7 +130,12 @@ public:
     std::fprintf(f, "# particle = %s\n", fPart.c_str());
     std::fprintf(f, "# E_prim_keV = %.4f\n", fSumEprim / N);
     std::fprintf(f, "# N_primaries = %ld\n", N);
+    // Срабатываний, а не событий Geant4: в прогоне по цепочке одно первичное
+    // ядро даёт несколько разнесённых во времени срабатываний, поэтому
+    // N_with_signal может превысить N_primaries. Это не ошибка, а счёт
+    // импульсов на распад родителя — именно так задана паспортная активность.
     std::fprintf(f, "# N_with_signal = %ld\n", fWithSignal);
+    std::fprintf(f, "# resolving_time_ns = %.0f\n", kResolvingTimeNs);
     std::fprintf(f, "# bin_keV = %.3f  (последний канал = переполнение)\n", kBinKeV);
     std::fprintf(f, "E_keV,counts\n");
     for (int i = 0; i <= kBins; ++i)
@@ -155,12 +169,29 @@ public:
   }
 };
 
+// Событие Geant4 — это НЕ событие спектрометра. Когда розыгрыш идёт по цепочке
+// (chain_Ra226, chain_Th232, точка p5_Th228), Geant4 доводит весь ряд до конца
+// внутри одного события: порог долгого распада поднят до 1e30 нс, иначе
+// долгоживущие звенья вообще не распались бы. В итоге в одном событии
+// оказываются кванты Ac-228, Tl-208, Bi-212 — ядер, которые в действительности
+// распадаются с разницей в годы. Складывая их энерговыделения, мы получали
+// совпадения между РАЗНЫМИ нуклидами: пики обеднялись, а сумма уходила в
+// континуум. Спектрометр так себя не ведёт.
+//
+// Поэтому энерговыделения собираются с отметкой глобального времени и потом
+// разбиваются на группы: разрыв больше TAU — это уже другое срабатывание.
+// TAU = 1 мкс, обычное время разрешения тракта. Значение некритично: настоящие
+// каскады приходят за пикосекунды-наносекунды, а звенья ряда разделены
+// секундами и годами, между этими масштабами шесть порядков пустоты.
+// Единственные промежуточные — Po-212 (300 нс) и Po-214 (164 мкс), но оба
+// альфа-излучатели: до кристалла из пробы они не долетают.
 class EventAct : public G4UserEventAction {
   RunAct* fRun;
 public:
-  double fEdep = 0;
+  // (глобальное время, кэВ) по каждому шагу в кристалле
+  std::vector<std::pair<double, double>> fDep;
   explicit EventAct(RunAct* r) : fRun(r) {}
-  void BeginOfEventAction(const G4Event*) override { fEdep = 0; }
+  void BeginOfEventAction(const G4Event*) override { fDep.clear(); }
   void EndOfEventAction(const G4Event* e) override {
     double ep = 0;
     if (e->GetNumberOfPrimaryVertex() > 0) {
@@ -169,7 +200,23 @@ public:
       if (fRun->fPart == "?" && p->GetParticleDefinition())
         fRun->fPart = p->GetParticleDefinition()->GetParticleName();
     }
-    fRun->Fill(fEdep / keV, ep);
+    fRun->FillPrimary(ep);
+    if (fDep.empty()) return;
+
+    // Шаги приходят в порядке обработки треков, а не по времени, поэтому
+    // сортировка обязательна: без неё группировка развалится на первом же
+    // треке, начавшемся раньше предыдущего.
+    std::sort(fDep.begin(), fDep.end());
+    double sum = fDep[0].second, t0 = fDep[0].first;
+    for (size_t i = 1; i < fDep.size(); ++i) {
+      if (fDep[i].first - t0 > kResolvingTimeNs) {
+        fRun->Fill(sum);
+        sum = 0;
+      }
+      t0 = fDep[i].first;
+      sum += fDep[i].second;
+    }
+    fRun->Fill(sum);
   }
 };
 
@@ -179,9 +226,12 @@ class Stepping : public G4UserSteppingAction {
 public:
   Stepping(EventAct* ev, const G4LogicalVolume* c) : fEvt(ev), fCry(c) {}
   void UserSteppingAction(const G4Step* s) override {
+    const double e = s->GetTotalEnergyDeposit();
+    if (e <= 0) return;
     auto* h = s->GetPreStepPoint()->GetTouchableHandle()->GetVolume();
     if (h && h->GetLogicalVolume() == fCry)
-      fEvt->fEdep += s->GetTotalEnergyDeposit();
+      fEvt->fDep.emplace_back(s->GetPreStepPoint()->GetGlobalTime() / ns,
+                              e / keV);
   }
 };
 

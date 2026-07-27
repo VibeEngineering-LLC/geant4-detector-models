@@ -5,10 +5,21 @@
 #
 # Cs-137 -> Ba-137m -> 661,657 кэВ, один квант на распад.
 # K-40   -> 1460,822 кэВ, один квант на распад (ветвь на Ar-40).
+#
+# Это ОТДЕЛЬНЫЙ прогон только контроля: те же две точки есть и в decay_all.mac,
+# но тот считает полтора часа, а этот — минуты. Пишет в СВОИ файлы
+# control_*.csv, и вот почему это важно: раньше он писал в decay_Cs137.csv и
+# decay_K40.csv, то есть ровно поверх результатов decay_all.mac. А поскольку
+# порог долгого распада тут не поднимался, оба ядра — Cs-137 (30 лет) и K-40
+# (1,25e9 лет) — убивались, не распавшись, и поверх годных данных ложились
+# ПУСТЫЕ файлы. Молча: прогон отрабатывал без единой жалобы.
 /run/initialize
 /control/verbose 0
 /run/verbose 0
 /process/had/rdm/verbose 0
+# Порог «очень долгого распада»: по умолчанию 1 год, и оба контрольных ядра
+# долгоживущие. Без этой строки прогон даёт нули.
+/process/had/rdm/thresholdForVeryLongDecayTime 1.0e+30 ns
 
 /gps/particle ion
 /gps/energy 0 keV
@@ -23,11 +34,11 @@
 # Cs-137: A = 137 пропускает и бета-распад, и переход Ba-137m
 /process/had/rdm/nucleusLimits 137 137 55 56
 /gps/ion 55 137 0 0
-/g1s/outFile decay_Cs137.csv
+/g1s/outFile control_Cs137.csv
 /run/beamOn 2000000
 
 # K-40: захват на Ar-40 даёт 1460,8; бета-ветвь на Ca-40 гамма не даёт
 /process/had/rdm/nucleusLimits 40 40 18 20
 /gps/ion 19 40 0 0
-/g1s/outFile decay_K40.csv
+/g1s/outFile control_K40.csv
 /run/beamOn 4000000

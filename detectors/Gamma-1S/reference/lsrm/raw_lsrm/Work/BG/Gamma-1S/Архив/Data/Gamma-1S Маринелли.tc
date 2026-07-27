@@ -1,0 +1,134 @@
+//************************************
+DetectorName=Гамма-1С
+GeometryName=Маринелли
+IdWin=10
+
+DetectorType = COAXIAL
+DC_CrystalDiameter = 6.3 cm
+DC_CrystalHeight = 4.5 cm
+DC_CrystalHoleDiameter = 0.86 cm
+DC_CrystalHoleHeight = 0 cm
+DC_CrystalFrontDeadLayer = 0.07 cm
+DC_CrystalSideDeadLayer = 0.07 cm
+DC_CrystalBackDeadLayer = 0.07 cm
+DC_CrystalHoleBottomDeadLayer = 0.07 cm
+DC_CrystalHoleSideDeadLayer = 0.07 cm
+DC_CrystalSideCladdingThickness = 0.1 cm
+DC_CapToCrystalDistance = 1 cm
+DC_DetectorCapDiameter = 7.5 cm
+DC_DetectorCapFrontThickness = 0.15 cm
+DC_DetectorCapSideThickness = 0.15 cm
+DC_DetectorCapBackThickness = 0.15 cm
+DC_DetectorMountingThickness = 3 cm
+SourceType = MARINELLI
+SM_BeakerToDetectorFrontDistance = 0 cm
+SM_BeakerDiameter = 15 cm
+SM_BeakerHeight = 11 cm
+SM_BeakerHoleDiameter = 8 cm
+SM_BeakerHoleHeight = 5.7 cm
+SM_BeakerSideThickness = 0.2 cm
+SM_BeakerEndWallThickness = 0.2 cm
+SM_BeakerHoleSideThickness = 0.2 cm
+SM_BeakerHoleEndWallThickness = 0.2 cm
+SM_SourceHeight = 8.9 cm
+DC_nCrystalElements = 2
+DC_RoCrystal = 3.667
+DC_ZCrystal[0] = 11
+DC_FractionsCrystal[0] = 0.153373
+DC_ZCrystal[1] = 53
+DC_FractionsCrystal[1] = 0.846627
+DC_FractionTypeCrystal = MASS
+M_DC_Crystal.MName = Sodium iodide
+M_DC_Crystal.Nmaterials = 1
+M_DC_Crystal.Name[0] = Sodium iodide                            
+M_DC_Crystal.MatRelWeight[0] = 1
+DC_nCrystalSideCladdingElements = 1
+DC_RoCrystalSideCladding = 2.7
+DC_ZCrystalSideCladding[0] = 13
+DC_FractionsCrystalSideCladding[0] = 1
+DC_FractionTypeCrystalSideCladding = MASS
+M_DC_Crystal_Cladding.MName = Aluminum
+M_DC_Crystal_Cladding.Nmaterials = 1
+M_DC_Crystal_Cladding.Name[0] = Aluminum                                 
+M_DC_Crystal_Cladding.MatRelWeight[0] = 1
+DC_nCrystalMountingElements = 1
+DC_RoCrystalMounting = 2.7
+DC_ZCrystalMounting[0] = 13
+DC_FractionsCrystalMounting[0] = 1
+DC_FractionTypeCrystalMounting = MASS
+M_DC_Crystal_Mounting.MName = Aluminum
+M_DC_Crystal_Mounting.Nmaterials = 1
+M_DC_Crystal_Mounting.Name[0] = Aluminum                                 
+M_DC_Crystal_Mounting.MatRelWeight[0] = 1
+DC_nDetectorCapElements = 1
+DC_RoDetectorCap = 2.7
+DC_ZDetectorCap[0] = 13
+DC_FractionsDetectorCap[0] = 1
+DC_FractionTypeDetectorCap = MASS
+M_DC_Detector_Cap.MName = Aluminum
+M_DC_Detector_Cap.Nmaterials = 1
+M_DC_Detector_Cap.Name[0] = Aluminum                                 
+M_DC_Detector_Cap.MatRelWeight[0] = 1
+DC_nVacuum = 2
+DC_RoVacuum = 0.2
+DC_ZVacuum[0] = 1
+DC_FractionsVacuum[0] = 0.143716
+DC_ZVacuum[1] = 6
+DC_FractionsVacuum[1] = 0.856284
+DC_FractionTypeVacuum = MASS
+M_DC_Vacuum.MName = Polyethylene
+M_DC_Vacuum.Nmaterials = 1
+M_DC_Vacuum.Name[0] = Polyethylene                             
+M_DC_Vacuum.MatRelWeight[0] = 1
+SM_nWallElements = 3
+SM_RoWall = 1.6
+SM_ZWall[0] = 1
+SM_FractionsWall[0] = 0.04196
+SM_ZWall[1] = 6
+SM_FractionsWall[1] = 0.625016
+SM_ZWall[2] = 8
+SM_FractionsWall[2] = 0.333024
+SM_FractionTypeWall = MASS
+M_SM_Beaker.MName = Polyethylene terephthalate
+M_SM_Beaker.Nmaterials = 1
+M_SM_Beaker.Name[0] = Polyethylene terephthalate               
+M_SM_Beaker.MatRelWeight[0] = 1
+SM_nSourceElements = 2
+SM_RoSource = 1.6
+SM_ZSource[0] = 1
+SM_FractionsSource[0] = 0.111898
+SM_ZSource[1] = 8
+SM_FractionsSource[1] = 0.888102
+SM_FractionTypeSource = MASS
+M_SM_Source.MName = Polyvinylidene fluoride
+M_SM_Source.Nmaterials = 1
+M_SM_Source.Name[0] = Water, liquid                            
+M_SM_Source.MatRelWeight[0] = 1
+SM_nEmptySpaceElements = 4
+SM_RoEmptySpace = 0.001205
+SM_ZEmptySpace[0] = 6
+SM_FractionsEmptySpace[0] = 0.000124
+SM_ZEmptySpace[1] = 7
+SM_FractionsEmptySpace[1] = 0.755268
+SM_ZEmptySpace[2] = 8
+SM_FractionsEmptySpace[2] = 0.231781
+SM_ZEmptySpace[3] = 18
+SM_FractionsEmptySpace[3] = 0.012827
+SM_FractionTypeEmptySpace = MASS
+M_SM_EmptySpace.MName = Air, dry (near sea level)
+M_SM_EmptySpace.Nmaterials = 1
+M_SM_EmptySpace.Name[0] = Air, dry (near sea level)                
+M_SM_EmptySpace.MatRelWeight[0] = 1
+
+Th-232        
+ 1          510.77    2.2609E+01     1.316E+00      1.191       4.60      0.019       1.55
+ 2          583.19    8.4484E+01     8.220E-01      1.102       2.50      0.016       0.86
+ 3          763.13     1.815E+00     2.732E+00      1.066      19.78      0.012       6.88
+ 4         2614.53     9.916E+01         0.000      1.145       4.16  5.030E-03       1.42
+Ra-226        
+ 1          609.31     4.610E+01     1.085E+00      1.088       1.08      0.015       0.38
+ 2         1120.29     1.510E+01     1.325E+00      1.105       2.48  9.050E-03       0.86
+ 3         1238.11     5.790E+00     1.382E+00      1.116       4.18  8.360E-03       1.44
+ 4         1729.60     2.920E+00     1.370E+00      0.842       6.24  6.490E-03        2.3
+ 5         1764.49     1.540E+01     1.299E+00      1.003       2.84  6.420E-03       1.01
+ 6         2204.21     5.080E+00     7.870E-01       0.97       5.26  5.600E-03       1.88

@@ -1,0 +1,128 @@
+[General]
+Sigma=2
+[Sets]
+Петри-60 ОИСН №SRC-16/7_р16=
+Петри-60 ОИСН №SRC-16-7_р06=
+Петри-60 РИСН №SRC-04=
+Петри-60 ОИСН-42280.73585=
+Петри-60 ИМН-Г-3-Н №SRC-23=
+[Петри-60 ОИСН №SRC-16/7_р16]
+Geometry=Петри-60мл
+Mass,g=96
+Volume,ml=60
+Material=ОИСН-16
+Date=17.09.2007
+Time=0:00:00
+Activity unit=Bq/kg
+Thick,mm=10,1
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Петри-60 ОИСН №SRC-16/7_р16,structure]
+Cs137_420-7-15=
+Th232_420-7-17=
+Ra226_420-7-19=
+K40_420-7-21=
+[Петри-60 ОИСН №SRC-16/7_р16,Cs137_420-7-15,Act]
+Mass,g=100
+Cs-137=1650,5
+[Петри-60 ОИСН №SRC-16/7_р16,Th232_420-7-17,Act]
+Mass,g=96
+Th-232=1940,6
+[Петри-60 ОИСН №SRC-16/7_р16,Ra226_420-7-19,Act]
+Mass,g=100
+Ra-226=1790,6
+[Петри-60 ОИСН №SRC-16/7_р16,K40_420-7-21,Act]
+Mass,g=93
+K-40=1950,6
+[Петри-60 ОИСН №SRC-16-7_р06]
+Geometry=Петри-60мл
+Mass,g=36
+Volume,ml=60
+Material=ОИСН-06
+Date=24.05.2002
+Time=0:00:00
+Activity unit=Bq/kg
+Thick,mm=10,1
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Петри-60 ОИСН №SRC-16-7_р06,structure]
+Cs137_420-7-14=
+Th232_420-7-16=
+Ra226_420-7-18=
+K40_420-7-20=
+[Петри-60 ОИСН №SRC-16-7_р06,Cs137_420-7-14,Act]
+Mass,g=34
+Cs-137=1760,5
+[Петри-60 ОИСН №SRC-16-7_р06,Th232_420-7-16,Act]
+Mass,g=33
+Th-232=2240,6
+[Петри-60 ОИСН №SRC-16-7_р06,Ra226_420-7-18,Act]
+Mass,g=37
+Ra-226=1780,6
+[Петри-60 ОИСН №SRC-16-7_р06,K40_420-7-20,Act]
+Mass,g=40
+K-40=2530,6
+[Петри-60 РИСН №SRC-04]
+Geometry=Петри-60мл
+Mass,g=60
+Volume,ml=60
+Material=РИСН-379
+Date=31.05.2002
+Time=0:00:00
+Activity unit=Bq/kg
+Thick,mm=10,1
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Петри-60 РИСН №SRC-04,structure]
+РИСН-379=
+[Петри-60 РИСН №SRC-04,РИСН-379,Act]
+Mass,g=60
+Am-241=4200,10
+Ti-44=2130,5
+Eu-152=4150,5
+Cs-137=2210,5
+[Петри-60 ОИСН-42280.73585]
+Geometry=Петри-60мл
+Mass,g=60
+Volume,ml=60
+Material=ОИСН-10
+Date=03.09.1997
+Time=0:00:00
+Activity unit=Bq/kg
+Thick,mm=10,1
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Петри-60 ОИСН-42280.73585,structure]
+ОИСН-42280.73585=
+[Петри-60 ОИСН-42280.73585,ОИСН-42280.73585,Act]
+Mass,g=60
+Cs-137=8800,5
+Cd-109=37100,5
+Am-241=27500,5
+Eu-152=13900,5
+[Петри-60 ИМН-Г-3-Н №SRC-23]
+Geometry=Петри-60мл
+Mass,g=38.4
+Volume,ml=60
+Material=ОИСН-06
+Date=05.06.2017
+Time=0:00:00
+Activity unit=Bq/kg
+Thick,mm=31,0
+Comment=
+UseShield=0
+ShieldMaterial=
+ShieldThickness,mm=0
+[Петри-60 ИМН-Г-3-Н №SRC-23,structure]
+Th-232 SRC-23=
+[Петри-60 ИМН-Г-3-Н №SRC-23,Th-232 SRC-23,Act]
+Mass,g=38.4
+Th-232=860,6

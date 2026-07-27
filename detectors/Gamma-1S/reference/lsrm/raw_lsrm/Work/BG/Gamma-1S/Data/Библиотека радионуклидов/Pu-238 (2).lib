@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<!--SpectraLine Nuclear Data Information file © LSRM 2005-2020-->
+<Library library_type="gamma" library_version="2.0" database_version="26">
+  <Comment></Comment>
+  <Nuclide name="Pu-238" half_life_value="87,7" half_life_unit="year" gamma_constant="4,18474786812398E-5" atomic_mass="238,04956" d_atomic_mass="2E-6" nuc_num="3468" source="ENSDF">
+    <Line energy="99,853" d_energy="0,003" intensity="0,00729" d_intensity="8E-5" dbid="Pu-238_20" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="U-234" half_life_value="245500" half_life_unit="year" gamma_constant="0,000656285253074107" atomic_mass="234,040951" d_atomic_mass="1E-6" nuc_num="3436" source="ENSDF">
+    <Line energy="53,2" d_energy="0,02" intensity="0,123" d_intensity="0,002" dbid="U-234_15" source="ENSDF"/>
+    <Line energy="120,9" d_energy="0,02" intensity="0,0342" d_intensity="0,0005" dbid="U-234_26" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Th-230" half_life_value="75380" half_life_unit="year" gamma_constant="0,00190126773101697" atomic_mass="230,033133" d_atomic_mass="1E-6" nuc_num="3405" source="ENSDF">
+    <Line energy="67,672" d_energy="0,002" intensity="0,37673" d_intensity="0,030834" dbid="Th-230_15" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Ra-226" half_life_value="1600" half_life_unit="year" gamma_constant="0,036690996914394" atomic_mass="226,02541" d_atomic_mass="2E-6" nuc_num="3374" source="ENSDF">
+    <Line energy="186,211" d_energy="0,013" intensity="3,64" d_intensity="0,04" dbid="Ra-226_26" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Rn-222" half_life_value="3,8222" half_life_unit="day" gamma_constant="0,00222358854477915" atomic_mass="222,017578" d_atomic_mass="3E-6" nuc_num="3349" source="ENSDF">
+    <Line energy="510" d_energy="2" intensity="0,076" d_intensity="0,001" dbid="Rn-222_1" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Pb-214" half_life_value="26,8" half_life_unit="min" gamma_constant="1,30847930856643" atomic_mass="213,999806" d_atomic_mass="2E-6" nuc_num="3306" source="ENSDF">
+    <Line energy="77,107" d_energy="0" intensity="10,8" d_intensity="0,498525401880169" line_type="X" width="69,4" dbid="Pb-214_21" xline_type="KA1" xray_child_nuclide="Bi-214" source="ENSDF"/>
+    <Line energy="241,995" d_energy="0,0023" intensity="7,251" d_intensity="0,016" dbid="Pb-214_40" source="ENSDF"/>
+    <Line energy="295,2228" d_energy="0,0018" intensity="18,42" d_intensity="0,04" dbid="Pb-214_43" source="ENSDF"/>
+    <Line energy="351,9321" d_energy="0,0018" intensity="35,6" d_intensity="0,07" dbid="Pb-214_48" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Bi-214" half_life_value="19,9" half_life_unit="min" gamma_constant="7,42329503554262" atomic_mass="213,998712" d_atomic_mass="1,2E-5" nuc_num="3243" source="ENSDF">
+    <Line energy="609,32" d_energy="0,005" intensity="45,489998" d_intensity="0,160003" dbid="Bi-214_121" source="ENSDF"/>
+    <Line energy="1120,294" d_energy="0,006" intensity="14,919999" d_intensity="0,030002" dbid="Bi-214_222" source="ENSDF"/>
+    <Line energy="1764,491" d_energy="0,01" intensity="15,299999" d_intensity="0,030002" dbid="Bi-214_304" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Tl-210" half_life_value="1,3" half_life_unit="min" gamma_constant="13,9127640687326" atomic_mass="209,990074" d_atomic_mass="1,3E-5" nuc_num="3244" source="ENSDF">
+    <Line energy="296" d_energy="3" intensity="79,168" d_intensity="9,896029" dbid="Tl-210_27" source="ENSDF"/>
+    <Line energy="799,6" d_energy="0,3" intensity="98,96" d_intensity="0,03" dbid="Tl-210_32" source="ENSDF"/>
+    <Line energy="1316" d_energy="13" intensity="20,7816" d_intensity="4,948004" dbid="Tl-210_38" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Po-214" half_life_value="0,0001636" half_life_unit="sec" gamma_constant="0,000458808819393238" atomic_mass="213,995202" d_atomic_mass="1E-6" nuc_num="3245" source="ENSDF">
+    <Line energy="799,7" d_energy="0,1" intensity="0,010353" d_intensity="0,0006448" dbid="Po-214_2" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Pb-210" half_life_value="22,2" half_life_unit="year" atomic_mass="209,984189" d_atomic_mass="2E-6" nuc_num="3170" source="ENSDF"/>
+  <Nuclide name="Hg-206" half_life_value="8,32" half_life_unit="min" gamma_constant="0,565162829018305" atomic_mass="205,977515" d_atomic_mass="2,1E-5" nuc_num="3171" source="ENSDF">
+    <Line energy="304,896" d_energy="0,006" intensity="26" d_intensity="5" dbid="Hg-206_26" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Bi-210" half_life_value="5,012" half_life_unit="day" atomic_mass="209,98412" d_atomic_mass="2E-6" nuc_num="3174" source="ENSDF"/>
+  <Nuclide name="Tl-206" half_life_value="4,202" half_life_unit="min" gamma_constant="0,00671888423029593" atomic_mass="205,97611" d_atomic_mass="1E-6" nuc_num="3172" source="ENSDF">
+    <Line energy="1166,4" d_energy="0,5" intensity="0,11" d_intensity="0,014" dbid="Tl-206_29" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Po-210" half_life_value="138,376" half_life_unit="day" gamma_constant="4,57602729788289E-5" atomic_mass="209,982874" d_atomic_mass="1E-6" nuc_num="3180" source="ENSDF">
+    <Line energy="803,06" d_energy="0,03" intensity="0,00103" d_intensity="6E-5" dbid="Po-210_25" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Th-232" half_life_value="14000000000" half_life_unit="year" gamma_constant="11,4364276290767" atomic_mass="232,038055" d_atomic_mass="1E-6" nuc_num="3420" with_daughter="true" daughter_recalculation_time="63072000000" source="ENSDF">
+    <Line energy="12,968" d_energy="0" intensity="15,2263374485597" d_intensity="1,79102326902081" line_type="X" dbid="Ac-228_4" xline_type="LA1" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="16,202" d_energy="0" intensity="10,4437058140762" d_intensity="1,56276239195251" line_type="X" dbid="Ac-228_9" xline_type="LB1" xray_child_nuclide="Th-228" source="ENSDF"/>
+    <Line energy="74,815" d_energy="0" intensity="10,4924242424242" d_intensity="0,428137315036888" line_type="X" width="70,1" dbid="Pb-212_21" xline_type="KA2" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="77,107" d_energy="0" intensity="17,5" d_intensity="0,694577581360733" line_type="X" width="69,4" dbid="Pb-212_22" xline_type="KA1" xray_child_nuclide="Bi-212" source="ENSDF"/>
+    <Line energy="238,632" d_energy="0,002" intensity="43,6" d_intensity="0,530718" dbid="Pb-212_35" source="ENSDF"/>
+    <Line energy="338,32" d_energy="0,003" intensity="11,27" d_intensity="0,19" dbid="Ac-228_77" source="ENSDF"/>
+    <Line energy="583,187" d_energy="0,002" intensity="30,5490000167464" d_intensity="0,107821206229321" dbid="Tl-208_32" source="ENSDF"/>
+    <Line energy="911,204" d_energy="0,004" intensity="25,8" d_intensity="0,4" dbid="Ac-228_193" source="ENSDF"/>
+    <Line energy="968,971" d_energy="0,017" intensity="15,8" d_intensity="0,3" dbid="Ac-228_208" source="ENSDF"/>
+    <Line energy="2614,511" d_energy="0,01" intensity="35,8515876196532" d_intensity="0,00155721698591898" dbid="Tl-208_69" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="K-40" half_life_value="1248000000" half_life_unit="year" gamma_constant="0,763349723883162" atomic_mass="39,963998" nuc_num="225" source="ENSDF">
+    <Line energy="1460,82" d_energy="0,005" intensity="10,661876" d_intensity="0,169927" dbid="K-40_8" source="ENSDF"/>
+  </Nuclide>
+  <Nuclide name="Cs-137" half_life_value="30,08" half_life_unit="year" gamma_constant="3,18016379380093" atomic_mass="136,90709" nuc_num="1784" with_daughter="true" daughter_recalculation_time="63072000000" source="ENSDF">
+    <Line energy="31,817" d_energy="0" intensity="1,99271146866001" d_intensity="0,0668070673231212" line_type="X" width="16,8" dbid="Ba-137M_14" xline_type="KA2" xray_child_nuclide="Ba-137" source="ENSDF"/>
+    <Line energy="32,194" d_energy="0,0003" intensity="3,63514162446961" d_intensity="0,122168679158182" line_type="X" width="16,5" dbid="Ba-137M_15" xline_type="KA1" xray_child_nuclide="Ba-137" source="ENSDF"/>
+    <Line energy="661,657" d_energy="0,003" intensity="85,1261349413437" d_intensity="0,188289728304924" dbid="Ba-137M_22" source="ENSDF"/>
+  </Nuclide>
+</Library>

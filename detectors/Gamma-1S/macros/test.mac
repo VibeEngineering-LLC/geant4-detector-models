@@ -1,0 +1,17 @@
+# Проверка сборки: точечный Cs-137 на 25 см от наружной плоскости крышки.
+# Наружная плоскость крышки — z = +43 мм от центра кристалла, значит источник
+# в z = 43 + 250 = 293 мм. Паспорт, п. 2.10: эффективность ППП по 662 кэВ для
+# этой геометрии не менее 0,1 %.
+/run/initialize
+/control/verbose 0
+/run/verbose 0
+/event/verbose 0
+
+/gps/particle gamma
+/gps/energy 661.657 keV
+/gps/pos/type Point
+/gps/pos/centre 0 0 293 mm
+/gps/ang/type iso
+
+/g1s/outFile test_cs137_25cm.csv
+/run/beamOn 200000

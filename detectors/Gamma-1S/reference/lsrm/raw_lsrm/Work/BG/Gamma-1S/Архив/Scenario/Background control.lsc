@@ -1,0 +1,4 @@
+if comparebackground(10) then
+messagebox(The background is not changed. You can continue to measure.,Background control,48)
+else
+messagebox(Background changed!,Background control,48)

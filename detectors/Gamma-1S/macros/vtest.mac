@@ -1,0 +1,19 @@
+# Проверка сосуда: Cs-137 662 кэВ, разыгранный по объёму пробы.
+# ВАЖНО (ловушка из radiacode-curves): область розыгрыша GPS должна объемлеть
+# пробу целиком, отбор — конфайном по физическому объёму Sample.
+/run/initialize
+/control/verbose 0
+/run/verbose 0
+
+/gps/particle gamma
+/gps/energy 661.657 keV
+/gps/pos/type Volume
+/gps/pos/shape Cylinder
+/gps/pos/centre 0 0 16 mm
+/gps/pos/radius 73 mm
+/gps/pos/halfz 45 mm
+/gps/pos/confine Sample
+/gps/ang/type iso
+
+/g1s/outFile vtest_cs137.csv
+/run/beamOn 200000

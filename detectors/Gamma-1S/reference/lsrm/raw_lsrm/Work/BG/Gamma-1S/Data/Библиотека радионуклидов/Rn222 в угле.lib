@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<!--SpectraLine Nuclear Data Information file © LSRM 2005-2020-->
+<Library library_type="gamma" library_version="2.0" database_version="26">
+  <Comment></Comment>
+  <Nuclide name="Pb-214" half_life_value="26,8" half_life_unit="min" gamma_constant="1,30847930856643" atomic_mass="213,999806" d_atomic_mass="2E-6" nuc_num="3306">
+    <Line energy="241,995" d_energy="0,0023" intensity="7,251" d_intensity="0,016" dbid="Pb-214_40"/>
+    <Line energy="295,2228" d_energy="0,0018" intensity="18,42" d_intensity="0,04" dbid="Pb-214_43"/>
+    <Line energy="351,9321" d_energy="0,0018" intensity="35,6" d_intensity="0,07" dbid="Pb-214_48"/>
+  </Nuclide>
+  <Nuclide name="Bi-214" half_life_value="19,9" half_life_unit="min" gamma_constant="7,42329503554262" atomic_mass="213,998712" d_atomic_mass="1,2E-5" nuc_num="3243">
+    <Line energy="609,32" d_energy="0,005" intensity="45,489998" d_intensity="0,160003" dbid="Bi-214_121"/>
+    <Line energy="1120,294" d_energy="0,006" intensity="14,919999" d_intensity="0,030002" dbid="Bi-214_222"/>
+    <Line energy="1764,491" d_energy="0,01" intensity="15,299999" d_intensity="0,030002" dbid="Bi-214_304"/>
+  </Nuclide>
+</Library>

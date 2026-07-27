@@ -1,0 +1,56 @@
+# Реальные нуклиды в пробе: полный распад со всеми продуктами — гамма, бета,
+# конверсионные электроны, тормозное излучение. Даёт спектр НА ОДИН РАСПАД
+# родителя при равновесии цепочки.
+#
+# Это второй, независимый продукт: кривые эффективности строятся по моноэнергети-
+# ческим фотонам, а здесь получается полный отклик, где под пиками лежит бета-
+# континуум. Сравнение «свёртка линий по кривой» против «полный распад» разделяет
+# гамма- и бета-вклад и заодно проверяет сами кривые.
+/run/verbose 0
+/event/verbose 0
+/tracking/verbose 0
+/run/printProgress 0
+
+# Разрешаем распад долгоживущих: иначе Ra-226 (1600 лет) как первичное ядро
+# будет убито по порогу времени и не распадётся вовсе.
+/process/had/rdm/thresholdForVeryLongDecayTime 1.0e+30 ns
+
+/gps/particle ion
+/gps/energy 0 keV
+/gps/pos/type Volume
+/gps/pos/shape Cylinder
+/gps/pos/radius 33.24 mm
+/gps/pos/halfz 33.25 mm
+/gps/pos/centre 0 0 -0.44 mm
+/gps/pos/confine sample
+/gps/ang/type iso
+
+# --- K-40: одиночный распад, бета Emax 1311 кэВ + гамма 1461 кэВ ---
+/process/had/rdm/nucleusLimits 40 40 19 19
+/gps/ion 19 40 0 0
+/rc/outFile nuc_K40.csv
+/run/beamOn 1000000
+
+# --- Cs-137 -> Ba-137m -> Ba-137: бета Emax 514 кэВ (до кристалла не доходит) ---
+/process/had/rdm/nucleusLimits 137 137 55 56
+/gps/ion 55 137 0 0
+/rc/outFile nuc_Cs137.csv
+/run/beamOn 1000000
+
+# --- Ra-226 -> ... -> Pb-210 (радиевая подцепочка, A=211..226) ---
+/process/had/rdm/nucleusLimits 211 226 82 88
+/gps/ion 88 226 0 0
+/rc/outFile nuc_Ra226.csv
+/run/beamOn 1000000
+
+# --- Th-232 -> ... -> Pb-208 (полная ториевая цепочка) ---
+/process/had/rdm/nucleusLimits 208 232 81 90
+/gps/ion 90 232 0 0
+/rc/outFile nuc_Th232.csv
+/run/beamOn 1000000
+
+# --- U-238 -> Th-234 -> Pa-234m -> U-234 (урановая голова, A=234..238) ---
+/process/had/rdm/nucleusLimits 234 238 90 92
+/gps/ion 92 238 0 0
+/rc/outFile nuc_U238.csv
+/run/beamOn 1000000

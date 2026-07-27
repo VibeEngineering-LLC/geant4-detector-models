@@ -1,0 +1,49 @@
+<meta charset="utf-8">
+<title>Модели детекторов в Geant4</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: light dark; }
+  body { max-width: 46rem; margin: 3rem auto; padding: 0 1.2rem;
+         font: 17px/1.6 Georgia, 'Times New Roman', serif; }
+  h1 { font-size: 1.7rem; line-height: 1.25; margin-bottom: .3rem; }
+  .sub { color: #666677; margin-top: 0; }
+  a { color: #0057b8; }
+  @media (prefers-color-scheme: dark) { a { color: #6bb3ff; } .sub { color: #9999aa; } }
+  .card { border: 1px solid #8884; border-radius: 8px; padding: 1rem 1.2rem;
+          margin: 1.2rem 0; }
+  .card h2 { font-size: 1.15rem; margin: 0 0 .4rem; }
+  .meta { font-size: .9rem; color: #778; }
+  code { font: 14px/1.4 ui-monospace, Consolas, monospace; }
+</style>
+
+<h1>Модели детекторов гамма-излучения в Geant4</h1>
+<p class="sub">Геометрия по чертежам и паспортам, сверка с измеренными
+кривыми эффективности.</p>
+
+<div class="card">
+  <h2><a href="radiacode-103/">Кривые эффективности RadiaCode 101–103
+      в сосудах Маринелли</a></h2>
+  <p>Расчёт эффективности регистрации в пике полного поглощения для бытового
+  спектрометра с кристаллом CsI(Tl) объёмом 1 см³ — задача, для которой прибор
+  не предназначен и заводских кривых не имеет. Интерактивная статья с
+  калькулятором удельной активности.</p>
+  <p class="meta">Диапазон 50–3000 кэВ, плотности 0,2–1,8 г/см³,
+  сосуды 200 и 500 мл.</p>
+</div>
+
+<div class="card">
+  <h2>ГАММА-1С: NaI(Tl) 63×63 в свинцовой защите</h2>
+  <p>Модель лабораторного спектрометрического комплекса, проверенная по пяти
+  геометриям комплекта поверки. Отчёт и код — в репозитории; отдельной статьи
+  пока нет.</p>
+  <p><a href="https://github.com/VibeEngineering-LLC/geant4-detector-models/tree/main/detectors/Gamma-1S/results">Готовые
+  кривые эффективности</a> — девять геометрий, таблицами: маринелли 1 л,
+  «Дента», Петри при двух плотностях, вода, точечные 5 и 25 см. Собирать
+  Geant4, чтобы взять эффективность на нужной энергии, не требуется.</p>
+  <p class="meta">Массы металлов защиты, эффективная толщина, каскадное
+  суммирование, минимальная измеряемая активность — всё против паспорта.</p>
+</div>
+
+<p><a href="https://github.com/VibeEngineering-LLC/geant4-detector-models">Исходники,
+отчёты и методика — на GitHub</a>. Там же протокол обязательных проверок и
+список ловушек, каждая из которых уже стоила ошибки в разы.</p>

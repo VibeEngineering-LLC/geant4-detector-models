@@ -1,0 +1,264 @@
+[General]
+Sigma=2
+[Sets]
+Дента ОИСН №SRC-16-7_р16=
+Дента ОИСН №SRC-16-7_р06=
+Дента РИСН №SRC-04_р10=
+Дента р18=
+Дента ОМАНС р-017=
+Дента ОМАНС р-090=
+Дента Th232 р10=
+Дента р10-D2=
+Дента ОМАНС р-10=
+Дента p07=
+Маринелли ИМН-Г-3-Н №SRC-23=
+Copy Дента р18=
+[Дента ОИСН №SRC-16-7_р16]
+Geometry=Дента-120мл
+Mass,g=195
+Volume,ml=120
+Material=ОИСН-16
+Date=17.09.2007
+Time=0:00:00
+Units=Bq/kg
+Thick,mm=33,3
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Дента ОИСН №SRC-16-7_р16,structure]
+Cs137_420-7-15=
+Th232_420-7-17=
+Ra226_420-7-19=
+K40_420-7-21=
+[Дента ОИСН №SRC-16-7_р16,Cs137_420-7-15,Act]
+Mass,g=199
+Cs-137=1650,5
+[Дента ОИСН №SRC-16-7_р16,Th232_420-7-17,Act]
+Mass,g=192
+Th-232=1940,6
+[Дента ОИСН №SRC-16-7_р16,Ra226_420-7-19,Act]
+Mass,g=200
+Ra-226=1790,6
+[Дента ОИСН №SRC-16-7_р16,K40_420-7-21,Act]
+Mass,g=186
+K-40=1950,6
+[Дента ОИСН №SRC-16-7_р06]
+Geometry=Дента-120мл
+Mass,g=72
+Volume,ml=120
+Material=ОИСН-06
+Date=24.05.2002
+Time=0:00:00
+Units=Bq/kg
+Thick,mm=33,3
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Дента ОИСН №SRC-16-7_р06,structure]
+Cs137_420-7-14=
+Th232_420-7-16=
+Ra226_420-7-18=
+K40_420-7-20=
+[Дента ОИСН №SRC-16-7_р06,Cs137_420-7-14,Act]
+Mass,g=68
+Cs-137=1760,5
+[Дента ОИСН №SRC-16-7_р06,Th232_420-7-16,Act]
+Mass,g=66
+Th-232=2240,6
+[Дента ОИСН №SRC-16-7_р06,Ra226_420-7-18,Act]
+Mass,g=74
+Ra-226=1780,6
+[Дента ОИСН №SRC-16-7_р06,K40_420-7-20,Act]
+Mass,g=79
+K-40=2530,6
+[Дента РИСН №SRC-04_р10]
+Geometry=Дента-120мл
+Mass,g=120
+Volume,ml=120
+Material=РИСН-379
+Date=31.05.2002
+Time=0:00:00
+Units=Bq/kg
+Thick,mm=33,3
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Дента РИСН №SRC-04_р10,structure]
+РИСН №SRC-04_Am-Ti-Eu-Cs=
+[Дента РИСН №SRC-04_р10,РИСН №SRC-04_Am-Ti-Eu-Cs,Act]
+Mass,g=120
+Cs-137=2210,5
+Am-241=4200,10
+Ti-44=2130,5
+Eu-152=4150,5
+[Дента р18]
+Geometry=Дента-120мл
+Mass,g=216
+Volume,ml=120
+Material=ОИСН-16
+Date=20.04.2000
+Time=0:00:00
+Units=Bq
+Thick,mm=33,3
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Дента р18,structure]
+ОИСН №SRC-A204_Cs-К=
+[Дента р18,ОИСН №SRC-A204_Cs-К,Act]
+Mass,g=216
+Cs-137=1070,5
+K-40=990,10
+[Дента ОМАНС р-017]
+Geometry=Дента
+Mass,g=
+Volume,ml=120
+Material=ОИСН-06
+Date=29.07.1999
+Time=0:00:00
+Units=Bq
+Thick,mm=33,3
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Дента ОМАНС р-017,structure]
+Eu152_420-9071=
+[Дента ОМАНС р-017,Eu152_420-9071,Act]
+Mass,g=
+Eu-152=3150,5
+[Дента ОМАНС р-090]
+Geometry=Дента-120мл
+Mass,g=108
+Volume,ml=120
+Material=ОИСН-10
+Date=01.08.1999
+Time=0:00:00
+Units=Bq
+Thick,mm=33,3
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Дента ОМАНС р-090,structure]
+Eu152_420-9072=
+[Дента ОМАНС р-090,Eu152_420-9072,Act]
+Mass,g=108
+Eu-152=6900,5
+[Дента Th232 р10]
+Geometry=Дента-120мл
+Mass,g=120
+Volume,ml=120
+Material=ОИСН-10
+Date=31.05.2002
+Time=0:00:00
+Units=Bq
+Thick,mm=33,3
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Дента Th232 р10,structure]
+Th232_420-51959=
+[Дента Th232 р10,Th232_420-51959,Act]
+Mass,g=120
+Th-232=2270,6
+[Дента р10-D2]
+Geometry=Дента-120мл
+Mass,g=120
+Volume,ml=120
+Material=ОИСН-10
+Date=02.11.1994
+Time=0:00:00
+Units=Bq
+Thick,mm=33,3
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Дента р10-D2,structure]
+ОИСН №SRC-A201_Ce-Cs-К=
+[Дента р10-D2,ОИСН №SRC-A201_Ce-Cs-К,Act]
+Mass,g=120
+Cs-137=1390,5
+K-40=1940,5
+Ce-139=2110,5
+[Дента ОМАНС р-10]
+Geometry=Дента-120мл
+Mass,g=120
+Volume,ml=120
+Material=ОИСН-10
+Date=15.07.1999
+Time=0:00:00
+Units=Bq
+Thick,mm=33,3
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Дента ОМАНС р-10,structure]
+K-40_420-9073=
+[Дента ОМАНС р-10,K-40_420-9073,Act]
+Mass,g=120
+K-40=265,5
+[Дента p07]
+Geometry=Дента-120мл
+Mass,g=82
+Volume,ml=120
+Material=ОИСН-06
+Date=19.11.1994
+Time=0:00:00
+Units=Bq
+Thick,mm=33,3
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Дента p07,structure]
+ОИСН №SRC-A219-I_Ce-Cs-K=
+[Дента p07,ОИСН №SRC-A219-I_Ce-Cs-K,Act]
+Mass,g=82
+Cs-137=1240,5
+Ce-139=2560,5
+K-40=830,5
+[Маринелли ИМН-Г-3-Н №SRC-23]
+Geometry=Дента-120мл
+Mass,g=76.8
+Volume,ml=120
+Material=ОИСН-06
+Date=05.06.2017
+Time=0:00:00
+Units=Bq/kg
+Thick,mm=31,2
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Маринелли ИМН-Г-3-Н №SRC-23,structure]
+Th-232_SRC-23=
+[Маринелли ИМН-Г-3-Н №SRC-23,Th-232_SRC-23,Act]
+Mass,g=76.8
+Th-232=860,6
+[Copy Дента р18]
+Geometry=Дента-120мл
+Mass,g=216
+Volume,ml=120
+Material=ОИСН-16
+Date=20.04.2000
+Time=0:00:00
+Units=Bq
+Thick,mm=33,3
+Comment=
+UseShield=1
+ShieldMaterial=
+ShieldThickness,mm=0
+[Copy Дента р18,structure]
+ОИСН №SRC-A204_Cs-К=
+[Copy Дента р18,ОИСН №SRC-A204_Cs-К,Act]
+Mass,g=216
+Cs-137=1070,5
+K-40=990,10

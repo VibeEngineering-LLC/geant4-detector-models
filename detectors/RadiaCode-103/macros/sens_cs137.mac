@@ -1,0 +1,36 @@
+# Проверка модели по паспортной чувствительности: 30 cps на 1 мкЗв/ч (Cs-137).
+# Широкий параллельный пучок 662 кэВ, диск радиусом 40 мм (площадь 50.265 см²),
+# три направления облучения. Запускать «голым» прибором:  rc_curves sens_cs137.mac bare
+/run/verbose 0
+/event/verbose 0
+/tracking/verbose 0
+/run/printProgress 0
+
+/gps/particle gamma
+/gps/ene/type Mono
+/gps/ene/mono 0.662 MeV
+/gps/pos/type Plane
+/gps/pos/shape Circle
+/gps/pos/radius 40 mm
+
+# --- фронт: со стороны дисплея (грань 8.20, кристалл ближе) ---
+/gps/pos/rot1 1 0 0
+/gps/pos/rot2 0 0 1
+/gps/pos/centre 0 -100 0 mm
+/gps/direction 0 1 0
+/rc/outFile sens_cs137_front.csv
+/run/beamOn 1200000
+
+# --- тыл: со стороны задней крышки (грань 9.30) ---
+/gps/pos/centre 0 100 0 mm
+/gps/direction 0 -1 0
+/rc/outFile sens_cs137_back.csv
+/run/beamOn 1200000
+
+# --- торец: со стороны носа ---
+/gps/pos/rot1 1 0 0
+/gps/pos/rot2 0 1 0
+/gps/pos/centre 0 0 -100 mm
+/gps/direction 0 0 1
+/rc/outFile sens_cs137_nose.csv
+/run/beamOn 1200000

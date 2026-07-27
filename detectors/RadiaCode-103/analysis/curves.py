@@ -260,11 +260,19 @@ def dump_json(vessels):
         for cfg, rows in c.eff.items():
             mats.add(rows[0][5])
         p = os.path.join(REF, LSRM_FILE[v])
-        if os.path.exists(p):
-            El, epl, unc = read_lsrm(p)
-            good = unc < 0.30
-            out["lsrm"][v] = {"E": list(El[good]), "eps": list(epl[good]),
-                              "unc": list(unc[good])}
+        # Громкий отказ, а не тихий пропуск: без блока lsrm статья теряет
+        # график сверки с независимым расчётом, и заметить это по виду
+        # curves.json невозможно.
+        if not os.path.exists(p):
+            raise SystemExit(
+                "Нет выгрузки LSRM %s.\n"
+                "Она нужна для блока сверки в curves.json и для рисунка в\n"
+                "статье. Файл лежит в detectors/RadiaCode-103/reference/."
+                % p)
+        El, epl, unc = read_lsrm(p)
+        good = unc < 0.30
+        out["lsrm"][v] = {"E": list(El[good]), "eps": list(epl[good]),
+                          "unc": list(unc[good])}
     # проникновение электронов: доля первичных, давших сигнал в кристалле
     for v in vessels:
         p = rcspec.rdir("beta_transmission.csv", v=v)

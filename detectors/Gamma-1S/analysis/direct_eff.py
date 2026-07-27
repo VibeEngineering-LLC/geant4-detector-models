@@ -62,22 +62,44 @@ def days(a, b):
     return (date(yb, mb, db) - date(ya, ma, da)).days
 
 
-def emit_yield(E):
-    """Выход линии на распад — из прогонов распада того же расчёта."""
-    for f in glob.glob(os.path.join(BUILD, "decay_*_emit.csv")):
-        tot, N = 0, None
-        for line in open(f, encoding="utf-8"):
-            if line.startswith("#"):
-                if "N_primaries" in line:
-                    N = int(line.split("=")[1])
-                continue
-            if line and line[0].isdigit():
-                e, c = line.split(",")
-                if abs(float(e) - E) <= 2.0:
-                    tot += int(c)
-        if N and tot > 50:
-            return tot / N, os.path.basename(f)
-    return None, None
+# Какой прогон даёт выход линии НА РАСПАД ИМЕННО ЭТОГО родителя.
+#
+# Раньше функция перебирала все decay_*_emit.csv и брала первый, где линия
+# набрала полсотни отсчётов. Для линий тория первым подворачивался
+# decay_Tl208_emit.csv — выход на распад ТАЛЛИЯ, а паспортная активность
+# задана на Th-232. Между ними ветвление Bi-212 -> Tl-208, равное 0,3594,
+# то есть выход завышался в 2,78 раза, а вместе с ним и эффективность.
+# Ровно за этим и гоняются цепочки chain_*: счётчик испускания в них считает
+# кванты на распад РОДИТЕЛЯ, со всеми ветвлениями внутри.
+EMIT_RUN = {
+    "Cs-137": "decay_Cs137",
+    "K-40": "decay_K40",
+    "Ra-226": "chain_Ra226",
+    "Th-232": "chain_Th232",
+}
+
+
+def emit_yield(nuc, E):
+    """Выход линии на распад родителя. Прогон задаётся нуклидом, не поиском."""
+    run = EMIT_RUN.get(nuc)
+    if run is None:
+        return None, "нет прогона цепочки для %s" % nuc
+    f = os.path.join(BUILD, run + "_emit.csv")
+    if not os.path.exists(f):
+        return None, "нет %s" % os.path.basename(f)
+    tot, N = 0, None
+    for line in open(f, encoding="utf-8"):
+        if line.startswith("#"):
+            if "N_primaries" in line:
+                N = int(line.split("=")[1])
+            continue
+        if line and line[0].isdigit():
+            e, c = line.split(",")
+            if abs(float(e) - E) <= 2.0:
+                tot += int(c)
+    if not N or tot <= 50:
+        return None, "%s: линия не набрана (%d отсчётов)" % (run, tot)
+    return tot / N, run
 
 
 def mc_eff(E):
@@ -91,8 +113,9 @@ def mc_eff(E):
 
 if __name__ == "__main__":
     print("Эффективность ППП прямо по измеренным спектрам комплекта\n")
-    print("%-8s %9s %8s %10s %11s %11s %8s" %
-          ("нуклид", "E, кэВ", "ПШПВ %", "имп/с", "eps_эксп", "eps_МК", "МК/эксп"))
+    print("%-8s %9s %8s %10s %11s %11s %8s  %s" %
+          ("нуклид", "E, кэВ", "ПШПВ %", "имп/с", "eps_эксп", "eps_МК",
+           "МК/эксп", "выход из"))
     for fn, (nuc, aspec, dpct, dt0, mass, _t12, lines) in KIT.items():
         path = paths.find_data(fn)
         if path is None:
@@ -123,10 +146,10 @@ if __name__ == "__main__":
                 print("%-8s %9.3f   ROI вне спектра" % (nuc, E))
                 continue
             rate, drate, rbg, _ = r
-            pg, src = emit_yield(E)
+            pg, src = emit_yield(nuc, E)
             if pg is None:
-                print("%-8s %9.3f %8.1f %10.4f   нет выхода линии" %
-                      (nuc, E, 100 * fw / E, rate))
+                print("%-8s %9.3f %8.1f %10.4f   нет выхода линии (%s)" %
+                      (nuc, E, 100 * fw / E, rate, src))
                 continue
             eps = rate / (A * pg)
             deps = eps * math.sqrt((drate / max(rate, 1e-9)) ** 2 + (dpct / 100) ** 2)
@@ -134,8 +157,8 @@ if __name__ == "__main__":
             if mc is None:
                 print("%-8s %9.3f %8.1f %10.4f %11.4e" % (nuc, E, 100 * fw / E, rate, eps))
                 continue
-            print("%-8s %9.3f %8.1f %10.4f %11.4e %11.4e %8.3f"
-                  % (nuc, E, 100 * fw / E, rate, eps, mc[0], mc[0] / eps))
+            print("%-8s %9.3f %8.1f %10.4f %11.4e %11.4e %8.3f  %s"
+                  % (nuc, E, 100 * fw / E, rate, eps, mc[0], mc[0] / eps, src))
         print("   %s: A = %.0f Бк (паспорт %.0f Бк/кг x %.3f кг x распад %.4f),"
               " живое %.0f с, фон %.0f с"
               % (nuc, A, aspec, mass / 1000, k, s.live, b.live if b else 0))

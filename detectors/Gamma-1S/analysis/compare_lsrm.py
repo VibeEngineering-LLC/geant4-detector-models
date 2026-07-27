@@ -62,8 +62,10 @@ def read_run(path):
     gross = sum(c for e, c in hist.items() if abs(e - E0) <= WIN)
     side = sum(c for e, c in hist.items() if E0 - BG0 <= e <= E0 - BG1)
     nside = BG0 - BG1                      # ширина полки в каналах по 1 кэВ
-    bg = side / nside * (2 * WIN + 1) if SUBTRACT_BG else 0.0
-    var = gross + (bg / nside) * bg        # пуассон пика + шум полки
+    n = 2 * WIN + 1
+    bg = side / nside * n if SUBTRACT_BG else 0.0
+    # D(bg) = (n/nside)^2 * side = (n/nside)*bg; вывод — в export_curves.py
+    var = gross + (n / nside) * bg
     return E0, gross - bg, math.sqrt(max(var, 1.0)), N
 
 

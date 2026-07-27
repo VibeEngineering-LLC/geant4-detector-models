@@ -36,7 +36,11 @@ for _d in ("analysis", "drivers"):
 import rcspec
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-REF = os.path.abspath(os.path.join(HERE, "..", "reference", "lsrm"))
+# Выгрузки LSRM лежат прямо в reference/. Стоял путь reference/lsrm — каталога
+# с таким именем здесь нет вовсе (он есть у Гамма-1С), поэтому сверка тихо
+# ничего не находила, а curves.py так же тихо пропускал блок lsrm: перегенерация
+# curves.json убрала бы график сверки из статьи, и никто бы не заметил.
+REF = os.path.abspath(os.path.join(HERE, "..", "reference"))
 
 # сосуд -> файл выгруженной кривой LSRM
 LSRM_FILE = {

@@ -101,8 +101,15 @@ def read_run(path):
     gross = sum(c for e, c in hist.items() if abs(e - E0) <= WIN)
     side = sum(c for e, c in hist.items() if E0 - BG0 <= e <= E0 - BG1)
     nside = BG0 - BG1                      # ширина полки в каналах по 1 кэВ
-    bg = side / nside * (2 * WIN + 1)
-    var = gross + (bg / nside) * bg        # пуассон пика + шум полки
+    n = 2 * WIN + 1                        # каналов в окне пика
+    bg = side / nside * n
+    # Дисперсия чистой площади: пуассон окна плюс перенесённый шум полки.
+    # bg = side*(n/nside), значит D(bg) = (n/nside)^2 * side = (n/nside)*bg.
+    # Стояло (bg/nside)*bg — это (n/nside)*bg * (side/nside)/1, лишний
+    # множитель side/nside. При заметной подложке погрешность раздувалась в
+    # разы, при слабой — занижалась. Та же формула, выведенная правильно,
+    # давно лежит в common/py/becqmoni.py.
+    var = gross + (n / nside) * bg
     return E0, gross - bg, math.sqrt(max(var, 1.0)), N, gross
 
 
@@ -256,9 +263,10 @@ def export_summing():
             peak = sum(c for e, c in hist.items() if abs(e - E) <= WIN)
             side = sum(c for e, c in hist.items() if E - BG0 <= e <= E - BG1)
             nside = BG0 - BG1
-            bg = side / nside * (2 * WIN + 1)
+            n = 2 * WIN + 1
+            bg = side / nside * n
             net = peak - bg
-            dnet = math.sqrt(max(peak + (bg / nside) * bg, 1.0))
+            dnet = math.sqrt(max(peak + (n / nside) * bg, 1.0))  # см. read_run
             nem, _ = emitted(run, E)
             if not nem or net <= 0:
                 continue

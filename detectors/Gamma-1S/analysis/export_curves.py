@@ -203,8 +203,7 @@ def export_curves():
         long_rows.sort(key=lambda r: (r["grid"], r["E_keV"]))
         write_csv(os.path.join(OUT, "efficiency_curves.csv"), head, long_rows)
     if dropped:
-        print("
-ПРОПУЩЕНЫ УЗЛЫ СЕТКИ (%d) — кривая короче задуманной:"
+        print("\nПРОПУЩЕНЫ УЗЛЫ СЕТКИ (%d) — кривая короче задуманной:"
               % len(dropped))
         for tag, what, why in dropped:
             print("   %-12s %-14s %s" % (tag, what, why))

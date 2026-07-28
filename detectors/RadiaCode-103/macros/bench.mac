@@ -10,7 +10,10 @@
 /gps/pos/shape Cylinder
 /gps/pos/radius 33.24 mm
 /gps/pos/halfz 33.25 mm
-/gps/pos/centre 0 0 -0.44 mm
+# центр полости m200: 0,5*(zTop+zRim) при seatGap = 0,32 (см. VESSELS в
+# drivers/run_grid.py — там та же таблица, по ней считаются ВСЕ прогоны).
+# Макрос годен только для m200; для m500 берите числа из VESSELS.
+/gps/pos/centre 0 0 -0.56 mm
 /gps/pos/confine sample
 /gps/ang/type iso
 /rc/outFile bench.csv

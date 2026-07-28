@@ -785,9 +785,9 @@ def zonenote(zones, mspan, soft, comp):
     """Зоны подгонки и — главное — чем ограничен диапазон паспортной кривой."""
     out = []
     if zones:
-        parts = ["зона %d: степень %d, %.0f–%.0f кэВ, объявленная погрешность "
-                 "%s %%" % (i, z["deg"], 10 ** z["xlo"], 10 ** z["xhi"],
-                            ru((10 ** z["sig"] - 1) * 100, 1))
+        parts = ["зона %d: степень %d, %.0f–%.0f кэВ, разброс точек %s %%"
+                 % (i, z["deg"], 10 ** z["xlo"], 10 ** z["xhi"],
+                    ru((10 ** z["sig"] - 1) * 100, 1))
                  for i, z in enumerate(zones, 1)]
         out.append("Подгонка ЛСРМ — %s." % "; ".join(parts))
     else:

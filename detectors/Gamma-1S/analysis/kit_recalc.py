@@ -577,7 +577,8 @@ if __name__ == "__main__":
                 print("   %-13s %-8s %5d %12.4g %12.4g %9s %s"
                       % (g, nuc, n, m, A0,
                          "%.3f±%.3f" % (m / A0, dm / A0), kind))
-                summary.append((g, nuc, n, m, A0, m / A0, dm / A0, kind))
+                summary.append((g, nuc, n, m, A0, m / A0, dm / A0, kind,
+                                None))
                 per_nuc.append((m / A0, dm / A0))
             # Одно число на сосуд — тем же правилом по отношениям нуклидов.
             # Оно осмысленно ровно потому, что нуклиды между собой согласны:
@@ -585,14 +586,25 @@ if __name__ == "__main__":
             # неопределённости это и показал бы.
             ag = lsrm_average(per_nuc)
             if ag:
+                # chi2/nu — мера СОГЛАСИЯ рядов между собой, а не точности.
+                # У сосудов она около единицы (0,2…1,2), поэтому сводка одним
+                # числом законна; у точечных геометрий она в единицах, и там
+                # это печатается вслух (point_recalc.chi2_dof).
+                c2 = (sum((ag[0] - a) ** 2 / d ** 2 for a, d in per_nuc)
+                      / (len(per_nuc) - 1)) if len(per_nuc) > 1 else None
                 # n_lines у сводной строки — число ГОДНЫХ ЛИНИЙ, а не нуклидов:
                 # столбец на странице так и подписан, и подставить туда число
                 # рядов значило бы соврать вчетверо.
                 nl = len([r for r in rows if r[0] == g and r[11]])
-                summary.append((g, "*", nl, 0.0, 0.0, ag[0], ag[1], ag[2]))
-                print("   %-13s %-8s %5d %12s %12s %9s %s (%d ряда)"
+                summary.append((g, "*", nl, 0.0, 0.0, ag[0], ag[1], ag[2],
+                                c2))
+                print("   %-13s %-8s %5d %12s %12s %9s %s (%d ряда, "
+                      "хи2/ню = %s)%s"
                       % (g, "ВСЕ", nl, "—", "—",
-                         "%.3f±%.3f" % (ag[0], ag[1]), ag[2], ag[3]))
+                         "%.3f±%.3f" % (ag[0], ag[1]), ag[2], ag[3],
+                         "%.2f" % c2 if c2 is not None else "—",
+                         "" if (c2 is None or c2 <= 2.0)
+                         else "  <- НАБОР НЕСОГЛАСОВАН"))
         if summary:
             sp = os.path.abspath(os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), "..", "results",
@@ -606,12 +618,17 @@ if __name__ == "__main__":
                          "отношениям нуклидов;\n"
                          "#   у неё A_meas_Bq и A_pass_Bq не определены и "
                          "записаны нулями.\n"
+                         "# chi2_dof у строки * — мера согласия рядов между "
+                         "собой; больше ~2 значит,\n"
+                         "#   что одним числом набор не сводится.\n"
                          "# Этот файл — ЕДИНСТВЕННЫЙ источник сводных чисел "
                          "для отчёта и страницы.\n")
                 fh.write("geometry,nuclide,n_lines,A_meas_Bq,A_pass_Bq,"
-                         "ratio,d_ratio,estimate\n")
+                         "ratio,d_ratio,estimate,chi2_dof\n")
                 for r in summary:
-                    fh.write("%s,%s,%d,%.4e,%.4e,%.4f,%.4f,%s\n" % r)
+                    fh.write("%s,%s,%d,%.4e,%.4e,%.4f,%.4f,%s,%s\n"
+                             % (r[0], r[1], r[2], r[3], r[4], r[5], r[6],
+                                r[7], "" if r[8] is None else "%.2f" % r[8]))
             print("\nсводка: %s (%d строк)" % (sp, len(summary)))
 
     # Ненайденные записи — вслух. Пустая таблица не должна выглядеть как

@@ -1,0 +1,38 @@
+# Концы строк. Без этого файла нормализация зависит от core.autocrlf на машине,
+# и на Linux-клоне часть текстовых файлов приезжает с CRLF.
+* text=auto
+
+# То, что мы правим руками, — всегда LF.
+*.py   text eol=lf
+*.cc   text eol=lf
+*.hh   text eol=lf
+*.md   text eol=lf
+*.csv  text eol=lf
+*.mac  text eol=lf
+*.json text eol=lf
+*.html text eol=lf
+*.css  text eol=lf
+*.txt  text eol=lf
+*.cmake text eol=lf
+CMakeLists.txt text eol=lf
+
+# ПРИБОРНЫЕ ФОРМАТЫ И ЭТАЛОННЫЕ ДАННЫЕ — БАЙТ В БАЙТ, никакой нормализации.
+# .spe двоичный (заголовок CP-1251 + отсчёты uint32), остальные форматы ЛСРМ
+# читаются их же библиотекой и сверены побайтно; трогать концы строк в них
+# нельзя. XML BecqMoni здесь по той же причине: на нём построена проверка
+# «XML против .spe».
+*.spe -text
+*.cen -text
+*.lib -text
+*.src -text
+*.efa -text
+*.efr -text
+*.lsc -text
+*.frf -text
+*.cfw -text
+*.cpt -text
+*.ini -text
+*.xml -text
+*.png -text
+*.jpg -text
+*.stl -text

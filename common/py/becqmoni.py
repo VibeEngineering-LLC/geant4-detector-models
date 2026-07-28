@@ -104,6 +104,59 @@ def read(path):
     return out[0], out[1]
 
 
+def peak_find(sp, E0, half_win=None, roi=1.25):
+    """(центроида, ПШПВ, высота) вокруг ожидаемой энергии E0, кэВ.
+
+    ЗАЧЕМ ЦЕНТРОИДА, А НЕ ТОЛЬКО ШИРИНА. Окно площади надо ставить на РЕАЛЬНОЕ
+    положение пика, а не на табличную энергию линии: у сцинтилляционного тракта
+    калибровка уходит (у одного из приборов в этом хозяйстве — на 4,3 кэВ при
+    662). Если окно сдвинуто относительно пика, часть площади срезается, а
+    полки фона захватывают склон пика — и то и другое смещает результат в одну
+    сторону, вниз. Прежняя fwhm_at находила максимум и ВЫБРАСЫВАЛА его
+    положение, оставляя только ширину; площадь при этом бралась по номиналу.
+
+    Центроида считается первым моментом по вычтенной подложке в пределах
+    ±roi·ПШПВ вокруг найденного максимума — то есть по той же области, которой
+    потом берётся площадь.
+    """
+    hw = half_win if half_win else max(3 * 0.06 * E0, 20.0)
+    ch = np.arange(len(sp.n), dtype=float)
+    en = sp.energy(ch)
+    m = (en > E0 - hw) & (en < E0 + hw)
+    if m.sum() < 5:
+        return None
+    x, y = en[m], sp.n[m].astype(float)
+    k = max(2, len(x) // 8)
+    a, b = np.polyfit(np.r_[x[:k], x[-k:]], np.r_[y[:k], y[-k:]], 1)
+    net = y - (a * x + b)
+    i0 = int(np.argmax(net))
+    top = net[i0]
+    if top <= 0:
+        return None
+    half = 0.5 * top
+
+    def cross(idx, step):
+        i = idx
+        while 0 <= i + step < len(net) and net[i + step] > half:
+            i += step
+        if not (0 <= i + step < len(net)):
+            return None
+        y1, y2 = net[i], net[i + step]
+        t = (y1 - half) / (y1 - y2) if y1 != y2 else 0.0
+        return x[i] + t * (x[i + step] - x[i])
+
+    lo, hi = cross(i0, -1), cross(i0, +1)
+    if lo is None or hi is None:
+        return None
+    fw = abs(hi - lo)
+    w = roi * fw
+    sel = (x > x[i0] - w) & (x < x[i0] + w) & (net > 0)
+    if not sel.any():
+        return None
+    cen = float((x[sel] * net[sel]).sum() / net[sel].sum())
+    return cen, fw, float(top)
+
+
 def fwhm_at(sp, E0, half_win=None):
     """ПШПВ по точкам полувысоты вокруг пика, кэВ. Грубая оценка окна — 12 % от E."""
     hw = half_win if half_win else max(3 * 0.06 * E0, 20.0)

@@ -49,9 +49,8 @@ if not os.path.exists(os.path.join(BUILD, EXE)):
 OUT = os.path.join(BUILD, "grid")
 os.makedirs(OUT, exist_ok=True)
 
-LINES = [59.5, 88.0, 122.1, 165.9, 238.632, 241.995, 295.223, 338.32, 351.932,
-         463.004, 583.187, 609.32, 661.657, 768.36, 911.204, 1120.294,
-         1460.822, 1764.491, 2614.511, 3000.0]
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from grid_energies import LINES  # noqa: E402
 
 # сосуд -> (радиус розыгрыша мм, полувысота мм, центр по z мм)
 VOL_SRC = {
@@ -76,14 +75,32 @@ POINTS = [("p5cm", 50.0, "shield", 60.0, 400000),
 ZFACE = 43.0    # наружная плоскость крышки детектора
 
 
-def macro_volume(tag, vessel, n):
+# Досчёт вместо пересчёта: энергия, для которой файл уже есть, пропускается.
+# Нужно потому, что сетка расширяется по краям (см. grid_energies.py), а гонять
+# заново все двадцать четыре точки в девяти геометриях — часы впустую.
+# --force считает всё; так надо, если сменилась сборка модели.
+FORCE = False
+
+
+def todo(tag):
+    if FORCE:
+        return list(LINES)
+    left = [e for e in LINES
+            if not os.path.exists(os.path.join(OUT, "%s_E%07.1f.csv" % (tag, e)))]
+    if len(left) < len(LINES):
+        print("   %s: уже посчитано %d из %d, считаю %d"
+              % (tag, len(LINES) - len(left), len(LINES), len(left)), flush=True)
+    return left
+
+
+def macro_volume(tag, vessel, n, lines):
     r, hz, zc = VOL_SRC[vessel]
     t = ["/run/initialize", "/control/verbose 0", "/run/verbose 0",
          "/gps/particle gamma", "/gps/pos/type Volume",
          "/gps/pos/shape Cylinder", "/gps/pos/centre 0 0 %.1f mm" % zc,
          "/gps/pos/radius %.1f mm" % r, "/gps/pos/halfz %.1f mm" % hz,
          "/gps/pos/confine Sample", "/gps/ang/type iso"]
-    for e in LINES:
+    for e in lines:
         t.append("/gps/energy %.3f keV" % e)
         t.append("/g1s/outFile %s" % os.path.join(OUT, "%s_E%07.1f.csv" % (tag, e)))
         t.append("/run/beamOn %d" % n)

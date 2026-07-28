@@ -36,10 +36,9 @@ if not os.path.exists(os.path.join(BUILD, EXE)):
 OUT = os.path.join(BUILD, "grid")
 os.makedirs(OUT, exist_ok=True)
 
-# 15 линий из .efr + края рабочего диапазона паспорта
-LINES = [59.5, 88.0, 122.1, 165.9, 238.632, 241.995, 295.223, 338.32, 351.932,
-         463.004, 583.187, 609.32, 661.657, 768.36, 911.204, 1120.294,
-         1460.822, 1764.491, 2614.511, 3000.0]
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from grid_energies import LINES  # noqa: E402
+
 N = 400000
 
 # Плотности для отдельной подгонки эффективной толщины d_eff: та же матрица,

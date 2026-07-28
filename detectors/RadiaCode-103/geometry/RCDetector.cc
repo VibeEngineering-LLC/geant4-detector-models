@@ -72,6 +72,7 @@
 #include "G4VisAttributes.hh"
 
 #include <cmath>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -235,9 +236,31 @@ G4Material* RCDetector::MakeMatrix(const G4String& name, double rho,
                              {"S", 0.020}};
   const Frac* f = (name == "ash") ? ash : soil;
   const int n = (name == "ash") ? 10 : 9;
+  // Массовые доли ОБЯЗАНЫ давать единицу. Geant4 на расхождение отвечает
+  // предупреждением в общем потоке вывода, которое в пакетном прогоне никто
+  // не читает, а состав при этом остаётся заданным как есть. Цена ошибки не
+  // равна её величине: ослабление энергозависимо, поэтому лишние проценты
+  // массы дают НАКЛОН кривой эффективности, а не сдвиг, и общим множителем
+  // нормировки такое не лечится. Найдено внешним аудитом: у ash сумма была
+  // 1,020 при ровно 1,000 у соседней soil, то есть это описка, а не
+  // соглашение. Пропорции сохраняются, меняется только масштаб.
+  double sum = 0.0;
+  for (int i = 0; i < n; ++i) sum += f[i].w;
+  if (sum <= 0.0) {
+    G4Exception("RCDetector::MakeMatrix", "RC_MATRIX_SUM", FatalException,
+                ("сумма массовых долей матрицы " + name
+                 + " не положительна").c_str());
+  }
+  if (std::fabs(sum - 1.0) > 1e-6) {
+    std::ostringstream os;
+    os << "матрица " << name << ": сумма массовых долей " << sum
+       << " вместо 1; состав нормирован, пропорции сохранены";
+    G4Exception("RCDetector::MakeMatrix", "RC_MATRIX_SUM", JustWarning,
+                os.str().c_str());
+  }
   auto* m = new G4Material(g4name, d, n);
   for (int i = 0; i < n; ++i)
-    m->AddElement(nist->FindOrBuildElement(f[i].el), f[i].w);
+    m->AddElement(nist->FindOrBuildElement(f[i].el), f[i].w / sum);
   return m;
 }
 

@@ -107,12 +107,12 @@ def macro_volume(tag, vessel, n, lines):
     return "\n".join(t) + "\n"
 
 
-def macro_point(tag, dist, thmax, n):
+def macro_point(tag, dist, thmax, n, lines):
     t = ["/run/initialize", "/control/verbose 0", "/run/verbose 0",
          "/gps/particle gamma", "/gps/pos/type Point",
          "/gps/pos/centre 0 0 %.1f mm" % (ZFACE + dist),
          "/gps/ang/type iso", "/gps/ang/maxtheta %.1f deg" % thmax]
-    for e in LINES:
+    for e in lines:
         t.append("/gps/energy %.3f keV" % e)
         t.append("/g1s/outFile %s" % os.path.join(OUT, "%s_E%07.1f.csv" % (tag, e)))
         t.append("/run/beamOn %d" % n)
@@ -139,23 +139,43 @@ def run(mpath, args, label):
 
 if __name__ == "__main__":
     only = sys.argv[1] if len(sys.argv) > 1 else None
+    if "--force" in sys.argv:
+        FORCE = True
+        if only == "--force":
+            only = None
     for tag, ves, mat, rho, vol, mode, n in JOBS:
         if only and only != tag:
             continue
+        # Досчёт: пропускаем энергии, для которых файл уже есть. Раньше
+        # todo() был написан, но не подключён, а macro_volume вызывался с
+        # тремя аргументами при четырёх обязательных — драйвер падал на
+        # первом же задании, и края паспортных диапазонов (45,3 / 56,1 /
+        # 3304,8 / 3552,5 кэВ) так и не были посчитаны НИ В ОДНОЙ сетке.
+        left = todo(tag)
+        if not left:
+            print("=== %s: всё посчитано ===" % tag, flush=True)
+            continue
         p = os.path.join(BUILD, "grid_%s.mac" % tag)
-        open(p, "w", encoding="utf-8").write(macro_volume(tag, ves, n))
+        open(p, "w", encoding="utf-8").write(macro_volume(tag, ves, n, left))
         run(p, [mode, str(rho), mat, str(vol)],
-            "%s: %s, %s, ро=%.2f, %.0f мл" % (tag, ves, mat, rho, vol))
+            "%s: %s, %s, ро=%.2f, %.0f мл, энергий %d"
+            % (tag, ves, mat, rho, vol, len(left)))
 
     for tag, dist, mode, th, n in POINTS:
         if only and only != tag:
             continue
-        p = os.path.join(BUILD, "grid_%s.mac" % tag)
-        open(p, "w", encoding="utf-8").write(macro_point(tag, dist, th, n))
         frac = (1 - math.cos(math.radians(th))) / 2
-        run(p, [mode], "%s: точечный на %.0f мм, конус %.0f град, доля угла %.5f"
-                       % (tag, dist, th, frac))
         # доля телесного угла нужна при разборе — кладём рядом с данными
         open(os.path.join(OUT, "%s_solidangle.txt" % tag), "w").write(
             "%.8f\n" % frac)
+        left = todo(tag)
+        if not left:
+            print("=== %s: всё посчитано ===" % tag, flush=True)
+            continue
+        p = os.path.join(BUILD, "grid_%s.mac" % tag)
+        open(p, "w", encoding="utf-8").write(
+            macro_point(tag, dist, th, n, left))
+        run(p, [mode], "%s: точечный на %.0f мм, конус %.0f град, доля угла "
+                       "%.5f, энергий %d"
+                       % (tag, dist, th, frac, len(left)))
     print("готово")

@@ -588,6 +588,64 @@ def ru(x, nd=3):
 CSS = open(os.path.join(HERE, "page.css"), encoding="utf-8").read()
 
 
+GEOM_RU = {"Marinelli_1L": "Маринелли 1 л", "Denta_120mL": "«Дента» 120 мл",
+           "Petri_60mL": "Петри 60 мл"}
+
+
+def _read_rows(fn):
+    """Строки CSV из results/ без заголовка и комментариев. -> [[поле, ...]]"""
+    p = os.path.join(RES, fn)
+    if not os.path.exists(p):
+        return []
+    out = []
+    for ln in open(p, encoding="utf-8"):
+        ln = ln.strip()
+        if not ln or ln.startswith("#") or ln[0].isalpha() and "," in ln \
+                and ln.split(",")[0] in ("geometry",):
+            continue
+        out.append(ln.split(","))
+    return out
+
+
+def balance_table():
+    rows = _read_rows("deconv_balance.csv")
+    if not rows:
+        return "<p>Таблица баланса не построена: запустите deconv_balance.py.</p>"
+    body = []
+    for g, E, n, fm, fg, r in rows:
+        cls = "" if abs(float(r) - 1) < 0.05 else ' class="warn"'
+        body.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td>"
+                    "<td>%s</td><td%s>%s</td></tr>"
+                    % (esc(GEOM_RU.get(g, g)), ru(float(E), 1), n,
+                       ru(100 * float(fm), 1), ru(100 * float(fg), 1),
+                       cls, ru(float(r), 3)))
+    return ("<div class=\"tw\"><table><thead><tr><th>геометрия</th>"
+            "<th>линия, кэВ</th><th>линий</th><th>доля пика, измерение, %%</th>"
+            "<th>доля пика, модель, %%</th><th>изм/мод</th></tr></thead>"
+            "<tbody>%s</tbody></table></div>" % "".join(body))
+
+
+def continuum_table():
+    rows = _read_rows("continuum.csv")
+    if not rows:
+        return "<p>Таблица континуума не построена: запустите continuum.py.</p>"
+    by = {}
+    for g, lo, hi, _A, r, dr in rows:
+        by.setdefault(g, []).append((float(lo), float(hi), float(r), float(dr)))
+    out = []
+    for g, v in by.items():
+        body = []
+        for lo, hi, r, dr in v:
+            cls = "" if abs(r - 1) < 0.05 else ' class="warn"'
+            body.append("<tr><td>%s…%s</td><td%s>%s</td><td>%s</td></tr>"
+                        % (ru(lo, 0), ru(hi, 0), cls, ru(r, 3), ru(dr, 3)))
+        out.append("<h4>%s</h4><div class=\"tw\"><table><thead><tr>"
+                   "<th>участок, кэВ</th><th>к опоре 2614,5</th><th>±</th>"
+                   "</tr></thead><tbody>%s</tbody></table></div>"
+                   % (esc(GEOM_RU.get(g, g)), "".join(body)))
+    return "".join(out)
+
+
 TMPL = """<meta charset="utf-8">
 <title>ГАММА-1С: отработка алгоритмов анализа по поверенному комплекту</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -831,6 +889,48 @@ Pb-212 239 кэВ из ряда тория</td></tr>
 вывода на маринелли остаётся допущением, а не проверкой.</p>
 
 %(legend)s
+
+<h2>Где именно расходятся расчёт и измерение</h2>
+
+<p>Разброс формы в 9…17 %% — это итог, а не диагноз. Ниже две проверки,
+которые показывают, <b>в каком месте спектра</b> сидит расхождение и в какую
+сторону. Обе ставятся без подгонки параметров модели и обе воспроизводятся
+одной командой.</p>
+
+<h3>Баланс пика и континуума в окне деконволюции</h3>
+
+<p>Активность по группе линий есть отношение амплитуд одной и той же формы,
+снятых с измерения и с уширенной модели, — значит она верна ровно настолько,
+насколько совпадают формы. Поэтому считается доля площади окна, которую
+подгонка отдала <b>пикам</b>: отдельно у измерения и у модели. Их отношение
+переносится в активность множителем один к одному.</p>
+
+%(balance)s
+
+<p>Отношение воспроизводит наблюдаемое превышение групп над одиночной линией.
+Знак противоположен на разных концах: под группой 583,2 модель даёт
+континуума <b>больше</b> измеренного, под одиночной 2614,5 — <b>меньше</b>.
+Это поворот, а не сдвиг, и общим множителем эффективности не лечится.</p>
+
+<h3>Континуум вне пиков</h3>
+
+<p>Та же мысль без всякой деконволюции. Модель даёт отсчёты на N разыгранных
+распадов, измерение — отсчёты за живое время, поэтому их отношение есть
+активность, которую дал бы участок спектра, будь модель верна. Нормировка —
+по чистой одиночной 2614,5. Участки выбираются автоматически: всё, что ближе
+2,5 сигмы к линии выхода ярче двух процентов, выбрасывается.</p>
+
+%(continuum)s
+
+<p><b>Ниже 700 кэВ расчётный континуум верен</b> — согласие в пределах 3 %% при
+статистической погрешности в доли процента. Расхождение сидит выше 1600 кэВ и
+имеет структуру: недобор подложки в полосе 1668…2252 и перебор в полосе
+2308…2452, которая лежит ровно на комптоновском крае линии 2614,5.</p>
+
+<p>Порядок сосудов здесь <b>обратный</b> тому, что даёт баланс пика: сильнее
+всего расходится маринелли — самый сильный источник комплекта. Зависимость от
+скорости счёта указывает на наложения импульсов, которых в расчёте нет вовсе.
+Значит механизма два, а не один, и ни один пока не разобран до числа.</p>
 
 %(blocks)s
 
@@ -1162,6 +1262,7 @@ def build():
     html = TMPL % dict(css=CSS, summary=srows, blocks="".join(blocks),
                        legend=legend(True), spectra=spec_blocks,
                        deconv=spec_rows, deconv_legend=spec_legend,
+                       balance=balance_table(), continuum=continuum_table(),
                        gridspan=gspan, gridn=gn)
     os.makedirs(OUT_DIR, exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as fh:

@@ -57,6 +57,7 @@ def main():
           % ("геометрия", "E, кэВ", "линий",
              "пик изм", "конт", "полка", "пик мод", "конт", "полка",
              "изм/мод"))
+    rows = []
     for geom, mask, nuc, _asp, _dp, _d0, _m, _v in kr.VOLUME_RECORDS:
         if nuc != NUC:
             continue
@@ -103,6 +104,15 @@ def main():
                      100 * sh_m[0], 100 * sh_m[1], 100 * sh_m[2],
                      100 * sh_g[0], 100 * sh_g[1], 100 * sh_g[2],
                      sh_m[0] / sh_g[0]))
+            rows.append("%s,%.3f,%d,%.5f,%.5f,%.5f"
+                        % (geom, E0, len(lines), sh_m[0], sh_g[0],
+                           sh_m[0] / sh_g[0]))
+    out = os.path.join(str(paths.results("Gamma-1S")), "deconv_balance.csv")
+    with open(out, "w", encoding="utf-8", newline="") as fh:
+        fh.write("# доля площади окна, отданная подгонкой ПИКАМ\n")
+        fh.write("geometry,E_keV,n_lines,peak_frac_meas,peak_frac_model,ratio\n")
+        fh.write("\n".join(rows) + "\n")
+    print("\n    таблица: %s (%d строк)" % (out, len(rows)))
     print("\nСтолбец изм/мод — во сколько раз подгонка отдала пикам больше на\n"
           "измерении, чем на модели. Единица означает, что формы совпали и\n"
           "нормировка деконволюции точна. Отклонение переносится в активность\n"

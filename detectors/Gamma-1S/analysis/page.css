@@ -26,6 +26,9 @@ figure{margin:1.1rem 0 1.6rem}
 .plot .mcerr{stroke:var(--mc);stroke-width:1;opacity:.75}
 .plot .expfit{fill:none;stroke:var(--exp);stroke-width:1.7}
 .plot .rfit{fill:none;stroke:var(--mc);stroke-width:1.6;opacity:.85}
+.plot .rfitx{fill:none;stroke:var(--mc);stroke-width:1.4;opacity:.55;
+stroke-dasharray:5 4}
+.plot .nodata{fill:var(--ink);opacity:.055}
 .plot .expp{fill:none;stroke:var(--exp);stroke-width:1.5}
 .plot .experr{stroke:var(--exp);stroke-width:1;opacity:.8}
 .plot .corr{stroke:var(--corr);stroke-width:1;stroke-dasharray:2 2}

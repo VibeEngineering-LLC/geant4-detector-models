@@ -36,6 +36,7 @@ detectors/Gamma-1S/results/.
 законно: в пик идут практически только прямые кванты. Полная (не пиковая)
 эффективность при таком розыгрыше была бы занижена.
 """
+import csv
 import glob
 import math
 import os
@@ -171,10 +172,43 @@ def curve(tag, dropped=None):
 
 
 def write_csv(path, header, rows):
+    """Запись через csv.writer, а НЕ склейкой запятыми.
+
+    Ручной ",".join не экранирует ничего, и любое поле с запятой рвёт строку.
+    Так и вышло: geometry у точечных сеток — «точечный, 25 см», и все 48
+    строк обеих точечных кривых в efficiency_curves.csv получили 14 полей
+    при шапке в 13. Стандартный csv.DictReader при этом не падает, а ТИХО
+    сдвигает всё правее запятой на поле: E_keV становится словом «ОТКРЫТА»,
+    eps_net — числом энергии. Потребитель получал точечные кривые мусором,
+    объёмные целыми (в их названиях запятых нет).
+
+    csv.writer закавычит поле сам. Проверка результата — check_csv ниже:
+    она стоит того, чтобы вызываться после каждой выгрузки.
+    """
     with open(path, "w", encoding="utf-8", newline="") as fh:
-        fh.write(",".join(header) + "\n")
+        w = csv.writer(fh, lineterminator="\n")
+        w.writerow(header)
         for r in rows:
-            fh.write(",".join(str(r[h]) for h in header) + "\n")
+            w.writerow([r[h] for h in header])
+    check_csv(path)
+
+
+def check_csv(path):
+    """Прочитать свой же файл штатным парсером и сверить длины строк.
+
+    Дешёвая проверка целого класса ошибок — того же сорта, что ast.parse по
+    исходникам. Файл, который читает потребитель, обязан читаться тем, чем
+    его читают.
+    """
+    with open(path, encoding="utf-8", newline="") as fh:
+        rows = [r for r in csv.reader(fh) if r]
+    n = len(rows[0])
+    bad = [i + 1 for i, r in enumerate(rows) if len(r) != n]
+    if bad:
+        raise SystemExit(
+            "%s: %d строк не совпали с шапкой (%d полей): строки %s.\n"
+            "Скорее всего запятая внутри значения и запись без экранирования."
+            % (path, len(bad), n, bad[:5]))
 
 
 def export_curves():

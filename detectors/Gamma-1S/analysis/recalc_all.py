@@ -71,6 +71,23 @@ def main():
             fails.append(name)
             print("!! КОД ВОЗВРАТА %d" % r.returncode, flush=True)
             print((r.stderr or "")[-1200:], flush=True)
+    # Таблицы, которые читает потребитель, проверяются ТЕМ ЖЕ парсером, каким
+    # он их читает. Незакавыченная запятая внутри значения не роняет чтение, а
+    # тихо сдвигает поля — так 48 строк точечных кривых отдавали энергию словом.
+    if not only:
+        print("=" * 70, flush=True)
+        print("%-20s %s" % ("check_csv.py", "поля таблиц против шапки"),
+              flush=True)
+        chk = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
+            HERE))), "tools", "check_csv.py")
+        r = subprocess.run([sys.executable, chk], capture_output=True,
+                           text=True, encoding="utf-8", errors="replace",
+                           env=env)
+        for ln in (r.stdout or "").splitlines():
+            print("   ", ln, flush=True)
+        if r.returncode != 0:
+            fails.append("check_csv.py")
+
     print("=" * 70)
     if fails:
         # Молчаливый провал одного шага из тринадцати — ровно тот случай, из

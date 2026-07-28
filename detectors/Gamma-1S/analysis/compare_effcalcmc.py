@@ -65,8 +65,13 @@ def main(argv):
     yc = [p[1] for p in pts]
     ev = local_quad(Ec, yc)
 
+    # СТОЛБЕЦ eps_gross, а НЕ eps_net (указание оператора). EffCalcMC — прямой
+    # счётчик в Monte Carlo: помечает событие как «в пик», а не снимает окно
+    # с вычетом континуума боковой полкой, как наш eps_net. Сравнивать наш
+    # результат с вычетом фона (континуума) против их результата без вычета —
+    # разные величины уже по определению, ещё до какой-либо физики детектора.
     rows = list(csv.DictReader(open(ours, encoding="utf-8", newline="")))
-    grid = sorted((float(r["E_keV"]), float(r["eps_net"]), float(r["d_eps"]))
+    grid = sorted((float(r["E_keV"]), float(r["eps_gross"]), float(r["d_eps"]))
                   for r in rows)
 
     print("сверка: %s (%d точек, интерполируется)\n против %s (узлы)"

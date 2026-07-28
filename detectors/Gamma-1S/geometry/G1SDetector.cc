@@ -202,7 +202,8 @@ G4VPhysicalVolume* G1SDetector::Construct() {
 //   значение ЛСРМ и Thick из .efa этого экземпляра).
 void G1SDetector::BuildVessel(G4LogicalVolume* w) {
   const VesselGeom& v = fVessel;
-  const double zFace = 43.00;                 // наружная плоскость головки
+  // 41,0 = крышка Al 2 мм: стек торца Al2/воздух1/банка0,5/MgO6 (оператор)
+  const double zFace = 41.00;                 // наружная плоскость головки
   const double zWellFloor = zFace + v.wall;   // дно колодца (проба выше)
   const double zBot = zFace - v.wellDepth + v.wall;  // низ юбки сосуда
   const double zTop = zBot + v.height;               // верх сосуда
@@ -290,7 +291,8 @@ VesselGeom VesselGeom::Preset(const G4String& n) {
 // детектора, засыпка — от внутреннего дна до уровня, заданного объёмом.
 void G1SDetector::BuildCup(G4LogicalVolume* w) {
   const VesselGeom& v = fVessel;
-  const double zFace = 43.00;                 // наружная плоскость головки
+  // 41,0 = крышка Al (см. BuildVessel)
+  const double zFace = 41.00;                 // наружная плоскость головки
   const double zBot = zFace;                  // сосуд стоит на торце
   const double zTop = zBot + v.height;
   const double rIn = v.outerR - v.wall;
@@ -331,13 +333,14 @@ void G1SDetector::BuildHead(G4LogicalVolume* w) {
   // Границы по оси, от кристалла к входному торцу
   const double zMgoTop  = zCry + h.mgoFace;        // 37,50
   const double zCanTop  = zMgoTop + h.alCan;       // 38,00
-  const double zRubTop  = zCanTop + h.rubber2;     // 40,00
-  const double zCaseTop = zRubTop + h.alCase;      // 41,50
-  const double zAirTop  = zCaseTop + h.airGap;     // 42,00
-  const double zFace    = zAirTop + h.rubber1;     // 43,00 — наружная плоскость
-  const double zWinBot  = -zCry - h.window;        // -36,50 — низ световода
-  const double zPmtBot  = zWinBot - h.pmtLen;      // -156,50
-  const double zTail    = zFace - h.unitLen;       // -272,00
+  // Торец по оператору: банка 0,5 -> воздух 1,0 -> крышка Al 2,0. Резины на
+  // торце нет; амортизатор 2 мм — только радиально.
+  const double zAirTop  = zCanTop + h.faceAir;     // 39,00 — верх зазора
+  const double zFace    = zAirTop + h.alCaseFace;  // 41,00 — наружная плоскость
+  const double zRubTop  = zCanTop;                 // радиальная резина до банки
+  const double zWinBot  = -zCry - h.window;        // -32,00 — низ слоя геля
+  const double zPmtBot  = zWinBot - h.pmtLen;      // -152,00
+  const double zTail    = zFace - h.unitLen;       // -274,00
 
   const G4Colour cCry(0.2, 0.9, 0.3), cMgo(1, 1, 1), cAl(0.7, 0.7, 0.75),
       cRub(0.15, 0.15, 0.15), cGlass(0.6, 0.8, 1.0), cEl(0.5, 0.3, 0.1);
@@ -353,22 +356,27 @@ void G1SDetector::BuildHead(G4LogicalVolume* w) {
   // стеклянный световод, состыкованный с ФЭУ.
   Ring("AlCan_side", rMgo, rCan, zWinBot, zMgoTop, Mat("G4_Al"), w, cAl);
   Ring("AlCan_face", 0, rCan, zMgoTop, zCanTop, Mat("G4_Al"), w, cAl);
-  Ring("Window", 0, rMgo, zWinBot, -zCry, Mat("G4_Pyrex_Glass"), w, cGlass);
+  // Стык кристалл->ФЭУ: тонкий оптический гель (силикон; по составу и
+  // плотности близок к резине, берём готовый материал). Толщина h.window.
+  Ring("Window", 0, rMgo, zWinBot, -zCry, Mat("G4_RUBBER_NATURAL"), w, cGlass);
 
-  // Амортизатор «резина 2 мм»
-  Ring("Rubber2_side", rCan, rRub, zPmtBot, zCanTop, Mat("G4_RUBBER_NATURAL"),
-       w, cRub);
-  Ring("Rubber2_face", 0, rRub, zCanTop, zRubTop, Mat("G4_RUBBER_NATURAL"),
+  // Амортизатор «резина 2 мм» — ТОЛЬКО радиально (оператор: на торце резины
+  // нет вовсе)
+  Ring("Rubber2_side", rCan, rRub, zPmtBot, zRubTop, Mat("G4_RUBBER_NATURAL"),
        w, cRub);
 
-  // Наружный корпус Al 1,5 мм — по всей длине устройства
-  Ring("AlCase_side", rRub, rCase, zTail, zRubTop, Mat("G4_Al"), w, cAl);
-  Ring("AlCase_face", 0, rCase, zRubTop, zCaseTop, Mat("G4_Al"), w, cAl);
+  // Наружный корпус: бок Al 1,5 по всей длине, крышка торца Al 2,0.
+  // Между банкой и крышкой — воздушный зазор 1,0 (чертёж, подтверждено
+  // оператором).
+  Ring("AlCase_side", rRub, rCase, zTail, zAirTop, Mat("G4_Al"), w, cAl);
+  Ring("FaceAir", 0, rRub, zCanTop, zAirTop, Mat("G4_AIR"), w, cAl);
+  Ring("AlCase_face", 0, rCase, zAirTop, zFace, Mat("G4_Al"), w, cAl);
 
-  // Входной торец: воздух 0,5 и наружный протектор «резина 1 мм»
-  Ring("FaceAir", 0, rCase, zCaseTop, zAirTop, Mat("G4_AIR"), w, cAl);
-  Ring("Rubber1_face", 0, rCase, zAirTop, zFace, Mat("G4_RUBBER_NATURAL"),
-       w, cRub);
+  // Наружная резиновая обёртка 1 мм по боку (чертёж: «резина 1 мм» на
+  // наружной поверхности корпуса; на торец не заходит)
+  if (h.rubberWrap > 0)
+    Ring("RubberWrap_side", rCase, rCase + h.rubberWrap, zTail, zAirTop,
+         Mat("G4_RUBBER_NATURAL"), w, cRub);
 
   // ФЭУ: баллон Ø71 со стенкой 1,5 и вакуумом внутри
   const double rPmt = 0.5 * h.pmtDia;              // 35,50

@@ -2,8 +2,9 @@
 """Проверка выгруженных таблиц штатным парсером CSV.
 
 ЗАЧЕМ. Файлы в results/ — это то, что читает внешний потребитель, и читает он
-их обычным csv.DictReader. Значит и проверять их надо тем же: прочитать и
-сверить число полей в каждой строке с шапкой.
+их обычным csv.DictReader (а бывает, что и просто split по запятой). Значит и
+проверять их надо так же: прочитать и сверить число полей в каждой строке
+с шапкой.
 
 ОТКУДА ВЗЯЛОСЬ. export_curves.py писал строки склейкой ",".join(...) без
 всякого экранирования. Значение geometry у точечных сеток — «точечный, 25 см»,
@@ -13,31 +14,22 @@
 энергии. Объёмные кривые при этом читались верно (в их названиях запятых нет),
 поэтому дефект и прожил столько времени.
 
-Три строки проверки ловят весь класс. Запускать после каждой выгрузки; в
-протокол проверок — рядом с check_paths.py.
+Сама проверка живёт в common/py/csvio.py и оттуда же вызывается при КАЖДОЙ
+записи. Здесь только обход дерева: два сторожа с разным поведением — это тот
+самый дефект «одно правило в двух местах».
 
     python tools/check_csv.py            # всё дерево detectors/*/results
     python tools/check_csv.py путь.csv   # один файл
 
 Код возврата: 0 — чисто, 1 — есть битые файлы.
 """
-import csv
 import glob
 import os
 import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-
-def check(path):
-    """[(номер строки, сколько полей)] у строк, не совпавших с шапкой."""
-    with open(path, encoding="utf-8", newline="") as fh:
-        rows = [(i + 1, r) for i, r in enumerate(csv.reader(fh))
-                if r and not r[0].lstrip().startswith("#")]
-    if not rows:
-        return []
-    n = len(rows[0][1])
-    return [(i, len(r)) for i, r in rows if len(r) != n]
+sys.path.insert(0, os.path.join(REPO, "common", "py"))
+import csvio  # noqa: E402
 
 
 def main(argv):
@@ -48,7 +40,7 @@ def main(argv):
                                               "results", "*.csv")))
     bad = 0
     for p in files:
-        errs = check(p)
+        errs = csvio.check(p)
         if errs:
             bad += 1
             rel = os.path.relpath(p, REPO)

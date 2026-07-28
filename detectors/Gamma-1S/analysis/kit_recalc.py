@@ -37,6 +37,7 @@ from datetime import date
 # было ни одного пути, привязанного к конкретной машине.
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
+import csvio  # noqa: E402
 import paths  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -523,27 +524,27 @@ if __name__ == "__main__":
                            "kit_recalc_volume_centroid.csv" if CENTROID
                            else "kit_recalc_volume.csv")
         out = os.path.abspath(out)
-        with open(out, "w", encoding="utf-8", newline="") as fh:
-            fh.write("# Пересчёт объёмных записей комплекта поверки.\n"
-                     "# A_изм = R_пика / eps_на_распад; A_пасп приведена на "
-                     "дату измерения.\n"
-                     "# ratio = A_изм / A_пасп: меньше единицы — модель "
-                     "ЗАВЫШАЕТ эффективность.\n"
-                     "# run — прогон распада, из которого взята "
-                     "eps_на_распад.\n")
-            fh.write("# purity — доля выхода окна, приходящаяся на саму линию;"
-                     " usable=0 значит\n"
-                     "#   линия плохо разделена и в активность НЕ ИДЁТ "
-                     "(порог %.2f).\n" % CLEAN_FRAC)
-            fh.write("geometry,nuclide,E_keV,rate_cps,eps_per_decay,"
-                     "A_meas_Bq_kg,A_pass_Bq_kg,ratio,d_pass_pct,run,"
-                     "purity,usable\n")
-            for r in rows:
-                fh.write("%s,%s,%.3f,%.4f,%.6e,%.1f,%.0f,%.4f,%.1f,%s,"
-                         "%.3f,%d\n"
-                         % (r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7],
-                            r[8], r[9], r[10] if r[10] is not None else 0.0,
-                            1 if r[11] else 0))
+        csvio.write(
+            out,
+            ["geometry", "nuclide", "E_keV", "rate_cps", "eps_per_decay",
+             "A_meas_Bq_kg", "A_pass_Bq_kg", "ratio", "d_pass_pct", "run",
+             "purity", "usable"],
+            [(r[0], r[1], "%.3f" % r[2], "%.4f" % r[3], "%.6e" % r[4],
+              "%.1f" % r[5], "%.0f" % r[6], "%.4f" % r[7], "%.1f" % r[8],
+              r[9], "%.3f" % (r[10] if r[10] is not None else 0.0),
+              "%d" % (1 if r[11] else 0)) for r in rows],
+            comments=[
+                "Пересчёт объёмных записей комплекта поверки.",
+                "A_изм = R_пика / eps_на_распад; A_пасп приведена на дату"
+                " измерения.",
+                "ratio = A_изм / A_пасп: меньше единицы — модель ЗАВЫШАЕТ"
+                " эффективность.",
+                "run — прогон распада, из которого взята eps_на_распад.",
+                "purity — доля выхода окна, приходящаяся на саму линию;"
+                " usable=0 значит",
+                "  линия плохо разделена и в активность НЕ ИДЁТ (порог %.2f)."
+                % CLEAN_FRAC,
+            ])
         print("\nтаблица: %s (%d строк)" % (out, len(rows)))
 
         # Активность по правилу ЛСРМ: средневзвешенное по ГОДНЫМ линиям,
@@ -609,26 +610,28 @@ if __name__ == "__main__":
             sp = os.path.abspath(os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), "..", "results",
                 "kit_activity_volume.csv"))
-            with open(sp, "w", encoding="utf-8", newline="") as fh:
-                fh.write("# Активность по правилу ЛСРМ: средневзвешенное по "
-                         "ГОДНЫМ линиям (usable=1),\n"
-                         "# неопределённость — максимум из взвешенной и "
-                         "разброса (столбец estimate).\n"
-                         "# nuclide=* — сводка по сосуду, тем же правилом по "
-                         "отношениям нуклидов;\n"
-                         "#   у неё A_meas_Bq и A_pass_Bq не определены и "
-                         "записаны нулями.\n"
-                         "# chi2_dof у строки * — мера согласия рядов между "
-                         "собой; больше ~2 значит,\n"
-                         "#   что одним числом набор не сводится.\n"
-                         "# Этот файл — ЕДИНСТВЕННЫЙ источник сводных чисел "
-                         "для отчёта и страницы.\n")
-                fh.write("geometry,nuclide,n_lines,A_meas_Bq,A_pass_Bq,"
-                         "ratio,d_ratio,estimate,chi2_dof\n")
-                for r in summary:
-                    fh.write("%s,%s,%d,%.4e,%.4e,%.4f,%.4f,%s,%s\n"
-                             % (r[0], r[1], r[2], r[3], r[4], r[5], r[6],
-                                r[7], "" if r[8] is None else "%.2f" % r[8]))
+            csvio.write(
+                sp,
+                ["geometry", "nuclide", "n_lines", "A_meas_Bq", "A_pass_Bq",
+                 "ratio", "d_ratio", "estimate", "chi2_dof"],
+                [(r[0], r[1], "%d" % r[2], "%.4e" % r[3], "%.4e" % r[4],
+                  "%.4f" % r[5], "%.4f" % r[6], r[7],
+                  "" if r[8] is None else "%.2f" % r[8]) for r in summary],
+                comments=[
+                    "Активность по правилу ЛСРМ: средневзвешенное по ГОДНЫМ"
+                    " линиям (usable=1),",
+                    "неопределённость — максимум из взвешенной и разброса"
+                    " (столбец estimate).",
+                    "nuclide=* — сводка по сосуду, тем же правилом по"
+                    " отношениям нуклидов;",
+                    "  у неё A_meas_Bq и A_pass_Bq не определены и записаны"
+                    " нулями.",
+                    "chi2_dof у строки * — мера согласия рядов между собой;"
+                    " больше ~2 значит,",
+                    "  что одним числом набор не сводится.",
+                    "Этот файл — ЕДИНСТВЕННЫЙ источник сводных чисел для"
+                    " отчёта и страницы.",
+                ])
             print("\nсводка: %s (%d строк)" % (sp, len(summary)))
 
     # Ненайденные записи — вслух. Пустая таблица не должна выглядеть как

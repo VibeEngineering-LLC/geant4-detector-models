@@ -35,6 +35,25 @@ if not os.path.isdir(BUILD):
         % BUILD)
 REF = str(paths.ref("Gamma-1S"))
 
+SUMMARY = os.path.join(str(paths.results("Gamma-1S")), "compare_lsrm_summary.csv")
+
+
+def marinelli_k():
+    """Отношение МК/эксперимент по маринелли — ИЗ ФАЙЛА, не из литерала.
+
+    Это число служит масштабом сразу нескольким разборам. Пока оно было
+    переписано от руки в трёх скриптах и в отчёте, после каждого пересчёта
+    сетки часть копий отставала, а на глаз такое не ловится: и 1,171, и 1,165
+    выглядят одинаково правдоподобно.
+    """
+    try:
+        with open(SUMMARY, encoding="utf-8") as fh:
+            fh.readline()
+            return "%.3f" % float(fh.readline().split(",")[0])
+    except (OSError, ValueError, IndexError):
+        return "неизвестно (запустите compare_lsrm.py)"
+
+
 # Окно ППП: расчёт без уширения, пик острый; края учитывают утечку в
 # соседний канал.
 WIN = 6.0        # +- кэВ вокруг E0
@@ -129,3 +148,10 @@ if __name__ == "__main__":
     print("chi2/dof формы            = %.2f" % chi2)
     print("макс. отклонение формы    = %+.1f %%  и  %+.1f %%"
           % (100 * max(dev), 100 * min(dev)))
+
+    # Сводка кладётся файлом, чтобы это число ЖИЛО В ОДНОМ МЕСТЕ. Раньше оно
+    # было переписано от руки в compare_point.py и в отчёте и отставало после
+    # каждого пересчёта сетки.
+    with open(SUMMARY, "w", encoding="utf-8", newline="") as fh:
+        fh.write("k_mc_over_exp,d_k,n_points,rms_shape,chi2_dof\n")
+        fh.write("%.4f,%.4f,%d,%.4f,%.3f\n" % (k, k * dk, len(logs), rms, chi2))

@@ -35,7 +35,7 @@ import paths  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import becqmoni as bm  # noqa: E402
-from compare_lsrm import read_run  # noqa: E402
+from compare_lsrm import read_run, marinelli_k as _marinelli_k  # noqa: E402
 
 BUILD = str(paths.build("Gamma-1S"))
 
@@ -133,5 +133,6 @@ if __name__ == "__main__":
     print("\nt = %.0f с (2 ч), масса пробы %.1f кг" % (TMEAS, MASS_KG))
     print("МИА — формула ЛСРМ, 4*sqrt(2) = 5,657; МДА_К — Карри/ГОСТ, "
           "(2,71+4,65*sqrt(B))/(t*eta).")
+    k = _marinelli_k()
     print("Эффективность здесь РАСЧЁТНАЯ (шкала МК). В шкале эксперимента "
-          "её надо делить на 1,171 — обе колонки тогда x1,171.")
+          "её надо делить на %s — обе колонки тогда x%s." % (k, k))

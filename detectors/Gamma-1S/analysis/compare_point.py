@@ -83,6 +83,52 @@ def mc_curve(tag):
     return out
 
 
+# --- Зонная аппроксимация по образцу ЛСРМ --------------------------------
+#
+# EffCalcMC/Efficiency строит кривую НЕ одним полиномом по всему диапазону,
+# а ЗОНАМИ С ПЕРЕКРЫТИЕМ и сшивкой (оператор показал на EffReg.efa: зоны
+# 20–245 / 70–859 / 459–3010 кэВ, степени 5/3/3, χ² = 4,47). Один полином
+# 5-й степени по нашим 24 узлам давал χ²/ν = 11,5 — он гнёт середину, чтобы
+# дотянуться до краёв. Зоны ниже — те же ЛСРМ-овские, масштабированные на
+# диапазон сетки; в перекрытии соседние ветви смешиваются линейно по log E,
+# что и есть «сшивка».
+ZONES = [(None, 245.4, 5), (70.0, 859.4, 3), (459.2, None, 3)]
+
+
+def zoned_fit(Eg, yg, dyg):
+    """[(lo, hi, coeffs)] по зонам + функция интерполяции log-log."""
+    lE, ly = np.log(Eg), np.log(yg)
+    w = yg / np.maximum(dyg, 1e-30)
+    fits = []
+    for lo, hi, deg in ZONES:
+        lo = Eg[0] if lo is None else lo
+        hi = Eg[-1] if hi is None else hi
+        m = (Eg >= lo * 0.999) & (Eg <= hi * 1.001)
+        if m.sum() < deg + 2:      # зоне нужен запас узлов над степенью
+            deg = max(1, m.sum() - 2)
+        cf = np.polyfit(lE[m], ly[m], deg, w=w[m])
+        rr = (ly[m] - np.polyval(cf, lE[m])) * w[m]
+        chi2 = (rr ** 2).sum() / max(1, m.sum() - deg - 1)
+        fits.append((lo, hi, deg, cf, chi2, int(m.sum())))
+
+    def ev(E):
+        x = math.log(E)
+        # ветви, чья зона накрывает E; в перекрытии — линейная сшивка по logE
+        hit = [(lo, hi, cf) for lo, hi, _d, cf, _c, _n in fits
+               if lo * 0.999 <= E <= hi * 1.001]
+        if not hit:
+            lo, hi, _d, cf, _c, _n = fits[0] if E < fits[0][1] else fits[-1]
+            return math.exp(np.polyval(cf, x))
+        if len(hit) == 1:
+            return math.exp(np.polyval(hit[0][2], x))
+        (l1, h1, c1), (l2, h2, c2) = hit[0], hit[1]
+        a, b = math.log(max(l1, l2)), math.log(min(h1, h2))
+        t = 0.5 if b <= a else min(1.0, max(0.0, (x - a) / (b - a)))
+        return math.exp((1 - t) * np.polyval(c1, x) + t * np.polyval(c2, x))
+
+    return fits, ev
+
+
 if __name__ == "__main__":
     for tag, efr, title in GEOM:
         mc = mc_curve(tag)
@@ -97,17 +143,17 @@ if __name__ == "__main__":
                for p in s["points"]]
         print("\n===== %s (%s): точек ЛСРМ %d" % (tag, title, len(pts)))
         # Гладкая кривая по расчётным точкам: у ЛСРМ 24 линии, а в сетке
-        # 20 узлов, и совпадают далеко не все. Интерполяция полиномом в log-log
-        # по СВОИМ точкам законна — та же процедура, что строит рабочую кривую;
-        # χ²/dof подгонки печатается, чтобы интерполяция не была слепой.
+        # 20 узлов, и совпадают далеко не все. Интерполяция — ЗОННАЯ, по
+        # образцу ЛСРМ (см. ZONES выше): один полином на весь диапазон гнул
+        # середину ради краёв. χ²/ν печатается по каждой зоне.
         Eg = np.array(sorted(mc))
         yg = np.array([mc[e][0] for e in Eg])
         dyg = np.array([mc[e][1] for e in Eg])
-        deg = 5
-        cf = np.polyfit(np.log(Eg), np.log(yg), deg, w=yg / np.maximum(dyg, 1e-30))
-        rr = (np.log(yg) - np.polyval(cf, np.log(Eg))) * yg / np.maximum(dyg, 1e-30)
-        print("   интерполяция: полином %d-й степени по %d узлам, "
-              "chi2/dof = %.2f" % (deg, len(Eg), (rr ** 2).sum() / (len(Eg) - deg - 1)))
+        fits, ev = zoned_fit(Eg, yg, dyg)
+        print("   интерполяция зонами (образец ЛСРМ), %d узлов:" % len(Eg))
+        for lo, hi, deg, _cf, chi2, n in fits:
+            print("      %6.1f–%6.1f кэВ  степень %d, узлов %2d, chi2/nu = %.2f"
+                  % (lo, hi, deg, n, chi2))
         print("%9s %-8s %12s %12s %8s %8s %s" %
               ("E, кэВ", "нуклид", "эксп", "МК", "МК/эксп", "±", "источник МК"))
         logs, ws = [], []
@@ -117,7 +163,7 @@ if __name__ == "__main__":
                 m, dm = mc[key]
                 src = "узел"
             elif Eg[0] <= E <= Eg[-1]:
-                m = math.exp(np.polyval(cf, math.log(E)))
+                m = ev(E)
                 dm = m * 0.02      # погрешность интерполяции, оценка
                 src = "интерп."
             else:

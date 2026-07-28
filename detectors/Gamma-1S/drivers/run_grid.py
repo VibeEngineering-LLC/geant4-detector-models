@@ -46,6 +46,22 @@ N = 400000
 DENSITIES = [1.0, 1.6]
 
 
+def todo(tag, force=False):
+    """Энергии, которых ещё нет: сетка расширяется по краям (grid_energies),
+    и гонять заново все двадцать четыре точки — часы впустую. --force считает
+    всё, это нужно после смены сборки модели."""
+    if force:
+        return list(LINES)
+    left = [e for e in LINES
+            if not os.path.exists(os.path.join(OUT, "%s_E%07.1f.csv"
+                                               % (tag, e)))]
+    if left and len(left) < len(LINES):
+        print("   %s: уже посчитано %d из %d, считаю %d"
+              % (tag, len(LINES) - len(left), len(LINES), len(left)),
+              flush=True)
+    return left
+
+
 def macro(lines, n, tag):
     txt = ["/run/initialize", "/control/verbose 0", "/run/verbose 0",
            "/gps/particle gamma", "/gps/pos/type Volume",
@@ -63,15 +79,21 @@ if __name__ == "__main__":
     # аргументы: [матрица] [плотности через запятую]
     #   run_grid.py                     -> OISN16, 1,00 и 1,60 (сверка с ЛСРМ)
     #   run_grid.py water 1.0           -> вода 1,0 (МИА по паспорту)
-    matrix = sys.argv[1] if len(sys.argv) > 1 else "OISN16"
-    rhos = ([float(x) for x in sys.argv[2].split(",")]
-            if len(sys.argv) > 2 else DENSITIES)
+    args = [a for a in sys.argv[1:] if a != "--force"]
+    force = "--force" in sys.argv
+    matrix = args[0] if args else "OISN16"
+    rhos = ([float(x) for x in args[1].split(",")]
+            if len(args) > 1 else DENSITIES)
     for rho in rhos:
         tag = "rho%.2f" % rho if matrix == "OISN16" else "%s%.2f" % (matrix, rho)
+        left = todo(tag, force)
+        if not left:
+            print("=== %s: всё посчитано ===" % tag, flush=True)
+            continue
         mpath = os.path.join(BUILD, "grid_%s.mac" % tag)
-        open(mpath, "w", encoding="utf-8").write(macro(LINES, N, tag))
+        open(mpath, "w", encoding="utf-8").write(macro(left, N, tag))
         print("=== %s (%s) : %d энергий x %d событий ==="
-              % (tag, matrix, len(LINES), N), flush=True)
+              % (tag, matrix, len(left), N), flush=True)
         # ВАЖНО: text=True без encoding декодирует вывод в cp1251 (локаль
         # Windows) и падает на первом же байте вне таблицы — Geant4 печатает
         # и UTF-8, и служебные символы. Декодируем сами, с заменой.

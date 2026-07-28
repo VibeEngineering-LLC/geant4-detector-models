@@ -28,14 +28,46 @@
 #include "G4VUserPrimaryGeneratorAction.hh"
 
 #include <cstdio>
+#include <cstdlib>
+#include <vector>
 
 namespace {
 
-const double E_GRID[] = {59.5, 88.0, 122.1, 165.9, 238.632, 241.995, 295.223,
-                         338.32, 351.932, 463.004, 583.187, 609.32, 661.657,
-                         768.36, 911.204, 1120.294, 1460.822, 1764.491,
-                         2614.511, 3000.0};
-const int NE = sizeof(E_GRID) / sizeof(E_GRID[0]);
+// Сетка энергий приходит АРГУМЕНТОМ — файлом со списком, по числу в строке.
+// Раньше здесь лежала третья копия списка (первые две — в двух драйверах на
+// питоне, их уже свели в drivers/grid_energies.py). Копии разъезжаются молча:
+// сетку расширили краями паспортных зон 45,3 и 3552,5 кэВ, а mu остались на
+// старых двадцати точках, и самопоглощение упало с «нет mu для E = 45,300».
+// Список ниже — АВАРИЙНЫЙ, на случай запуска без аргумента; рабочий путь —
+// drivers/run_mu.py, который пишет файл из grid_energies.py.
+const double E_FALLBACK[] = {59.5, 88.0, 122.1, 165.9, 238.632, 241.995,
+                             295.223, 338.32, 351.932, 463.004, 583.187,
+                             609.32, 661.657, 768.36, 911.204, 1120.294,
+                             1460.822, 1764.491, 2614.511, 3000.0};
+
+std::vector<double> LoadGrid(const char* path) {
+  std::vector<double> out;
+  if (path) {
+    FILE* f = std::fopen(path, "r");
+    if (!f) {
+      std::fprintf(stderr, "не открыть список энергий: %s\n", path);
+      std::exit(2);
+    }
+    double e = 0;
+    while (std::fscanf(f, "%lf", &e) == 1)
+      if (e > 0)
+        out.push_back(e);
+    std::fclose(f);
+    if (out.empty()) {
+      std::fprintf(stderr, "список энергий пуст: %s\n", path);
+      std::exit(2);
+    }
+    return out;
+  }
+  for (double v : E_FALLBACK)
+    out.push_back(v);
+  return out;
+}
 
 G4Material* gOisn = nullptr;
 G4Material* gWater = nullptr;   // для лёгких матриц источников комплекта
@@ -70,6 +102,8 @@ public:
 }  // namespace
 
 int main(int argc, char** argv) {
+  const std::vector<double> E_GRID = LoadGrid(argc > 1 ? argv[1] : nullptr);
+  const int NE = static_cast<int>(E_GRID.size());
   auto* rm = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Serial);
   rm->SetUserInitialization(new Geom());
   rm->SetUserInitialization(new Phys());

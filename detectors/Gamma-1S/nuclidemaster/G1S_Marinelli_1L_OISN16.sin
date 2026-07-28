@@ -1,0 +1,99 @@
+//---------------------------------
+//SOURCE PARAMETERS BLOCK:
+//---------------------------------
+//Source types: POINT, CYLINDER, MARINELLI, CONE
+//
+// Marinelli 1 L with OISN-16 filling, as modelled in
+// geant4-detector-models (G1SDetector.hh VesselGeom + BuildVessel).
+// Vessel: outer D150 x H110 mm, wall 2 mm polypropylene, well D80 mm,
+// well depth 74 mm (sits over the whole detector head).
+// Distance 0.15 cm stands for two layers outside the detector cap that
+// have no slot in the .din: air 0.5 mm + rubber protector 1.0 mm
+// (rubber vs air costs ~1% transmission at 60 keV).
+// Source: target volume 1000 cm3 -> fill level 11.6 mm above the well
+// floor; total source height 8.4 cm. OISN-16, bulk density 1.60.
+
+SourceType = MARINELLI
+
+//Marinelli beaker Source
+SM_BeakerToDetectorFrontDistance = 0.15 cm
+SM_BeakerDiameter = 15 cm
+SM_BeakerHeight = 11 cm
+SM_BeakerHoleDiameter = 8 cm
+SM_BeakerHoleHeight = 7.2 cm
+SM_BeakerSideThickness = 0.2 cm
+SM_BeakerEndWallThickness = 0.2 cm
+SM_BeakerHoleSideThickness = 0.2 cm
+SM_BeakerHoleEndWallThickness = 0.2 cm
+SM_SourceHeight = 8.4 cm
+
+
+//---------------------------------
+//MATERIAL PARAMETERS BLOCK:
+//---------------------------------
+//Marinelli beaker materials:
+//----------------------------
+
+
+// Walls: polypropylene (C3H6)n
+SM_nWallElements = 2
+SM_RoWall = 0.9
+SM_ZWall[0] = 1
+SM_FractionsWall[0] = 0.143711
+SM_ZWall[1] = 6
+SM_FractionsWall[1] = 0.856289
+SM_FractionTypeWall = MASS
+M_SM_Beaker.MName = Polypropylene
+M_SM_Beaker.Nmaterials = 1
+M_SM_Beaker.Name[0] = Polypropylene
+M_SM_Beaker.MatRelWeight[0] = 1
+
+
+// Source: OISN-16 soil imitator, density 1.60
+// (composition as in the Geant4 model MakeMatrix)
+SM_nSourceElements = 5
+SM_RoSource = 1.6
+SM_ZSource[0] = 1
+SM_FractionsSource[0] = 0.022
+SM_ZSource[1] = 6
+SM_FractionsSource[1] = 0.206
+SM_ZSource[2] = 7
+SM_FractionsSource[2] = 0.009
+SM_ZSource[3] = 8
+SM_FractionsSource[3] = 0.049
+SM_ZSource[4] = 26
+SM_FractionsSource[4] = 0.714
+SM_FractionTypeSource = MASS
+M_SM_Source.MName = OISN16
+M_SM_Source.Nmaterials = 1
+M_SM_Source.Name[0] = OISN16
+M_SM_Source.MatRelWeight[0] = 1
+
+
+// Empty Space
+SM_nEmptySpaceElements = 3
+SM_RoEmptySpace = 0.001
+SM_ZEmptySpace[0] = 7
+SM_FractionsEmptySpace[0] = 0.755
+SM_ZEmptySpace[1] = 8
+SM_FractionsEmptySpace[1] = 0.232
+SM_ZEmptySpace[2] = 18
+SM_FractionsEmptySpace[2] = 0.013
+SM_FractionTypeEmptySpace = MASS
+M_SM_EmptySpace.MName = Air
+M_SM_EmptySpace.Nmaterials = 1
+M_SM_EmptySpace.Name[0] = Air
+M_SM_EmptySpace.MatRelWeight[0] = 1
+
+
+//---------------------------------
+//COLOR PARAMETERS BLOCK:
+//---------------------------------
+//Marinelli source colors:
+//---------------------------
+SM_Beaker_Color = 12493944
+SM_Source_Color = 9075829
+SM_EmptySpace_Color = 15856049
+SM_Detector_Color = 0
+
+

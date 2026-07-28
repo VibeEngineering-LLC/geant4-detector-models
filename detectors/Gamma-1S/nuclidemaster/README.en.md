@@ -84,8 +84,17 @@ the decisive step.
 
 ## Point-source EffCalcMC calculation, 28.07.2026 — FORK RESOLVED
 
+**NOTE (28.07.2026): the cross-check below is stale.** `EffReg_G1S_Point5cm.efa`
+was computed by EffCalcMC from the `.din` exported BEFORE the end-face and
+reflector-density fix (the same `.din` as in the Marinelli comparison above).
+The numbers below remain as a historical trace of the "code vs. code"
+investigation; the up-to-date model-vs-measurement comparison is in
+`REPORT.md` §2.4а and §5а, which also gives an honest account of the density
+scan on the new geometry (the direction is right, the shape is not).
+
 The operator assembled a POINT source (distance 5 cm, radial 0) and ran the same
-grid. File — `EffReg_G1S_Point5cm.efa`, cross-check with `results/eff_p5cm.csv`:
+grid. File — `EffReg_G1S_Point5cm.efa`, cross-check with `results/eff_p5cm.csv`
+(also stale at the time of this note):
 
     45.3–59.5 keV   our/ECM = 1.017…1.024   (soft edge CONVERGED)
     88–166 keV      0.92…0.97
@@ -112,9 +121,15 @@ measured "from the surface of the detector cover", while `Point5cm.sin` has
 the end face includes the rubber protector (equivalent to 5.15 cm) — after the
 geometry fix of 28.07.2026 (no protector on the end face, outer plane = Al cover)
 this difference disappeared, and both models, ours and ECM's, measure from the same
-physical plane. Where the 0.968 level then comes from is an open question; the
-reference to 1.5 mm in this README and in the REPORT is wrong and is withdrawn by
-the next run.
+physical plane. Where the 0.968 level then comes from remains an open question SPECIFICALLY for
+the code-vs-code comparison (our Geant4 vs. EffCalcMC); it requires a fresh ECM
+run against a re-exported `.din`, which does not exist yet. Separately from this
+— the comparison of the model against MEASUREMENT on the new geometry has already
+been done and does not depend on the `.din`: `REPORT.md` §2.4а gives p5cm
+MC/exp = 1.094 (was 0.971 before the end-face fix), p25cm = 1.010 (was 0.928).
+These are two different questions: "do the two codes agree" and "does the model
+agree with the instrument" — the first awaits re-export, the second is already
+answered.
 
 Incidental confirmation: fitting this curve, Efficiency itself converged on
 TWO zones (20–245 / 70–3010, degrees 4/4, χ² = 8.8) — matching our own scan via

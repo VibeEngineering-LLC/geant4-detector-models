@@ -108,6 +108,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
+import csvio  # noqa: E402
 import paths  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -448,18 +449,22 @@ def _run():
         out = os.path.abspath(os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             "..", "results", "deconv_lines.csv"))
-        with open(out, "w", encoding="utf-8", newline="") as fh:
-            fh.write("# Связанная деконволюция: активность по группе линий.\n"
-                     "# A = N_распадов*S_измер/S_модель/t — обе площади сняты\n"
-                     "#   одной и той же подгонкой, см. шапку deconv.py.\n"
-                     "# ratio_window — то же отношение оконным съёмом; у чистых\n"
-                     "#   линий (purity>=0.95) обязано совпадать.\n")
-            fh.write("geometry,nuclide,E_keV,n_lines,A_Bq,dA_Bq,A_pass_Bq,"
-                     "ratio,ratio_window,purity,chi2_meas,chi2_model,"
-                     "shift_keV\n")
-            for r in rows:
-                fh.write("%s,%s,%.3f,%d,%.2f,%.2f,%.2f,%.4f,%.4f,%.3f,"
-                         "%.3f,%.3f,%+.2f\n" % r)
+        csvio.write(
+            out,
+            ["geometry", "nuclide", "E_keV", "n_lines", "A_Bq", "dA_Bq",
+             "A_pass_Bq", "ratio", "ratio_window", "purity", "chi2_meas",
+             "chi2_model", "shift_keV"],
+            [(r[0], r[1], "%.3f" % r[2], "%d" % r[3], "%.2f" % r[4],
+              "%.2f" % r[5], "%.2f" % r[6], "%.4f" % r[7], "%.4f" % r[8],
+              "%.3f" % r[9], "%.3f" % r[10], "%.3f" % r[11],
+              "%+.2f" % r[12]) for r in rows],
+            comments=[
+                "Связанная деконволюция: активность по группе линий.",
+                "A = N_распадов*S_измер/S_модель/t — обе площади сняты",
+                "  одной и той же подгонкой, см. шапку deconv.py.",
+                "ratio_window — то же отношение оконным съёмом; у чистых",
+                "  линий (purity>=0.95) обязано совпадать.",
+            ])
         print("\nтаблица: %s (%d строк)" % (out, len(rows)))
 
 

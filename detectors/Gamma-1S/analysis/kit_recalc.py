@@ -260,6 +260,41 @@ def decay_factor(nuc, d0, d1):
     return 0.5 ** (dt / T12[nuc])
 
 
+def lsrm_average(vals):
+    """Активность по нескольким линиям ПО ПРАВИЛУ ЛСРМ.
+
+    «Алгоритмические основы SpectraLine» §5 и методика «Активность в счётных
+    образцах» предписывают одно и то же: средневзвешенное по линиям с весами
+    w = 1/(ΔA)², а неопределённость — МАКСИМУМ из двух оценок, средневзвешенной
+    и разброса:
+
+        Ā = Σ Aᵢwᵢ / Σwᵢ
+        Δ_св = Ā·√(Σwᵢ)⁻¹ ,  Δ_ср = √( Σwᵢ(Ā−Aᵢ)² / (Σwᵢ·(n−1)) )
+
+    Медиана, стоявшая здесь раньше, ни одному из этих правил не отвечает: она
+    не знает о погрешностях и потому даёт равный вес точной и грубой линии.
+    При весах 1/σ² линия с погрешностью втрое меньшей получает вес в девять раз
+    больший — это и есть то, что на практике называют «расчётом по лучшей
+    линии», только записанное честно.
+
+    vals — [(A, ΔA)]. Возврат: (Ā, ΔĀ, какая оценка сработала, n).
+    """
+    pts = [(a, d) for a, d in vals if a > 0 and d and d > 0]
+    if not pts:
+        return None
+    w = [1.0 / d ** 2 for _a, d in pts]
+    sw = sum(w)
+    m = sum(a * wi for (a, _d), wi in zip(pts, w)) / sw
+    d_w = math.sqrt(1.0 / sw)
+    n = len(pts)
+    if n > 1:
+        d_s = math.sqrt(sum(wi * (m - a) ** 2 for (a, _d), wi in zip(pts, w))
+                        / (sw * (n - 1)))
+    else:
+        d_s = 0.0
+    return (m, max(d_w, d_s), "разброс" if d_s > d_w else "взвеш.", n)
+
+
 def eps_per_decay(geom, ckey, E, fwhm, rho_src, mu_src):
     """Эффективность НА РАСПАД РОДИТЕЛЯ в окне ±1 ПШПВ с полками.
 
@@ -320,37 +355,68 @@ def eps_per_decay(geom, ckey, E, fwhm, rho_src, mu_src):
 считается, какая доля выхода внутри окна приходится на ±3 кэВ вокруг номинала.
 Доля выше CLEAN_FRAC — линия чистая, центроида есть калибровочный сдвиг и её
 надо использовать. Ниже — группа, и центроида к калибровке отношения не имеет.
+
+ПРАВИЛО ОТБОРА ЛИНИЙ (указание оператора). Плохо разделённая линия для расчёта
+активности НЕ ГОДИТСЯ. Площадь такой линии — сумма нескольких, и приписывать её
+одному переходу нельзя, сколько бы поправок ни вводить. Линия 911 кэВ Ac-228
+годится только как материал для отработки алгоритма деконволюции, и до тех пор,
+пока он не отработан, из активности исключается.
+
+Мера — ЧИСТОТА: доля выхода внутри окна ±1 ПШПВ, приходящаяся на саму линию
+(±3 кэВ). Считается по спектру испускания того же прогона, то есть по данным, и
+учитывает ИНТЕНСИВНОСТЬ соседей, а не только расстояние. Порог 0,95.
+
+Проверено против независимой меры — предела Спарроу 0,85·ПШПВ: обе дают один и
+тот же набор годных линий. Там, где они расходились бы, права чистота: слабый
+сосед в двух кэВ мешает меньше, чем сильный в сорока.
+
+Что вышло по комплекту:
+    годны  Cs-137 661,7 (1,00); K-40 1460,8 (1,00); Ra-226 295,2 (0,96),
+           351,9 (0,99), 609,3 (0,98); Th-232 2614,5 (1,00)
+    нет    Ra-226 1120,3 (0,85; Bi-214 1155 — 9 %), 1764,5 (0,82; 1730 — 15 %);
+           Th-232 238,6 (0,89; Ac-228 209 — 8 %), 583,2 (0,89; 562 — 3 %),
+           911,2 (0,48; 968 — 29 %, 964 — 9 %, 860 — 8 %)
+
+Следствие, которое надо знать: у тория остаётся ОДНА годная линия — 2614,5 кэВ.
+Активность Th-232 держится на ней одной, и запаса по линиям там нет.
+
+Негодные линии из таблицы не выбрасываются: они считаются, помечаются столбцами
+purity и usable и не входят в медианы. Прятать их незачем — на них проверяется
+деконволюция.
 """
 CENTROID = "--centroid" in sys.argv
-CLEAN_FRAC = 0.90        # доля выхода окна, приходящаяся на саму линию
+CLEAN_FRAC = 0.95        # порог чистоты для расчёта активности
 CLEAN_HALF = 3.0         # кэВ, полуширина «самой линии» в спектре испускания
 
 
-def line_is_clean(base, E, win):
-    """Одна ли линия в окне: по спектру испускания прогона. None — нет данных."""
+def purity(base, E, win):
+    """(чистота, [(энергия, доля) засорителей]) по спектру испускания прогона."""
     p = os.path.join(BUILD, base + "_emit.csv")
     if not os.path.exists(p):
-        return None
+        return None, []
     emit, _N = load_hist(p)
     tot = sum(c for e, c in emit.items() if abs(e - E) <= win)
-    own = sum(c for e, c in emit.items() if abs(e - E) <= CLEAN_HALF)
     if tot <= 0:
-        return None
-    return (own / tot) >= CLEAN_FRAC, own / tot
+        return None, []
+    own = sum(c for e, c in emit.items() if abs(e - E) <= CLEAN_HALF)
+    bad = sorted(((c / tot, e) for e, c in emit.items()
+                  if CLEAN_HALF < abs(e - E) <= win and c > 0.02 * tot),
+                 reverse=True)
+    return own / tot, bad
 
 
-def measured_centre(s, E, base, win):
-    """Центр окна ИЗМЕРЕНИЯ: центроида, если линия чистая; иначе номинал."""
-    if not CENTROID:
-        return E, None, None
-    clean = line_is_clean(base, E, win)
-    frac = clean[1] if clean else None
-    if clean is None or not clean[0]:
-        return E, None, frac
+def measured_centre(s, E, frac):
+    """Центр окна ИЗМЕРЕНИЯ: центроида у чистой линии, иначе номинал.
+
+    У группы «центроида» — это центр тяжести группы, а не калибровочный сдвиг;
+    сдвигать по ней окно измерения, оставив модельное на номинале, значит
+    захватить разные доли группы с двух сторон. Проверено: так разброс по
+    «Денте» вырос с 1,37 до 1,66.
+    """
+    if not CENTROID or frac is None or frac < CLEAN_FRAC:
+        return E, None
     f = bm.peak_find(s, E)
-    if f is None:
-        return E, None, frac
-    return f[0], f[0] - E, frac
+    return (f[0], f[0] - E) if f else (E, None)
 
 
 if __name__ == "__main__":
@@ -396,7 +462,9 @@ if __name__ == "__main__":
             base = RUNBASE.get((geom, ckey))
             if base is None:
                 continue          # для этой пары геометрия/нуклид прогона нет
-            Em, dshift, frac = measured_centre(s, E, base, fw)
+            frac, dirt = purity(base, E, fw)
+            usable = frac is not None and frac >= CLEAN_FRAC
+            Em, dshift = measured_centre(s, E, frac)
             r = bm.net_rate(s, b, Em, fw, roi=1.0, side=1.0)
             if r is None or r[0] <= 0:
                 continue
@@ -409,15 +477,21 @@ if __name__ == "__main__":
             if not eps:
                 continue
             A = rate / eps
-            tag = ""
-            if CENTROID:
-                tag = ("  сдвиг %+.2f кэВ (чистота %.2f)" % (dshift, frac)
-                       if dshift else
-                       "  без сдвига: группа (чистота %.2f)" % (frac or 0.0))
+            # Погрешность активности по линии: статистика чистой площади плюс
+            # паспортная неопределённость источника. Она и задаёт вес линии в
+            # средневзвешенном по правилу ЛСРМ.
+            dA = A * math.hypot(r[1] / r[0], dpct / 100.0)
+            tag = "  чистота %.2f%s" % (
+                frac if frac is not None else 0.0,
+                "" if usable else " — В АКТИВНОСТЬ НЕ ИДЁТ: " + (
+                    ", ".join("%.0f кэВ %.0f%%" % (e, 100 * f)
+                              for f, e in dirt[:3]) or "группа"))
+            if CENTROID and dshift:
+                tag += ", сдвиг %+.2f кэВ" % dshift
             print("%-13s %-8s %9.1f %8.3f %11.4e %9.1f %8.3f%s"
                   % (geom, nuc, E, rate, eps, A / (mass / 1000.0), A / A0, tag))
             rows.append((geom, nuc, E, rate, eps, A / (mass / 1000.0),
-                         aspec, A / A0, dpct, base))
+                         aspec, A / A0, dpct, base, frac, usable, A, dA, A0))
         # Соответствие фона геометрии. У Денты и Петри опорный фон —
         # «пустая защита»: кювета мала, водяной маринелльной защиты нет, и
         # empty_shield — правильный выбор (в имени файла стоит «point5cm»
@@ -444,18 +518,46 @@ if __name__ == "__main__":
                      "ЗАВЫШАЕТ эффективность.\n"
                      "# run — прогон распада, из которого взята "
                      "eps_на_распад.\n")
+            fh.write("# purity — доля выхода окна, приходящаяся на саму линию;"
+                     " usable=0 значит\n"
+                     "#   линия плохо разделена и в активность НЕ ИДЁТ "
+                     "(порог %.2f).\n" % CLEAN_FRAC)
             fh.write("geometry,nuclide,E_keV,rate_cps,eps_per_decay,"
-                     "A_meas_Bq_kg,A_pass_Bq_kg,ratio,d_pass_pct,run\n")
+                     "A_meas_Bq_kg,A_pass_Bq_kg,ratio,d_pass_pct,run,"
+                     "purity,usable\n")
             for r in rows:
-                fh.write("%s,%s,%.3f,%.4f,%.6e,%.1f,%.0f,%.4f,%.1f,%s\n" % r)
+                fh.write("%s,%s,%.3f,%.4f,%.6e,%.1f,%.0f,%.4f,%.1f,%s,"
+                         "%.3f,%d\n"
+                         % (r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7],
+                            r[8], r[9], r[10] if r[10] is not None else 0.0,
+                            1 if r[11] else 0))
         print("\nтаблица: %s (%d строк)" % (out, len(rows)))
+
+        # Активность по правилу ЛСРМ: средневзвешенное по ГОДНЫМ линиям,
+        # неопределённость — максимум из взвешенной и разброса.
+        print("\nАктивность по правилу ЛСРМ (средневзвешенное, вес 1/dA²;\n"
+              "плохо разделённые линии исключены):")
+        print("   %-13s %-8s %5s %12s %12s %9s %s"
+              % ("геометрия", "нуклид", "линий", "A изм., Бк", "A пасп., Бк",
+                 "A/пасп", "оценка d"))
         for g in ("Marinelli_1L", "Denta_120mL", "Petri_60mL"):
-            rr = [r[7] for r in rows if r[0] == g]
-            if rr:
-                rr.sort()
-                print("   %-13s строк %2d, медиана A/пасп %.3f, "
-                      "разброс %.3f..%.3f"
-                      % (g, len(rr), rr[len(rr) // 2], rr[0], rr[-1]))
+            for nuc in ("Cs-137", "K-40", "Ra-226", "Th-232"):
+                sel = [r for r in rows
+                       if r[0] == g and r[1] == nuc and r[11]]
+                if not sel:
+                    skipped = [r for r in rows if r[0] == g and r[1] == nuc]
+                    if skipped:
+                        print("   %-13s %-8s   — все линии плохо разделены, "
+                              "активность НЕ СЧИТАЕТСЯ" % (g, nuc))
+                    continue
+                av = lsrm_average([(r[12], r[13]) for r in sel])
+                if not av:
+                    continue
+                A0 = sel[0][14]
+                m, dm, kind, n = av
+                print("   %-13s %-8s %5d %12.4g %12.4g %9s %s"
+                      % (g, nuc, n, m, A0,
+                         "%.3f±%.3f" % (m / A0, dm / A0), kind))
 
     # Ненайденные записи — вслух. Пустая таблица не должна выглядеть как
     # «всё сошлось»: именно так этот пересчёт и простоял незамеченным.

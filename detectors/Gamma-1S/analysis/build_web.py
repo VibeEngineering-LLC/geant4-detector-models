@@ -19,6 +19,7 @@ GitHub Pages, и из файла).
 import csv
 import math
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -69,18 +70,103 @@ def find_eff_dir():
     return None
 
 
-def measured(name):
-    """Точки измеренной кривой: [(E, eps, d_eps)] — из .efa, иначе из .efr.
+# --- подгоночная кривая ЛСРМ из .efa ----------------------------------------
+# Точки — это ещё не паспортная кривая. Прибор работает по ПОДГОНКЕ, и она
+# лежит в том же .efa, просто не среди точек: блок Zones/Curve_*.
+#
+# Формат (разобран по данным, в документации к формату его нет):
+#   Zones=N
+#   Zone_i = степень, lg(E_min), lg(E_max), sigma
+#   Curve_i_k = коэффициенты k-го базисного полинома, СТАРШАЯ степень первой
+#   Curve_i   = коэффициенты разложения по этому базису
+# Значение: lg(eps) = sum_k c_k * P_k(lg E). Базис ортогональный (Форсайта) по
+# самим точкам: у линейного P_2 корень стоит во взвешенном среднем lg E, у
+# квадратичного оба корня внутри диапазона данных — по этому признаку
+# соглашение и опознано.
+#
+# Проверка расшифровки: на точечной 25 см подгонка воспроизводит измеренные
+# точки с точностью 2 % при объявленной sigma 0,005 в lg. У маринелли и
+# «Денты» разброс больше (до 20 %), но он принадлежит САМИМ ТОЧКАМ: на 238,6 и
+# 242,0 кэВ у них 4,34 и 5,05 % — линии Ra-226 и Th-232 в NaI не разделяются,
+# и подгонка идёт между ними.
+#
+# ЗОНЫ ПЕРЕКРЫВАЮТСЯ, и файл не говорит, как их сшивать. У точечной 25 см в
+# перекрытии 273-769 кэВ зоны согласны на 0,3-5 %, у Петри в 234-1854 кэВ на
+# 0,6-8 %; расходятся только у краёв, как и положено полиномам. Принято
+# линейное смешивание по lg E внутри перекрытия — это ДОПУЩЕНИЕ, но оно даёт
+# непрерывную кривую и не даёт краевых выбросов.
 
-    .efa — уже сведённая ЛСРМ кривая (одна точка на линию). У точечной 5 см
-    её нет, там только .efr с блоком на каждый источник; блоки объединяются,
-    повторы одной энергии усредняются с весом 1/σ².
+
+def zones_of(text):
+    nz = re.search(r"^Zones=(\d+)", text, re.M)
+    if not nz:
+        return []
+    out = []
+    for i in range(1, int(nz.group(1)) + 1):
+        m = re.search(r"^Zone_%d=([^\r\n]+)" % i, text, re.M)
+        c = re.search(r"^Curve_%d=([^\r\n]+)" % i, text, re.M)
+        if not (m and c):
+            continue
+        f = m.group(1).split(",")
+        deg, xlo, xhi, sig = int(f[0]), float(f[1]), float(f[2]), float(f[3])
+        basis = []
+        for k in range(1, deg + 2):
+            b = re.search(r"^Curve_%d_%d=([^\r\n]+)" % (i, k), text, re.M)
+            if b:
+                basis.append([float(v) for v in b.group(1).split(",")])
+        cf = [float(v) for v in c.group(1).split(",")]
+        out.append(dict(deg=deg, xlo=xlo, xhi=xhi, sig=sig, basis=basis,
+                        cf=cf))
+    return out
+
+
+def _pv(c, x):
+    v = 0.0
+    for a in c:
+        v = v * x + a
+    return v
+
+
+def _lg_zone(z, x):
+    return sum(c * _pv(b, x) for c, b in zip(z["cf"], z["basis"]))
+
+
+def fit_eps(zones, E):
+    """Паспортная подгонка в точке E, или None вне области определения."""
+    x = math.log10(E)
+    act = [z for z in zones if z["xlo"] - 1e-9 <= x <= z["xhi"] + 1e-9]
+    if not act:
+        return None
+    if len(act) == 1:
+        return 10 ** _lg_zone(act[0], x)
+    a, b = act[0], act[1]
+    lo, hi = max(a["xlo"], b["xlo"]), min(a["xhi"], b["xhi"])
+    w = 0.0 if hi <= lo else (x - lo) / (hi - lo)
+    w = min(1.0, max(0.0, w))
+    return 10 ** ((1 - w) * _lg_zone(a, x) + w * _lg_zone(b, x))
+
+
+def fit_range(zones):
+    if not zones:
+        return None
+    return (10 ** min(z["xlo"] for z in zones),
+            10 ** max(z["xhi"] for z in zones))
+
+
+def measured(name):
+    """(точки, зоны подгонки, имя файла). Точки — [(E, eps, d_eps, нуклид)].
+
+    .efa — сведённая ЛСРМ кривая: одна точка на линию плюс блок подгонки.
+    У точечной 5 см .efa нет, там только .efr с блоком на каждый источник;
+    блоки объединяются, повторы одной энергии усредняются с весом 1/σ², а
+    подгоночной кривой в .efr не бывает вовсе.
     """
     for ext in (".efa", ".efr"):
         hits = sorted(EFF_DIR.glob("*%s*%s" % (name, ext)))
         if not hits:
             continue
-        secs = parse_efr(paths.read_text(hits[0]))
+        text = paths.read_text(hits[0])
+        secs = parse_efr(text)
         acc = {}
         for s in secs:
             for E, eps, dpct, nuc in s["points"]:
@@ -93,8 +179,8 @@ def measured(name):
             w = sum(1.0 / v[1] ** 2 for v in vals)
             eps = sum(v[0] / v[1] ** 2 for v in vals) / w
             out.append((E, eps, w ** -0.5, vals[0][2]))
-        return out, os.path.basename(hits[0])
-    return [], None
+        return out, zones_of(text), os.path.basename(hits[0])
+    return [], [], None
 
 
 def computed(fn):
@@ -165,8 +251,26 @@ def ticks_e():
     return out
 
 
-def chart(meas, comp, lo, hi):
-    """Наложение: измеренные точки с усами и расчётная кривая."""
+def smooth_path(fn, lo, hi, e0=None, e1=None, w=W, n=180):
+    """Путь SVG по гладкой функции eps(E); разрывы обрываются и начинаются вновь."""
+    a = math.log10(max(e0 or E_LO, E_LO))
+    b = math.log10(min(e1 or E_HI, E_HI))
+    if b <= a:
+        return ""
+    d, pen = [], False
+    for i in range(n + 1):
+        E = 10 ** (a + (b - a) * i / n)
+        v = fn(E)
+        if v is None or not (lo <= v <= hi):
+            pen = False
+            continue
+        d.append("%s%.1f,%.1f" % ("L" if pen else "M", lx(E, w), ly(v, lo, hi)))
+        pen = True
+    return " ".join(d)
+
+
+def chart(meas, comp, lo, hi, zones, mcfit):
+    """Наложение: паспортная подгонка и расчётная кривая, обе с точками."""
     s = ['<svg viewBox="0 0 %d %d" class="plot" role="img" '
          'aria-label="Эффективность ППП: расчёт и измерение">' % (W, H)]
     # сетка по энергии
@@ -198,24 +302,29 @@ def chart(meas, comp, lo, hi):
              'text-anchor="middle">эффективность ППП, %%</text>'
              % ((PAD_T + H - PAD_B) / 2))
 
-    # расчётная кривая
-    pts = [(E, v) for E, v, _, _ in comp if lo <= v <= hi and E >= E_LO]
-    if pts:
-        d = " ".join("%s%.1f,%.1f" % ("M" if i == 0 else "L",
-                                      lx(E), ly(v, lo, hi))
-                     for i, (E, v) in enumerate(pts))
-        s.append('<path class="mc" d="%s"/>' % d)
-        for E, v, dv, _ in comp:
-            if not (lo <= v <= hi and E >= E_LO):
-                continue
-            x, y = lx(E), ly(v, lo, hi)
-            if dv > 0 and v - dv > lo:
-                s.append('<line class="mcerr" x1="%.1f" y1="%.1f" x2="%.1f" '
-                         'y2="%.1f"/>' % (x, ly(v + dv, lo, hi),
-                                          x, ly(max(v - dv, lo), lo, hi)))
-            s.append('<circle class="mcp" cx="%.1f" cy="%.1f" r="2.6">'
-                     '<title>расчёт: %.1f кэВ, %.4g %%</title></circle>'
-                     % (x, y, E, v * 100))
+    # паспортная подгонка ЛСРМ — сплошной линией, в своей области определения
+    if zones:
+        r = fit_range(zones)
+        d = smooth_path(lambda E: fit_eps(zones, E), lo, hi, r[0], r[1])
+        if d:
+            s.append('<path class="expfit" d="%s"/>' % d)
+
+    # расчётная кривая — та же гладкая подгонка, по которой берётся отношение
+    if mcfit:
+        d = smooth_path(mcfit, lo, hi, comp[0][0], comp[-1][0])
+        if d:
+            s.append('<path class="mc" d="%s"/>' % d)
+    for E, v, dv, _ in comp:
+        if not (lo <= v <= hi and E >= E_LO):
+            continue
+        x, y = lx(E), ly(v, lo, hi)
+        if dv > 0 and v - dv > lo:
+            s.append('<line class="mcerr" x1="%.1f" y1="%.1f" x2="%.1f" '
+                     'y2="%.1f"/>' % (x, ly(v + dv, lo, hi),
+                                      x, ly(max(v - dv, lo), lo, hi)))
+        s.append('<circle class="mcp" cx="%.1f" cy="%.1f" r="2.6">'
+                 '<title>расчёт, узел сетки: %.1f кэВ, %.4g %%</title></circle>'
+                 % (x, y, E, v * 100))
 
     # измеренные точки
     for E, v, dv, nuc in meas:
@@ -233,8 +342,8 @@ def chart(meas, comp, lo, hi):
     return "\n".join(s)
 
 
-def ratio_chart(pairs, med):
-    """МК/эксп по точкам: линия единицы и медиана."""
+def ratio_chart(pairs, med, zones=None, mcfit=None, erange=None):
+    """МК/эксп: гладкая кривая подгонка-к-подгонке плюс точки по линиям."""
     lo, hi = 0.55, 1.75
     for p in pairs:
         r, rc = p[1], p[4]
@@ -263,6 +372,31 @@ def ratio_chart(pairs, med):
     if lo <= med <= hi:
         s.append('<line class="med" x1="%d" y1="%.1f" x2="%d" y2="%.1f"/>'
                  % (PAD_L, y(med), RW - PAD_R, y(med)))
+    # Отношение двух ПОДГОНОК: то, что видно на верхнем графике как расстояние
+    # между линиями. Точки по линиям остаются — они показывают, где расходятся
+    # сами измерения, а не кривые.
+    if zones and mcfit and erange:
+        e0 = max(erange[0], fit_range(zones)[0])
+        e1 = min(erange[1], fit_range(zones)[1])
+        d, pen = [], False
+        for i in range(181):
+            if e1 <= e0:
+                break
+            E = 10 ** (math.log10(e0)
+                       + (math.log10(e1) - math.log10(e0)) * i / 180)
+            fv = fit_eps(zones, E)
+            mv = mcfit(E)
+            if not fv or not mv:
+                pen = False
+                continue
+            r = mv / fv
+            if not (lo <= r <= hi):
+                pen = False
+                continue
+            d.append("%s%.1f,%.1f" % ("L" if pen else "M", lx(E, RW), y(r)))
+            pen = True
+        if d:
+            s.append('<path class="rfit" d="%s"/>' % " ".join(d))
     for E, r, dr, nuc, rc, is_node in pairs:
         x = lx(E, RW)
         if dr > 0:
@@ -330,6 +464,23 @@ def pair_up(meas, comp, C, gross=False):
         c = C.get(round(E, 1))
         out.append((E, r, dr, nuc, (r / c[0]) if c else None, is_node))
     return out
+
+
+def mc_fit(comp, gross=False):
+    """Гладкая расчётная кривая: та же подгонка, что даёт интерполяцию."""
+    import numpy as np
+    col = 3 if gross else 1
+    Eg = np.array([c[0] for c in comp], dtype=float)
+    yg = np.array([c[col] for c in comp], dtype=float)
+    dyg = np.array([c[2] for c in comp], dtype=float)
+    cf = np.polyfit(np.log(Eg), np.log(yg), DEG,
+                    w=yg / np.maximum(dyg, 1e-30))
+
+    def f(E):
+        if not (Eg[0] <= E <= Eg[-1]):
+            return None
+        return math.exp(float(np.polyval(cf, math.log(E))))
+    return f, (float(Eg[0]), float(Eg[-1]))
 
 
 def wmean(pairs):
@@ -492,6 +643,33 @@ A/пасп меньше единицы — то же самое (завышен�
 
 <h2>Кривые по геометриям</h2>
 
+<div class="card">
+<p><b>Что за линии и откуда они взяты.</b> Паспортная кривая — не точки: ЛСРМ
+строит по измеренным точкам подгонку, и прибор считает активности именно по
+ней. Подгонка лежит в том же файле <code>.efa</code>, отдельным блоком, и она
+<b>зонная</b>: у Петри и точечной 25 см по две зоны с перекрытием, у маринелли
+и «Денты» одна. Внутри зоны — разложение по ортогональному базису от lg E,
+значение — lg&nbsp;&epsilon;. Здесь она восстановлена из файла и нарисована
+сплошной синей линией; квадраты — те же измеренные точки, по которым она
+построена.</p>
+<p>Насколько подгонка описывает свои точки: у точечной 25 см в пределах 2 %% при
+объявленной погрешности 1,1 %%. У маринелли и «Денты» разброс до 20 %%, но он
+принадлежит самим точкам, а не подгонке: на 238,6 и 242,0 кэВ измерено 4,34 и
+5,05 %% — линии Th-232 и Ra-226 в NaI не разделяются, и кривая идёт между ними.
+Это и есть причина, по которой сравнивать расчёт надо с кривой, а не с
+отдельной точкой.</p>
+<p><b>Одно допущение.</b> Зоны перекрываются, а как их сшивать, файл не
+сообщает. В перекрытии они согласны между собой на 0,3–8 %% и расходятся только
+у краёв, как и положено полиномам. Принято линейное смешивание по lg E внутри
+перекрытия: кривая получается непрерывной и без краевых выбросов. Если у ЛСРМ
+правило другое, картинка в перекрытии сдвинется на единицы процентов.</p>
+<p>Расчётная кривая нарисована той же подгонкой по своим узлам (полином 5-й
+степени по log-log), по которой берутся отношения; красные точки — сами узлы
+сетки с их статистикой. У точечной 5 см подгонки ЛСРМ нет — для неё есть
+только <code>.efr</code> с блоками по источникам, а блока кривой в этом
+формате не бывает; там показаны только точки.</p>
+</div>
+
 %(legend)s
 
 %(blocks)s
@@ -535,16 +713,33 @@ Opus&nbsp;5) под проверкой оператора; числа получ
 """
 
 
+def zonenote(zones):
+    """Строка о зонах подгонки: сколько, какой степени, где действует."""
+    if not zones:
+        return ('<p class="leg">Подгоночной кривой в файле нет (только '
+                '<code>.efr</code> с блоками по источникам) — показаны '
+                'измеренные точки.</p>')
+    parts = []
+    for i, z in enumerate(zones, 1):
+        parts.append("зона %d: степень %d, %.0f–%.0f кэВ, объявленная "
+                     "погрешность %s %%"
+                     % (i, z["deg"], 10 ** z["xlo"], 10 ** z["xhi"],
+                        ru((10 ** z["sig"] - 1) * 100, 1)))
+    return '<p class="leg">Подгонка ЛСРМ — %s.</p>' % "; ".join(parts)
+
+
 def legend(with_corr):
-    k = ['<span class="k"><i style="border-color:var(--mc)"></i>расчёт '
-         '(Geant4)</span>',
-         '<span class="k"><i style="border-color:var(--exp)"></i>измерение '
-         '(паспортная кривая ЛСРМ)</span>']
+    k = ['<span class="k"><i style="border-color:var(--exp)"></i>'
+         'паспортная подгонка ЛСРМ (по зонам)</span>',
+         '<span class="k"><i style="border-color:var(--exp);'
+         'border-top-style:dotted"></i>её измеренные точки</span>',
+         '<span class="k"><i style="border-color:var(--mc)"></i>расчёт '
+         '(Geant4), подгонка по узлам сетки</span>']
     if with_corr:
         k.append('<span class="k"><i style="border-color:var(--corr)"></i>'
-                 'то же с поправкой на суммирование</span>')
-    k.append('<span class="k"><i style="border-color:var(--med)"></i>медиана'
-             '</span>')
+                 'точка с поправкой на суммирование</span>')
+        k.append('<span class="k"><i style="border-color:var(--med)"></i>'
+                 'медиана по точкам</span>')
     return '<p class="leg">%s</p>' % "".join(k)
 
 
@@ -561,11 +756,12 @@ def build():
 
     blocks, summary = [], []
     for title, mname, cfile, note, kitkey in GEOMS:
-        meas, src = measured(mname)
+        meas, zones, src = measured(mname)
         comp = computed(cfile)
         if not meas:
             print("!! нет измеренной кривой для", title)
             continue
+        mcf, mcrange = mc_fit(comp)
         pairs = pair_up(meas, comp, C)
         rs = [p[1] for p in pairs]
         k, rms = wmean(pairs)
@@ -607,10 +803,10 @@ def build():
 <th class="n">МК/эксп</th><th class="n">C → с поправкой</th>
 <th>расчёт взят</th></tr></thead>
 <tbody>%s</tbody></table></div>
-""" % (esc(title), esc(note), chart(meas, comp, lo, hi),
-            legend(False), esc(src), esc(cfile),
-            ratio_chart(pairs, med), ru(k), len(pairs), ru(100 * rms, 1),
-            ru(med), "".join(rows)))
+""" % (esc(title), esc(note), chart(meas, comp, lo, hi, zones, mcf),
+            zonenote(zones), esc(src), esc(cfile),
+            ratio_chart(pairs, med, zones, mcf, mcrange),
+            ru(k), len(pairs), ru(100 * rms, 1), ru(med), "".join(rows)))
         kr = kit.get(kitkey, [])
         summary.append((title, len(pairs), k, kg, rms,
                         len(kr), med_of(kr) if kr else None))

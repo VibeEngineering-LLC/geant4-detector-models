@@ -372,9 +372,9 @@ void RCDetector::BuildDevice(G4LogicalVolume* world) {
 void RCDetector::BuildVessel(G4LogicalVolume* world) {
   const VesselGeom& v = fVes;
   // Нос прибора в z = -crystalZ0. Вершина полости колодца — на seatGap ниже.
-  const double zSlot = -fDev.crystalZ0 + v.wellTip - v.seatGap;    // 35.61
-  const double zRim = zSlot - v.barrelH;                           // -33.69
-  const double zSmpTop = zSlot - v.endWall;                        // 32.81
+  const double zSlot = -fDev.crystalZ0 + v.wellTip - v.seatGap;    // 35.49
+  const double zRim = zSlot - v.barrelH;                           // -33.81
+  const double zSmpTop = zSlot - v.endWall;                        // 32.69
   const double smpH = zSmpTop - zRim;                              // 66.50
 
   const double zOut = 0.5 * (zSlot + zRim);

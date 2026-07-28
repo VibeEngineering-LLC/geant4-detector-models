@@ -95,7 +95,7 @@ if __name__ == "__main__":
         raise SystemExit("не найден спектр комплекта в %s"
                          % paths.ref("Gamma-1S"))
     src = str(src)
-    smp, bg = bm.read(src)
+    smp, bg = bm.read_checked(src)[:2]
     print("Фон: %s, живое %.0f с, каналов %d\n"
           % ("маринелли с водой (вложен в XML комплекта)", bg.live, len(bg.n)))
     print("%-8s %9s %7s %9s %9s %9s %8s %8s %8s" %

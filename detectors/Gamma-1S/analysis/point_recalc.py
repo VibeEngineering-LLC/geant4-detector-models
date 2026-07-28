@@ -239,7 +239,7 @@ if __name__ == "__main__":
             p = record(geom, nuc)
             if not p:
                 continue
-            s, b = bm.read(p)
+            s, b = bm.read_checked(p)[:2]
             txt = open(p, encoding="utf-8", errors="replace").read()
             md = re.search(r"<StartTime>(\d{4}-\d{2}-\d{2})", txt)
             md = md.group(1) if md else None

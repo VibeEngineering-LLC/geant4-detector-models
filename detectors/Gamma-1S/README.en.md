@@ -13,7 +13,7 @@ supplies the detection efficiency. The measure is the reference kit: the
 instrument has passport curves for each geometry, the sources have passports
 with activities — that is, forty records with answers known in advance.
 
-Detailed report with all the numbers and caveats — [REPORT.md](REPORT.md).
+Detailed report with all the numbers and caveats — [REPORT.md](REPORT.en.md).
 Spectra with found peaks, calibration verification and deconvolution insets —
 on the [summary page](https://vibeengineering-llc.github.io/geant4-detector-models/gamma-1s/).
 
@@ -22,7 +22,7 @@ efficiency curves (Marinelli, "Denta", Petri dish at two densities, water,
 point sources at 5 and 25 cm), a run manifest, and cascade-summing
 corrections. Building Geant4 to obtain the efficiency at a given energy is
 not required; column descriptions and caveats are in
-[results/README.md](results/README.md).
+[results/README.md](results/README.en.md).
 
 LSRM reference data are located in [reference/lsrm/](reference/lsrm/) in two
 formats: the instrument's binary `.spe` and BecqMoni XML. They are
@@ -71,7 +71,7 @@ models, not to a common normalization.
 
 ## Verification status per the common protocol
 
-See [common/docs/validation.md](../../common/docs/validation.md).
+See [common/docs/validation.md](../../common/docs/validation.en.md).
 
 | item | status |
 |---|---|
@@ -141,4 +141,4 @@ sections: **Am-241 + Ti-44/Sc-44 + Eu-152 + Cs-137**. "Ti" is indeed
 titanium-44: it decays into Sc-44, which emits a positron and a 1157 keV
 quantum, hence the strong 511 line (annihilation, not Na-22) and the sum
 peak 511 + 1157 = 1668 keV. The matrix is RISN-379, composition taken from
-the original `.spe` files, see [materials](../../materials/README.md).
+the original `.spe` files, see [materials](../../materials/README.en.md).

@@ -20,9 +20,21 @@ document. A cavity of Ø200 × 190 mm with 1 mm liners gives 167.1 kg of lead,
 Layer labels usually admit more than one reading. The correct one is the
 one for which ALL stated summary dimensions add up.
 
-*Example.* Radially, `63 + 2·(3.65+0.5+2+1.5) = 78.3` against Ø78, and
-axially `63 + (6+0.5+2+1.5+0.5+1) = 74.5` against 74 — only one reading
-gives both sums.
+*Example.* Radially, `63 + 2·(3.65+0.5+2+1.5) = 78.3` against Ø78; axially,
+from the crystal centre to the outer plane of the entrance face,
+`31.5 + (6+0.5+1+2) = 41.0`.
+
+*And an example of this check NOT working.* The first reading of the
+entrance face put a 1 mm rubber protector and a 2 mm shock absorber there,
+giving axially `63 + (6+0.5+2+1.5+0.5+1) = 74.5` against the stated 74 — it
+agreed to within half a millimetre, and the reading was taken as confirmed.
+The operator later pointed out that there is no rubber on the entrance face
+at all (it is radial only), and that the face stack is
+`Al 2 / air 1 / Al can 0.5 / MgO 6`. The sum of overall dimensions is
+consistent with both variants: the check rejects grossly wrong readings, but
+it cannot distinguish readings that produce the same sum from different
+terms. The composition of the layers is confirmed only by someone who has
+held the instrument in their hands.
 
 ## 3. Nameplate efficiency point
 

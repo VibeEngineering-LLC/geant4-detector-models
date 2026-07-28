@@ -145,7 +145,7 @@ field spectrum.
 The datasheet sensitivity of 30 counts/s per µSv/h (Cs-137) is not
 reproduced by the model — the calculation gives 20–24. The discrepancy is
 localized in the definition of the datasheet figure, not in the model: see
-["On the datasheet's 30 counts/s"](#про-паспортные-30-imps).
+["On the datasheet's 30 counts/s"](#on-the-datasheets-30-counts-s).
 
 ### Cross-check with an independent LSRM calculation (BecqMoni)
 

@@ -41,6 +41,7 @@ import paths  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import becqmoni as bm  # noqa: E402
+import contam  # noqa: E402
 
 BUILD = str(paths.build("Gamma-1S"))
 
@@ -463,6 +464,16 @@ if __name__ == "__main__":
             if base is None:
                 continue          # для этой пары геометрия/нуклид прогона нет
             frac, dirt = purity(base, E, fw)
+            # Чистота смотрит ВНУТРЬ окна пика. Но подложка снимается полками
+            # СНАРУЖИ него, и чужая линия, попавшая на полку, задирает
+            # подложку и отнимает площадь у своей же линии — мера чистоты
+            # такого не видит вовсе. Здесь это только сообщается: у объёмных
+            # геометрий обе стороны отношения снимаются одним окном по
+            # уширенному спектру распада, поэтому загрязнение полок в
+            # значительной части сокращается, и исключать линию (как в
+            # point_recalc на 25 см, где модельная сторона — сетка
+            # моноэнергий с чистыми полками) оснований нет.
+            shelf = contam.dirty_shelves(nuc, E, fw, roi=1.0, side=1.0)
             usable = frac is not None and frac >= CLEAN_FRAC
             Em, dshift = measured_centre(s, E, frac)
             r = bm.net_rate(s, b, Em, fw, roi=1.0, side=1.0)
@@ -486,6 +497,8 @@ if __name__ == "__main__":
                 "" if usable else " — В АКТИВНОСТЬ НЕ ИДЁТ: " + (
                     ", ".join("%.0f кэВ %.0f%%" % (e, 100 * f)
                               for f, e in dirt[:3]) or "группа"))
+            if shelf:
+                tag += ", ПОЛКА на %s" % ", ".join("%.1f" % x for x in shelf)
             if CENTROID and dshift:
                 tag += ", сдвиг %+.2f кэВ" % dshift
             print("%-13s %-8s %9.1f %8.3f %11.4e %9.1f %8.3f%s"

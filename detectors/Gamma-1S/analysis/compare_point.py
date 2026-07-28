@@ -48,6 +48,9 @@ GEOM = [("p5cm", "Точечная-5см", "5 см, крышка закрыта"
 WIN = 6.0
 
 
+from compare_lsrm import marinelli_k as _marinelli_k  # noqa: E402
+
+
 def load(path):
     hist, N = {}, None
     for line in open(path, encoding="utf-8"):
@@ -137,4 +140,5 @@ if __name__ == "__main__":
                   % (k, len(logs)))
             print("   разброс формы RMS = %.1f %%, chi2/dof = %.2f"
                   % (100 * rms, chi2))
-            print("   для сравнения: маринелли 1,171; RadiaCode K_NORM 0,833")
+            print("   для сравнения: маринелли %s; RadiaCode K_NORM 0,833"
+                  % _marinelli_k())

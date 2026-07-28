@@ -214,7 +214,7 @@ def peak_area(sp, E0, fwhm, roi=1.25, side=1.0):
     return g - bg, math.sqrt(max(var, 1.0)), bg
 
 
-def broaden(hist, fwhm_at_662=49.9, emax=3200.0, bin_keV=1.0):
+def broaden(hist, fwhm_at_662=49.9, emax=3200.0, bin_keV=1.0, fwhm_of=None):
     """Уширить МОДЕЛЬНЫЙ спектр до разрешения прибора: массив на сетке 1 кэВ.
 
     Зачем это обязательно. В расчёте линии острые, в измерении — шириной в
@@ -225,8 +225,11 @@ def broaden(hist, fwhm_at_662=49.9, emax=3200.0, bin_keV=1.0):
     только 911, окно ±1 ПШПВ по измерению — оба, и активность тория по этой
     линии выходила завышенной в полтора раза.
 
-    ПШПВ(E) = fwhm_at_662 * sqrt(E/661,657); форма пика NaI — гауссиана
-    [ЛСРМ §8.4.2.1].
+    По умолчанию ПШПВ(E) = fwhm_at_662 * sqrt(E/661,657); форма пика NaI —
+    гауссиана [ЛСРМ §8.4.2.1]. Закон корня — приближение одной опорной точки:
+    на этом приборе он завышает ширину на 583 кэВ и занижает на 2614. Кто
+    работает подгонкой, а не окном, обязан передать откалиброванный закон
+    fwhm_of(E) — тот же, каким подгоняет измерение (см. deconv.fwhm).
     """
     n = int(emax / bin_keV) + 1
     out = np.zeros(n)
@@ -234,7 +237,10 @@ def broaden(hist, fwhm_at_662=49.9, emax=3200.0, bin_keV=1.0):
     for E0, c in hist.items():
         if c <= 0 or E0 <= 0:
             continue
-        sig = fwhm_at_662 * math.sqrt(max(E0, 8.0) / 661.657) / 2.3548
+        if fwhm_of is not None:
+            sig = fwhm_of(max(E0, 8.0)) / 2.3548
+        else:
+            sig = fwhm_at_662 * math.sqrt(max(E0, 8.0) / 661.657) / 2.3548
         lo = max(0, int((E0 - 5 * sig) / bin_keV))
         hi = min(n, int((E0 + 5 * sig) / bin_keV) + 1)
         if hi <= lo:

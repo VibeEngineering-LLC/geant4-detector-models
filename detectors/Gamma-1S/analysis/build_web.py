@@ -302,6 +302,23 @@ def chart(meas, comp, lo, hi, zones, mcfit):
              'text-anchor="middle">эффективность ППП, %%</text>'
              % ((PAD_T + H - PAD_B) / 2))
 
+    # Полосы, где эталонных линий НЕТ. Расчёт там есть, сверять его не с чем, и
+    # это надо видеть глазом: у маринелли и «Денты» ниже 239 кэВ нет ни одного
+    # источника, а именно там кривая заворачивает от самопоглощения.
+    if meas:
+        e_lo = min(E for E, _, _, _ in meas)
+        e_hi = max(E for E, _, _, _ in meas)
+        for a, b, where in ((E_LO, e_lo, "ниже"), (e_hi, E_HI, "выше")):
+            if b <= a * 1.001:
+                continue
+            x0, x1 = lx(a), lx(b)
+            s.append('<rect class="nodata" x="%.1f" y="%d" width="%.1f" '
+                     'height="%d"><title>%s %.0f кэВ эталонных линий в этой '
+                     'геометрии нет: расчёт есть, сверять не с чем</title>'
+                     '</rect>'
+                     % (x0, PAD_T, x1 - x0, H - PAD_B - PAD_T, where,
+                        a if where == "выше" else b))
+
     # паспортная подгонка ЛСРМ — сплошной линией, в своей области определения
     if zones:
         r = fit_range(zones)
@@ -342,7 +359,7 @@ def chart(meas, comp, lo, hi, zones, mcfit):
     return "\n".join(s)
 
 
-def ratio_chart(pairs, med, zones=None, mcfit=None, erange=None):
+def ratio_chart(pairs, med, zones=None, mcfit=None, erange=None, mspan=None):
     """МК/эксп: гладкая кривая подгонка-к-подгонке плюс точки по линиям."""
     lo, hi = 0.55, 1.75
     for p in pairs:
@@ -378,25 +395,34 @@ def ratio_chart(pairs, med, zones=None, mcfit=None, erange=None):
     if zones and mcfit and erange:
         e0 = max(erange[0], fit_range(zones)[0])
         e1 = min(erange[1], fit_range(zones)[1])
-        d, pen = [], False
-        for i in range(181):
+        # Внутри диапазона измеренных линий кривая отношения опирается на
+        # данные — сплошная. Вне его паспортная сторона сама экстраполяция,
+        # поэтому там пунктир: это отношение двух моделей, а не проверка.
+        segs = {"rfit": [], "rfitx": []}
+        prev = None
+        for i in range(241):
             if e1 <= e0:
                 break
             E = 10 ** (math.log10(e0)
-                       + (math.log10(e1) - math.log10(e0)) * i / 180)
+                       + (math.log10(e1) - math.log10(e0)) * i / 240)
             fv = fit_eps(zones, E)
             mv = mcfit(E)
-            if not fv or not mv:
-                pen = False
+            r = (mv / fv) if (fv and mv) else None
+            inside = bool(mspan and mspan[0] <= E <= mspan[1])
+            key = "rfit" if inside else "rfitx"
+            if r is None or not (lo <= r <= hi):
+                prev = None
                 continue
-            r = mv / fv
-            if not (lo <= r <= hi):
-                pen = False
-                continue
-            d.append("%s%.1f,%.1f" % ("L" if pen else "M", lx(E, RW), y(r)))
-            pen = True
-        if d:
-            s.append('<path class="rfit" d="%s"/>' % " ".join(d))
+            pt = (lx(E, RW), y(r))
+            if prev is None or prev[1] != key:
+                segs[key].append(["M%.1f,%.1f" % pt])
+            else:
+                segs[key][-1].append("L%.1f,%.1f" % pt)
+            prev = (pt, key)
+        for key, chunks in segs.items():
+            for ch in chunks:
+                if len(ch) > 1:
+                    s.append('<path class="%s" d="%s"/>' % (key, " ".join(ch)))
     for E, r, dr, nuc, rc, is_node in pairs:
         x = lx(E, RW)
         if dr > 0:
@@ -670,6 +696,48 @@ A/пасп меньше единицы — то же самое (завышен�
 формате не бывает; там показаны только точки.</p>
 </div>
 
+<h3>Почему расчёт идёт дальше паспортной кривой</h3>
+
+<p>Диапазоны не совпадают, и это не разные вкусы, а разная природа двух кривых.
+Паспортная кривая существует только там, где были эталонные линии, а расчёту
+источник не нужен: Монте-Карло безразлично, выпускает ли кто-нибудь квант
+такой энергии.</p>
+
+<div class="tw"><table>
+<thead><tr><th>геометрия</th><th class="n">эталонные линии</th>
+<th class="n">зоны подгонки</th><th>чем ограничена снизу</th></tr></thead>
+<tbody>
+<tr><td>Маринелли 1 л</td><td class="n">239–2615</td><td class="n">185–3305</td>
+<td>только объёмные ОИСН: Cs-137, K-40, Ra-226, Th-232. Мягчайшая линия —
+Pb-212 239 кэВ из ряда тория</td></tr>
+<tr><td>«Дента» 120 мл</td><td class="n">239–2615</td><td class="n">186–3552</td>
+<td>тот же набор, та же мягчайшая линия</td></tr>
+<tr><td>Петри 60 мл</td><td class="n">68–2615</td>
+<td class="n">56–1854 и 234–3305</td>
+<td>добавились Ti-44 и Eu-152 — отсюда линии 68, 78 и 122 кэВ</td></tr>
+<tr><td>точечная 5 см</td><td class="n">60–2615</td><td class="n">подгонки нет</td>
+<td>точечные источники, включая Am-241 59,5 кэВ</td></tr>
+<tr><td>точечная 25 см</td><td class="n">60–2615</td>
+<td class="n">45–769 и 273–3552</td><td>то же</td></tr>
+</tbody></table></div>
+
+<p>Расчётная сетка у всех геометрий одна: 59,5–3000 кэВ, 20 узлов, посаженных
+на реальные линии комплекта плюс края.</p>
+
+<p><b>Отсюда вывод, который важнее самих диапазонов.</b> В маринелли и «Денте»
+всё, что ниже 239 кэВ, расчётом посчитано, а проверить <b>нечем</b> — объёмного
+источника с мягкой линией в комплекте нет. И это ровно та область, где кривая
+заворачивает: в матрице ОИСН-16 с 71 %% железа плюс стенка сосуда мягкие кванты
+поглощаются, эффективность проходит через максимум около 170–200 кэВ и падает.
+Самая содержательная часть объёмных кривых лежит вне зоны экспериментального
+контроля, и на графиках она затенена. Сверху то же: выше 2615 кэВ обе стороны
+экстраполируют, потому что жёстче Tl-208 в комплекте линий нет.</p>
+
+<p>Косвенный довод, что в затенённой области расчёту всё-таки можно доверять,
+даёт Петри: там эталоны есть с 68 кэВ, то есть заворот кривой попадает под
+измерение, и модель его воспроизводит. Но это <b>другая</b> геометрия — перенос
+вывода на маринелли остаётся допущением, а не проверкой.</p>
+
 %(legend)s
 
 %(blocks)s
@@ -713,19 +781,25 @@ Opus&nbsp;5) под проверкой оператора; числа получ
 """
 
 
-def zonenote(zones):
-    """Строка о зонах подгонки: сколько, какой степени, где действует."""
-    if not zones:
-        return ('<p class="leg">Подгоночной кривой в файле нет (только '
-                '<code>.efr</code> с блоками по источникам) — показаны '
-                'измеренные точки.</p>')
-    parts = []
-    for i, z in enumerate(zones, 1):
-        parts.append("зона %d: степень %d, %.0f–%.0f кэВ, объявленная "
-                     "погрешность %s %%"
-                     % (i, z["deg"], 10 ** z["xlo"], 10 ** z["xhi"],
-                        ru((10 ** z["sig"] - 1) * 100, 1)))
-    return '<p class="leg">Подгонка ЛСРМ — %s.</p>' % "; ".join(parts)
+def zonenote(zones, mspan, soft, comp):
+    """Зоны подгонки и — главное — чем ограничен диапазон паспортной кривой."""
+    out = []
+    if zones:
+        parts = ["зона %d: степень %d, %.0f–%.0f кэВ, объявленная погрешность "
+                 "%s %%" % (i, z["deg"], 10 ** z["xlo"], 10 ** z["xhi"],
+                            ru((10 ** z["sig"] - 1) * 100, 1))
+                 for i, z in enumerate(zones, 1)]
+        out.append("Подгонка ЛСРМ — %s." % "; ".join(parts))
+    else:
+        out.append("Подгоночной кривой в файле нет (только <code>.efr</code> "
+                   "с блоками по источникам) — показаны измеренные точки.")
+    out.append("Эталонные линии: %.1f–%.1f кэВ. Снизу диапазон обрезан тем, "
+               "что мягче <b>%.1f кэВ (%s)</b> источников в этой геометрии "
+               "нет. Расчётная сетка одна на все геометрии, %.1f–%.0f кэВ: "
+               "ей источник не нужен. Затенённые полосы — где сверять не с чем."
+               % (mspan[0], mspan[1], soft[0], esc(soft[3]),
+                  comp[0][0], comp[-1][0]))
+    return '<p class="leg">%s</p>' % "<br>".join(out)
 
 
 def legend(with_corr):
@@ -740,6 +814,8 @@ def legend(with_corr):
                  'точка с поправкой на суммирование</span>')
         k.append('<span class="k"><i style="border-color:var(--med)"></i>'
                  'медиана по точкам</span>')
+    k.append('<span class="k"><i style="border-color:var(--ink);opacity:.25">'
+             '</i>затенено — эталонных линий нет</span>')
     return '<p class="leg">%s</p>' % "".join(k)
 
 
@@ -762,6 +838,8 @@ def build():
             print("!! нет измеренной кривой для", title)
             continue
         mcf, mcrange = mc_fit(comp)
+        mspan = (min(E for E, _, _, _ in meas), max(E for E, _, _, _ in meas))
+        soft = min(meas, key=lambda p: p[0])
         pairs = pair_up(meas, comp, C)
         rs = [p[1] for p in pairs]
         k, rms = wmean(pairs)
@@ -804,8 +882,8 @@ def build():
 <th>расчёт взят</th></tr></thead>
 <tbody>%s</tbody></table></div>
 """ % (esc(title), esc(note), chart(meas, comp, lo, hi, zones, mcf),
-            zonenote(zones), esc(src), esc(cfile),
-            ratio_chart(pairs, med, zones, mcf, mcrange),
+            zonenote(zones, mspan, soft, comp), esc(src), esc(cfile),
+            ratio_chart(pairs, med, zones, mcf, mcrange, mspan),
             ru(k), len(pairs), ru(100 * rms, 1), ru(med), "".join(rows)))
         kr = kit.get(kitkey, [])
         summary.append((title, len(pairs), k, kg, rms,

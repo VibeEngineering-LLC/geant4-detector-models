@@ -509,7 +509,7 @@ The reference data are stored here in full, under `reference/lsrm/`: the verific
 The data can be refreshed from the original source with the loaders in `tools/`; the original source itself is
 [spectravibe-toolkit](https://github.com/VibeEngineering-LLC/spectravibe-toolkit).
 
-The finished computed curves are in [results/](results/), with their description and caveats in [results/README.md](results/README.md).
+The finished computed curves are in [results/](results/), with their description and caveats in [results/README.md](results/README.en.md).
 
 ---
 

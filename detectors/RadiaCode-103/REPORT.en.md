@@ -268,7 +268,7 @@ organic/soil/water matrices at densities 0.5–1.6 g/cm³ and energies
 ε_p^limit(E) — in
 [`results/m200/efficiency.csv`](results/m200/efficiency.csv), a table by
 natural-background lines — in
-[`efficiency_table.md`](results/m200/efficiency_table.md).
+[`efficiency_table.md`](results/m200/efficiency_table.en.md).
 
 Self-absorption separates the curves **only below 150 keV**, but there
 radically: at 30 keV, 1.6 g/cm³ soil gives four times less than the

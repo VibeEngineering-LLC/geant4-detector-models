@@ -260,7 +260,7 @@ def _solve(M, y, sy):
         dS = float(math.sqrt(max(cov[0, 0], 0.0)))
     except np.linalg.LinAlgError:
         return None
-    return float(p[0]), dS, chi2, ok
+    return float(p[0]), dS, chi2, ok, np.asarray(p, dtype=float)
 
 
 def _fit_measured(sp, bg, lines, lo, hi, shift):
@@ -285,7 +285,13 @@ def _fit_measured(sp, bg, lines, lo, hi, shift):
     E_step = 0.5 * (lines[0][0] + lines[-1][0]) + shift
     sig_step = max(sigma(E) for E, _ in lines)
     M = _design(x, np.gradient(x), lines, shift, E_step, sig_step)
-    return _solve(M, y, sy)
+    r = _solve(M, y, sy)
+    if r is None:
+        return None
+    # Кривые для рисования — из ТЕХ ЖЕ колонок, что и решение, чтобы картинка
+    # не могла разойтись с числом (см. analysis/spectra_figs.py).
+    return r + (dict(x=x, y=y, sy=sy, dE=np.gradient(x), shift=shift,
+                     model=M @ r[4], cont=M[:, 1:] @ r[4][1:]),)
 
 
 def _fit_model(arr, lines, lo, hi, bin_keV=1.0):
@@ -339,10 +345,10 @@ def deconvolve(sp, bg, base, E0, geom=None, rho_src=None, span=SPAN):
     for d in SHIFT_GRID:
         r = _fit_measured(sp, bg, lines, lo, hi, float(d))
         if r and r[0] > 0 and (best is None or r[2] < best[2]):
-            best = (r[0], r[1], r[2], float(d))
+            best = (r[0], r[1], r[2], float(d), r[5])
     if best is None:
         return None
-    S, dS, chi2, shift = best
+    S, dS, chi2, shift, fit = best
     corr = 1.0
     if geom and rho_src:
         rho_run, mat_run = kr.RUNRHO[geom]
@@ -354,9 +360,16 @@ def deconvolve(sp, bg, base, E0, geom=None, rho_src=None, span=SPAN):
                 / kr.fx(mu_run * rho_run * dmm / 10))
     A = N * S / fm[0] / sp.live / corr
     dA = A * math.hypot(dS / S, fm[1] / fm[0])
+    # Вклад каждой линии по отдельности — для врезок деконволюции на странице.
+    x, dEx = fit["x"], fit["dE"]
+    fit["parts"] = []
+    for E, I in lines:
+        s = sigma(E)
+        fit["parts"].append((E, I, S * I * dEx / (s * math.sqrt(2 * math.pi))
+                             * np.exp(-0.5 * ((x - (E + shift)) / s) ** 2)))
     return dict(A=A, dA=dA, shift=shift, chi2=chi2, chi2_model=fm[2],
                 n_lines=len(lines), lines=lines, half=half,
-                S=S, S_model=fm[0], N=N)
+                S=S, S_model=fm[0], N=N, fit=fit)
 
 
 # ---------------------------------------------------------------------------
@@ -398,12 +411,19 @@ def _run():
                 continue
             A = r["A"] * pile
             dA = r["dA"] * pile
+            # Оконный столбец обязан ВОСПРОИЗВОДИТЬ kit_recalc до последней
+            # цифры, иначе сверка ничего не проверяет. Отсюда два условия:
+            # ПШПВ по закону корня (у kit_recalc он) и матрица источника по
+            # его же правилу — у лёгких засыпок (ρ ≤ 1,3) состав в файлах не
+            # записан и берётся ВОДА, а не ОИСН-16 с её 71 % железа. Оба
+            # места я сначала взял по-своему, и таблица разошлась: ПШПВ дала
+            # до 12 % на Ra-226 351,9, матрица — ровные 0,8 % на всех лёгких.
             fw = FWHM662 * math.sqrt(E / 661.657)
             frac, _dirt = kr.purity(base, E, fw)
             nr = bm.net_rate(sp, bg, E, fw, roi=1.0, side=1.0)
-            eps = kr.eps_per_decay(geom, ckey, E, fw, rho,
-                                   kr.MU_O[min(kr.MU_O,
-                                               key=lambda k: abs(k - E))])
+            key = min(kr.MU_O, key=lambda k: abs(k - E))
+            mu_src = kr.MU_O[key] if rho > 1.3 else kr.MU_W[key]
+            eps = kr.eps_per_decay(geom, ckey, E, fw, rho, mu_src)
             win = (nr[0] * pile / eps / A0) if (nr and eps and nr[0] > 0) else None
             print("%-13s %-8s %8.1f %5d %9.1f %9s %8.3f %8s %7.2f"
                   % (geom, nuc, E, r["n_lines"], A,

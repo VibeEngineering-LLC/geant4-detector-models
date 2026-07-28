@@ -1,55 +1,160 @@
-:root{color-scheme:light dark;--ink:#1a1a1f;--dim:#666677;--line:#8884;
---mc:#c0392b;--exp:#1f4e9c;--corr:#8e44ad;--med:#0a7a44;--bg:#fff;--card:#f7f7f9}
-@media(prefers-color-scheme:dark){:root{--ink:#e8e8ee;--dim:#9b9bab;
---mc:#ff7a6b;--exp:#7fb2ff;--corr:#c9a0ff;--med:#4fd18b;--bg:#14141a;
---card:#1d1d25}}
-*{box-sizing:border-box}
-body{max-width:62rem;margin:0 auto;padding:2.5rem 1.2rem 5rem;color:var(--ink);
-background:var(--bg);font:17px/1.62 Georgia,'Times New Roman',serif}
-h1{font-size:1.85rem;line-height:1.2;margin:0 0 .2rem}
-h2{font-size:1.3rem;margin:2.6rem 0 .6rem;border-top:1px solid var(--line);
-padding-top:1.1rem}
-h3{font-size:1.08rem;margin:1.6rem 0 .3rem}
-.sub{color:var(--dim);margin:.2rem 0 1.6rem;font-size:1.02rem}
-a{color:var(--exp)}
-p{margin:.7rem 0}
-.lead{font-size:1.06rem}
-figure{margin:1.1rem 0 1.6rem}
+/* Оформление сводной страницы Гамма-1С.
+   Взято из отчётов gamma-spectrum-analysis (sample_v2/*_report.html): те же
+   токены, та же типографика, те же карточки и таблицы — чтобы страницы одного
+   хозяйства выглядели одинаково. Цвета кривых — их палитра графиков:
+   фиолетовый #6566D7 (расчёт), оранжевый #E8884F (измерение), маджента
+   #D63384 (континуум и поправки), зелёный (медиана).
+
+   Файл отдельный, а не строкой в build_web.py, по прозаической причине:
+   проверка перед публикацией ищет номера источников, записанные после знака
+   номера, и шестнадцатеричный цвет от такого номера по форме не отличается.
+   В стилях она такие находки пропускает по расширению, в исходниках на
+   питоне — нет, и ослаблять её нельзя: один раз номер так и утёк. */
+
+:root{
+--bg-primary:#ffffff;--bg-secondary:#f5f4ee;--bg-info:#e6f1fb;
+--text-primary:#1f1e1d;--text-secondary:#5f5e5a;--text-tertiary:#888780;
+--border-tertiary:rgba(0,0,0,0.10);--border-secondary:rgba(0,0,0,0.20);
+--radius-md:8px;
+--font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+"Helvetica Neue",Arial,"PT Sans","Noto Sans",sans-serif;
+--font-mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+--accent:#6566D7;
+/* имена ниже используются в SVG-графиках */
+--ink:var(--text-primary);--dim:var(--text-secondary);
+--line:var(--border-tertiary);
+--mc:#6566D7;--exp:#E8884F;--corr:#D63384;--med:#0F6E56}
+@media (prefers-color-scheme: dark){:root{
+--bg-primary:#1a1a1a;--bg-secondary:#262625;--bg-info:#0c447c;
+--text-primary:#f0eee6;--text-secondary:#b4b2a9;--text-tertiary:#888780;
+--border-tertiary:rgba(255,255,255,0.12);
+--border-secondary:rgba(255,255,255,0.22);
+--accent:#9D97E5;
+--mc:#9D97E5;--exp:#F0A579;--corr:#F07AB5;--med:#9FE1CB}}
+
+*{box-sizing:border-box;-webkit-text-size-adjust:100%}
+html,body{margin:0;padding:0;background:var(--bg-primary);
+color:var(--text-primary);font-family:var(--font-sans);font-size:16px;
+line-height:1.5;-webkit-font-smoothing:antialiased}
+.page{max-width:900px;margin:0 auto;padding:32px 24px 48px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;line-height:1.25}
+h2{font-size:17px;font-weight:500;margin:2.2rem 0 .5rem;
+border-top:0.5px solid var(--border-secondary);padding-top:1rem}
+h3{font-size:14px;font-weight:500;margin:1.4rem 0 .3rem}
+h4{font-size:13px;font-weight:500;margin:1.6rem 0 .2rem;
+color:var(--text-secondary)}
+p{margin:.55rem 0;font-size:14.5px;line-height:1.6}
+.sub{font-size:13px;color:var(--text-secondary);margin:0 0 20px}
+.lead{font-size:15px}
+a{color:var(--accent)}
+b{font-weight:500;color:var(--text-primary)}
+code{font-family:var(--font-mono);font-size:12.5px;
+background:var(--bg-secondary);padding:1px 5px;border-radius:3px}
+figure{margin:.9rem 0 1.3rem}
+ul{font-size:14.5px;line-height:1.6;margin:.3rem 0 .5rem;padding-left:1.2rem}
+li{margin-bottom:.25rem}
+
+/* таблицы — как .fp-tbl в их отчётах */
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin:.6rem 0}
+th{text-align:left;font-weight:500;color:var(--text-secondary);
+padding:6px 8px;border-bottom:0.5px solid var(--border-secondary);
+font-size:11.5px;white-space:nowrap}
+td{padding:6px 8px;border-bottom:0.5px solid var(--border-tertiary);
+vertical-align:top}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.dim td{color:var(--text-tertiary)}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* карточки — как .fp-mp-block / .fp-detail */
+.card{background:var(--bg-secondary);border-radius:var(--radius-md);
+padding:12px 16px;margin:1rem 0;font-size:13px}
+.card p{font-size:13px;line-height:1.6;margin:.4rem 0}
+.card p:first-child{margin-top:0}.card p:last-child{margin-bottom:0}
+.card ul{font-size:13px}
+.warn{border-left:2px solid var(--accent);border-radius:0 var(--radius-md)
+var(--radius-md) 0}
+.cap{font-size:11.5px;line-height:1.55;color:var(--text-tertiary);
+margin:.3rem 0 0}
+.leg{font-size:12px;color:var(--text-secondary);margin:.25rem 0 0;
+display:flex;flex-wrap:wrap;gap:6px 14px}
+.leg .k{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.leg i{display:inline-block;width:14px;height:0;border-top:2px solid;
+flex-shrink:0}
+.foot{color:var(--text-tertiary);font-size:12px;margin-top:2.5rem;
+border-top:0.5px solid var(--border-tertiary);padding-top:.9rem;
+line-height:1.6}
+
+/* графики эффективности */
 .plot{width:100%;height:auto;display:block}
 .plot .grid{stroke:var(--line);stroke-width:.5}
-.plot .one{stroke:var(--ink);stroke-width:1;stroke-dasharray:none;opacity:.55}
+.plot .one{stroke:var(--ink);stroke-width:1;opacity:.5}
 .plot .med{stroke:var(--med);stroke-width:1.4;stroke-dasharray:6 4}
-.plot .ax{fill:var(--dim);font:11px/1 ui-sans-serif,system-ui,sans-serif}
-.plot .axt{fill:var(--dim);font:12px/1 ui-sans-serif,system-ui,sans-serif}
+.plot .ax{fill:var(--dim);font:11px/1 var(--font-sans)}
+.plot .axt{fill:var(--dim);font:11.5px/1 var(--font-sans)}
+.plot .mk{fill:var(--text-tertiary);font:9.5px/1 var(--font-sans)}
 .plot .mc{fill:none;stroke:var(--mc);stroke-width:1.7}
 .plot .mcp{fill:var(--mc)}
 .plot .mcerr{stroke:var(--mc);stroke-width:1;opacity:.75}
 .plot .expfit{fill:none;stroke:var(--exp);stroke-width:1.7}
+.plot .expp{fill:none;stroke:var(--exp);stroke-width:1.5}
+.plot .experr{stroke:var(--exp);stroke-width:1;opacity:.8}
 .plot .rfit{fill:none;stroke:var(--mc);stroke-width:1.6;opacity:.85}
 .plot .rfitx{fill:none;stroke:var(--mc);stroke-width:1.4;opacity:.55;
 stroke-dasharray:5 4}
-.plot .nodata{fill:var(--ink);opacity:.055}
-.plot .expp{fill:none;stroke:var(--exp);stroke-width:1.5}
-.plot .experr{stroke:var(--exp);stroke-width:1;opacity:.8}
+.plot .nodata{fill:var(--ink);opacity:.05}
 .plot .corr{stroke:var(--corr);stroke-width:1;stroke-dasharray:2 2}
 .plot .corrp{fill:var(--corr)}
-.leg{font:13px/1.5 ui-sans-serif,system-ui,sans-serif;color:var(--dim);
-margin:.2rem 0 0}
-.leg i{display:inline-block;width:1.1rem;height:0;border-top:2px solid;
-vertical-align:.28rem;margin-right:.3rem}
-.leg .k{white-space:nowrap;margin-right:1.1rem;display:inline-block}
-.cap{font:13.5px/1.5 ui-sans-serif,system-ui,sans-serif;color:var(--dim);
-margin:.35rem 0 0}
-table{border-collapse:collapse;width:100%;font:14.5px/1.45 ui-sans-serif,
-system-ui,sans-serif;margin:.8rem 0}
-th,td{border-bottom:1px solid var(--line);padding:.38rem .5rem;text-align:left}
-th{font-weight:600;color:var(--dim);font-size:13px}
-td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
-.tw{overflow-x:auto}
-.card{background:var(--card);border-radius:10px;padding:.9rem 1.1rem;
-margin:1.2rem 0}
-.card p:first-child{margin-top:0}.card p:last-child{margin-bottom:0}
-.warn{border-left:3px solid var(--mc);border-radius:0 10px 10px 0}
-code{font:14px/1.4 ui-monospace,Consolas,monospace}
-.foot{color:var(--dim);font-size:.92rem;margin-top:3rem;border-top:1px solid
-var(--line);padding-top:1rem}
+.plot .mark{stroke:var(--ink);stroke-width:.7;opacity:.3}
+.plot .mark.dirty{stroke-dasharray:3 3;opacity:.25}
+.plot .ssmp{fill:none;stroke:var(--mc);stroke-width:.9}
+.plot .sbg{fill:none;stroke:var(--exp);stroke-width:.8;opacity:.85}
+.plot .snet{fill:none;stroke:var(--corr);stroke-width:.7;opacity:.6}
+
+/* интерактивный спектр */
+.si{margin:.8rem 0 .3rem}
+.si-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+margin-bottom:6px;font-size:12px;color:var(--text-secondary)}
+.si-bar button{font-size:11px;padding:4px 10px;background:transparent;
+border:0.5px solid var(--border-secondary);border-radius:var(--radius-md);
+cursor:pointer;color:inherit;font-family:inherit}
+.si-bar button:hover{background:var(--bg-secondary)}
+.si-bar button.on{background:var(--bg-secondary);font-weight:500;
+border-color:var(--text-secondary)}
+.si-range{margin-left:auto;font-size:11px;color:var(--text-tertiary);
+font-variant-numeric:tabular-nums}
+.si-read{font-size:11.5px;color:var(--text-tertiary);min-height:1.2em;
+font-variant-numeric:tabular-nums;margin-top:2px}
+.si svg{cursor:crosshair;touch-action:none}
+.plot .fpk{fill:var(--med)}
+
+/* врезки деконволюции */
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(19rem,1fr));
+gap:.3rem 1rem;margin:.7rem 0}
+.dgrid figure{margin:.2rem 0 .5rem}
+.dgrid figcaption{font-size:11.5px;line-height:1.5;color:var(--text-tertiary)}
+.dplot{width:100%;height:auto;display:block}
+.dplot .grid{stroke:var(--line);stroke-width:.5}
+.dplot .ax{fill:var(--dim);font:10px/1 var(--font-sans)}
+.dplot .axt{fill:var(--dim);font:11px/1 var(--font-sans)}
+.dplot .mk{fill:var(--text-tertiary);font:9.5px/1 var(--font-sans)}
+.dplot .ddata{fill:var(--ink);opacity:.45}
+.dplot .dmodel{fill:none;stroke:var(--mc);stroke-width:1.6}
+.dplot .dcont{fill:none;stroke:var(--corr);stroke-width:1.2}
+.dplot .dcomp{fill:none;stroke:var(--exp);stroke-width:.9;
+stroke-dasharray:4 3;opacity:.9}
+
+@media (max-width:680px){
+html,body{font-size:15px}
+.page{padding:18px 14px 32px}
+h1{font-size:19px}
+p,ul{font-size:13.5px}
+table{font-size:11.5px}
+th,td{padding:5px 6px}
+.dgrid{grid-template-columns:1fr}
+}
+@media print{
+body{background:#fff}
+.page{max-width:none;padding:0}
+figure,.card,table{page-break-inside:avoid}
+h2,h3,h4{page-break-after:avoid}
+}

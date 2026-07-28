@@ -134,15 +134,28 @@ def solid_angle(tag):
     return 1.0
 
 
-def curve(tag):
+def curve(tag, dropped=None):
+    """Кривая по сетке. dropped — сюда складываются ПРОПУЩЕННЫЕ узлы.
+
+    Пропуск обязан быть слышен. Узел с нулевой площадью молча выпадал из
+    кривой, и так потерялись две верхние точки сетки (3304,8 и 3552,5 кэВ):
+    гистограмма модели была обрезана на 3200 кэВ, пик полного поглощения
+    уезжал в канал переполнения. Ни прогон, ни выгрузка не сказали ни слова,
+    а кривая просто оказалась короче, чем задумано.
+    """
     frac = solid_angle(tag)
     rows = []
     for p in sorted(glob.glob(os.path.join(BUILD, "grid", tag + "_E*.csv"))):
         r = read_run(p)
         if r is None:
+            if dropped is not None:
+                dropped.append((tag, os.path.basename(p), "нет заголовка"))
             continue
         E0, net, dnet, N, gross = r
         if net <= 0:
+            if dropped is not None:
+                dropped.append((tag, "%.1f кэВ" % E0,
+                                "чистая площадь ≤ 0 — пик вне гистограммы?"))
             continue
         rows.append({
             "E_keV": round(E0, 3),
@@ -168,8 +181,9 @@ def export_curves():
     os.makedirs(OUT, exist_ok=True)
     long_rows = []
     made = []
+    dropped = []
     for (tag, vessel, matrix, rho, vol, lid, driver, note) in GRIDS:
-        rows = curve(tag)
+        rows = curve(tag, dropped)
         if not rows:
             print("нет сетки %s — пропущена" % tag)
             continue
@@ -188,6 +202,12 @@ def export_curves():
                 "N_primaries", "net_counts", "solid_angle_fraction"]
         long_rows.sort(key=lambda r: (r["grid"], r["E_keV"]))
         write_csv(os.path.join(OUT, "efficiency_curves.csv"), head, long_rows)
+    if dropped:
+        print("
+ПРОПУЩЕНЫ УЗЛЫ СЕТКИ (%d) — кривая короче задуманной:"
+              % len(dropped))
+        for tag, what, why in dropped:
+            print("   %-12s %-14s %s" % (tag, what, why))
     return made
 
 

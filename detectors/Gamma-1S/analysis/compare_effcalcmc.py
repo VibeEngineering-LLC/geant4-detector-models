@@ -4,18 +4,25 @@
 ЛСРМ (REPORT §2, §5а): занижение мягкого края, завышение жёсткого. Ход может
 принадлежать либо коду (розыгрыш, съём площади, телесный угол), либо описанию
 слоёв (толщины/плотности против реального прибора). Расчёт EffCalcMC по нашим
-же .din/.sin (nuclidemaster/) разделяет гипотезы: независимая реализация с
-теми же слоями воспроизводит либо нашу кривую (дефект в описании), либо
-измеренную (дефект в коде).
+же .din/.sin (nuclidemaster/) разделяет гипотезы.
 
-Итог первого прогона (маринелли, 10^8 испытаний, 28.07.2026): среднее
-отношение наш/EffCalcMC = 1,000, наклон −1,2 % на декаду, перепад по
-48–3000 кэВ −4,8 % — при наблюдаемых против измерения 18–52 %. Два МК
-согласны; расхождение с измерением принадлежит ОПИСАНИЮ СЛОЁВ.
+НАПРАВЛЕНИЕ ИНТЕРПОЛЯЦИИ (урок от аудитора). Интерполируется ГУСТАЯ кривая
+(ECM, 50 лог-точек) в узлы РЕДКОЙ (наша сетка, 22–24 узла) локальной
+квадратикой в log-log — ошибка такой интерполяции ничтожна. Первая редакция
+делала наоборот: тянула зонную аппроксимацию нашей сетки в точки ECM, и
+аппроксимация сглаживала ровно тот мягкий край, где вся структура.
 
-Остаток ниже 100 кэВ (наш выше на 9–25 % у края, ниже на 3–8 % в 85–240)
-— кандидаты: раскладка засыпки, сечения в ОИСН-16 (71 % железа),
-определение площади пика. Для точечной геометрии этих факторов нет.
+ОДНИМ ЧИСЛОМ НЕ СВОДИТСЯ — печатаются срезы. Итог первого прогона
+(маринелли, 10^8, 28.07.2026): отношение наш/ECM НЕ плоское —
++20 % на трёх узлах ниже 70 кэВ, −7 % в 122–166, монотонный рост ~+10 %
+на декаду выше 90 кэВ. Прямая по всем точкам даёт около нуля лишь потому,
+что мягкое смещение гасит жёсткий рост — то же маскирующее среднее, что
+и χ²/ν поверх несогласного набора. Согласие кодов ±3 % — ТОЛЬКО выше
+90 кэВ; главному выводу это не мешает: расхождение кодов на порядок меньше
+измеренного хода и противоположно ему по знаку.
+
+Скрипту нужны ДВА файла, оба в репозитории; каталог расчётных спектров не
+нужен и не проверяется.
 
 Запуск:
     python compare_effcalcmc.py [файл.efa] [наша_кривая.csv]
@@ -29,18 +36,21 @@ import sys
 
 import numpy as np
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                "..", "..", "..", "common", "py"))
-import paths  # noqa: E402
-
-sys.path.insert(0, str(paths.tools()))
-from fetch_efr import parse_efr  # noqa: E402
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from compare_point import zoned_fit  # noqa: E402
-
 HERE = os.path.dirname(os.path.abspath(__file__))
 DET = os.path.join(HERE, "..")
+
+# parse_efr — из tools/ репозитория; paths для этого не нужен
+sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "tools"))
+from fetch_efr import parse_efr  # noqa: E402
+
+sys.path.insert(0, HERE)
+from curvefit import local_quad  # noqa: E402
+
+
+def slices(pairs):
+    """Срезы (метка, [пары]): весь набор и жёсткая часть без мягкого края."""
+    return [("все узлы", pairs),
+            ("E >= 90", [p for p in pairs if p[0] >= 90.0])]
 
 
 def main(argv):
@@ -49,36 +59,42 @@ def main(argv):
     ours = argv[1] if len(argv) > 1 else os.path.join(
         DET, "results", "eff_rho1.60.csv")
     # .efa ЛСРМ — cp1251
-    pts = parse_efr(open(efa, encoding="cp1251", errors="replace").read())
-    pts = [p for s in pts for p in s["points"]] if isinstance(pts, list) and \
-        pts and isinstance(pts[0], dict) else pts[0]["points"]
+    secs = parse_efr(open(efa, encoding="cp1251", errors="replace").read())
+    pts = sorted(p for s in secs for p in s["points"])
+    Ec = [p[0] for p in pts]
+    yc = [p[1] for p in pts]
+    ev = local_quad(Ec, yc)
 
     rows = list(csv.DictReader(open(ours, encoding="utf-8", newline="")))
-    E = np.array([float(r["E_keV"]) for r in rows])
-    i = np.argsort(E)
-    E = E[i]
-    y = np.array([float(r["eps_net"]) for r in rows])[i]
-    dy = np.array([float(r["d_eps"]) for r in rows])[i]
-    _fits, ev = zoned_fit(E, y, dy)
+    grid = sorted((float(r["E_keV"]), float(r["eps_net"]), float(r["d_eps"]))
+                  for r in rows)
 
-    print("сверка: %s\n против %s" % (os.path.basename(efa),
-                                      os.path.basename(ours)))
-    print("%8s %11s %11s %9s" % ("E, кэВ", "EffCalcMC", "наш МК", "наш/ECM"))
-    lr = []
-    for Ee, eff, _dp, _n in sorted(pts):
-        if Ee < E[0] or Ee > E[-1]:
+    print("сверка: %s (%d точек, интерполируется)\n против %s (узлы)"
+          % (os.path.basename(efa), len(pts), os.path.basename(ours)))
+    print("%8s %11s %11s %9s %7s" % ("E, кэВ", "наш узел", "ECM интерп.",
+                                     "наш/ECM", "стат.%"))
+    pairs = []
+    for E, y, dy in grid:
+        if E < Ec[0] or E > Ec[-1]:
+            print("%8.1f %11.4e   вне сетки ECM" % (E, y))
             continue
-        m = ev(Ee)
-        lr.append((Ee, m / eff))
-        print("%8.1f %11.4e %11.4e %9.3f" % (Ee, eff, m, m / eff))
-    if len(lr) > 2:
-        x = np.log([e for e, _ in lr])
-        z = np.log([r for _, r in lr])
+        m = ev(E)
+        pairs.append((E, y / m))
+        print("%8.1f %11.4e %11.4e %9.3f %7.2f"
+              % (E, y, m, y / m, 100 * dy / y))
+
+    for name, sel in slices(pairs):
+        if len(sel) < 3:
+            continue
+        x = np.log([e for e, _ in sel])
+        z = np.log([r for _, r in sel])
         b = np.polyfit(x, z, 1)[0]
-        print("\nсреднее наш/ECM = %.3f, наклон d lnR/d lnE = %+.4f,"
-              " перепад по диапазону %.1f %%"
-              % (math.exp(z.mean()), b,
-                 100 * (math.exp(b * (x[-1] - x[0])) - 1)))
+        sko = float(np.std(np.exp(z - z.mean()) - 1))
+        print("\n   %-10s (%2d узлов): среднее %.3f, наклон %+.1f %% на "
+              "декаду, перепад %+.1f %%, СКО %.1f %%"
+              % (name, len(sel), math.exp(z.mean()),
+                 100 * (math.exp(b * math.log(10)) - 1),
+                 100 * (math.exp(b * (x[-1] - x[0])) - 1), 100 * sko))
 
 
 if __name__ == "__main__":

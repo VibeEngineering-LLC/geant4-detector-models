@@ -76,7 +76,7 @@ FRAC = (1 - math.cos(math.radians(THETA))) / 2
 #
 # Поэтому габарит считается из тех же формул, что и G1SDetector::BuildVessel,
 # и печатается в лог: расхождение с «объём пробы» из вывода модели сразу видно.
-WALL, Z_FACE, R_IN, R_WELL_OUT, SAMPLE_CM3 = 2.0, 43.0, 73.0, 42.0, 1000.0
+WALL, Z_FACE, R_IN, R_WELL_OUT, SAMPLE_CM3 = 2.0, 41.0, 73.0, 42.0, 1000.0
 
 
 def sample_span(well):

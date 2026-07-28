@@ -74,19 +74,19 @@ def main():
     # Таблицы, которые читает потребитель, проверяются ТЕМ ЖЕ парсером, каким
     # он их читает. Незакавыченная запятая внутри значения не роняет чтение, а
     # тихо сдвигает поля — так 48 строк точечных кривых отдавали энергию словом.
-    if not only:
-        print("=" * 70, flush=True)
-        print("%-20s %s" % ("check_csv.py", "поля таблиц против шапки"),
-              flush=True)
-        chk = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
-            HERE))), "tools", "check_csv.py")
-        r = subprocess.run([sys.executable, chk], capture_output=True,
-                           text=True, encoding="utf-8", errors="replace",
-                           env=env)
-        for ln in (r.stdout or "").splitlines():
-            print("   ", ln, flush=True)
-        if r.returncode != 0:
-            fails.append("check_csv.py")
+    # Сверка идёт ВСЕГДА, в том числе при --only. Стояло «если полный прогон»,
+    # а самый частый путь ровно обратный: перезалить одну таблицу и запушить.
+    # Сторож, который молчит на коротком пути, сторожит не то.
+    print("=" * 70, flush=True)
+    print("%-20s %s" % ("check_csv.py", "поля таблиц против шапки"), flush=True)
+    chk = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
+        HERE))), "tools", "check_csv.py")
+    r = subprocess.run([sys.executable, chk], capture_output=True,
+                       text=True, encoding="utf-8", errors="replace", env=env)
+    for ln in (r.stdout or "").splitlines():
+        print("   ", ln, flush=True)
+    if r.returncode != 0:
+        fails.append("check_csv.py")
 
     print("=" * 70)
     if fails:

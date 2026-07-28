@@ -206,6 +206,22 @@ def summing():
     return out
 
 
+def kit_cell(km):
+    """Ячейка сводки: отношение ± погрешность и пометка о согласии набора.
+
+    Если χ²/ν больше 2, ряды нуклидов между собой не согласны, и число, каким
+    бы узким ни вышел интервал, описывает набор плохо. Пометка ставится рядом
+    с числом: читатель должен видеть это без обращения к таблицам.
+    """
+    if not km:
+        return "—"
+    s = "%s ± %s" % (ru(km[0]), ru(km[1]))
+    if km[3] is not None and km[3] > 2.0:
+        s += "<br><span class='cap'>χ²/ν = %s, ряды не согласны</span>" \
+             % ru(km[3], 1)
+    return s
+
+
 def kit_activity():
     """A_изм/A_пасп по геометриям — ИЗ ФАЙЛОВ СВОДКИ, а не своей формулой.
 
@@ -216,8 +232,10 @@ def kit_activity():
     сводку считает пересчёт и кладёт в kit_activity_*.csv, а страница только
     читает: одно правило, один источник.
 
-    Возврат: {геометрия: (отношение, погрешность, число линий)} по строкам
-    nuclide=*.
+    Возврат: {геометрия: (отношение, погрешность, число линий, χ²/ν)} по
+    строкам nuclide=*. χ²/ν — мера согласия рядов между собой; больше ~2
+    значит, что одним числом набор не сводится, и это выносится на страницу
+    рядом с числом, а не прячется.
     """
     out = {}
     for fn in ("kit_activity_volume.csv", "kit_activity_point.csv"):
@@ -228,8 +246,10 @@ def kit_activity():
             for r in csv.DictReader(l for l in fh if not l.startswith("#")):
                 if r["nuclide"] != "*":
                     continue
+                c2 = r.get("chi2_dof") or ""
                 out[r["geometry"]] = (float(r["ratio"]), float(r["d_ratio"]),
-                                      int(r["n_lines"]))
+                                      int(r["n_lines"]),
+                                      float(c2) if c2 else None)
     return out
 
 
@@ -1278,7 +1298,7 @@ def build():
         "<td class='n'>%s</td></tr>"
         % (esc(t), n, ru(k), ru(kg), ru(100 * rms, 1),
            nk if nk else "—",
-           ("%s ± %s" % (ru(km[0]), ru(km[1]))) if km else "—")
+           kit_cell(km))
         for t, n, k, kg, rms, nk, km in summary)
 
     spec_blocks, spec_rows, spec_legend = spectra_section()

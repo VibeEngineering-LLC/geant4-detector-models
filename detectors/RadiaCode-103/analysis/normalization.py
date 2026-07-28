@@ -49,13 +49,20 @@ def measured():
     """Площадь пика и полный счёт реперной пробы, имп/с, за вычетом фона."""
     smp = read_rcxml.read(SAMPLE)[0]
     bg = read_rcxml.read(BG)[0]
-    bgs = rebin_to(smp, bg) * (smp.live / bg.live)
+    kbg = smp.live / bg.live
+    bgs = rebin_to(smp, bg) * kbg
     net = smp.counts - bgs
     e, dE = smp.energy, np.gradient(smp.energy)
 
     m = (e > 560) & (e < 790)
     x, y = e[m], net[m] / dE[m]
-    err = np.sqrt(np.maximum(smp.counts[m] + bgs[m], 1)) / dE[m]
+    # Дисперсия ЧИСТОГО счёта: N_проба + k²·N_фон_сырой, где k —
+    # множитель приведения фона по времени. Через уже
+    # приведённый фон это N_проба + k·bg_приведённый. Стояло без k,
+    # то есть при k < 1 погрешность занижалась, и сверка «модель
+    # против аттестации» показывала согласие лучше действительного.
+    # Эталон вывода — detectors/Gamma-1S/analysis/export_curves.py.
+    err = np.sqrt(np.maximum(smp.counts[m] + kbg * bgs[m], 1)) / dE[m]
     p, cov = curve_fit(peak_model, x, y,
                        p0=[net[m].sum(), E0, 0.084 * 662 / 2.355, y.min(), 0.0],
                        sigma=err, absolute_sigma=True)
@@ -63,7 +70,7 @@ def measured():
 
     thr = e > 20
     tot = net[thr].sum()
-    d_tot = np.sqrt(smp.counts[thr].sum() + bgs[thr].sum())
+    d_tot = np.sqrt(smp.counts[thr].sum() + kbg * bgs[thr].sum())
     return (area, d_area, tot, d_tot, smp.live)
 
 

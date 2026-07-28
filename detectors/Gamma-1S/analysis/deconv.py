@@ -392,7 +392,7 @@ def _run():
         files = sorted(str(p) for p in kd.rglob(mask)) if kd else []
         if not files:
             continue
-        sp, bg = bm.read(files[0])
+        sp, bg, _cal = bm.read_checked(files[0])
         import re
         txt = open(files[0], encoding="utf-8", errors="replace").read()
         md = re.search(r"<StartTime>(\d{4}-\d{2}-\d{2})", txt)

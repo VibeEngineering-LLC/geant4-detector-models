@@ -116,7 +116,7 @@ def own_measured(target):
     return np.diff(np.interp(edges(target), edges(s), cum)) / s.live
 
 
-def fit662(spec, bgscaled):
+def fit662(spec, bgscaled, kbg=1.0):
     """Площадь пика 662 подгонкой «гауссиана + линейная подложка»."""
     from fit_peak import peak_model
     from scipy.optimize import curve_fit
@@ -124,7 +124,13 @@ def fit662(spec, bgscaled):
     e, dE = spec.energy, np.gradient(spec.energy)
     m = (e > 560) & (e < 790)
     x, y = e[m], net[m] / dE[m]
-    err = np.sqrt(np.maximum(spec.counts[m] + bgscaled[m], 1)) / dE[m]
+    # Дисперсия ЧИСТОГО счёта: N_проба + k²·N_фон_сырой, где k —
+    # множитель приведения фона по времени. Через уже
+    # приведённый фон это N_проба + k·bg_приведённый. Стояло без k,
+    # то есть при k < 1 погрешность занижалась, и сверка «модель
+    # против аттестации» показывала согласие лучше действительного.
+    # Эталон вывода — detectors/Gamma-1S/analysis/export_curves.py.
+    err = np.sqrt(np.maximum(spec.counts[m] + kbg * bgscaled[m], 1)) / dE[m]
     p, cov = curve_fit(peak_model, x, y,
                        p0=[max(net[m].sum(), 1.0), 661.657,
                            0.084 * 662 / 2.355, y.min(), 0.0],
@@ -143,10 +149,10 @@ def peak_cross_check(smp_open, bg_open):
     smp_sh = read_rcxml.read(S_SHIELD)[0]
     bg_sh = read_rcxml.read(B_SHIELD)[0]
 
-    a_o, d_o = fit662(smp_open, rebin_meas(smp_open, bg_open)
-                      * (smp_open.live / bg_open.live))
-    a_s, d_s = fit662(smp_sh, rebin_meas(smp_sh, bg_sh)
-                      * (smp_sh.live / bg_sh.live))
+    k_o = smp_open.live / bg_open.live
+    a_o, d_o = fit662(smp_open, rebin_meas(smp_open, bg_open) * k_o, k_o)
+    k_s = smp_sh.live / bg_sh.live
+    a_s, d_s = fit662(smp_sh, rebin_meas(smp_sh, bg_sh) * k_s, k_s)
     r_o, dr_o = a_o / smp_open.live, d_o / smp_open.live
     r_s, dr_s = a_s / smp_sh.live, d_s / smp_sh.live
 

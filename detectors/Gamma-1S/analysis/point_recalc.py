@@ -121,6 +121,38 @@ PASSPORT = {
 OMEGA_RATIO = ((1 - math.cos(math.atan(39.15 / 250.0))) / 2) / \
               ((1 - math.cos(math.atan(39.15 / 50.0))) / 2)
 
+# Отбор линий по ЧИСТОТЕ — то же правило, что у объёмных (kit_recalc.py):
+# плохо разделённая линия для активности не годится, её площадь есть сумма
+# нескольких линий. Порог и полуширина «самой линии» — общие с объёмным
+# пересчётом, иначе две половины комплекта отбирались бы по разным меркам.
+CLEAN_FRAC = 0.95
+CLEAN_HALF = 3.0
+
+
+def purity(tag, E, win):
+    """(чистота, [(доля, энергия) засорителей]) по спектру ИСПУСКАНИЯ прогона.
+
+    Спектр испускания — свойство РАСПАДА, а не геометрии: он пишется по
+    родившимся гамма-квантам, до всякого взаимодействия с прибором. Поэтому
+    для обеих точечных геометрий берётся один файл p5_<нукл>_emit.csv;
+    отдельных прогонов распада на 25 см нет и не нужно.
+
+    Ширина окна win — та же ±1 ПШПВ, которой снимается площадь; чистота
+    учитывает ИНТЕНСИВНОСТЬ соседей, а не только расстояние до них.
+    """
+    p = os.path.join(BUILD, "p5_%s_emit.csv" % tag)
+    if not os.path.exists(p):
+        return None, []
+    emit, _N = load_hist(p)
+    tot = sum(c for e, c in emit.items() if abs(e - E) <= win)
+    if tot <= 0:
+        return None, []
+    own = sum(c for e, c in emit.items() if abs(e - E) <= CLEAN_HALF)
+    bad = sorted(((c / tot, e) for e, c in emit.items()
+                  if CLEAN_HALF < abs(e - E) <= win and c > 0.02 * tot),
+                 reverse=True)
+    return own / tot, bad
+
 
 def load_hist(path):
     hist, N = {}, None
@@ -261,6 +293,13 @@ if __name__ == "__main__":
                 # измерения должны совпадать в точности, а у слабых линий пик
                 # не находится
                 fw = fwhm(E)
+                # Чистота линии — ДО расчёта: она решает, пойдёт ли линия в
+                # активность. Считается и на 5, и на 25 см по одному спектру
+                # испускания (см. purity), поэтому набор годных линий у обеих
+                # геометрий один и тот же — расходиться могут только причины
+                # исключения по полкам, они геометрии не безразличны.
+                frac, dirt = purity(tag, E, fw)
+                usable = frac is not None and frac >= CLEAN_FRAC
                 r = bm.net_rate(s, b, E, fw, roi=1.0, side=1.0)
                 if r is None or r[0] <= 0:
                     continue
@@ -295,10 +334,18 @@ if __name__ == "__main__":
                 # в отношение A/A0 входит одинаково всем линиям нуклида и на
                 # ВЕС не влияет, поэтому здесь только статистика.
                 dA = A * (r[1] / r[0])
-                ratios.append((geom, nuc, E, A / A0, dA / A0))
-                rows.append((geom, nuc, E, rate, ed, Cshow, A, A0, A / A0))
-                print("%-11s %-8s %9.1f %9.3f %11.4e %6s %9.3e %8.3f"
-                      % (geom, nuc, E, rate, ed, Cshow, A, A / A0))
+                if usable:
+                    ratios.append((geom, nuc, E, A / A0, dA / A0))
+                rows.append((geom, nuc, E, rate, ed, Cshow, A, A0, A / A0,
+                             frac, usable))
+                tag_txt = "  чистота %.2f" % (frac if frac is not None else 0.0)
+                if not usable:
+                    tag_txt += " — В АКТИВНОСТЬ НЕ ИДЁТ: " + (
+                        ", ".join("%.0f кэВ %.0f%%" % (e, 100 * f)
+                                  for f, e in dirt[:3]) or "группа")
+                print("%-11s %-8s %9.1f %9.3f %11.4e %6s %9.3e %8.3f%s"
+                      % (geom, nuc, E, rate, ed, Cshow, A, A / A0, tag_txt))
+    summary = []
     if ratios:
         import statistics
         # Сведение — ПО ПРАВИЛУ ЛСРМ, а не медианой. Медиана не пользуется
@@ -314,10 +361,13 @@ if __name__ == "__main__":
                 continue
             av = kr_average(v)
             raw = [a for a, _d in v]
-            print("\n%s: %d линий" % (g, len(v)))
+            drop = len([x for x in rows if x[0] == g and not x[10]])
+            print("\n%s: %d годных линий (плохо разделённых отброшено %d)"
+                  % (g, len(v), drop))
             if av:
                 print("   по правилу ЛСРМ  A/пасп = %.3f ± %.3f (%s)"
                       % (av[0], av[1], av[2]))
+                summary.append((g, "*", av[3], av[0], av[1], av[2]))
             print("   медиана %.3f, разброс %.3f..%.3f"
                   % (statistics.median(raw), min(raw), max(raw)))
             # Разбор по нуклидам: расхождение МЕЖДУ рядами информативнее
@@ -328,6 +378,26 @@ if __name__ == "__main__":
                 if an:
                     print("      %-8s %d лин.  %.3f ± %.3f (%s)"
                           % (nuc, len(vn), an[0], an[1], an[2]))
+                    summary.append((g, nuc, an[3], an[0], an[1], an[2]))
+
+    # Сводка — тем же файлом-источником, что у объёмных (kit_activity_*.csv):
+    # страница и отчёт берут числа отсюда и не считают своей формулой.
+    if summary:
+        sp = os.path.abspath(os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", "results",
+            "kit_activity_point.csv"))
+        with open(sp, "w", encoding="utf-8", newline="") as fh:
+            fh.write("# Активность по правилу ЛСРМ для точечных геометрий: "
+                     "средневзвешенное по ГОДНЫМ\n"
+                     "# линиям (usable=1 в kit_recalc_point.csv), "
+                     "неопределённость — максимум из\n"
+                     "# взвешенной и разброса (столбец estimate).\n"
+                     "# nuclide=* — сводка по геометрии по всем её годным "
+                     "линиям.\n")
+            fh.write("geometry,nuclide,n_lines,ratio,d_ratio,estimate\n")
+            for r in summary:
+                fh.write("%s,%s,%d,%.4f,%.4f,%s\n" % r)
+        print("\nсводка: %s (%d строк)" % (sp, len(summary)))
 
     # Числа — файлом (пункт 12 протокола проверок).
     if rows:
@@ -343,9 +413,18 @@ if __name__ == "__main__":
                      "# C — поправка на суммирование; «прям.» значит, что "
                      "она уже внутри прогона распада.\n"
                      "# Линии с загрязнёнными полками исключены и в файл не "
-                     "попадают, их список — в выводе скрипта.\n")
+                     "попадают, их список — в выводе скрипта.\n"
+                     "# purity — доля выхода окна, приходящаяся на саму линию;"
+                     " usable=0 значит\n"
+                     "#   линия плохо разделена и в активность НЕ ИДЁТ "
+                     "(порог %.2f). Такие строки\n"
+                     "#   остаются в файле: на них проверяется деконволюция.\n"
+                     % CLEAN_FRAC)
             fh.write("geometry,nuclide,E_keV,rate_cps,eps_per_decay,C,"
-                     "A_meas_Bq,A_pass_Bq,ratio\n")
+                     "A_meas_Bq,A_pass_Bq,ratio,purity,usable\n")
             for r in rows:
-                fh.write("%s,%s,%.3f,%.4f,%.6e,%s,%.4e,%.4e,%.4f\n" % r)
+                fh.write("%s,%s,%.3f,%.4f,%.6e,%s,%.4e,%.4e,%.4f,%.3f,%d\n"
+                         % (r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7],
+                            r[8], r[9] if r[9] is not None else 0.0,
+                            1 if r[10] else 0))
         print("\nтаблица: %s (%d строк)" % (out, len(rows)))

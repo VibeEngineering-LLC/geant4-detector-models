@@ -206,17 +206,31 @@ def summing():
     return out
 
 
-def kit_medians():
-    """Медианы A_изм/A_пасп по геометриям пересчёта комплекта."""
+def kit_activity():
+    """A_изм/A_пасп по геометриям — ИЗ ФАЙЛОВ СВОДКИ, а не своей формулой.
+
+    Раньше страница брала таблицу линий и сводила её МЕДИАНОЙ, тогда как
+    отчёт сводил тот же пересчёт правилом ЛСРМ (средневзвешенное с весами
+    1/(ΔA)²). Числа получались разные — 1,17 против 1,18 на 5 см и до трёх
+    сотых на сосудах, — и оба назывались «пересчётом комплекта». Теперь
+    сводку считает пересчёт и кладёт в kit_activity_*.csv, а страница только
+    читает: одно правило, один источник.
+
+    Возврат: {геометрия: (отношение, погрешность, число линий)} по строкам
+    nuclide=*.
+    """
     out = {}
-    for fn in ("kit_recalc_volume.csv", "kit_recalc_point.csv"):
+    for fn in ("kit_activity_volume.csv", "kit_activity_point.csv"):
         p = os.path.join(RES, fn)
         if not os.path.exists(p):
             continue
         with open(p, encoding="utf-8") as fh:
             for r in csv.DictReader(l for l in fh if not l.startswith("#")):
-                out.setdefault(r["geometry"], []).append(float(r["ratio"]))
-    return {k: sorted(v) for k, v in out.items()}
+                if r["nuclide"] != "*":
+                    continue
+                out[r["geometry"]] = (float(r["ratio"]), float(r["d_ratio"]),
+                                      int(r["n_lines"]))
+    return out
 
 
 # --- построение SVG ---------------------------------------------------------
@@ -734,7 +748,8 @@ TMPL = """<meta charset="utf-8">
 <th class="n">МК/эксп<br>по чистой площади</th>
 <th class="n">то же<br>без вычета полки</th>
 <th class="n">RMS формы, %%</th>
-<th class="n">линий в пересчёте</th><th class="n">медиана A/пасп</th></tr>
+<th class="n">линий в пересчёте</th>
+<th class="n">A/пасп<br>по правилу ЛСРМ</th></tr>
 </thead><tbody>%(summary)s</tbody></table></div>
 
 <p class="cap">Два столбца отношения — не разброс расчёта, а систематика
@@ -749,6 +764,14 @@ TMPL = """<meta charset="utf-8">
 эффективность и получается активность, которую сравнивают с паспортом
 источника. Подогнать в этой процедуре нечего. Знак расхождения в обоих
 столбцах один и тот же, хотя пути расчёта разные.</p>
+
+<p class="cap">Правое число — по правилу ЛСРМ: средневзвешенное с весами
+1/(ΔA)², неопределённость — максимум из взвешенной оценки и разброса между
+линиями. В него идут только ГОДНЫЕ линии: плохо разделённая линия — сумма
+нескольких, и приписать её площадь одному переходу нельзя, сколько бы поправок
+ни вводить. Мера разделённости — доля выхода в окне, приходящаяся на саму
+линию, по спектру испускания того же прогона; порог 0,95. Отсеянные линии
+остаются в таблицах пересчёта с пометкой, на них проверяется деконволюция.</p>
 
 <p><b>Читать так:</b> МК/эксп больше единицы — расчёт завышает эффективность;
 A/пасп меньше единицы — то же самое (завышенной эффективностью
@@ -1186,7 +1209,7 @@ def build():
             "detectors/Gamma-1S/reference/lsrm/efficiency/; укажите\n"
             "G4MODELS_REF, если эталоны вынесены из репозитория.")
     C = summing()
-    kit = kit_medians()
+    kit = kit_activity()
 
     blocks, summary = [], []
     for title, mname, cfile, note, kitkey in GEOMS:
@@ -1245,16 +1268,17 @@ def build():
             ratio_chart(pairs, med, zones, mcf, mcrange, mspan),
             ru(k), len(pairs), ru(100 * rms, 1), ru(med), mcdeg,
             ru(100 * mcloo, 1), "".join(rows)))
-        kr = kit.get(kitkey, [])
+        kr = kit.get(kitkey)
         summary.append((title, len(pairs), k, kg, rms,
-                        len(kr), med_of(kr) if kr else None))
+                        kr[2] if kr else 0, kr if kr else None))
 
     srows = "".join(
         "<tr><td>%s</td><td class='n'>%d</td><td class='n'>%s</td>"
         "<td class='n'>%s</td><td class='n'>%s</td><td class='n'>%s</td>"
         "<td class='n'>%s</td></tr>"
         % (esc(t), n, ru(k), ru(kg), ru(100 * rms, 1),
-           nk if nk else "—", ru(km) if km is not None else "—")
+           nk if nk else "—",
+           ("%s ± %s" % (ru(km[0]), ru(km[1]))) if km else "—")
         for t, n, k, kg, rms, nk, km in summary)
 
     spec_blocks, spec_rows, spec_legend = spectra_section()
@@ -1272,7 +1296,8 @@ def build():
         print("   %-16s линий %2d, МК/эксп %s (без вычета полки %s), "
               "RMS формы %s %%, пересчёт комплекта %s"
               % (t, n, ru(k), ru(kg), ru(100 * rms, 1),
-                 ru(km) if km is not None else "—"))
+                 ("%s ± %s по %d линиям" % (ru(km[0]), ru(km[1]), km[2]))
+                 if km else "—"))
 
 
 if __name__ == "__main__":

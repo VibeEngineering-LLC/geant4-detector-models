@@ -36,7 +36,6 @@ detectors/Gamma-1S/results/.
 законно: в пик идут практически только прямые кванты. Полная (не пиковая)
 эффективность при таком розыгрыше была бы занижена.
 """
-import csv
 import glob
 import math
 import os
@@ -47,6 +46,7 @@ import sys
 # было ни одного пути, привязанного к конкретной машине.
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
+import csvio  # noqa: E402
 import paths  # noqa: E402
 
 BUILD = str(paths.build("Gamma-1S"))
@@ -179,43 +179,19 @@ def curve(tag, dropped=None):
 
 
 def write_csv(path, header, rows):
-    """Запись через csv.writer, а НЕ склейкой запятыми.
+    """Запись таблицы — общей реализацией из common/py/csvio.py.
 
     Ручной ",".join не экранирует ничего, и любое поле с запятой рвёт строку.
-    Так и вышло: geometry у точечных сеток — «точечный, 25 см», и все 48
-    строк обеих точечных кривых в efficiency_curves.csv получили 14 полей
-    при шапке в 13. Стандартный csv.DictReader при этом не падает, а ТИХО
-    сдвигает всё правее запятой на поле: E_keV становится словом «ОТКРЫТА»,
-    eps_net — числом энергии. Потребитель получал точечные кривые мусором,
-    объёмные целыми (в их названиях запятых нет).
+    Так и вышло: geometry у точечных сеток было «точечный, 25 см», и все 48
+    строк обеих точечных кривых в efficiency_curves.csv получили 14 полей при
+    шапке в 13. csv.DictReader при этом не падал, а ТИХО сдвигал всё правее на
+    поле: E_keV становился словом «ОТКРЫТА», eps_net — числом энергии.
 
-    csv.writer закавычит поле сам. Проверка результата — check_csv ниже:
-    она стоит того, чтобы вызываться после каждой выгрузки.
+    Своей копии записи и своего сторожа здесь больше нет: и то и другое живёт
+    в csvio, потому что копия сторожа успела разъехаться с копией в
+    tools/check_csv.py по обращению с комментариями.
     """
-    with open(path, "w", encoding="utf-8", newline="") as fh:
-        w = csv.writer(fh, lineterminator="\n")
-        w.writerow(header)
-        for r in rows:
-            w.writerow([r[h] for h in header])
-    check_csv(path)
-
-
-def check_csv(path):
-    """Прочитать свой же файл штатным парсером и сверить длины строк.
-
-    Дешёвая проверка целого класса ошибок — того же сорта, что ast.parse по
-    исходникам. Файл, который читает потребитель, обязан читаться тем, чем
-    его читают.
-    """
-    with open(path, encoding="utf-8", newline="") as fh:
-        rows = [r for r in csv.reader(fh) if r]
-    n = len(rows[0])
-    bad = [i + 1 for i, r in enumerate(rows) if len(r) != n]
-    if bad:
-        raise SystemExit(
-            "%s: %d строк не совпали с шапкой (%d полей): строки %s.\n"
-            "Скорее всего запятая внутри значения и запись без экранирования."
-            % (path, len(bad), n, bad[:5]))
+    csvio.write(path, header, rows)
 
 
 def export_curves():

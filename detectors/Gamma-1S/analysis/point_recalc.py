@@ -45,6 +45,9 @@ import paths  # noqa: E402
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import becqmoni as bm  # noqa: E402
 from contam import dirty_shelves  # noqa: E402
+# Правило усреднения — ОДНО на весь пересчёт, из объёмного модуля, чтобы две
+# половины комплекта не сводились по-разному.
+from kit_recalc import lsrm_average as kr_average  # noqa: E402
 
 BUILD = str(paths.build("Gamma-1S"))
 
@@ -288,17 +291,43 @@ if __name__ == "__main__":
                 if not ed:
                     continue
                 A = rate / ed
-                ratios.append((geom, nuc, E, A / A0))
+                # Погрешность активности по линии — от счёта; паспортная доля
+                # в отношение A/A0 входит одинаково всем линиям нуклида и на
+                # ВЕС не влияет, поэтому здесь только статистика.
+                dA = A * (r[1] / r[0])
+                ratios.append((geom, nuc, E, A / A0, dA / A0))
                 rows.append((geom, nuc, E, rate, ed, Cshow, A, A0, A / A0))
                 print("%-11s %-8s %9.1f %9.3f %11.4e %6s %9.3e %8.3f"
                       % (geom, nuc, E, rate, ed, Cshow, A, A / A0))
     if ratios:
         import statistics
+        # Сведение — ПО ПРАВИЛУ ЛСРМ, а не медианой. Медиана не пользуется
+        # погрешностями вовсе: линия, снятая с трёх процентов, весит у неё
+        # столько же, сколько снятая с тридцати. Правило ЛСРМ берёт
+        # средневзвешенное с весами 1/(ΔA)², а неопределённостью объявляет
+        # МАКСИМУМ из взвешенной и разброса — так расхождение между линиями
+        # не прячется за малой статистической погрешностью. Объёмный пересчёт
+        # переведён на это правило раньше; здесь оставалась медиана.
         for g in ("Point_5cm", "Point_25cm"):
-            v = [x[3] for x in ratios if x[0] == g]
-            if v:
-                print("\n%s: %d линий, медиана A/пасп = %.3f, разброс %.3f..%.3f"
-                      % (g, len(v), statistics.median(v), min(v), max(v)))
+            v = [(x[3], x[4]) for x in ratios if x[0] == g]
+            if not v:
+                continue
+            av = kr_average(v)
+            raw = [a for a, _d in v]
+            print("\n%s: %d линий" % (g, len(v)))
+            if av:
+                print("   по правилу ЛСРМ  A/пасп = %.3f ± %.3f (%s)"
+                      % (av[0], av[1], av[2]))
+            print("   медиана %.3f, разброс %.3f..%.3f"
+                  % (statistics.median(raw), min(raw), max(raw)))
+            # Разбор по нуклидам: расхождение МЕЖДУ рядами информативнее
+            # общего разброса — оно указывает на эффективность, а не на счёт.
+            for nuc in sorted({x[1] for x in ratios if x[0] == g}):
+                vn = [(x[3], x[4]) for x in ratios if x[0] == g and x[1] == nuc]
+                an = kr_average(vn)
+                if an:
+                    print("      %-8s %d лин.  %.3f ± %.3f (%s)"
+                          % (nuc, len(vn), an[0], an[1], an[2]))
 
     # Числа — файлом (пункт 12 протокола проверок).
     if rows:

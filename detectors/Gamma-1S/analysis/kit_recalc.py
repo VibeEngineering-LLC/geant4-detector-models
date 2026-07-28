@@ -440,7 +440,7 @@ if __name__ == "__main__":
         if not files:
             missing.append("%s / %s (%s)" % (geom, mask, nuc))
             continue
-        s, b = bm.read(files[0])
+        s, b, _cal = bm.read_checked(files[0])
         # дата измерения и опорный фон
         txt = open(files[0], encoding="utf-8", errors="replace").read()
         mdate = re.search(r"<StartTime>(\d{4}-\d{2}-\d{2})", txt)

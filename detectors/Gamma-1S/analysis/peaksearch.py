@@ -397,7 +397,7 @@ def _run():
         base = kr.RUNBASE.get((geom, ckey))
         if not base:
             continue
-        sp, bg = bm.read(files[0])
+        sp, bg, _cal = bm.read_checked(files[0])
         r = analyze(sp, bg, base)
         print("=" * 78)
         print("%s — %s: найдено пиков %d, линий в библиотеке прогона %d, "

@@ -1,0 +1,1230 @@
+<meta charset="utf-8">
+<title>ГАММА-1С: расчётные и паспортные кривые эффективности</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Модель спектрометра ГАММА-1С в Geant4:
+наложение расчётных и паспортных кривых эффективности по пяти геометриям
+комплекта поверки.">
+<style>:root{color-scheme:light dark;--ink:#1a1a1f;--dim:#666677;--line:#8884;
+--mc:#c0392b;--exp:#1f4e9c;--corr:#8e44ad;--med:#0a7a44;--bg:#fff;--card:#f7f7f9}
+@media(prefers-color-scheme:dark){:root{--ink:#e8e8ee;--dim:#9b9bab;
+--mc:#ff7a6b;--exp:#7fb2ff;--corr:#c9a0ff;--med:#4fd18b;--bg:#14141a;
+--card:#1d1d25}}
+*{box-sizing:border-box}
+body{max-width:62rem;margin:0 auto;padding:2.5rem 1.2rem 5rem;color:var(--ink);
+background:var(--bg);font:17px/1.62 Georgia,'Times New Roman',serif}
+h1{font-size:1.85rem;line-height:1.2;margin:0 0 .2rem}
+h2{font-size:1.3rem;margin:2.6rem 0 .6rem;border-top:1px solid var(--line);
+padding-top:1.1rem}
+h3{font-size:1.08rem;margin:1.6rem 0 .3rem}
+.sub{color:var(--dim);margin:.2rem 0 1.6rem;font-size:1.02rem}
+a{color:var(--exp)}
+p{margin:.7rem 0}
+.lead{font-size:1.06rem}
+figure{margin:1.1rem 0 1.6rem}
+.plot{width:100%;height:auto;display:block}
+.plot .grid{stroke:var(--line);stroke-width:.5}
+.plot .one{stroke:var(--ink);stroke-width:1;stroke-dasharray:none;opacity:.55}
+.plot .med{stroke:var(--med);stroke-width:1.4;stroke-dasharray:6 4}
+.plot .ax{fill:var(--dim);font:11px/1 ui-sans-serif,system-ui,sans-serif}
+.plot .axt{fill:var(--dim);font:12px/1 ui-sans-serif,system-ui,sans-serif}
+.plot .mc{fill:none;stroke:var(--mc);stroke-width:1.7}
+.plot .mcp{fill:var(--mc)}
+.plot .mcerr{stroke:var(--mc);stroke-width:1;opacity:.75}
+.plot .expp{fill:none;stroke:var(--exp);stroke-width:1.5}
+.plot .experr{stroke:var(--exp);stroke-width:1;opacity:.8}
+.plot .corr{stroke:var(--corr);stroke-width:1;stroke-dasharray:2 2}
+.plot .corrp{fill:var(--corr)}
+.leg{font:13px/1.5 ui-sans-serif,system-ui,sans-serif;color:var(--dim);
+margin:.2rem 0 0}
+.leg i{display:inline-block;width:1.1rem;height:0;border-top:2px solid;
+vertical-align:.28rem;margin-right:.3rem}
+.leg .k{white-space:nowrap;margin-right:1.1rem;display:inline-block}
+.cap{font:13.5px/1.5 ui-sans-serif,system-ui,sans-serif;color:var(--dim);
+margin:.35rem 0 0}
+table{border-collapse:collapse;width:100%;font:14.5px/1.45 ui-sans-serif,
+system-ui,sans-serif;margin:.8rem 0}
+th,td{border-bottom:1px solid var(--line);padding:.38rem .5rem;text-align:left}
+th{font-weight:600;color:var(--dim);font-size:13px}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.tw{overflow-x:auto}
+.card{background:var(--card);border-radius:10px;padding:.9rem 1.1rem;
+margin:1.2rem 0}
+.card p:first-child{margin-top:0}.card p:last-child{margin-bottom:0}
+.warn{border-left:3px solid var(--mc);border-radius:0 10px 10px 0}
+code{font:14px/1.4 ui-monospace,Consolas,monospace}
+.foot{color:var(--dim);font-size:.92rem;margin-top:3rem;border-top:1px solid
+var(--line);padding-top:1rem}
+</style>
+
+<h1>ГАММА-1С: расчёт против паспорта</h1>
+<p class="sub">Модель сцинтилляционного спектрометра NaI(Tl) 63&times;63 в
+свинцовой защите — наложение расчётных и паспортных кривых эффективности по
+пяти геометриям комплекта поверки.</p>
+
+<p class="lead">Спектрометр ГАММА-1С поверен, и на каждую геометрию у него есть
+кривая эффективности, снятая по эталонным источникам. Это редкая роскошь:
+обычно расчётную модель сверять не с чем. Здесь есть с чем — и ниже показано,
+где модель совпадает с прибором, а где нет, без сглаживания расхождений.</p>
+
+<h2>Что сравнивается</h2>
+
+<p><b>Паспортная кривая</b> — результат поверки: площадь пика полного
+поглощения от эталонного источника, делённая на активность и выход линии.
+Синие точки, усы — заявленная погрешность. Каждая точка привязана к своему
+нуклиду; это не гладкая функция, а набор измерений.</p>
+
+<p><b>Расчётная кривая</b> — Монте-Карло в Geant4 11.2.1
+(EmStandardPhysics_option4 + RadioactiveDecay): моноэнергетические кванты
+разыгрываются по объёму пробы, считается доля попавших в пик полного
+поглощения. Красная линия, усы — статистика прогона. Геометрия построена по
+чертежам и паспорту, ни одно число не подгонялось под измеренную кривую.</p>
+
+<div class="card warn">
+<p><b>Одна поправка обязательна, и без неё сравнение неверно.</b> В расчёте
+квант приходит в кристалл один — суммироваться не с чем. В реальном распаде
+каскадные кванты летят одновременно, и если два попали в кристалл, событие
+уходит из своего пика. Поэтому измеренная эффективность каскадных линий
+занижена, и отношение расчёт/измерение надо делить на поправку C, посчитанную
+отдельным прогоном полного распада. Там, где C известна, сиреневый штрих на
+нижнем графике показывает, куда уезжает точка. Контроль: у Cs-137 и K-40
+каскада нет, и для них C вышла 0,983 и 1,009 — единица в пределах
+погрешности.</p>
+</div>
+
+<h2>Сводка</h2>
+
+<div class="tw"><table>
+<thead><tr><th>геометрия</th><th class="n">линий</th>
+<th class="n">МК/эксп<br>по чистой площади</th>
+<th class="n">то же<br>без вычета полки</th>
+<th class="n">RMS формы, %</th>
+<th class="n">линий в пересчёте</th><th class="n">медиана A/пасп</th></tr>
+</thead><tbody><tr><td>Маринелли 1 л</td><td class='n'>15</td><td class='n'>1,171</td><td class='n'>1,202</td><td class='n'>11,3</td><td class='n'>8</td><td class='n'>0,789</td></tr><tr><td>«Дента» 120 мл</td><td class='n'>13</td><td class='n'>0,867</td><td class='n'>0,890</td><td class='n'>17,3</td><td class='n'>7</td><td class='n'>1,189</td></tr><tr><td>Петри 60 мл</td><td class='n'>19</td><td class='n'>0,833</td><td class='n'>0,855</td><td class='n'>16,4</td><td class='n'>7</td><td class='n'>1,295</td></tr><tr><td>Точечная, 5 см</td><td class='n'>24</td><td class='n'>0,957</td><td class='n'>0,973</td><td class='n'>11,1</td><td class='n'>24</td><td class='n'>1,168</td></tr><tr><td>Точечная, 25 см</td><td class='n'>20</td><td class='n'>0,921</td><td class='n'>0,934</td><td class='n'>9,3</td><td class='n'>7</td><td class='n'>1,177</td></tr></tbody></table></div>
+
+<p class="cap">Два столбца отношения — не разброс расчёта, а систематика
+обработки: площадь пика можно брать с вычетом левой полки континуума и без
+него. Разница доходит до 10 % на мягких линиях и меньше процента на жёстких.
+Опубликовать одно число, умолчав о втором, значило бы выдать выбор обработки
+за свойство детектора. Дальше по тексту используется чистая площадь.</p>
+
+<p>Два правых столбца — независимая проверка, в которой паспортная кривая не
+участвует вовсе. Там решается обратная задача: из измеренного спектра
+эталонного источника берётся скорость счёта в пике, делится на расчётную
+эффективность и получается активность, которую сравнивают с паспортом
+источника. Подогнать в этой процедуре нечего. Знак расхождения в обоих
+столбцах один и тот же, хотя пути расчёта разные.</p>
+
+<p><b>Читать так:</b> МК/эксп больше единицы — расчёт завышает эффективность;
+A/пасп меньше единицы — то же самое (завышенной эффективностью
+восстанавливается заниженная активность). Оба столбца согласованно говорят
+одно: <b>маринелли завышена, кюветы занижены, точечные геометрии почти
+верны</b>.</p>
+
+<h2>Главный вывод: расходятся модели сосудов, а не детектор</h2>
+
+<p>Две точечные геометрии — 5 и 25 см — согласны между собой и обе лежат около
+единицы, причём в РАЗНЫХ конфигурациях защиты: с закрытой и со снятой крышкой.
+Значит модель самого устройства детектирования проверена дважды и независимо.
+А объёмные геометрии расходятся, и <b>расходятся в разные стороны</b>: одна
+ошибка эффективности так себя вести не может.</p>
+
+<p>Отсюда адрес расхождения — <b>геометрия сосудов</b>. И это ровно то место,
+где данных не хватает: из документов у сосуда Маринелли известны только
+габарит Ø150 и высота 110 мм, а толщина стенки 2 мм, диаметр колодца
+Ø80 и его глубина 74 мм — <b>допущения</b>. Чертежей кювет комплекта нет.
+Если проба в действительности отстоит от кристалла дальше, расчётная
+эффективность падает; ближе — растёт.</p>
+
+<div class="card">
+<p><b>Что уже отклонено по заранее записанным признакам.</b> Гипотеза «дело в
+подходе: Монте-Карло считает энерговыделение, а эксперимент площадь пика» —
+будь это так, точечная геометрия дала бы то же превышение; она даёт единицу.
+Гипотеза «дело в нуклидной зависимости» — отклонена после того, как разброс
+внутри каждого сосуда схлопнулся (см. ниже). Остаются размеры сосудов, и для
+них нужны не расчёты, а чертежи.</p>
+</div>
+
+<h2>Дефект, который до 28 июля 2026 портил эти числа</h2>
+
+<p>В прогонах по цепочке (Ra-226 → … → Po-214, Th-232 → … → Pb-208) Geant4
+доводил весь ряд до конца <b>внутри одного события</b>: порог «очень долгого
+распада» поднят до 10<sup>30</sup> нс, иначе долгоживущие звенья не распались
+бы вовсе. В итоге энерговыделения Ac-228, Tl-208, Bi-212 складывались, и
+получались совпадения между ядрами, которые в природе распадаются с разницей
+в <b>годы</b>. Спектрометр так себя не ведёт.</p>
+
+<p>Лечение: энерговыделения собираются с отметкой глобального времени и
+режутся на группы с разрывом больше 1 мкс — обычного времени разрешения
+тракта. Значение некритично: настоящие каскады приходят за наносекунды, а
+звенья ряда разделены секундами и годами, между этими масштабами шесть
+порядков пустоты.</p>
+
+<p><b>Проверка правки.</b> Одиночный нуклид (Tl-208, 100 000 распадов) до и
+после дал побайтно те же данные и то же число сработавших событий — правка
+задевает только цепочки. На них пики ряда тория выросли на 25–46 %, ряда
+радия на 12–14 %; в точечной геометрии всего на 7 %, потому что при малом
+телесном угле двойное попадание маловероятно.</p>
+
+<p><b>Что это изменило по существу.</b> Раньше в сосуде Маринелли цезий давал
+отношение 0,78, а торий 1,26 — разница в 60 % на одной и той же геометрии,
+которую геометрия объяснить не может: она не знает, какой нуклид внутри.
+Теперь весь сосуд укладывается в 0,69–0,89. У каждой геометрии остался
+<b>один</b> множитель вместо разнобоя по нуклидам, и искать надо одну причину
+на сосуд.</p>
+
+<h2>Кривые по геометриям</h2>
+
+<p class="leg"><span class="k"><i style="border-color:var(--mc)"></i>расчёт (Geant4)</span><span class="k"><i style="border-color:var(--exp)"></i>измерение (паспортная кривая ЛСРМ)</span><span class="k"><i style="border-color:var(--corr)"></i>то же с поправкой на суммирование</span><span class="k"><i style="border-color:var(--med)"></i>медиана</span></p>
+
+
+<h3>Маринелли 1 л</h3>
+<p>Проба обнимает детектор с боков и сверху. ОИСН-16, ρ = 1,6 г/см³ — та же засыпка, при которой снималась паспортная кривая.</p>
+<figure><svg viewBox="0 0 760 400" class="plot" role="img" aria-label="Эффективность ППП: расчёт и измерение">
+<line class="grid" x1="66.0" y1="14.0" x2="66.0" y2="356.0"/>
+<text class="ax" x="66.0" y="372" text-anchor="middle">50</text>
+<line class="grid" x1="179.3" y1="14.0" x2="179.3" y2="356.0"/>
+<text class="ax" x="179.3" y="372" text-anchor="middle">100</text>
+<line class="grid" x1="292.7" y1="14.0" x2="292.7" y2="356.0"/>
+<text class="ax" x="292.7" y="372" text-anchor="middle">200</text>
+<line class="grid" x1="442.5" y1="14.0" x2="442.5" y2="356.0"/>
+<text class="ax" x="442.5" y="372" text-anchor="middle">500</text>
+<line class="grid" x1="555.8" y1="14.0" x2="555.8" y2="356.0"/>
+<text class="ax" x="555.8" y="372" text-anchor="middle">1000</text>
+<line class="grid" x1="669.2" y1="14.0" x2="669.2" y2="356.0"/>
+<text class="ax" x="669.2" y="372" text-anchor="middle">2000</text>
+<line class="grid" x1="735.4" y1="14.0" x2="735.4" y2="356.0"/>
+<text class="ax" x="735.4" y="372" text-anchor="middle">3000</text>
+<line class="grid" x1="66" y1="282.6" x2="746" y2="282.6"/>
+<text class="ax" x="60" y="286.6" text-anchor="end">0.5</text>
+<line class="grid" x1="66" y1="222.6" x2="746" y2="222.6"/>
+<text class="ax" x="60" y="226.6" text-anchor="end">1</text>
+<line class="grid" x1="66" y1="162.6" x2="746" y2="162.6"/>
+<text class="ax" x="60" y="166.6" text-anchor="end">2</text>
+<line class="grid" x1="66" y1="83.2" x2="746" y2="83.2"/>
+<text class="ax" x="60" y="87.2" text-anchor="end">5</text>
+<line class="grid" x1="66" y1="23.2" x2="746" y2="23.2"/>
+<text class="ax" x="60" y="27.2" text-anchor="end">10</text>
+<text class="axt" x="406.0" y="394" text-anchor="middle">энергия, кэВ</text>
+<text class="axt" transform="translate(14,185.0) rotate(-90)" text-anchor="middle">эффективность ППП, %</text>
+<path class="mc" d="M94.4,195.3 L158.4,134.8 L212.0,110.9 L262.1,96.2 L321.5,94.3 L323.8,94.2 L356.3,99.7 L378.6,106.5 L385.1,109.6 L429.9,124.8 L467.6,142.1 L474.8,146.7 L488.3,153.0 L512.7,163.7 L540.6,174.8 L574.4,188.3 L617.8,207.9 L648.7,224.2 L713.0,252.9 L735.4,267.4"/>
+<line class="mcerr" x1="94.4" y1="192.6" x2="94.4" y2="198.1"/>
+<circle class="mcp" cx="94.4" cy="195.3" r="2.6"><title>расчёт: 59.5 кэВ, 1.37 %</title></circle>
+<line class="mcerr" x1="158.4" y1="130.0" x2="158.4" y2="140.0"/>
+<circle class="mcp" cx="158.4" cy="134.8" r="2.6"><title>расчёт: 88.0 кэВ, 2.754 %</title></circle>
+<line class="mcerr" x1="212.0" y1="105.8" x2="212.0" y2="116.2"/>
+<circle class="mcp" cx="212.0" cy="110.9" r="2.6"><title>расчёт: 122.1 кэВ, 3.633 %</title></circle>
+<line class="mcerr" x1="262.1" y1="93.0" x2="262.1" y2="99.6"/>
+<circle class="mcp" cx="262.1" cy="96.2" r="2.6"><title>расчёт: 165.9 кэВ, 4.301 %</title></circle>
+<line class="mcerr" x1="321.5" y1="92.5" x2="321.5" y2="96.2"/>
+<circle class="mcp" cx="321.5" cy="94.3" r="2.6"><title>расчёт: 238.6 кэВ, 4.397 %</title></circle>
+<line class="mcerr" x1="323.8" y1="92.3" x2="323.8" y2="96.0"/>
+<circle class="mcp" cx="323.8" cy="94.2" r="2.6"><title>расчёт: 242.0 кэВ, 4.406 %</title></circle>
+<line class="mcerr" x1="356.3" y1="98.4" x2="356.3" y2="101.0"/>
+<circle class="mcp" cx="356.3" cy="99.7" r="2.6"><title>расчёт: 295.2 кэВ, 4.134 %</title></circle>
+<line class="mcerr" x1="378.6" y1="105.3" x2="378.6" y2="107.6"/>
+<circle class="mcp" cx="378.6" cy="106.5" r="2.6"><title>расчёт: 338.3 кэВ, 3.822 %</title></circle>
+<line class="mcerr" x1="385.1" y1="108.5" x2="385.1" y2="110.8"/>
+<circle class="mcp" cx="385.1" cy="109.6" r="2.6"><title>расчёт: 351.9 кэВ, 3.686 %</title></circle>
+<line class="mcerr" x1="429.9" y1="123.9" x2="429.9" y2="125.7"/>
+<circle class="mcp" cx="429.9" cy="124.8" r="2.6"><title>расчёт: 463.0 кэВ, 3.093 %</title></circle>
+<line class="mcerr" x1="467.6" y1="141.2" x2="467.6" y2="143.0"/>
+<circle class="mcp" cx="467.6" cy="142.1" r="2.6"><title>расчёт: 583.2 кэВ, 2.533 %</title></circle>
+<line class="mcerr" x1="474.8" y1="145.8" x2="474.8" y2="147.6"/>
+<circle class="mcp" cx="474.8" cy="146.7" r="2.6"><title>расчёт: 609.3 кэВ, 2.402 %</title></circle>
+<line class="mcerr" x1="488.3" y1="152.0" x2="488.3" y2="153.9"/>
+<circle class="mcp" cx="488.3" cy="153.0" r="2.6"><title>расчёт: 661.7 кэВ, 2.234 %</title></circle>
+<line class="mcerr" x1="512.7" y1="162.7" x2="512.7" y2="164.7"/>
+<circle class="mcp" cx="512.7" cy="163.7" r="2.6"><title>расчёт: 768.4 кэВ, 1.974 %</title></circle>
+<line class="mcerr" x1="540.6" y1="173.7" x2="540.6" y2="175.8"/>
+<circle class="mcp" cx="540.6" cy="174.8" r="2.6"><title>расчёт: 911.2 кэВ, 1.737 %</title></circle>
+<line class="mcerr" x1="574.4" y1="187.1" x2="574.4" y2="189.4"/>
+<circle class="mcp" cx="574.4" cy="188.3" r="2.6"><title>расчёт: 1120.3 кэВ, 1.486 %</title></circle>
+<line class="mcerr" x1="617.8" y1="206.7" x2="617.8" y2="209.2"/>
+<circle class="mcp" cx="617.8" cy="207.9" r="2.6"><title>расчёт: 1460.8 кэВ, 1.184 %</title></circle>
+<line class="mcerr" x1="648.7" y1="222.9" x2="648.7" y2="225.6"/>
+<circle class="mcp" cx="648.7" cy="224.2" r="2.6"><title>расчёт: 1764.5 кэВ, 0.9812 %</title></circle>
+<line class="mcerr" x1="713.0" y1="251.3" x2="713.0" y2="254.6"/>
+<circle class="mcp" cx="713.0" cy="252.9" r="2.6"><title>расчёт: 2614.5 кэВ, 0.7046 %</title></circle>
+<line class="mcerr" x1="735.4" y1="265.6" x2="735.4" y2="269.2"/>
+<circle class="mcp" cx="735.4" cy="267.4" r="2.6"><title>расчёт: 3000.0 кэВ, 0.5963 %</title></circle>
+<line class="experr" x1="321.5" y1="92.5" x2="321.5" y2="98.3"/>
+<rect class="expp" x="318.5" y="92.4" width="6" height="6"><title>измерение (Th-232): 238.6 кэВ, 4.344 % ± 0.15</title></rect>
+<line class="experr" x1="323.8" y1="79.2" x2="323.8" y2="85.4"/>
+<rect class="expp" x="320.8" y="79.3" width="6" height="6"><title>измерение (Ra-226): 242.0 кэВ, 5.053 % ± 0.18</title></rect>
+<line class="experr" x1="356.3" y1="117.2" x2="356.3" y2="124.1"/>
+<rect class="expp" x="353.3" y="117.6" width="6" height="6"><title>измерение (Ra-226): 295.2 кэВ, 3.246 % ± 0.13</title></rect>
+<line class="experr" x1="378.6" y1="115.3" x2="378.6" y2="121.9"/>
+<rect class="expp" x="375.6" y="115.5" width="6" height="6"><title>измерение (Th-232): 338.3 кэВ, 3.325 % ± 0.13</title></rect>
+<line class="experr" x1="385.1" y1="118.2" x2="385.1" y2="124.1"/>
+<rect class="expp" x="382.1" y="118.1" width="6" height="6"><title>измерение (Ra-226): 351.9 кэВ, 3.228 % ± 0.11</title></rect>
+<line class="experr" x1="429.9" y1="130.5" x2="429.9" y2="139.7"/>
+<rect class="expp" x="426.9" y="132.0" width="6" height="6"><title>измерение (Th-232): 463.0 кэВ, 2.75 % ± 0.15</title></rect>
+<line class="experr" x1="467.6" y1="152.7" x2="467.6" y2="158.3"/>
+<rect class="expp" x="464.6" y="152.4" width="6" height="6"><title>измерение (Th-232): 583.2 кэВ, 2.171 % ± 0.071</title></rect>
+<line class="experr" x1="474.8" y1="160.7" x2="474.8" y2="166.0"/>
+<rect class="expp" x="471.8" y="160.3" width="6" height="6"><title>измерение (Ra-226): 609.3 кэВ, 1.983 % ± 0.061</title></rect>
+<line class="experr" x1="488.3" y1="166.1" x2="488.3" y2="170.6"/>
+<rect class="expp" x="485.3" y="165.3" width="6" height="6"><title>измерение (Cs-137): 661.7 кэВ, 1.871 % ± 0.048</title></rect>
+<line class="experr" x1="512.7" y1="176.4" x2="512.7" y2="183.9"/>
+<rect class="expp" x="509.7" y="177.1" width="6" height="6"><title>измерение (Ra-226): 768.4 кэВ, 1.633 % ± 0.071</title></rect>
+<line class="experr" x1="540.6" y1="192.4" x2="540.6" y2="201.6"/>
+<rect class="expp" x="537.6" y="193.8" width="6" height="6"><title>измерение (Th-232): 911.2 кэВ, 1.346 % ± 0.072</title></rect>
+<line class="experr" x1="574.4" y1="192.2" x2="574.4" y2="198.0"/>
+<rect class="expp" x="571.4" y="192.0" width="6" height="6"><title>измерение (Ra-226): 1120.3 кэВ, 1.375 % ± 0.046</title></rect>
+<line class="experr" x1="617.8" y1="221.8" x2="617.8" y2="228.0"/>
+<rect class="expp" x="614.8" y="221.8" width="6" height="6"><title>измерение (K-40): 1460.8 кэВ, 0.9743 % ± 0.034</title></rect>
+<line class="experr" x1="648.7" y1="237.8" x2="648.7" y2="243.9"/>
+<rect class="expp" x="645.7" y="237.8" width="6" height="6"><title>измерение (Ra-226): 1764.5 кэВ, 0.8106 % ± 0.028</title></rect>
+<line class="experr" x1="713.0" y1="284.9" x2="713.0" y2="290.6"/>
+<rect class="expp" x="710.0" y="284.7" width="6" height="6"><title>измерение (Th-232): 2614.5 кэВ, 0.4714 % ± 0.015</title></rect>
+</svg>
+<p class="leg"><span class="k"><i style="border-color:var(--mc)"></i>расчёт (Geant4)</span><span class="k"><i style="border-color:var(--exp)"></i>измерение (паспортная кривая ЛСРМ)</span><span class="k"><i style="border-color:var(--med)"></i>медиана</span></p>
+<p class="cap">Точки измерения — УДС-ГЦ-63х63-USB__SN-01_-_Маринелли.efa, усы: паспортная погрешность. Расчёт —
+eff_rho1.60.csv, усы: статистика прогона. Наведите курсор на точку, чтобы увидеть числа.</p>
+</figure>
+<figure><svg viewBox="0 0 760 170" class="plot ratio" role="img" aria-label="Отношение расчёт/измерение по точкам">
+<line class="grid" x1="66.0" y1="12" x2="66.0" y2="140"/>
+<text class="ax" x="66.0" y="158" text-anchor="middle">50</text>
+<line class="grid" x1="179.3" y1="12" x2="179.3" y2="140"/>
+<text class="ax" x="179.3" y="158" text-anchor="middle">100</text>
+<line class="grid" x1="292.7" y1="12" x2="292.7" y2="140"/>
+<text class="ax" x="292.7" y="158" text-anchor="middle">200</text>
+<line class="grid" x1="442.5" y1="12" x2="442.5" y2="140"/>
+<text class="ax" x="442.5" y="158" text-anchor="middle">500</text>
+<line class="grid" x1="555.8" y1="12" x2="555.8" y2="140"/>
+<text class="ax" x="555.8" y="158" text-anchor="middle">1000</text>
+<line class="grid" x1="669.2" y1="12" x2="669.2" y2="140"/>
+<text class="ax" x="669.2" y="158" text-anchor="middle">2000</text>
+<line class="grid" x1="735.4" y1="12" x2="735.4" y2="140"/>
+<text class="ax" x="735.4" y="158" text-anchor="middle">3000</text>
+<line class="grid" x1="66" y1="134.7" x2="746" y2="134.7"/>
+<text class="ax" x="60" y="138.7" text-anchor="end">0.6</text>
+<line class="grid" x1="66" y1="113.3" x2="746" y2="113.3"/>
+<text class="ax" x="60" y="117.3" text-anchor="end">0.8</text>
+<line class="one" x1="66" y1="92.0" x2="746" y2="92.0"/>
+<text class="ax" x="60" y="96.0" text-anchor="end">1.0</text>
+<line class="grid" x1="66" y1="70.7" x2="746" y2="70.7"/>
+<text class="ax" x="60" y="74.7" text-anchor="end">1.2</text>
+<line class="grid" x1="66" y1="49.3" x2="746" y2="49.3"/>
+<text class="ax" x="60" y="53.3" text-anchor="end">1.4</text>
+<line class="grid" x1="66" y1="28.0" x2="746" y2="28.0"/>
+<text class="ax" x="60" y="32.0" text-anchor="end">1.6</text>
+<line class="med" x1="66" y1="71.3" x2="746" y2="71.3"/>
+<line class="mcerr" x1="321.5" y1="86.4" x2="321.5" y2="95.0"/>
+<circle class="mcp" cx="321.5" cy="90.7" r="3"><title>238.6 кэВ (Th-232): МК/эксп 1.012 ± 0.041</title></circle>
+<line class="mcerr" x1="323.8" y1="101.8" x2="323.8" y2="109.5"/>
+<circle class="mcp" cx="323.8" cy="105.7" r="3"><title>242.0 кэВ (Ra-226): МК/эксп 0.872 ± 0.036</title></circle>
+<line class="mcerr" x1="356.3" y1="57.0" x2="356.3" y2="68.6"/>
+<circle class="mcp" cx="356.3" cy="62.8" r="3"><title>295.2 кэВ (Ra-226): МК/эксп 1.274 ± 0.054</title></circle>
+<line class="mcerr" x1="378.6" y1="71.2" x2="378.6" y2="81.0"/>
+<circle class="mcp" cx="378.6" cy="76.1" r="3"><title>338.3 кэВ (Th-232): МК/эксп 1.149 ± 0.046</title></circle>
+<line class="mcerr" x1="385.1" y1="72.4" x2="385.1" y2="81.4"/>
+<circle class="mcp" cx="385.1" cy="76.9" r="3"><title>351.9 кэВ (Ra-226): МК/эксп 1.142 ± 0.042</title></circle>
+<line class="mcerr" x1="429.9" y1="72.2" x2="429.9" y2="85.2"/>
+<circle class="mcp" cx="429.9" cy="78.7" r="3"><title>463.0 кэВ (Th-232): МК/эксп 1.125 ± 0.061</title></circle>
+<line class="mcerr" x1="467.6" y1="70.0" x2="467.6" y2="78.5"/>
+<line class="corr" x1="467.6" y1="74.2" x2="467.6" y2="90.1"/>
+<circle class="corrp" cx="467.6" cy="90.1" r="2.4"><title>583.2 кэВ, с поправкой на суммирование: 1.018</title></circle>
+<circle class="mcp" cx="467.6" cy="74.2" r="3"><title>583.2 кэВ (Th-232): МК/эксп 1.166 ± 0.040</title></circle>
+<line class="mcerr" x1="474.8" y1="65.2" x2="474.8" y2="73.7"/>
+<line class="corr" x1="474.8" y1="69.5" x2="474.8" y2="82.8"/>
+<circle class="corrp" cx="474.8" cy="82.8" r="2.4"><title>609.3 кэВ, с поправкой на суммирование: 1.086</title></circle>
+<circle class="mcp" cx="474.8" cy="69.5" r="3"><title>609.3 кэВ (Ra-226): МК/эксп 1.211 ± 0.040</title></circle>
+<line class="mcerr" x1="488.3" y1="67.8" x2="488.3" y2="74.9"/>
+<line class="corr" x1="488.3" y1="71.3" x2="488.3" y2="69.1"/>
+<circle class="corrp" cx="488.3" cy="69.1" r="2.4"><title>661.7 кэВ, с поправкой на суммирование: 1.215</title></circle>
+<circle class="mcp" cx="488.3" cy="71.3" r="3"><title>661.7 кэВ (Cs-137): МК/эксп 1.194 ± 0.033</title></circle>
+<line class="mcerr" x1="512.7" y1="63.9" x2="512.7" y2="75.5"/>
+<line class="corr" x1="512.7" y1="69.7" x2="512.7" y2="86.5"/>
+<circle class="corrp" cx="512.7" cy="86.5" r="2.4"><title>768.4 кэВ, с поправкой на суммирование: 1.052</title></circle>
+<circle class="mcp" cx="512.7" cy="69.7" r="3"><title>768.4 кэВ (Ra-226): МК/эксп 1.209 ± 0.054</title></circle>
+<line class="mcerr" x1="540.6" y1="53.5" x2="540.6" y2="68.5"/>
+<circle class="mcp" cx="540.6" cy="61.0" r="3"><title>911.2 кэВ (Th-232): МК/эксп 1.290 ± 0.070</title></circle>
+<line class="mcerr" x1="574.4" y1="79.2" x2="574.4" y2="87.5"/>
+<line class="corr" x1="574.4" y1="83.3" x2="574.4" y2="98.9"/>
+<circle class="corrp" cx="574.4" cy="98.9" r="2.4"><title>1120.3 кэВ, с поправкой на суммирование: 0.936</title></circle>
+<circle class="mcp" cx="574.4" cy="83.3" r="3"><title>1120.3 кэВ (Ra-226): МК/эксп 1.081 ± 0.039</title></circle>
+<line class="mcerr" x1="617.8" y1="64.0" x2="617.8" y2="74.0"/>
+<line class="corr" x1="617.8" y1="69.0" x2="617.8" y2="70.1"/>
+<circle class="corrp" cx="617.8" cy="70.1" r="2.4"><title>1460.8 кэВ, с поправкой на суммирование: 1.205</title></circle>
+<circle class="mcp" cx="617.8" cy="69.0" r="3"><title>1460.8 кэВ (K-40): МК/эксп 1.216 ± 0.047</title></circle>
+<line class="mcerr" x1="648.7" y1="64.6" x2="648.7" y2="74.5"/>
+<line class="corr" x1="648.7" y1="69.6" x2="648.7" y2="63.3"/>
+<circle class="corrp" cx="648.7" cy="63.3" r="2.4"><title>1764.5 кэВ, с поправкой на суммирование: 1.269</title></circle>
+<circle class="mcp" cx="648.7" cy="69.6" r="3"><title>1764.5 кэВ (Ra-226): МК/эксп 1.210 ± 0.047</title></circle>
+<line class="mcerr" x1="713.0" y1="33.2" x2="713.0" y2="45.2"/>
+<line class="corr" x1="713.0" y1="39.2" x2="713.0" y2="64.1"/>
+<circle class="corrp" cx="713.0" cy="64.1" r="2.4"><title>2614.5 кэВ, с поправкой на суммирование: 1.261</title></circle>
+<circle class="mcp" cx="713.0" cy="39.2" r="3"><title>2614.5 кэВ (Th-232): МК/эксп 1.495 ± 0.056</title></circle>
+<text class="axt" x="406.0" y="169" text-anchor="middle">энергия, кэВ</text>
+</svg>
+<p class="cap">Отношение расчёт/измерение по линиям. Средневзвешенное
+(в логарифме, как в отчёте) 1,171 по 15 точкам, разброс формы RMS 11,3 %; медиана
+1,194. Сиреневым — куда точка уходит после деления на поправку каскадного
+суммирования там, где она посчитана: измерение теряет отсчёты из пика на
+совпадениях, расчёт моноэнергетической сетки — нет.</p>
+</figure>
+<div class="tw"><table>
+<thead><tr><th class="n">E, кэВ</th><th>по нуклиду</th>
+<th class="n">измерено, %</th><th class="n">расчёт, %</th>
+<th class="n">МК/эксп</th><th class="n">C → с поправкой</th>
+<th>расчёт взят</th></tr></thead>
+<tbody><tr><td class='n'>238,6</td><td>Th-232</td><td class='n'>4.344</td><td class='n'>4.397</td><td class='n'>1,012</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>242,0</td><td>Ra-226</td><td class='n'>5.053</td><td class='n'>4.406</td><td class='n'>0,872</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>295,2</td><td>Ra-226</td><td class='n'>3.246</td><td class='n'>4.134</td><td class='n'>1,274</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>338,3</td><td>Th-232</td><td class='n'>3.325</td><td class='n'>3.822</td><td class='n'>1,149</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>351,9</td><td>Ra-226</td><td class='n'>3.228</td><td class='n'>3.686</td><td class='n'>1,142</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>463,0</td><td>Th-232</td><td class='n'>2.75</td><td class='n'>3.093</td><td class='n'>1,125</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>583,2</td><td>Th-232</td><td class='n'>2.171</td><td class='n'>2.533</td><td class='n'>1,166</td><td class='n'>1,146 → 1,018</td><td>узел</td></tr><tr><td class='n'>609,3</td><td>Ra-226</td><td class='n'>1.983</td><td class='n'>2.402</td><td class='n'>1,211</td><td class='n'>1,115 → 1,086</td><td>узел</td></tr><tr><td class='n'>661,7</td><td>Cs-137</td><td class='n'>1.871</td><td class='n'>2.234</td><td class='n'>1,194</td><td class='n'>0,983 → 1,215</td><td>узел</td></tr><tr><td class='n'>768,4</td><td>Ra-226</td><td class='n'>1.633</td><td class='n'>1.974</td><td class='n'>1,209</td><td class='n'>1,149 → 1,052</td><td>узел</td></tr><tr><td class='n'>911,2</td><td>Th-232</td><td class='n'>1.346</td><td class='n'>1.737</td><td class='n'>1,290</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>1120,3</td><td>Ra-226</td><td class='n'>1.375</td><td class='n'>1.486</td><td class='n'>1,081</td><td class='n'>1,156 → 0,936</td><td>узел</td></tr><tr><td class='n'>1460,8</td><td>K-40</td><td class='n'>0.9743</td><td class='n'>1.184</td><td class='n'>1,216</td><td class='n'>1,008 → 1,205</td><td>узел</td></tr><tr><td class='n'>1764,5</td><td>Ra-226</td><td class='n'>0.8106</td><td class='n'>0.9812</td><td class='n'>1,210</td><td class='n'>0,954 → 1,269</td><td>узел</td></tr><tr><td class='n'>2614,5</td><td>Th-232</td><td class='n'>0.4714</td><td class='n'>0.7046</td><td class='n'>1,495</td><td class='n'>1,185 → 1,261</td><td>узел</td></tr></tbody></table></div>
+
+<h3>«Дента» 120 мл</h3>
+<p>Плоская кювета на головке. ОИСН-16, ρ = 1,6 г/см³.</p>
+<figure><svg viewBox="0 0 760 400" class="plot" role="img" aria-label="Эффективность ППП: расчёт и измерение">
+<line class="grid" x1="66.0" y1="14.0" x2="66.0" y2="356.0"/>
+<text class="ax" x="66.0" y="372" text-anchor="middle">50</text>
+<line class="grid" x1="179.3" y1="14.0" x2="179.3" y2="356.0"/>
+<text class="ax" x="179.3" y="372" text-anchor="middle">100</text>
+<line class="grid" x1="292.7" y1="14.0" x2="292.7" y2="356.0"/>
+<text class="ax" x="292.7" y="372" text-anchor="middle">200</text>
+<line class="grid" x1="442.5" y1="14.0" x2="442.5" y2="356.0"/>
+<text class="ax" x="442.5" y="372" text-anchor="middle">500</text>
+<line class="grid" x1="555.8" y1="14.0" x2="555.8" y2="356.0"/>
+<text class="ax" x="555.8" y="372" text-anchor="middle">1000</text>
+<line class="grid" x1="669.2" y1="14.0" x2="669.2" y2="356.0"/>
+<text class="ax" x="669.2" y="372" text-anchor="middle">2000</text>
+<line class="grid" x1="735.4" y1="14.0" x2="735.4" y2="356.0"/>
+<text class="ax" x="735.4" y="372" text-anchor="middle">3000</text>
+<line class="grid" x1="66" y1="309.0" x2="746" y2="309.0"/>
+<text class="ax" x="60" y="313.0" text-anchor="end">0.5</text>
+<line class="grid" x1="66" y1="252.6" x2="746" y2="252.6"/>
+<text class="ax" x="60" y="256.6" text-anchor="end">1</text>
+<line class="grid" x1="66" y1="196.2" x2="746" y2="196.2"/>
+<text class="ax" x="60" y="200.2" text-anchor="end">2</text>
+<line class="grid" x1="66" y1="121.7" x2="746" y2="121.7"/>
+<text class="ax" x="60" y="125.7" text-anchor="end">5</text>
+<line class="grid" x1="66" y1="65.3" x2="746" y2="65.3"/>
+<text class="ax" x="60" y="69.3" text-anchor="end">10</text>
+<text class="axt" x="406.0" y="394" text-anchor="middle">энергия, кэВ</text>
+<text class="axt" transform="translate(14,185.0) rotate(-90)" text-anchor="middle">эффективность ППП, %</text>
+<path class="mc" d="M94.4,208.8 L158.4,152.6 L212.0,134.0 L262.1,124.7 L321.5,127.5 L323.8,126.9 L356.3,133.9 L378.6,139.9 L385.1,141.1 L429.9,158.1 L467.6,175.0 L474.8,177.3 L488.3,183.7 L512.7,195.0 L540.6,205.6 L574.4,218.8 L617.8,235.0 L648.7,249.7 L713.0,278.6 L735.4,291.9"/>
+<line class="mcerr" x1="94.4" y1="206.4" x2="94.4" y2="211.3"/>
+<circle class="mcp" cx="94.4" cy="208.8" r="2.6"><title>расчёт: 59.5 кэВ, 1.713 %</title></circle>
+<line class="mcerr" x1="158.4" y1="148.6" x2="158.4" y2="156.8"/>
+<circle class="mcp" cx="158.4" cy="152.6" r="2.6"><title>расчёт: 88.0 кэВ, 3.418 %</title></circle>
+<line class="mcerr" x1="212.0" y1="129.6" x2="212.0" y2="138.6"/>
+<circle class="mcp" cx="212.0" cy="134.0" r="2.6"><title>расчёт: 122.1 кэВ, 4.297 %</title></circle>
+<line class="mcerr" x1="262.1" y1="121.7" x2="262.1" y2="127.8"/>
+<circle class="mcp" cx="262.1" cy="124.7" r="2.6"><title>расчёт: 165.9 кэВ, 4.816 %</title></circle>
+<line class="mcerr" x1="321.5" y1="125.7" x2="321.5" y2="129.4"/>
+<circle class="mcp" cx="321.5" cy="127.5" r="2.6"><title>расчёт: 238.6 кэВ, 4.652 %</title></circle>
+<line class="mcerr" x1="323.8" y1="125.2" x2="323.8" y2="128.7"/>
+<circle class="mcp" cx="323.8" cy="126.9" r="2.6"><title>расчёт: 242.0 кэВ, 4.688 %</title></circle>
+<line class="mcerr" x1="356.3" y1="132.6" x2="356.3" y2="135.2"/>
+<circle class="mcp" cx="356.3" cy="133.9" r="2.6"><title>расчёт: 295.2 кэВ, 4.301 %</title></circle>
+<line class="mcerr" x1="378.6" y1="138.8" x2="378.6" y2="141.0"/>
+<circle class="mcp" cx="378.6" cy="139.9" r="2.6"><title>расчёт: 338.3 кэВ, 3.997 %</title></circle>
+<line class="mcerr" x1="385.1" y1="140.1" x2="385.1" y2="142.1"/>
+<circle class="mcp" cx="385.1" cy="141.1" r="2.6"><title>расчёт: 351.9 кэВ, 3.938 %</title></circle>
+<line class="mcerr" x1="429.9" y1="157.2" x2="429.9" y2="159.0"/>
+<circle class="mcp" cx="429.9" cy="158.1" r="2.6"><title>расчёт: 463.0 кэВ, 3.194 %</title></circle>
+<line class="mcerr" x1="467.6" y1="174.2" x2="467.6" y2="175.9"/>
+<circle class="mcp" cx="467.6" cy="175.0" r="2.6"><title>расчёт: 583.2 кэВ, 2.595 %</title></circle>
+<line class="mcerr" x1="474.8" y1="176.4" x2="474.8" y2="178.2"/>
+<circle class="mcp" cx="474.8" cy="177.3" r="2.6"><title>расчёт: 609.3 кэВ, 2.523 %</title></circle>
+<line class="mcerr" x1="488.3" y1="182.8" x2="488.3" y2="184.6"/>
+<circle class="mcp" cx="488.3" cy="183.7" r="2.6"><title>расчёт: 661.7 кэВ, 2.332 %</title></circle>
+<line class="mcerr" x1="512.7" y1="194.0" x2="512.7" y2="195.9"/>
+<circle class="mcp" cx="512.7" cy="195.0" r="2.6"><title>расчёт: 768.4 кэВ, 2.031 %</title></circle>
+<line class="mcerr" x1="540.6" y1="204.6" x2="540.6" y2="206.5"/>
+<circle class="mcp" cx="540.6" cy="205.6" r="2.6"><title>расчёт: 911.2 кэВ, 1.783 %</title></circle>
+<line class="mcerr" x1="574.4" y1="217.7" x2="574.4" y2="219.8"/>
+<circle class="mcp" cx="574.4" cy="218.8" r="2.6"><title>расчёт: 1120.3 кэВ, 1.516 %</title></circle>
+<line class="mcerr" x1="617.8" y1="233.8" x2="617.8" y2="236.2"/>
+<circle class="mcp" cx="617.8" cy="235.0" r="2.6"><title>расчёт: 1460.8 кэВ, 1.242 %</title></circle>
+<line class="mcerr" x1="648.7" y1="248.4" x2="648.7" y2="251.0"/>
+<circle class="mcp" cx="648.7" cy="249.7" r="2.6"><title>расчёт: 1764.5 кэВ, 1.037 %</title></circle>
+<line class="mcerr" x1="713.0" y1="277.1" x2="713.0" y2="280.1"/>
+<circle class="mcp" cx="713.0" cy="278.6" r="2.6"><title>расчёт: 2614.5 кэВ, 0.7266 %</title></circle>
+<line class="mcerr" x1="735.4" y1="290.2" x2="735.4" y2="293.5"/>
+<circle class="mcp" cx="735.4" cy="291.9" r="2.6"><title>расчёт: 3000.0 кэВ, 0.6174 %</title></circle>
+<line class="experr" x1="321.5" y1="97.6" x2="321.5" y2="103.5"/>
+<rect class="expp" x="318.5" y="97.5" width="6" height="6"><title>измерение (Th-232): 238.6 кэВ, 6.483 % ± 0.23</title></rect>
+<line class="experr" x1="323.8" y1="74.5" x2="323.8" y2="81.9"/>
+<rect class="expp" x="320.8" y="75.1" width="6" height="6"><title>измерение (Ra-226): 242.0 кэВ, 8.536 % ± 0.39</title></rect>
+<line class="experr" x1="356.3" y1="122.7" x2="356.3" y2="129.0"/>
+<rect class="expp" x="353.3" y="122.8" width="6" height="6"><title>измерение (Ra-226): 295.2 кэВ, 4.754 % ± 0.18</title></rect>
+<line class="experr" x1="378.6" y1="96.8" x2="378.6" y2="103.7"/>
+<rect class="expp" x="375.6" y="97.2" width="6" height="6"><title>измерение (Th-232): 338.3 кэВ, 6.511 % ± 0.28</title></rect>
+<line class="experr" x1="385.1" y1="129.2" x2="385.1" y2="134.8"/>
+<rect class="expp" x="382.1" y="129.0" width="6" height="6"><title>измерение (Ra-226): 351.9 кэВ, 4.406 % ± 0.15</title></rect>
+<line class="experr" x1="467.6" y1="161.0" x2="467.6" y2="166.6"/>
+<rect class="expp" x="464.6" y="160.7" width="6" height="6"><title>измерение (Th-232): 583.2 кэВ, 2.981 % ± 0.1</title></rect>
+<line class="experr" x1="474.8" y1="173.0" x2="474.8" y2="178.3"/>
+<rect class="expp" x="471.8" y="172.6" width="6" height="6"><title>измерение (Ra-226): 609.3 кэВ, 2.576 % ± 0.083</title></rect>
+<line class="experr" x1="488.3" y1="177.9" x2="488.3" y2="182.0"/>
+<rect class="expp" x="485.3" y="176.9" width="6" height="6"><title>измерение (Cs-137): 661.7 кэВ, 2.444 % ± 0.063</title></rect>
+<line class="experr" x1="540.6" y1="183.9" x2="540.6" y2="191.0"/>
+<rect class="expp" x="537.6" y="184.4" width="6" height="6"><title>измерение (Th-232): 911.2 кэВ, 2.23 % ± 0.098</title></rect>
+<line class="experr" x1="574.4" y1="208.0" x2="574.4" y2="214.1"/>
+<rect class="expp" x="571.4" y="208.0" width="6" height="6"><title>измерение (Ra-226): 1120.3 кэВ, 1.668 % ± 0.062</title></rect>
+<line class="experr" x1="617.8" y1="215.0" x2="617.8" y2="221.1"/>
+<rect class="expp" x="614.8" y="215.0" width="6" height="6"><title>измерение (K-40): 1460.8 кэВ, 1.531 % ± 0.057</title></rect>
+<line class="experr" x1="648.7" y1="251.9" x2="648.7" y2="258.2"/>
+<rect class="expp" x="645.7" y="252.0" width="6" height="6"><title>измерение (Ra-226): 1764.5 кэВ, 0.9715 % ± 0.038</title></rect>
+<line class="experr" x1="713.0" y1="279.4" x2="713.0" y2="285.4"/>
+<rect class="expp" x="710.0" y="279.3" width="6" height="6"><title>измерение (Th-232): 2614.5 кэВ, 0.694 % ± 0.026</title></rect>
+</svg>
+<p class="leg"><span class="k"><i style="border-color:var(--mc)"></i>расчёт (Geant4)</span><span class="k"><i style="border-color:var(--exp)"></i>измерение (паспортная кривая ЛСРМ)</span><span class="k"><i style="border-color:var(--med)"></i>медиана</span></p>
+<p class="cap">Точки измерения — УДС-ГЦ-63х63-USB__SN-01_-_Дента.efa, усы: паспортная погрешность. Расчёт —
+eff_denta1.60.csv, усы: статистика прогона. Наведите курсор на точку, чтобы увидеть числа.</p>
+</figure>
+<figure><svg viewBox="0 0 760 170" class="plot ratio" role="img" aria-label="Отношение расчёт/измерение по точкам">
+<line class="grid" x1="66.0" y1="12" x2="66.0" y2="140"/>
+<text class="ax" x="66.0" y="158" text-anchor="middle">50</text>
+<line class="grid" x1="179.3" y1="12" x2="179.3" y2="140"/>
+<text class="ax" x="179.3" y="158" text-anchor="middle">100</text>
+<line class="grid" x1="292.7" y1="12" x2="292.7" y2="140"/>
+<text class="ax" x="292.7" y="158" text-anchor="middle">200</text>
+<line class="grid" x1="442.5" y1="12" x2="442.5" y2="140"/>
+<text class="ax" x="442.5" y="158" text-anchor="middle">500</text>
+<line class="grid" x1="555.8" y1="12" x2="555.8" y2="140"/>
+<text class="ax" x="555.8" y="158" text-anchor="middle">1000</text>
+<line class="grid" x1="669.2" y1="12" x2="669.2" y2="140"/>
+<text class="ax" x="669.2" y="158" text-anchor="middle">2000</text>
+<line class="grid" x1="735.4" y1="12" x2="735.4" y2="140"/>
+<text class="ax" x="735.4" y="158" text-anchor="middle">3000</text>
+<line class="grid" x1="66" y1="129.2" x2="746" y2="129.2"/>
+<text class="ax" x="60" y="133.2" text-anchor="end">0.6</text>
+<line class="grid" x1="66" y1="108.8" x2="746" y2="108.8"/>
+<text class="ax" x="60" y="112.8" text-anchor="end">0.8</text>
+<line class="one" x1="66" y1="88.5" x2="746" y2="88.5"/>
+<text class="ax" x="60" y="92.5" text-anchor="end">1.0</text>
+<line class="grid" x1="66" y1="68.1" x2="746" y2="68.1"/>
+<text class="ax" x="60" y="72.1" text-anchor="end">1.2</text>
+<line class="grid" x1="66" y1="47.7" x2="746" y2="47.7"/>
+<text class="ax" x="60" y="51.7" text-anchor="end">1.4</text>
+<line class="grid" x1="66" y1="27.3" x2="746" y2="27.3"/>
+<text class="ax" x="60" y="31.3" text-anchor="end">1.6</text>
+<line class="med" x1="66" y1="99.3" x2="746" y2="99.3"/>
+<line class="mcerr" x1="321.5" y1="114.1" x2="321.5" y2="120.4"/>
+<circle class="mcp" cx="321.5" cy="117.2" r="3"><title>238.6 кэВ (Th-232): МК/эксп 0.718 ± 0.031</title></circle>
+<line class="mcerr" x1="323.8" y1="131.6" x2="323.8" y2="137.2"/>
+<circle class="mcp" cx="323.8" cy="134.4" r="3"><title>242.0 кэВ (Ra-226): МК/эксп 0.549 ± 0.028</title></circle>
+<line class="mcerr" x1="356.3" y1="94.3" x2="356.3" y2="102.0"/>
+<circle class="mcp" cx="356.3" cy="98.2" r="3"><title>295.2 кэВ (Ra-226): МК/эксп 0.905 ± 0.038</title></circle>
+<line class="mcerr" x1="378.6" y1="125.0" x2="378.6" y2="130.6"/>
+<circle class="mcp" cx="378.6" cy="127.8" r="3"><title>338.3 кэВ (Th-232): МК/эксп 0.614 ± 0.027</title></circle>
+<line class="mcerr" x1="385.1" y1="96.0" x2="385.1" y2="102.6"/>
+<circle class="mcp" cx="385.1" cy="99.3" r="3"><title>351.9 кэВ (Ra-226): МК/эксп 0.894 ± 0.033</title></circle>
+<line class="mcerr" x1="467.6" y1="98.4" x2="467.6" y2="104.9"/>
+<line class="corr" x1="467.6" y1="101.7" x2="467.6" y2="113.0"/>
+<circle class="corrp" cx="467.6" cy="113.0" r="2.4"><title>583.2 кэВ, с поправкой на суммирование: 0.760</title></circle>
+<circle class="mcp" cx="467.6" cy="101.7" r="3"><title>583.2 кэВ (Th-232): МК/эксп 0.870 ± 0.032</title></circle>
+<line class="mcerr" x1="474.8" y1="87.1" x2="474.8" y2="93.9"/>
+<line class="corr" x1="474.8" y1="90.5" x2="474.8" y2="100.8"/>
+<circle class="corrp" cx="474.8" cy="100.8" r="2.4"><title>609.3 кэВ, с поправкой на суммирование: 0.879</title></circle>
+<circle class="mcp" cx="474.8" cy="90.5" r="3"><title>609.3 кэВ (Ra-226): МК/эксп 0.980 ± 0.033</title></circle>
+<line class="mcerr" x1="488.3" y1="90.4" x2="488.3" y2="95.8"/>
+<line class="corr" x1="488.3" y1="93.1" x2="488.3" y2="91.4"/>
+<circle class="corrp" cx="488.3" cy="91.4" r="2.4"><title>661.7 кэВ, с поправкой на суммирование: 0.971</title></circle>
+<circle class="mcp" cx="488.3" cy="93.1" r="3"><title>661.7 кэВ (Cs-137): МК/эксп 0.954 ± 0.027</title></circle>
+<line class="mcerr" x1="540.6" y1="105.2" x2="540.6" y2="112.6"/>
+<circle class="mcp" cx="540.6" cy="108.9" r="3"><title>911.2 кэВ (Th-232): МК/эксп 0.799 ± 0.036</title></circle>
+<line class="mcerr" x1="574.4" y1="94.1" x2="574.4" y2="101.5"/>
+<line class="corr" x1="574.4" y1="97.8" x2="574.4" y2="110.3"/>
+<circle class="corrp" cx="574.4" cy="110.3" r="2.4"><title>1120.3 кэВ, с поправкой на суммирование: 0.786</title></circle>
+<circle class="mcp" cx="574.4" cy="97.8" r="3"><title>1120.3 кэВ (Ra-226): МК/эксп 0.908 ± 0.036</title></circle>
+<line class="mcerr" x1="617.8" y1="104.4" x2="617.8" y2="111.0"/>
+<line class="corr" x1="617.8" y1="107.7" x2="617.8" y2="108.4"/>
+<circle class="corrp" cx="617.8" cy="108.4" r="2.4"><title>1460.8 кэВ, с поправкой на суммирование: 0.805</title></circle>
+<circle class="mcp" cx="617.8" cy="107.7" r="3"><title>1460.8 кэВ (K-40): МК/эксп 0.811 ± 0.032</title></circle>
+<line class="mcerr" x1="648.7" y1="77.1" x2="648.7" y2="86.1"/>
+<line class="corr" x1="648.7" y1="81.6" x2="648.7" y2="76.3"/>
+<circle class="corrp" cx="648.7" cy="76.3" r="2.4"><title>1764.5 кэВ, с поправкой на суммирование: 1.119</title></circle>
+<circle class="mcp" cx="648.7" cy="81.6" r="3"><title>1764.5 кэВ (Ra-226): МК/эксп 1.067 ± 0.045</title></circle>
+<line class="mcerr" x1="713.0" y1="79.2" x2="713.0" y2="88.1"/>
+<line class="corr" x1="713.0" y1="83.7" x2="713.0" y2="100.3"/>
+<circle class="corrp" cx="713.0" cy="100.3" r="2.4"><title>2614.5 кэВ, с поправкой на суммирование: 0.884</title></circle>
+<circle class="mcp" cx="713.0" cy="83.7" r="3"><title>2614.5 кэВ (Th-232): МК/эксп 1.047 ± 0.043</title></circle>
+<text class="axt" x="406.0" y="169" text-anchor="middle">энергия, кэВ</text>
+</svg>
+<p class="cap">Отношение расчёт/измерение по линиям. Средневзвешенное
+(в логарифме, как в отчёте) 0,867 по 13 точкам, разброс формы RMS 17,3 %; медиана
+0,894. Сиреневым — куда точка уходит после деления на поправку каскадного
+суммирования там, где она посчитана: измерение теряет отсчёты из пика на
+совпадениях, расчёт моноэнергетической сетки — нет.</p>
+</figure>
+<div class="tw"><table>
+<thead><tr><th class="n">E, кэВ</th><th>по нуклиду</th>
+<th class="n">измерено, %</th><th class="n">расчёт, %</th>
+<th class="n">МК/эксп</th><th class="n">C → с поправкой</th>
+<th>расчёт взят</th></tr></thead>
+<tbody><tr><td class='n'>238,6</td><td>Th-232</td><td class='n'>6.483</td><td class='n'>4.652</td><td class='n'>0,718</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>242,0</td><td>Ra-226</td><td class='n'>8.536</td><td class='n'>4.688</td><td class='n'>0,549</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>295,2</td><td>Ra-226</td><td class='n'>4.754</td><td class='n'>4.301</td><td class='n'>0,905</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>338,3</td><td>Th-232</td><td class='n'>6.511</td><td class='n'>3.997</td><td class='n'>0,614</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>351,9</td><td>Ra-226</td><td class='n'>4.406</td><td class='n'>3.938</td><td class='n'>0,894</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>583,2</td><td>Th-232</td><td class='n'>2.981</td><td class='n'>2.595</td><td class='n'>0,870</td><td class='n'>1,146 → 0,760</td><td>узел</td></tr><tr><td class='n'>609,3</td><td>Ra-226</td><td class='n'>2.576</td><td class='n'>2.523</td><td class='n'>0,980</td><td class='n'>1,115 → 0,879</td><td>узел</td></tr><tr><td class='n'>661,7</td><td>Cs-137</td><td class='n'>2.444</td><td class='n'>2.332</td><td class='n'>0,954</td><td class='n'>0,983 → 0,971</td><td>узел</td></tr><tr><td class='n'>911,2</td><td>Th-232</td><td class='n'>2.23</td><td class='n'>1.783</td><td class='n'>0,799</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>1120,3</td><td>Ra-226</td><td class='n'>1.668</td><td class='n'>1.516</td><td class='n'>0,908</td><td class='n'>1,156 → 0,786</td><td>узел</td></tr><tr><td class='n'>1460,8</td><td>K-40</td><td class='n'>1.531</td><td class='n'>1.242</td><td class='n'>0,811</td><td class='n'>1,008 → 0,805</td><td>узел</td></tr><tr><td class='n'>1764,5</td><td>Ra-226</td><td class='n'>0.9715</td><td class='n'>1.037</td><td class='n'>1,067</td><td class='n'>0,954 → 1,119</td><td>узел</td></tr><tr><td class='n'>2614,5</td><td>Th-232</td><td class='n'>0.694</td><td class='n'>0.7266</td><td class='n'>1,047</td><td class='n'>1,185 → 0,884</td><td>узел</td></tr></tbody></table></div>
+
+<h3>Петри 60 мл</h3>
+<p>Тонкий слой на головке, самая мелкая из кювет комплекта.</p>
+<figure><svg viewBox="0 0 760 400" class="plot" role="img" aria-label="Эффективность ППП: расчёт и измерение">
+<line class="grid" x1="66.0" y1="14.0" x2="66.0" y2="356.0"/>
+<text class="ax" x="66.0" y="372" text-anchor="middle">50</text>
+<line class="grid" x1="179.3" y1="14.0" x2="179.3" y2="356.0"/>
+<text class="ax" x="179.3" y="372" text-anchor="middle">100</text>
+<line class="grid" x1="292.7" y1="14.0" x2="292.7" y2="356.0"/>
+<text class="ax" x="292.7" y="372" text-anchor="middle">200</text>
+<line class="grid" x1="442.5" y1="14.0" x2="442.5" y2="356.0"/>
+<text class="ax" x="442.5" y="372" text-anchor="middle">500</text>
+<line class="grid" x1="555.8" y1="14.0" x2="555.8" y2="356.0"/>
+<text class="ax" x="555.8" y="372" text-anchor="middle">1000</text>
+<line class="grid" x1="669.2" y1="14.0" x2="669.2" y2="356.0"/>
+<text class="ax" x="669.2" y="372" text-anchor="middle">2000</text>
+<line class="grid" x1="735.4" y1="14.0" x2="735.4" y2="356.0"/>
+<text class="ax" x="735.4" y="372" text-anchor="middle">3000</text>
+<line class="grid" x1="66" y1="328.8" x2="746" y2="328.8"/>
+<text class="ax" x="60" y="332.8" text-anchor="end">0.5</text>
+<line class="grid" x1="66" y1="272.3" x2="746" y2="272.3"/>
+<text class="ax" x="60" y="276.3" text-anchor="end">1</text>
+<line class="grid" x1="66" y1="215.8" x2="746" y2="215.8"/>
+<text class="ax" x="60" y="219.8" text-anchor="end">2</text>
+<line class="grid" x1="66" y1="141.1" x2="746" y2="141.1"/>
+<text class="ax" x="60" y="145.1" text-anchor="end">5</text>
+<line class="grid" x1="66" y1="84.6" x2="746" y2="84.6"/>
+<text class="ax" x="60" y="88.6" text-anchor="end">10</text>
+<line class="grid" x1="66" y1="28.1" x2="746" y2="28.1"/>
+<text class="ax" x="60" y="32.1" text-anchor="end">20</text>
+<text class="axt" x="406.0" y="394" text-anchor="middle">энергия, кэВ</text>
+<text class="axt" transform="translate(14,185.0) rotate(-90)" text-anchor="middle">эффективность ППП, %</text>
+<path class="mc" d="M94.4,171.2 L158.4,135.8 L212.0,122.8 L262.1,117.6 L321.5,122.9 L323.8,123.0 L356.3,129.9 L378.6,136.6 L385.1,137.9 L429.9,156.4 L467.6,173.4 L474.8,175.4 L488.3,181.7 L512.7,191.7 L540.6,204.1 L574.4,219.8 L617.8,237.0 L648.7,249.4 L713.0,280.5 L735.4,291.7"/>
+<line class="mcerr" x1="94.4" y1="168.9" x2="94.4" y2="173.5"/>
+<circle class="mcp" cx="94.4" cy="171.2" r="2.6"><title>расчёт: 59.5 кэВ, 3.456 %</title></circle>
+<line class="mcerr" x1="158.4" y1="131.6" x2="158.4" y2="140.3"/>
+<circle class="mcp" cx="158.4" cy="135.8" r="2.6"><title>расчёт: 88.0 кэВ, 5.331 %</title></circle>
+<line class="mcerr" x1="212.0" y1="118.9" x2="212.0" y2="126.8"/>
+<circle class="mcp" cx="212.0" cy="122.8" r="2.6"><title>расчёт: 122.1 кэВ, 6.259 %</title></circle>
+<line class="mcerr" x1="262.1" y1="115.0" x2="262.1" y2="120.4"/>
+<circle class="mcp" cx="262.1" cy="117.6" r="2.6"><title>расчёт: 165.9 кэВ, 6.666 %</title></circle>
+<line class="mcerr" x1="321.5" y1="121.4" x2="321.5" y2="124.4"/>
+<circle class="mcp" cx="321.5" cy="122.9" r="2.6"><title>расчёт: 238.6 кэВ, 6.25 %</title></circle>
+<line class="mcerr" x1="323.8" y1="121.5" x2="323.8" y2="124.5"/>
+<circle class="mcp" cx="323.8" cy="123.0" r="2.6"><title>расчёт: 242.0 кэВ, 6.24 %</title></circle>
+<line class="mcerr" x1="356.3" y1="128.8" x2="356.3" y2="131.0"/>
+<circle class="mcp" cx="356.3" cy="129.9" r="2.6"><title>расчёт: 295.2 кэВ, 5.733 %</title></circle>
+<line class="mcerr" x1="378.6" y1="135.7" x2="378.6" y2="137.5"/>
+<circle class="mcp" cx="378.6" cy="136.6" r="2.6"><title>расчёт: 338.3 кэВ, 5.281 %</title></circle>
+<line class="mcerr" x1="385.1" y1="137.0" x2="385.1" y2="138.8"/>
+<circle class="mcp" cx="385.1" cy="137.9" r="2.6"><title>расчёт: 351.9 кэВ, 5.198 %</title></circle>
+<line class="mcerr" x1="429.9" y1="155.7" x2="429.9" y2="157.2"/>
+<circle class="mcp" cx="429.9" cy="156.4" r="2.6"><title>расчёт: 463.0 кэВ, 4.141 %</title></circle>
+<line class="mcerr" x1="467.6" y1="172.7" x2="467.6" y2="174.2"/>
+<circle class="mcp" cx="467.6" cy="173.4" r="2.6"><title>расчёт: 583.2 кэВ, 3.361 %</title></circle>
+<line class="mcerr" x1="474.8" y1="174.7" x2="474.8" y2="176.2"/>
+<circle class="mcp" cx="474.8" cy="175.4" r="2.6"><title>расчёт: 609.3 кэВ, 3.279 %</title></circle>
+<line class="mcerr" x1="488.3" y1="180.9" x2="488.3" y2="182.4"/>
+<circle class="mcp" cx="488.3" cy="181.7" r="2.6"><title>расчёт: 661.7 кэВ, 3.039 %</title></circle>
+<line class="mcerr" x1="512.7" y1="190.9" x2="512.7" y2="192.5"/>
+<circle class="mcp" cx="512.7" cy="191.7" r="2.6"><title>расчёт: 768.4 кэВ, 2.687 %</title></circle>
+<line class="mcerr" x1="540.6" y1="203.3" x2="540.6" y2="205.0"/>
+<circle class="mcp" cx="540.6" cy="204.1" r="2.6"><title>расчёт: 911.2 кэВ, 2.306 %</title></circle>
+<line class="mcerr" x1="574.4" y1="218.9" x2="574.4" y2="220.8"/>
+<circle class="mcp" cx="574.4" cy="219.8" r="2.6"><title>расчёт: 1120.3 кэВ, 1.903 %</title></circle>
+<line class="mcerr" x1="617.8" y1="235.9" x2="617.8" y2="238.0"/>
+<circle class="mcp" cx="617.8" cy="237.0" r="2.6"><title>расчёт: 1460.8 кэВ, 1.542 %</title></circle>
+<line class="mcerr" x1="648.7" y1="248.3" x2="648.7" y2="250.6"/>
+<circle class="mcp" cx="648.7" cy="249.4" r="2.6"><title>расчёт: 1764.5 кэВ, 1.323 %</title></circle>
+<line class="mcerr" x1="713.0" y1="279.1" x2="713.0" y2="281.8"/>
+<circle class="mcp" cx="713.0" cy="280.5" r="2.6"><title>расчёт: 2614.5 кэВ, 0.9041 %</title></circle>
+<line class="mcerr" x1="735.4" y1="290.3" x2="735.4" y2="293.2"/>
+<circle class="mcp" cx="735.4" cy="291.7" r="2.6"><title>расчёт: 3000.0 кэВ, 0.7875 %</title></circle>
+<line class="experr" x1="116.0" y1="119.4" x2="116.0" y2="136.7"/>
+<rect class="expp" x="113.0" y="124.6" width="6" height="6"><title>измерение (Ti-44): 67.9 кэВ, 5.9 % ± 0.63</title></rect>
+<line class="experr" x1="139.5" y1="103.9" x2="139.5" y2="118.7"/>
+<rect class="expp" x="136.5" y="107.9" width="6" height="6"><title>измерение (Ti-44): 78.4 кэВ, 7.238 % ± 0.66</title></rect>
+<line class="experr" x1="211.6" y1="74.0" x2="211.6" y2="82.8"/>
+<rect class="expp" x="208.6" y="75.3" width="6" height="6"><title>измерение (Eu-152): 121.8 кэВ, 10.8 % ± 0.58</title></rect>
+<line class="experr" x1="321.5" y1="89.7" x2="321.5" y2="95.5"/>
+<rect class="expp" x="318.5" y="89.6" width="6" height="6"><title>измерение (Th-232): 238.6 кэВ, 9.063 % ± 0.32</title></rect>
+<line class="experr" x1="356.3" y1="113.1" x2="356.3" y2="119.7"/>
+<rect class="expp" x="353.3" y="113.3" width="6" height="6"><title>измерение (Ra-226): 295.2 кэВ, 6.776 % ± 0.27</title></rect>
+<line class="experr" x1="378.6" y1="101.7" x2="378.6" y2="107.8"/>
+<rect class="expp" x="375.6" y="101.7" width="6" height="6"><title>измерение (Th-232): 338.3 кэВ, 7.813 % ± 0.29</title></rect>
+<line class="experr" x1="381.5" y1="123.8" x2="381.5" y2="129.7"/>
+<rect class="expp" x="378.5" y="123.7" width="6" height="6"><title>измерение (Eu-152): 344.3 кэВ, 5.965 % ± 0.22</title></rect>
+<line class="experr" x1="385.1" y1="120.1" x2="385.1" y2="125.8"/>
+<rect class="expp" x="382.1" y="119.9" width="6" height="6"><title>измерение (Ra-226): 351.9 кэВ, 6.251 % ± 0.22</title></rect>
+<line class="experr" x1="467.6" y1="150.1" x2="467.6" y2="155.4"/>
+<rect class="expp" x="464.6" y="149.7" width="6" height="6"><title>измерение (Th-232): 583.2 кэВ, 4.335 % ± 0.14</title></rect>
+<line class="experr" x1="474.8" y1="163.7" x2="474.8" y2="168.9"/>
+<rect class="expp" x="471.8" y="163.3" width="6" height="6"><title>измерение (Ra-226): 609.3 кэВ, 3.671 % ± 0.12</title></rect>
+<line class="experr" x1="488.3" y1="167.0" x2="488.3" y2="171.2"/>
+<rect class="expp" x="485.3" y="166.1" width="6" height="6"><title>измерение (Cs-137): 661.7 кэВ, 3.544 % ± 0.092</title></rect>
+<line class="experr" x1="515.0" y1="188.6" x2="515.0" y2="196.5"/>
+<rect class="expp" x="512.0" y="189.5" width="6" height="6"><title>измерение (Eu-152): 778.9 кэВ, 2.661 % ± 0.13</title></rect>
+<line class="experr" x1="540.6" y1="174.6" x2="540.6" y2="180.9"/>
+<rect class="expp" x="537.6" y="174.7" width="6" height="6"><title>измерение (Th-232): 911.2 кэВ, 3.191 % ± 0.12</title></rect>
+<line class="experr" x1="549.8" y1="204.8" x2="549.8" y2="213.3"/>
+<rect class="expp" x="546.8" y="206.0" width="6" height="6"><title>измерение (Eu-152): 964.1 кэВ, 2.174 % ± 0.11</title></rect>
+<line class="experr" x1="574.4" y1="197.8" x2="574.4" y2="204.2"/>
+<rect class="expp" x="571.4" y="198.0" width="6" height="6"><title>измерение (Ra-226): 1120.3 кэВ, 2.398 % ± 0.093</title></rect>
+<line class="experr" x1="611.8" y1="233.5" x2="611.8" y2="241.0"/>
+<rect class="expp" x="608.8" y="234.1" width="6" height="6"><title>измерение (Eu-152): 1408.0 кэВ, 1.539 % ± 0.071</title></rect>
+<line class="experr" x1="617.8" y1="213.0" x2="617.8" y2="219.9"/>
+<rect class="expp" x="614.8" y="213.4" width="6" height="6"><title>измерение (K-40): 1460.8 кэВ, 1.985 % ± 0.084</title></rect>
+<line class="experr" x1="648.7" y1="245.6" x2="648.7" y2="252.4"/>
+<rect class="expp" x="645.7" y="245.9" width="6" height="6"><title>измерение (Ra-226): 1764.5 кэВ, 1.331 % ± 0.055</title></rect>
+<line class="experr" x1="713.0" y1="280.1" x2="713.0" y2="285.6"/>
+<rect class="expp" x="710.0" y="279.8" width="6" height="6"><title>измерение (Th-232): 2614.5 кэВ, 0.8786 % ± 0.029</title></rect>
+</svg>
+<p class="leg"><span class="k"><i style="border-color:var(--mc)"></i>расчёт (Geant4)</span><span class="k"><i style="border-color:var(--exp)"></i>измерение (паспортная кривая ЛСРМ)</span><span class="k"><i style="border-color:var(--med)"></i>медиана</span></p>
+<p class="cap">Точки измерения — УДС-ГЦ-63х63-USB__SN-01_-_Петри.efa, усы: паспортная погрешность. Расчёт —
+eff_petri1.60.csv, усы: статистика прогона. Наведите курсор на точку, чтобы увидеть числа.</p>
+</figure>
+<figure><svg viewBox="0 0 760 170" class="plot ratio" role="img" aria-label="Отношение расчёт/измерение по точкам">
+<line class="grid" x1="66.0" y1="12" x2="66.0" y2="140"/>
+<text class="ax" x="66.0" y="158" text-anchor="middle">50</text>
+<line class="grid" x1="179.3" y1="12" x2="179.3" y2="140"/>
+<text class="ax" x="179.3" y="158" text-anchor="middle">100</text>
+<line class="grid" x1="292.7" y1="12" x2="292.7" y2="140"/>
+<text class="ax" x="292.7" y="158" text-anchor="middle">200</text>
+<line class="grid" x1="442.5" y1="12" x2="442.5" y2="140"/>
+<text class="ax" x="442.5" y="158" text-anchor="middle">500</text>
+<line class="grid" x1="555.8" y1="12" x2="555.8" y2="140"/>
+<text class="ax" x="555.8" y="158" text-anchor="middle">1000</text>
+<line class="grid" x1="669.2" y1="12" x2="669.2" y2="140"/>
+<text class="ax" x="669.2" y="158" text-anchor="middle">2000</text>
+<line class="grid" x1="735.4" y1="12" x2="735.4" y2="140"/>
+<text class="ax" x="735.4" y="158" text-anchor="middle">3000</text>
+<line class="grid" x1="66" y1="131.8" x2="746" y2="131.8"/>
+<text class="ax" x="60" y="135.8" text-anchor="end">0.6</text>
+<line class="grid" x1="66" y1="111.0" x2="746" y2="111.0"/>
+<text class="ax" x="60" y="115.0" text-anchor="end">0.8</text>
+<line class="one" x1="66" y1="90.1" x2="746" y2="90.1"/>
+<text class="ax" x="60" y="94.1" text-anchor="end">1.0</text>
+<line class="grid" x1="66" y1="69.3" x2="746" y2="69.3"/>
+<text class="ax" x="60" y="73.3" text-anchor="end">1.2</text>
+<line class="grid" x1="66" y1="48.5" x2="746" y2="48.5"/>
+<text class="ax" x="60" y="52.5" text-anchor="end">1.4</text>
+<line class="grid" x1="66" y1="27.6" x2="746" y2="27.6"/>
+<text class="ax" x="60" y="31.6" text-anchor="end">1.6</text>
+<line class="med" x1="66" y1="107.7" x2="746" y2="107.7"/>
+<line class="mcerr" x1="116.0" y1="116.0" x2="116.0" y2="131.3"/>
+<circle class="mcp" cx="116.0" cy="123.6" r="3"><title>67.9 кэВ (Ti-44): МК/эксп 0.679 ± 0.073</title></circle>
+<line class="mcerr" x1="139.5" y1="121.7" x2="139.5" y2="134.0"/>
+<circle class="mcp" cx="139.5" cy="127.8" r="3"><title>78.4 кэВ (Ti-44): МК/эксп 0.638 ± 0.059</title></circle>
+<line class="mcerr" x1="211.6" y1="129.6" x2="211.6" y2="138.3"/>
+<circle class="mcp" cx="211.6" cy="134.0" r="3"><title>121.8 кэВ (Eu-152): МК/эксп 0.579 ± 0.042</title></circle>
+<line class="mcerr" x1="321.5" y1="119.6" x2="321.5" y2="125.4"/>
+<circle class="mcp" cx="321.5" cy="122.5" r="3"><title>238.6 кэВ (Th-232): МК/эксп 0.690 ± 0.028</title></circle>
+<line class="mcerr" x1="356.3" y1="102.4" x2="356.3" y2="109.9"/>
+<circle class="mcp" cx="356.3" cy="106.2" r="3"><title>295.2 кэВ (Ra-226): МК/эксп 0.846 ± 0.036</title></circle>
+<line class="mcerr" x1="378.6" y1="121.1" x2="378.6" y2="126.7"/>
+<circle class="mcp" cx="378.6" cy="123.9" r="3"><title>338.3 кэВ (Th-232): МК/эксп 0.676 ± 0.026</title></circle>
+<line class="mcerr" x1="381.5" y1="99.7" x2="381.5" y2="107.3"/>
+<circle class="mcp" cx="381.5" cy="103.5" r="3"><title>344.3 кэВ (Eu-152): МК/эксп 0.872 ± 0.036</title></circle>
+<line class="mcerr" x1="385.1" y1="104.5" x2="385.1" y2="110.9"/>
+<circle class="mcp" cx="385.1" cy="107.7" r="3"><title>351.9 кэВ (Ra-226): МК/эксп 0.832 ± 0.031</title></circle>
+<line class="mcerr" x1="467.6" y1="110.8" x2="467.6" y2="116.3"/>
+<line class="corr" x1="467.6" y1="113.5" x2="467.6" y2="123.8"/>
+<circle class="corrp" cx="467.6" cy="123.8" r="2.4"><title>583.2 кэВ, с поправкой на суммирование: 0.677</title></circle>
+<circle class="mcp" cx="467.6" cy="113.5" r="3"><title>583.2 кэВ (Th-232): МК/эксп 0.775 ± 0.026</title></circle>
+<line class="mcerr" x1="474.8" y1="98.2" x2="474.8" y2="104.3"/>
+<line class="corr" x1="474.8" y1="101.3" x2="474.8" y2="110.8"/>
+<circle class="corrp" cx="474.8" cy="110.8" r="2.4"><title>609.3 кэВ, с поправкой на суммирование: 0.801</title></circle>
+<circle class="mcp" cx="474.8" cy="101.3" r="3"><title>609.3 кэВ (Ra-226): МК/эксп 0.893 ± 0.030</title></circle>
+<line class="mcerr" x1="488.3" y1="102.5" x2="488.3" y2="107.5"/>
+<line class="corr" x1="488.3" y1="105.0" x2="488.3" y2="103.4"/>
+<circle class="corrp" cx="488.3" cy="103.4" r="2.4"><title>661.7 кэВ, с поправкой на суммирование: 0.873</title></circle>
+<circle class="mcp" cx="488.3" cy="105.0" r="3"><title>661.7 кэВ (Cs-137): МК/эксп 0.857 ± 0.024</title></circle>
+<line class="mcerr" x1="515.0" y1="85.9" x2="515.0" y2="96.7"/>
+<circle class="mcp" cx="515.0" cy="91.3" r="3"><title>778.9 кэВ (Eu-152): МК/эксп 0.989 ± 0.052</title></circle>
+<line class="mcerr" x1="540.6" y1="116.0" x2="540.6" y2="122.0"/>
+<circle class="mcp" cx="540.6" cy="119.0" r="3"><title>911.2 кэВ (Th-232): МК/эксп 0.723 ± 0.029</title></circle>
+<line class="mcerr" x1="549.8" y1="83.9" x2="549.8" y2="95.6"/>
+<circle class="mcp" cx="549.8" cy="89.7" r="3"><title>964.1 кэВ (Eu-152): МК/эксп 1.004 ± 0.056</title></circle>
+<line class="mcerr" x1="574.4" y1="108.3" x2="574.4" y2="115.0"/>
+<line class="corr" x1="574.4" y1="111.7" x2="574.4" y2="122.8"/>
+<circle class="corrp" cx="574.4" cy="122.8" r="2.4"><title>1120.3 кэВ, с поправкой на суммирование: 0.687</title></circle>
+<circle class="mcp" cx="574.4" cy="111.7" r="3"><title>1120.3 кэВ (Ra-226): МК/эксп 0.793 ± 0.032</title></circle>
+<line class="mcerr" x1="611.8" y1="81.5" x2="611.8" y2="92.3"/>
+<circle class="mcp" cx="611.8" cy="86.9" r="3"><title>1408.0 кэВ (Eu-152): МК/эксп 1.031 ± 0.052</title></circle>
+<line class="mcerr" x1="617.8" y1="109.8" x2="617.8" y2="117.0"/>
+<line class="corr" x1="617.8" y1="113.4" x2="617.8" y2="114.1"/>
+<circle class="corrp" cx="617.8" cy="114.1" r="2.4"><title>1460.8 кэВ, с поправкой на суммирование: 0.770</title></circle>
+<circle class="mcp" cx="617.8" cy="113.4" r="3"><title>1460.8 кэВ (K-40): МК/эксп 0.777 ± 0.034</title></circle>
+<line class="mcerr" x1="648.7" y1="86.3" x2="648.7" y2="95.3"/>
+<line class="corr" x1="648.7" y1="90.8" x2="648.7" y2="85.7"/>
+<circle class="corrp" cx="648.7" cy="85.7" r="2.4"><title>1764.5 кэВ, с поправкой на суммирование: 1.042</title></circle>
+<circle class="mcp" cx="648.7" cy="90.8" r="3"><title>1764.5 кэВ (Ra-226): МК/эксп 0.994 ± 0.043</title></circle>
+<line class="mcerr" x1="713.0" y1="83.1" x2="713.0" y2="91.1"/>
+<line class="corr" x1="713.0" y1="87.1" x2="713.0" y2="103.9"/>
+<circle class="corrp" cx="713.0" cy="103.9" r="2.4"><title>2614.5 кэВ, с поправкой на суммирование: 0.868</title></circle>
+<circle class="mcp" cx="713.0" cy="87.1" r="3"><title>2614.5 кэВ (Th-232): МК/эксп 1.029 ± 0.038</title></circle>
+<text class="axt" x="406.0" y="169" text-anchor="middle">энергия, кэВ</text>
+</svg>
+<p class="cap">Отношение расчёт/измерение по линиям. Средневзвешенное
+(в логарифме, как в отчёте) 0,833 по 19 точкам, разброс формы RMS 16,4 %; медиана
+0,832. Сиреневым — куда точка уходит после деления на поправку каскадного
+суммирования там, где она посчитана: измерение теряет отсчёты из пика на
+совпадениях, расчёт моноэнергетической сетки — нет.</p>
+</figure>
+<div class="tw"><table>
+<thead><tr><th class="n">E, кэВ</th><th>по нуклиду</th>
+<th class="n">измерено, %</th><th class="n">расчёт, %</th>
+<th class="n">МК/эксп</th><th class="n">C → с поправкой</th>
+<th>расчёт взят</th></tr></thead>
+<tbody><tr><td class='n'>67,9</td><td>Ti-44</td><td class='n'>5.9</td><td class='n'>4.004</td><td class='n'>0,679</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>78,4</td><td>Ti-44</td><td class='n'>7.238</td><td class='n'>4.619</td><td class='n'>0,638</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>121,8</td><td>Eu-152</td><td class='n'>10.8</td><td class='n'>6.259</td><td class='n'>0,579</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>238,6</td><td>Th-232</td><td class='n'>9.063</td><td class='n'>6.25</td><td class='n'>0,690</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>295,2</td><td>Ra-226</td><td class='n'>6.776</td><td class='n'>5.733</td><td class='n'>0,846</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>338,3</td><td>Th-232</td><td class='n'>7.813</td><td class='n'>5.281</td><td class='n'>0,676</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>344,3</td><td>Eu-152</td><td class='n'>5.965</td><td class='n'>5.201</td><td class='n'>0,872</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>351,9</td><td>Ra-226</td><td class='n'>6.251</td><td class='n'>5.198</td><td class='n'>0,832</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>583,2</td><td>Th-232</td><td class='n'>4.335</td><td class='n'>3.361</td><td class='n'>0,775</td><td class='n'>1,146 → 0,677</td><td>узел</td></tr><tr><td class='n'>609,3</td><td>Ra-226</td><td class='n'>3.671</td><td class='n'>3.279</td><td class='n'>0,893</td><td class='n'>1,115 → 0,801</td><td>узел</td></tr><tr><td class='n'>661,7</td><td>Cs-137</td><td class='n'>3.544</td><td class='n'>3.039</td><td class='n'>0,857</td><td class='n'>0,983 → 0,873</td><td>узел</td></tr><tr><td class='n'>778,9</td><td>Eu-152</td><td class='n'>2.661</td><td class='n'>2.632</td><td class='n'>0,989</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>911,2</td><td>Th-232</td><td class='n'>3.191</td><td class='n'>2.306</td><td class='n'>0,723</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>964,1</td><td>Eu-152</td><td class='n'>2.174</td><td class='n'>2.182</td><td class='n'>1,004</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>1120,3</td><td>Ra-226</td><td class='n'>2.398</td><td class='n'>1.903</td><td class='n'>0,793</td><td class='n'>1,156 → 0,687</td><td>узел</td></tr><tr><td class='n'>1408,0</td><td>Eu-152</td><td class='n'>1.539</td><td class='n'>1.587</td><td class='n'>1,031</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>1460,8</td><td>K-40</td><td class='n'>1.985</td><td class='n'>1.542</td><td class='n'>0,777</td><td class='n'>1,008 → 0,770</td><td>узел</td></tr><tr><td class='n'>1764,5</td><td>Ra-226</td><td class='n'>1.331</td><td class='n'>1.323</td><td class='n'>0,994</td><td class='n'>0,954 → 1,042</td><td>узел</td></tr><tr><td class='n'>2614,5</td><td>Th-232</td><td class='n'>0.8786</td><td class='n'>0.9041</td><td class='n'>1,029</td><td class='n'>1,185 → 0,868</td><td>узел</td></tr></tbody></table></div>
+
+<h3>Точечная, 5 см</h3>
+<p>Точечный источник на 5 см от торца, крышка защиты ЗАКРЫТА. Здесь нет сосуда — проверяется сам детектор.</p>
+<figure><svg viewBox="0 0 760 400" class="plot" role="img" aria-label="Эффективность ППП: расчёт и измерение">
+<line class="grid" x1="66.0" y1="14.0" x2="66.0" y2="356.0"/>
+<text class="ax" x="66.0" y="372" text-anchor="middle">50</text>
+<line class="grid" x1="179.3" y1="14.0" x2="179.3" y2="356.0"/>
+<text class="ax" x="179.3" y="372" text-anchor="middle">100</text>
+<line class="grid" x1="292.7" y1="14.0" x2="292.7" y2="356.0"/>
+<text class="ax" x="292.7" y="372" text-anchor="middle">200</text>
+<line class="grid" x1="442.5" y1="14.0" x2="442.5" y2="356.0"/>
+<text class="ax" x="442.5" y="372" text-anchor="middle">500</text>
+<line class="grid" x1="555.8" y1="14.0" x2="555.8" y2="356.0"/>
+<text class="ax" x="555.8" y="372" text-anchor="middle">1000</text>
+<line class="grid" x1="669.2" y1="14.0" x2="669.2" y2="356.0"/>
+<text class="ax" x="669.2" y="372" text-anchor="middle">2000</text>
+<line class="grid" x1="735.4" y1="14.0" x2="735.4" y2="356.0"/>
+<text class="ax" x="735.4" y="372" text-anchor="middle">3000</text>
+<line class="grid" x1="66" y1="325.1" x2="746" y2="325.1"/>
+<text class="ax" x="60" y="329.1" text-anchor="end">0.2</text>
+<line class="grid" x1="66" y1="252.3" x2="746" y2="252.3"/>
+<text class="ax" x="60" y="256.3" text-anchor="end">0.5</text>
+<line class="grid" x1="66" y1="197.3" x2="746" y2="197.3"/>
+<text class="ax" x="60" y="201.3" text-anchor="end">1</text>
+<line class="grid" x1="66" y1="142.3" x2="746" y2="142.3"/>
+<text class="ax" x="60" y="146.3" text-anchor="end">2</text>
+<line class="grid" x1="66" y1="69.5" x2="746" y2="69.5"/>
+<text class="ax" x="60" y="73.5" text-anchor="end">5</text>
+<line class="grid" x1="66" y1="14.5" x2="746" y2="14.5"/>
+<text class="ax" x="60" y="18.5" text-anchor="end">10</text>
+<text class="axt" x="406.0" y="394" text-anchor="middle">энергия, кэВ</text>
+<text class="axt" transform="translate(14,185.0) rotate(-90)" text-anchor="middle">эффективность ППП, %</text>
+<path class="mc" d="M94.4,104.7 L158.4,96.2 L212.0,97.3 L262.1,101.3 L321.5,111.5 L323.8,112.8 L356.3,122.1 L378.6,130.2 L385.1,132.6 L429.9,151.5 L467.6,169.9 L474.8,171.9 L488.3,178.3 L512.7,190.7 L540.6,202.4 L574.4,217.6 L617.8,238.0 L648.7,252.0 L713.0,282.2 L735.4,293.4"/>
+<line class="mcerr" x1="94.4" y1="103.1" x2="94.4" y2="106.3"/>
+<circle class="mcp" cx="94.4" cy="104.7" r="2.6"><title>расчёт: 59.5 кэВ, 3.211 %</title></circle>
+<line class="mcerr" x1="158.4" y1="94.8" x2="158.4" y2="97.6"/>
+<circle class="mcp" cx="158.4" cy="96.2" r="2.6"><title>расчёт: 88.0 кэВ, 3.574 %</title></circle>
+<line class="mcerr" x1="212.0" y1="95.9" x2="212.0" y2="98.7"/>
+<circle class="mcp" cx="212.0" cy="97.3" r="2.6"><title>расчёт: 122.1 кэВ, 3.523 %</title></circle>
+<line class="mcerr" x1="262.1" y1="100.1" x2="262.1" y2="102.6"/>
+<circle class="mcp" cx="262.1" cy="101.3" r="2.6"><title>расчёт: 165.9 кэВ, 3.349 %</title></circle>
+<line class="mcerr" x1="321.5" y1="110.7" x2="321.5" y2="112.3"/>
+<circle class="mcp" cx="321.5" cy="111.5" r="2.6"><title>расчёт: 238.6 кэВ, 2.945 %</title></circle>
+<line class="mcerr" x1="323.8" y1="112.0" x2="323.8" y2="113.6"/>
+<circle class="mcp" cx="323.8" cy="112.8" r="2.6"><title>расчёт: 242.0 кэВ, 2.898 %</title></circle>
+<line class="mcerr" x1="356.3" y1="121.5" x2="356.3" y2="122.8"/>
+<circle class="mcp" cx="356.3" cy="122.1" r="2.6"><title>расчёт: 295.2 кэВ, 2.577 %</title></circle>
+<line class="mcerr" x1="378.6" y1="129.6" x2="378.6" y2="130.7"/>
+<circle class="mcp" cx="378.6" cy="130.2" r="2.6"><title>расчёт: 338.3 кэВ, 2.329 %</title></circle>
+<line class="mcerr" x1="385.1" y1="132.0" x2="385.1" y2="133.1"/>
+<circle class="mcp" cx="385.1" cy="132.6" r="2.6"><title>расчёт: 351.9 кэВ, 2.259 %</title></circle>
+<line class="mcerr" x1="429.9" y1="151.0" x2="429.9" y2="152.0"/>
+<circle class="mcp" cx="429.9" cy="151.5" r="2.6"><title>расчёт: 463.0 кэВ, 1.78 %</title></circle>
+<line class="mcerr" x1="467.6" y1="169.4" x2="467.6" y2="170.5"/>
+<circle class="mcp" cx="467.6" cy="169.9" r="2.6"><title>расчёт: 583.2 кэВ, 1.412 %</title></circle>
+<line class="mcerr" x1="474.8" y1="171.4" x2="474.8" y2="172.5"/>
+<circle class="mcp" cx="474.8" cy="171.9" r="2.6"><title>расчёт: 609.3 кэВ, 1.376 %</title></circle>
+<line class="mcerr" x1="488.3" y1="177.7" x2="488.3" y2="178.8"/>
+<circle class="mcp" cx="488.3" cy="178.3" r="2.6"><title>расчёт: 661.7 кэВ, 1.271 %</title></circle>
+<line class="mcerr" x1="512.7" y1="190.1" x2="512.7" y2="191.3"/>
+<circle class="mcp" cx="512.7" cy="190.7" r="2.6"><title>расчёт: 768.4 кэВ, 1.086 %</title></circle>
+<line class="mcerr" x1="540.6" y1="201.7" x2="540.6" y2="203.0"/>
+<circle class="mcp" cx="540.6" cy="202.4" r="2.6"><title>расчёт: 911.2 кэВ, 0.9382 %</title></circle>
+<line class="mcerr" x1="574.4" y1="216.9" x2="574.4" y2="218.4"/>
+<circle class="mcp" cx="574.4" cy="217.6" r="2.6"><title>расчёт: 1120.3 кэВ, 0.774 %</title></circle>
+<line class="mcerr" x1="617.8" y1="237.2" x2="617.8" y2="238.9"/>
+<circle class="mcp" cx="617.8" cy="238.0" r="2.6"><title>расчёт: 1460.8 кэВ, 0.5986 %</title></circle>
+<line class="mcerr" x1="648.7" y1="251.2" x2="648.7" y2="252.9"/>
+<circle class="mcp" cx="648.7" cy="252.0" r="2.6"><title>расчёт: 1764.5 кэВ, 0.5018 %</title></circle>
+<line class="mcerr" x1="713.0" y1="281.1" x2="713.0" y2="283.2"/>
+<circle class="mcp" cx="713.0" cy="282.2" r="2.6"><title>расчёт: 2614.5 кэВ, 0.3434 %</title></circle>
+<line class="mcerr" x1="735.4" y1="292.2" x2="735.4" y2="294.6"/>
+<circle class="mcp" cx="735.4" cy="293.4" r="2.6"><title>расчёт: 3000.0 кэВ, 0.2981 %</title></circle>
+<line class="experr" x1="94.6" y1="74.9" x2="94.6" y2="82.3"/>
+<rect class="expp" x="91.6" y="75.5" width="6" height="6"><title>измерение (Am-241): 59.5 кэВ, 4.462 % ± 0.21</title></rect>
+<line class="experr" x1="144.9" y1="74.8" x2="144.9" y2="78.5"/>
+<rect class="expp" x="141.9" y="73.6" width="6" height="6"><title>измерение (Ba-133): 81.0 кэВ, 4.571 % ± 0.11</title></rect>
+<line class="experr" x1="158.5" y1="78.9" x2="158.5" y2="85.1"/>
+<rect class="expp" x="155.5" y="79.0" width="6" height="6"><title>измерение (Cd-109): 88.0 кэВ, 4.274 % ± 0.17</title></rect>
+<line class="experr" x1="211.6" y1="82.2" x2="211.6" y2="86.9"/>
+<rect class="expp" x="208.6" y="81.5" width="6" height="6"><title>измерение (Eu-152): 121.8 кэВ, 4.138 % ± 0.12</title></rect>
+<line class="experr" x1="211.9" y1="77.8" x2="211.9" y2="85.3"/>
+<rect class="expp" x="208.9" y="78.5" width="6" height="6"><title>измерение (Co-57): 122.1 кэВ, 4.299 % ± 0.2</title></rect>
+<line class="experr" x1="321.5" y1="108.1" x2="321.5" y2="121.3"/>
+<rect class="expp" x="318.5" y="111.4" width="6" height="6"><title>измерение (Th-228): 238.6 кэВ, 2.84 % ± 0.24</title></rect>
+<line class="experr" x1="325.6" y1="99.9" x2="325.6" y2="103.6"/>
+<rect class="expp" x="322.6" y="98.7" width="6" height="6"><title>измерение (Eu-152): 244.7 кэВ, 3.331 % ± 0.079</title></rect>
+<line class="experr" x1="360.5" y1="120.2" x2="360.5" y2="124.1"/>
+<rect class="expp" x="357.5" y="119.1" width="6" height="6"><title>измерение (Ba-133): 302.9 кэВ, 2.577 % ± 0.064</title></rect>
+<line class="experr" x1="381.5" y1="122.5" x2="381.5" y2="126.4"/>
+<rect class="expp" x="378.5" y="121.4" width="6" height="6"><title>измерение (Eu-152): 344.3 кэВ, 2.504 % ± 0.062</title></rect>
+<line class="experr" x1="387.0" y1="128.5" x2="387.0" y2="131.0"/>
+<rect class="expp" x="384.0" y="126.8" width="6" height="6"><title>измерение (Ba-133): 356.0 кэВ, 2.34 % ± 0.037</title></rect>
+<line class="experr" x1="467.6" y1="165.4" x2="467.6" y2="167.9"/>
+<rect class="expp" x="464.6" y="163.6" width="6" height="6"><title>измерение (Th-228): 583.2 кэВ, 1.472 % ± 0.023</title></rect>
+<line class="experr" x1="488.3" y1="170.8" x2="488.3" y2="173.3"/>
+<rect class="expp" x="485.3" y="169.0" width="6" height="6"><title>измерение (Cs-137): 661.7 кэВ, 1.374 % ± 0.022</title></rect>
+<line class="experr" x1="503.8" y1="180.3" x2="503.8" y2="183.8"/>
+<rect class="expp" x="500.8" y="179.0" width="6" height="6"><title>измерение (Th-228): 727.3 кэВ, 1.212 % ± 0.026</title></rect>
+<line class="experr" x1="526.3" y1="186.0" x2="526.3" y2="189.2"/>
+<rect class="expp" x="523.3" y="184.6" width="6" height="6"><title>измерение (Mn-54): 834.9 кэВ, 1.13 % ± 0.022</title></rect>
+<line class="experr" x1="531.3" y1="194.1" x2="531.3" y2="197.1"/>
+<rect class="expp" x="528.3" y="192.6" width="6" height="6"><title>измерение (Th-228): 860.6 кэВ, 1.021 % ± 0.019</title></rect>
+<line class="experr" x1="538.2" y1="196.1" x2="538.2" y2="198.5"/>
+<rect class="expp" x="535.2" y="194.3" width="6" height="6"><title>измерение (Y-88): 898.0 кэВ, 0.9998 % ± 0.016</title></rect>
+<line class="experr" x1="549.8" y1="193.5" x2="549.8" y2="197.5"/>
+<rect class="expp" x="546.8" y="192.5" width="6" height="6"><title>измерение (Eu-152): 964.1 кэВ, 1.023 % ± 0.026</title></rect>
+<line class="experr" x1="573.7" y1="211.6" x2="573.7" y2="214.8"/>
+<rect class="expp" x="570.7" y="210.1" width="6" height="6"><title>измерение (Zn-65): 1115.5 кэВ, 0.819 % ± 0.016</title></rect>
+<line class="experr" x1="581.9" y1="229.8" x2="581.9" y2="232.9"/>
+<rect class="expp" x="578.9" y="228.3" width="6" height="6"><title>измерение (Co-60): 1173.2 кэВ, 0.6514 % ± 0.013</title></rect>
+<line class="experr" x1="595.5" y1="227.6" x2="595.5" y2="231.6"/>
+<rect class="expp" x="592.5" y="226.6" width="6" height="6"><title>измерение (Na-22): 1274.5 кэВ, 0.6655 % ± 0.017</title></rect>
+<line class="experr" x1="602.8" y1="237.6" x2="602.8" y2="240.7"/>
+<rect class="expp" x="599.8" y="236.1" width="6" height="6"><title>измерение (Co-60): 1332.5 кэВ, 0.5903 % ± 0.011</title></rect>
+<line class="experr" x1="611.8" y1="237.4" x2="611.8" y2="240.7"/>
+<rect class="expp" x="608.8" y="236.1" width="6" height="6"><title>измерение (Eu-152): 1408.0 кэВ, 0.591 % ± 0.012</title></rect>
+<line class="experr" x1="655.2" y1="254.5" x2="655.2" y2="257.0"/>
+<rect class="expp" x="652.2" y="252.8" width="6" height="6"><title>измерение (Y-88): 1836.1 кэВ, 0.4787 % ± 0.0075</title></rect>
+<line class="experr" x1="713.0" y1="290.8" x2="713.0" y2="293.3"/>
+<rect class="expp" x="710.0" y="289.0" width="6" height="6"><title>измерение (Th-228): 2614.5 кэВ, 0.3033 % ± 0.0047</title></rect>
+</svg>
+<p class="leg"><span class="k"><i style="border-color:var(--mc)"></i>расчёт (Geant4)</span><span class="k"><i style="border-color:var(--exp)"></i>измерение (паспортная кривая ЛСРМ)</span><span class="k"><i style="border-color:var(--med)"></i>медиана</span></p>
+<p class="cap">Точки измерения — УДС-ГЦ-63х63-USB__SN-01_-_Точечная-5см.efr, усы: паспортная погрешность. Расчёт —
+eff_p5cm.csv, усы: статистика прогона. Наведите курсор на точку, чтобы увидеть числа.</p>
+</figure>
+<figure><svg viewBox="0 0 760 170" class="plot ratio" role="img" aria-label="Отношение расчёт/измерение по точкам">
+<line class="grid" x1="66.0" y1="12" x2="66.0" y2="140"/>
+<text class="ax" x="66.0" y="158" text-anchor="middle">50</text>
+<line class="grid" x1="179.3" y1="12" x2="179.3" y2="140"/>
+<text class="ax" x="179.3" y="158" text-anchor="middle">100</text>
+<line class="grid" x1="292.7" y1="12" x2="292.7" y2="140"/>
+<text class="ax" x="292.7" y="158" text-anchor="middle">200</text>
+<line class="grid" x1="442.5" y1="12" x2="442.5" y2="140"/>
+<text class="ax" x="442.5" y="158" text-anchor="middle">500</text>
+<line class="grid" x1="555.8" y1="12" x2="555.8" y2="140"/>
+<text class="ax" x="555.8" y="158" text-anchor="middle">1000</text>
+<line class="grid" x1="669.2" y1="12" x2="669.2" y2="140"/>
+<text class="ax" x="669.2" y="158" text-anchor="middle">2000</text>
+<line class="grid" x1="735.4" y1="12" x2="735.4" y2="140"/>
+<text class="ax" x="735.4" y="158" text-anchor="middle">3000</text>
+<line class="grid" x1="66" y1="134.7" x2="746" y2="134.7"/>
+<text class="ax" x="60" y="138.7" text-anchor="end">0.6</text>
+<line class="grid" x1="66" y1="113.3" x2="746" y2="113.3"/>
+<text class="ax" x="60" y="117.3" text-anchor="end">0.8</text>
+<line class="one" x1="66" y1="92.0" x2="746" y2="92.0"/>
+<text class="ax" x="60" y="96.0" text-anchor="end">1.0</text>
+<line class="grid" x1="66" y1="70.7" x2="746" y2="70.7"/>
+<text class="ax" x="60" y="74.7" text-anchor="end">1.2</text>
+<line class="grid" x1="66" y1="49.3" x2="746" y2="49.3"/>
+<text class="ax" x="60" y="53.3" text-anchor="end">1.4</text>
+<line class="grid" x1="66" y1="28.0" x2="746" y2="28.0"/>
+<text class="ax" x="60" y="32.0" text-anchor="end">1.6</text>
+<line class="med" x1="66" y1="97.5" x2="746" y2="97.5"/>
+<line class="mcerr" x1="94.6" y1="118.0" x2="94.6" y2="125.8"/>
+<circle class="mcp" cx="94.6" cy="121.9" r="3"><title>59.5 кэВ (Am-241): МК/эксп 0.720 ± 0.036</title></circle>
+<line class="mcerr" x1="144.9" y1="116.0" x2="144.9" y2="120.9"/>
+<circle class="mcp" cx="144.9" cy="118.4" r="3"><title>81.0 кэВ (Ba-133): МК/эксп 0.752 ± 0.023</title></circle>
+<line class="mcerr" x1="158.5" y1="105.7" x2="158.5" y2="113.3"/>
+<circle class="mcp" cx="158.5" cy="109.5" r="3"><title>88.0 кэВ (Cd-109): МК/эксп 0.836 ± 0.036</title></circle>
+<line class="mcerr" x1="211.6" y1="104.7" x2="211.6" y2="111.0"/>
+<circle class="mcp" cx="211.6" cy="107.8" r="3"><title>121.8 кэВ (Eu-152): МК/эксп 0.851 ± 0.030</title></circle>
+<line class="mcerr" x1="211.9" y1="106.8" x2="211.9" y2="115.7"/>
+<circle class="mcp" cx="211.9" cy="111.2" r="3"><title>122.1 кэВ (Co-57): МК/эксп 0.820 ± 0.041</title></circle>
+<line class="mcerr" x1="321.5" y1="78.8" x2="321.5" y2="97.3"/>
+<circle class="mcp" cx="321.5" cy="88.0" r="3"><title>238.6 кэВ (Th-228): МК/эксп 1.037 ± 0.086</title></circle>
+<line class="mcerr" x1="325.6" y1="103.1" x2="325.6" y2="108.8"/>
+<circle class="mcp" cx="325.6" cy="106.0" r="3"><title>244.7 кэВ (Eu-152): МК/эксп 0.869 ± 0.027</title></circle>
+<line class="mcerr" x1="360.5" y1="91.0" x2="360.5" y2="97.7"/>
+<circle class="mcp" cx="360.5" cy="94.3" r="3"><title>302.9 кэВ (Ba-133): МК/эксп 0.978 ± 0.031</title></circle>
+<line class="mcerr" x1="381.5" y1="98.1" x2="381.5" y2="104.3"/>
+<circle class="mcp" cx="381.5" cy="101.2" r="3"><title>344.3 кэВ (Eu-152): МК/эксп 0.914 ± 0.029</title></circle>
+<line class="mcerr" x1="387.0" y1="94.5" x2="387.0" y2="99.7"/>
+<circle class="mcp" cx="387.0" cy="97.1" r="3"><title>356.0 кэВ (Ba-133): МК/эксп 0.952 ± 0.024</title></circle>
+<line class="mcerr" x1="467.6" y1="94.6" x2="467.6" y2="98.1"/>
+<line class="corr" x1="467.6" y1="96.3" x2="467.6" y2="109.4"/>
+<circle class="corrp" cx="467.6" cy="109.4" r="2.4"><title>583.2 кэВ, с поправкой на суммирование: 0.837</title></circle>
+<circle class="mcp" cx="467.6" cy="96.3" r="3"><title>583.2 кэВ (Th-228): МК/эксп 0.959 ± 0.017</title></circle>
+<line class="mcerr" x1="488.3" y1="98.3" x2="488.3" y2="101.7"/>
+<line class="corr" x1="488.3" y1="100.0" x2="488.3" y2="98.3"/>
+<circle class="corrp" cx="488.3" cy="98.3" r="2.4"><title>661.7 кэВ, с поправкой на суммирование: 0.941</title></circle>
+<circle class="mcp" cx="488.3" cy="100.0" r="3"><title>661.7 кэВ (Cs-137): МК/эксп 0.925 ± 0.016</title></circle>
+<line class="mcerr" x1="503.8" y1="93.9" x2="503.8" y2="99.9"/>
+<circle class="mcp" cx="503.8" cy="96.9" r="3"><title>727.3 кэВ (Th-228): МК/эксп 0.954 ± 0.028</title></circle>
+<line class="mcerr" x1="526.3" y1="100.4" x2="526.3" y2="105.8"/>
+<circle class="mcp" cx="526.3" cy="103.1" r="3"><title>834.9 кэВ (Mn-54): МК/эксп 0.896 ± 0.025</title></circle>
+<line class="mcerr" x1="531.3" y1="93.2" x2="531.3" y2="98.8"/>
+<circle class="mcp" cx="531.3" cy="96.0" r="3"><title>860.6 кэВ (Th-228): МК/эксп 0.963 ± 0.027</title></circle>
+<line class="mcerr" x1="538.2" y1="95.4" x2="538.2" y2="100.5"/>
+<circle class="mcp" cx="538.2" cy="98.0" r="3"><title>898.0 кэВ (Y-88): МК/эксп 0.944 ± 0.024</title></circle>
+<line class="mcerr" x1="549.8" y1="103.8" x2="549.8" y2="109.7"/>
+<circle class="mcp" cx="549.8" cy="106.7" r="3"><title>964.1 кэВ (Eu-152): МК/эксп 0.862 ± 0.028</title></circle>
+<line class="mcerr" x1="573.7" y1="95.8" x2="573.7" y2="101.4"/>
+<circle class="mcp" cx="573.7" cy="98.6" r="3"><title>1115.5 кэВ (Zn-65): МК/эксп 0.938 ± 0.027</title></circle>
+<line class="mcerr" x1="581.9" y1="75.3" x2="581.9" y2="82.0"/>
+<circle class="mcp" cx="581.9" cy="78.6" r="3"><title>1173.2 кэВ (Co-60): МК/эксп 1.125 ± 0.031</title></circle>
+<line class="mcerr" x1="595.5" y1="86.3" x2="595.5" y2="93.3"/>
+<circle class="mcp" cx="595.5" cy="89.8" r="3"><title>1274.5 кэВ (Na-22): МК/эксп 1.020 ± 0.033</title></circle>
+<line class="mcerr" x1="602.8" y1="77.6" x2="602.8" y2="84.2"/>
+<circle class="mcp" cx="602.8" cy="80.9" r="3"><title>1332.5 кэВ (Co-60): МК/эксп 1.104 ± 0.031</title></circle>
+<line class="mcerr" x1="611.8" y1="83.6" x2="611.8" y2="90.0"/>
+<circle class="mcp" cx="611.8" cy="86.8" r="3"><title>1408.0 кэВ (Eu-152): МК/эксп 1.049 ± 0.030</title></circle>
+<line class="mcerr" x1="655.2" y1="87.5" x2="655.2" y2="93.0"/>
+<circle class="mcp" cx="655.2" cy="90.2" r="3"><title>1836.1 кэВ (Y-88): МК/эксп 1.017 ± 0.026</title></circle>
+<line class="mcerr" x1="713.0" y1="75.4" x2="713.0" y2="80.3"/>
+<line class="corr" x1="713.0" y1="77.9" x2="713.0" y2="96.7"/>
+<circle class="corrp" cx="713.0" cy="96.7" r="2.4"><title>2614.5 кэВ, с поправкой на суммирование: 0.956</title></circle>
+<circle class="mcp" cx="713.0" cy="77.9" r="3"><title>2614.5 кэВ (Th-228): МК/эксп 1.132 ± 0.023</title></circle>
+<text class="axt" x="406.0" y="169" text-anchor="middle">энергия, кэВ</text>
+</svg>
+<p class="cap">Отношение расчёт/измерение по линиям. Средневзвешенное
+(в логарифме, как в отчёте) 0,957 по 24 точкам, разброс формы RMS 11,1 %; медиана
+0,948. Сиреневым — куда точка уходит после деления на поправку каскадного
+суммирования там, где она посчитана: измерение теряет отсчёты из пика на
+совпадениях, расчёт моноэнергетической сетки — нет.</p>
+</figure>
+<div class="tw"><table>
+<thead><tr><th class="n">E, кэВ</th><th>по нуклиду</th>
+<th class="n">измерено, %</th><th class="n">расчёт, %</th>
+<th class="n">МК/эксп</th><th class="n">C → с поправкой</th>
+<th>расчёт взят</th></tr></thead>
+<tbody><tr><td class='n'>59,5</td><td>Am-241</td><td class='n'>4.462</td><td class='n'>3.211</td><td class='n'>0,720</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>81,0</td><td>Ba-133</td><td class='n'>4.571</td><td class='n'>3.438</td><td class='n'>0,752</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>88,0</td><td>Cd-109</td><td class='n'>4.274</td><td class='n'>3.574</td><td class='n'>0,836</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>121,8</td><td>Eu-152</td><td class='n'>4.138</td><td class='n'>3.523</td><td class='n'>0,851</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>122,1</td><td>Co-57</td><td class='n'>4.299</td><td class='n'>3.523</td><td class='n'>0,820</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>238,6</td><td>Th-228</td><td class='n'>2.84</td><td class='n'>2.945</td><td class='n'>1,037</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>244,7</td><td>Eu-152</td><td class='n'>3.331</td><td class='n'>2.895</td><td class='n'>0,869</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>302,9</td><td>Ba-133</td><td class='n'>2.577</td><td class='n'>2.521</td><td class='n'>0,978</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>344,3</td><td>Eu-152</td><td class='n'>2.504</td><td class='n'>2.289</td><td class='n'>0,914</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>356,0</td><td>Ba-133</td><td class='n'>2.34</td><td class='n'>2.229</td><td class='n'>0,952</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>583,2</td><td>Th-228</td><td class='n'>1.472</td><td class='n'>1.412</td><td class='n'>0,959</td><td class='n'>1,146 → 0,837</td><td>узел</td></tr><tr><td class='n'>661,7</td><td>Cs-137</td><td class='n'>1.374</td><td class='n'>1.271</td><td class='n'>0,925</td><td class='n'>0,983 → 0,941</td><td>узел</td></tr><tr><td class='n'>727,3</td><td>Th-228</td><td class='n'>1.212</td><td class='n'>1.157</td><td class='n'>0,954</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>834,9</td><td>Mn-54</td><td class='n'>1.13</td><td class='n'>1.012</td><td class='n'>0,896</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>860,6</td><td>Th-228</td><td class='n'>1.021</td><td class='n'>0.9831</td><td class='n'>0,963</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>898,0</td><td>Y-88</td><td class='n'>0.9998</td><td class='n'>0.9436</td><td class='n'>0,944</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>964,1</td><td>Eu-152</td><td class='n'>1.023</td><td class='n'>0.8818</td><td class='n'>0,862</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>1115,5</td><td>Zn-65</td><td class='n'>0.819</td><td class='n'>0.7684</td><td class='n'>0,938</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>1173,2</td><td>Co-60</td><td class='n'>0.6514</td><td class='n'>0.7331</td><td class='n'>1,125</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>1274,5</td><td>Na-22</td><td class='n'>0.6655</td><td class='n'>0.6791</td><td class='n'>1,020</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>1332,5</td><td>Co-60</td><td class='n'>0.5903</td><td class='n'>0.6519</td><td class='n'>1,104</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>1408,0</td><td>Eu-152</td><td class='n'>0.591</td><td class='n'>0.6199</td><td class='n'>1,049</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>1836,1</td><td>Y-88</td><td class='n'>0.4787</td><td class='n'>0.4867</td><td class='n'>1,017</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>2614,5</td><td>Th-228</td><td class='n'>0.3033</td><td class='n'>0.3434</td><td class='n'>1,132</td><td class='n'>1,185 → 0,956</td><td>узел</td></tr></tbody></table></div>
+
+<h3>Точечная, 25 см</h3>
+<p>Точечный источник на 25 см, крышка защиты СНЯТА. Вторая, независимая проверка детектора — в другой конфигурации защиты.</p>
+<figure><svg viewBox="0 0 760 400" class="plot" role="img" aria-label="Эффективность ППП: расчёт и измерение">
+<line class="grid" x1="66.0" y1="14.0" x2="66.0" y2="356.0"/>
+<text class="ax" x="66.0" y="372" text-anchor="middle">50</text>
+<line class="grid" x1="179.3" y1="14.0" x2="179.3" y2="356.0"/>
+<text class="ax" x="179.3" y="372" text-anchor="middle">100</text>
+<line class="grid" x1="292.7" y1="14.0" x2="292.7" y2="356.0"/>
+<text class="ax" x="292.7" y="372" text-anchor="middle">200</text>
+<line class="grid" x1="442.5" y1="14.0" x2="442.5" y2="356.0"/>
+<text class="ax" x="442.5" y="372" text-anchor="middle">500</text>
+<line class="grid" x1="555.8" y1="14.0" x2="555.8" y2="356.0"/>
+<text class="ax" x="555.8" y="372" text-anchor="middle">1000</text>
+<line class="grid" x1="669.2" y1="14.0" x2="669.2" y2="356.0"/>
+<text class="ax" x="669.2" y="372" text-anchor="middle">2000</text>
+<line class="grid" x1="735.4" y1="14.0" x2="735.4" y2="356.0"/>
+<text class="ax" x="735.4" y="372" text-anchor="middle">3000</text>
+<line class="grid" x1="66" y1="314.1" x2="746" y2="314.1"/>
+<text class="ax" x="60" y="318.1" text-anchor="end">0.02</text>
+<line class="grid" x1="66" y1="236.4" x2="746" y2="236.4"/>
+<text class="ax" x="60" y="240.4" text-anchor="end">0.05</text>
+<line class="grid" x1="66" y1="177.7" x2="746" y2="177.7"/>
+<text class="ax" x="60" y="181.7" text-anchor="end">0.1</text>
+<line class="grid" x1="66" y1="118.9" x2="746" y2="118.9"/>
+<text class="ax" x="60" y="122.9" text-anchor="end">0.2</text>
+<line class="grid" x1="66" y1="41.2" x2="746" y2="41.2"/>
+<text class="ax" x="60" y="45.2" text-anchor="end">0.5</text>
+<text class="axt" x="406.0" y="394" text-anchor="middle">энергия, кэВ</text>
+<text class="axt" transform="translate(14,185.0) rotate(-90)" text-anchor="middle">эффективность ППП, %</text>
+<path class="mc" d="M94.4,111.3 L158.4,103.7 L212.0,104.5 L262.1,104.5 L321.5,107.5 L323.8,107.8 L356.3,113.1 L378.6,121.9 L385.1,123.3 L429.9,141.5 L467.6,158.7 L474.8,162.5 L488.3,167.3 L512.7,177.9 L540.6,190.8 L574.4,207.3 L617.8,228.6 L648.7,239.7 L713.0,272.9 L735.4,289.2"/>
+<line class="mcerr" x1="94.4" y1="109.4" x2="94.4" y2="113.2"/>
+<circle class="mcp" cx="94.4" cy="111.3" r="2.6"><title>расчёт: 59.5 кэВ, 0.2188 %</title></circle>
+<line class="mcerr" x1="158.4" y1="101.5" x2="158.4" y2="105.9"/>
+<circle class="mcp" cx="158.4" cy="103.7" r="2.6"><title>расчёт: 88.0 кэВ, 0.2394 %</title></circle>
+<line class="mcerr" x1="212.0" y1="102.1" x2="212.0" y2="106.9"/>
+<circle class="mcp" cx="212.0" cy="104.5" r="2.6"><title>расчёт: 122.1 кэВ, 0.2371 %</title></circle>
+<line class="mcerr" x1="262.1" y1="102.7" x2="262.1" y2="106.3"/>
+<circle class="mcp" cx="262.1" cy="104.5" r="2.6"><title>расчёт: 165.9 кэВ, 0.2371 %</title></circle>
+<line class="mcerr" x1="321.5" y1="106.3" x2="321.5" y2="108.7"/>
+<circle class="mcp" cx="321.5" cy="107.5" r="2.6"><title>расчёт: 238.6 кэВ, 0.2288 %</title></circle>
+<line class="mcerr" x1="323.8" y1="106.7" x2="323.8" y2="109.0"/>
+<circle class="mcp" cx="323.8" cy="107.8" r="2.6"><title>расчёт: 242.0 кэВ, 0.228 %</title></circle>
+<line class="mcerr" x1="356.3" y1="112.1" x2="356.3" y2="114.0"/>
+<circle class="mcp" cx="356.3" cy="113.1" r="2.6"><title>расчёт: 295.2 кэВ, 0.2143 %</title></circle>
+<line class="mcerr" x1="378.6" y1="121.0" x2="378.6" y2="122.8"/>
+<circle class="mcp" cx="378.6" cy="121.9" r="2.6"><title>расчёт: 338.3 кэВ, 0.1931 %</title></circle>
+<line class="mcerr" x1="385.1" y1="122.4" x2="385.1" y2="124.2"/>
+<circle class="mcp" cx="385.1" cy="123.3" r="2.6"><title>расчёт: 351.9 кэВ, 0.19 %</title></circle>
+<line class="mcerr" x1="429.9" y1="140.5" x2="429.9" y2="142.4"/>
+<circle class="mcp" cx="429.9" cy="141.5" r="2.6"><title>расчёт: 463.0 кэВ, 0.1533 %</title></circle>
+<line class="mcerr" x1="467.6" y1="157.8" x2="467.6" y2="159.7"/>
+<circle class="mcp" cx="467.6" cy="158.7" r="2.6"><title>расчёт: 583.2 кэВ, 0.125 %</title></circle>
+<line class="mcerr" x1="474.8" y1="161.5" x2="474.8" y2="163.5"/>
+<circle class="mcp" cx="474.8" cy="162.5" r="2.6"><title>расчёт: 609.3 кэВ, 0.1196 %</title></circle>
+<line class="mcerr" x1="488.3" y1="166.3" x2="488.3" y2="168.4"/>
+<circle class="mcp" cx="488.3" cy="167.3" r="2.6"><title>расчёт: 661.7 кэВ, 0.113 %</title></circle>
+<line class="mcerr" x1="512.7" y1="176.8" x2="512.7" y2="179.0"/>
+<circle class="mcp" cx="512.7" cy="177.9" r="2.6"><title>расчёт: 768.4 кэВ, 0.09973 %</title></circle>
+<line class="mcerr" x1="540.6" y1="189.6" x2="540.6" y2="192.0"/>
+<circle class="mcp" cx="540.6" cy="190.8" r="2.6"><title>расчёт: 911.2 кэВ, 0.08569 %</title></circle>
+<line class="mcerr" x1="574.4" y1="206.0" x2="574.4" y2="208.6"/>
+<circle class="mcp" cx="574.4" cy="207.3" r="2.6"><title>расчёт: 1120.3 кэВ, 0.07051 %</title></circle>
+<line class="mcerr" x1="617.8" y1="227.1" x2="617.8" y2="230.1"/>
+<circle class="mcp" cx="617.8" cy="228.6" r="2.6"><title>расчёт: 1460.8 кэВ, 0.05483 %</title></circle>
+<line class="mcerr" x1="648.7" y1="238.2" x2="648.7" y2="241.3"/>
+<circle class="mcp" cx="648.7" cy="239.7" r="2.6"><title>расчёт: 1764.5 кэВ, 0.04809 %</title></circle>
+<line class="mcerr" x1="713.0" y1="271.0" x2="713.0" y2="274.9"/>
+<circle class="mcp" cx="713.0" cy="272.9" r="2.6"><title>расчёт: 2614.5 кэВ, 0.0325 %</title></circle>
+<line class="mcerr" x1="735.4" y1="287.1" x2="735.4" y2="291.3"/>
+<circle class="mcp" cx="735.4" cy="289.2" r="2.6"><title>расчёт: 3000.0 кэВ, 0.02684 %</title></circle>
+<line class="experr" x1="94.6" y1="85.9" x2="94.6" y2="96.9"/>
+<rect class="expp" x="91.6" y="88.2" width="6" height="6"><title>измерение (Am-241): 59.5 кэВ, 0.2772 % ± 0.018</title></rect>
+<line class="experr" x1="144.9" y1="77.1" x2="144.9" y2="84.7"/>
+<rect class="expp" x="141.9" y="77.8" width="6" height="6"><title>измерение (Ba-133): 81.0 кэВ, 0.3134 % ± 0.014</title></rect>
+<line class="experr" x1="211.6" y1="80.4" x2="211.6" y2="85.0"/>
+<rect class="expp" x="208.6" y="79.7" width="6" height="6"><title>измерение (Eu-152): 121.8 кэВ, 0.3068 % ± 0.0083</title></rect>
+<line class="experr" x1="321.5" y1="88.0" x2="321.5" y2="93.5"/>
+<rect class="expp" x="318.5" y="87.7" width="6" height="6"><title>измерение (Th-228): 238.6 кэВ, 0.279 % ± 0.0091</title></rect>
+<line class="experr" x1="360.5" y1="99.1" x2="360.5" y2="105.1"/>
+<rect class="expp" x="357.5" y="99.0" width="6" height="6"><title>измерение (Ba-133): 302.9 кэВ, 0.244 % ± 0.0086</title></rect>
+<line class="experr" x1="381.5" y1="108.6" x2="381.5" y2="112.5"/>
+<rect class="expp" x="378.5" y="107.5" width="6" height="6"><title>измерение (Eu-152): 344.3 кэВ, 0.2209 % ± 0.0051</title></rect>
+<line class="experr" x1="387.0" y1="111.1" x2="387.0" y2="113.7"/>
+<rect class="expp" x="384.0" y="109.4" width="6" height="6"><title>измерение (Ba-133): 356.0 кэВ, 0.2159 % ± 0.0032</title></rect>
+<line class="experr" x1="467.6" y1="146.9" x2="467.6" y2="149.9"/>
+<rect class="expp" x="464.6" y="145.4" width="6" height="6"><title>измерение (Th-228): 583.2 кэВ, 0.1412 % ± 0.0025</title></rect>
+<line class="experr" x1="488.3" y1="159.4" x2="488.3" y2="162.0"/>
+<rect class="expp" x="485.3" y="157.7" width="6" height="6"><title>измерение (Cs-137): 661.7 кэВ, 0.1222 % ± 0.0019</title></rect>
+<line class="experr" x1="526.3" y1="176.3" x2="526.3" y2="179.3"/>
+<rect class="expp" x="523.3" y="174.8" width="6" height="6"><title>измерение (Mn-54): 834.9 кэВ, 0.09984 % ± 0.0018</title></rect>
+<line class="experr" x1="538.2" y1="184.6" x2="538.2" y2="187.4"/>
+<rect class="expp" x="535.2" y="183.0" width="6" height="6"><title>измерение (Y-88): 898.0 кэВ, 0.09064 % ± 0.0015</title></rect>
+<line class="experr" x1="549.8" y1="191.5" x2="549.8" y2="195.6"/>
+<rect class="expp" x="546.8" y="190.5" width="6" height="6"><title>измерение (Eu-152): 964.1 кэВ, 0.08293 % ± 0.002</title></rect>
+<line class="experr" x1="569.3" y1="197.6" x2="569.3" y2="200.5"/>
+<rect class="expp" x="566.3" y="196.1" width="6" height="6"><title>измерение (Eu-152): 1085.9 кэВ, 0.07768 % ± 0.0013</title></rect>
+<line class="experr" x1="573.2" y1="197.7" x2="573.2" y2="200.5"/>
+<rect class="expp" x="570.2" y="196.1" width="6" height="6"><title>измерение (Eu-152): 1112.1 кэВ, 0.07767 % ± 0.0013</title></rect>
+<line class="experr" x1="581.9" y1="207.5" x2="581.9" y2="209.6"/>
+<rect class="expp" x="578.9" y="205.6" width="6" height="6"><title>измерение (Co-60): 1173.2 кэВ, 0.06946 % ± 0.00083</title></rect>
+<line class="experr" x1="595.5" y1="209.2" x2="595.5" y2="213.5"/>
+<rect class="expp" x="592.5" y="208.3" width="6" height="6"><title>измерение (Na-22): 1274.5 кэВ, 0.06723 % ± 0.0017</title></rect>
+<line class="experr" x1="602.8" y1="217.2" x2="602.8" y2="219.3"/>
+<rect class="expp" x="599.8" y="215.2" width="6" height="6"><title>измерение (Co-60): 1332.5 кэВ, 0.06198 % ± 0.00076</title></rect>
+<line class="experr" x1="611.8" y1="215.9" x2="611.8" y2="219.4"/>
+<rect class="expp" x="608.8" y="214.7" width="6" height="6"><title>измерение (Eu-152): 1408.0 кэВ, 0.06239 % ± 0.0013</title></rect>
+<line class="experr" x1="655.2" y1="243.8" x2="655.2" y2="246.6"/>
+<rect class="expp" x="652.2" y="242.2" width="6" height="6"><title>измерение (Y-88): 1836.1 кэВ, 0.04509 % ± 0.00076</title></rect>
+<line class="experr" x1="713.0" y1="276.7" x2="713.0" y2="279.7"/>
+<rect class="expp" x="710.0" y="275.2" width="6" height="6"><title>измерение (Th-228): 2614.5 кэВ, 0.03054 % ± 0.00053</title></rect>
+</svg>
+<p class="leg"><span class="k"><i style="border-color:var(--mc)"></i>расчёт (Geant4)</span><span class="k"><i style="border-color:var(--exp)"></i>измерение (паспортная кривая ЛСРМ)</span><span class="k"><i style="border-color:var(--med)"></i>медиана</span></p>
+<p class="cap">Точки измерения — УДС-ГЦ-63х63-USB__SN-01_-_Точечная-25см.efa, усы: паспортная погрешность. Расчёт —
+eff_p25cm.csv, усы: статистика прогона. Наведите курсор на точку, чтобы увидеть числа.</p>
+</figure>
+<figure><svg viewBox="0 0 760 170" class="plot ratio" role="img" aria-label="Отношение расчёт/измерение по точкам">
+<line class="grid" x1="66.0" y1="12" x2="66.0" y2="140"/>
+<text class="ax" x="66.0" y="158" text-anchor="middle">50</text>
+<line class="grid" x1="179.3" y1="12" x2="179.3" y2="140"/>
+<text class="ax" x="179.3" y="158" text-anchor="middle">100</text>
+<line class="grid" x1="292.7" y1="12" x2="292.7" y2="140"/>
+<text class="ax" x="292.7" y="158" text-anchor="middle">200</text>
+<line class="grid" x1="442.5" y1="12" x2="442.5" y2="140"/>
+<text class="ax" x="442.5" y="158" text-anchor="middle">500</text>
+<line class="grid" x1="555.8" y1="12" x2="555.8" y2="140"/>
+<text class="ax" x="555.8" y="158" text-anchor="middle">1000</text>
+<line class="grid" x1="669.2" y1="12" x2="669.2" y2="140"/>
+<text class="ax" x="669.2" y="158" text-anchor="middle">2000</text>
+<line class="grid" x1="735.4" y1="12" x2="735.4" y2="140"/>
+<text class="ax" x="735.4" y="158" text-anchor="middle">3000</text>
+<line class="grid" x1="66" y1="134.7" x2="746" y2="134.7"/>
+<text class="ax" x="60" y="138.7" text-anchor="end">0.6</text>
+<line class="grid" x1="66" y1="113.3" x2="746" y2="113.3"/>
+<text class="ax" x="60" y="117.3" text-anchor="end">0.8</text>
+<line class="one" x1="66" y1="92.0" x2="746" y2="92.0"/>
+<text class="ax" x="60" y="96.0" text-anchor="end">1.0</text>
+<line class="grid" x1="66" y1="70.7" x2="746" y2="70.7"/>
+<text class="ax" x="60" y="74.7" text-anchor="end">1.2</text>
+<line class="grid" x1="66" y1="49.3" x2="746" y2="49.3"/>
+<text class="ax" x="60" y="53.3" text-anchor="end">1.4</text>
+<line class="grid" x1="66" y1="28.0" x2="746" y2="28.0"/>
+<text class="ax" x="60" y="32.0" text-anchor="end">1.6</text>
+<line class="med" x1="66" y1="100.4" x2="746" y2="100.4"/>
+<line class="mcerr" x1="94.6" y1="108.7" x2="94.6" y2="120.3"/>
+<circle class="mcp" cx="94.6" cy="114.5" r="3"><title>59.5 кэВ (Am-241): МК/эксп 0.789 ± 0.054</title></circle>
+<line class="mcerr" x1="144.9" y1="119.0" x2="144.9" y2="126.5"/>
+<circle class="mcp" cx="144.9" cy="122.8" r="3"><title>81.0 кэВ (Ba-133): МК/эксп 0.712 ± 0.035</title></circle>
+<line class="mcerr" x1="211.6" y1="113.0" x2="211.6" y2="119.4"/>
+<circle class="mcp" cx="211.6" cy="116.2" r="3"><title>121.8 кэВ (Eu-152): МК/эксп 0.773 ± 0.030</title></circle>
+<line class="mcerr" x1="321.5" y1="108.1" x2="321.5" y2="114.3"/>
+<circle class="mcp" cx="321.5" cy="111.2" r="3"><title>238.6 кэВ (Th-228): МК/эксп 0.820 ± 0.029</title></circle>
+<line class="mcerr" x1="360.5" y1="104.7" x2="360.5" y2="112.0"/>
+<circle class="mcp" cx="360.5" cy="108.4" r="3"><title>302.9 кэВ (Ba-133): МК/эксп 0.846 ± 0.034</title></circle>
+<line class="mcerr" x1="381.5" y1="103.5" x2="381.5" y2="109.2"/>
+<circle class="mcp" cx="381.5" cy="106.3" r="3"><title>344.3 кэВ (Eu-152): МК/эксп 0.865 ± 0.026</title></circle>
+<line class="mcerr" x1="387.0" y1="104.0" x2="387.0" y2="108.6"/>
+<circle class="mcp" cx="387.0" cy="106.3" r="3"><title>356.0 кэВ (Ba-133): МК/эксп 0.866 ± 0.022</title></circle>
+<line class="mcerr" x1="467.6" y1="102.2" x2="467.6" y2="106.2"/>
+<line class="corr" x1="467.6" y1="104.2" x2="467.6" y2="116.3"/>
+<circle class="corrp" cx="467.6" cy="116.3" r="2.4"><title>583.2 кэВ, с поправкой на суммирование: 0.773</title></circle>
+<circle class="mcp" cx="467.6" cy="104.2" r="3"><title>583.2 кэВ (Th-228): МК/эксп 0.885 ± 0.019</title></circle>
+<line class="mcerr" x1="488.3" y1="98.0" x2="488.3" y2="101.9"/>
+<line class="corr" x1="488.3" y1="100.0" x2="488.3" y2="98.2"/>
+<circle class="corrp" cx="488.3" cy="98.2" r="2.4"><title>661.7 кэВ, с поправкой на суммирование: 0.942</title></circle>
+<circle class="mcp" cx="488.3" cy="100.0" r="3"><title>661.7 кэВ (Cs-137): МК/эксп 0.925 ± 0.018</title></circle>
+<line class="mcerr" x1="526.3" y1="98.2" x2="526.3" y2="103.5"/>
+<circle class="mcp" cx="526.3" cy="100.9" r="3"><title>834.9 кэВ (Mn-54): МК/эксп 0.917 ± 0.025</title></circle>
+<line class="mcerr" x1="538.2" y1="95.2" x2="538.2" y2="100.4"/>
+<circle class="mcp" cx="538.2" cy="97.8" r="3"><title>898.0 кэВ (Y-88): МК/эксп 0.946 ± 0.024</title></circle>
+<line class="mcerr" x1="549.8" y1="91.9" x2="549.8" y2="98.5"/>
+<circle class="mcp" cx="549.8" cy="95.2" r="3"><title>964.1 кэВ (Eu-152): МК/эксп 0.970 ± 0.031</title></circle>
+<line class="mcerr" x1="569.3" y1="96.6" x2="569.3" y2="101.9"/>
+<circle class="mcp" cx="569.3" cy="99.2" r="3"><title>1085.9 кэВ (Eu-152): МК/эксп 0.932 ± 0.024</title></circle>
+<line class="mcerr" x1="573.2" y1="98.7" x2="573.2" y2="103.8"/>
+<circle class="mcp" cx="573.2" cy="101.3" r="3"><title>1112.1 кэВ (Eu-152): МК/эксп 0.913 ± 0.024</title></circle>
+<line class="mcerr" x1="581.9" y1="92.4" x2="581.9" y2="97.2"/>
+<circle class="mcp" cx="581.9" cy="94.8" r="3"><title>1173.2 кэВ (Co-60): МК/эксп 0.974 ± 0.023</title></circle>
+<line class="mcerr" x1="595.5" y1="95.5" x2="595.5" y2="102.0"/>
+<circle class="mcp" cx="595.5" cy="98.8" r="3"><title>1274.5 кэВ (Na-22): МК/эксп 0.937 ± 0.030</title></circle>
+<line class="mcerr" x1="602.8" y1="91.9" x2="602.8" y2="96.8"/>
+<circle class="mcp" cx="602.8" cy="94.4" r="3"><title>1332.5 кэВ (Co-60): МК/эксп 0.978 ± 0.023</title></circle>
+<line class="mcerr" x1="611.8" y1="97.0" x2="611.8" y2="102.7"/>
+<circle class="mcp" cx="611.8" cy="99.9" r="3"><title>1408.0 кэВ (Eu-152): МК/эксп 0.926 ± 0.027</title></circle>
+<line class="mcerr" x1="655.2" y1="87.4" x2="655.2" y2="93.1"/>
+<circle class="mcp" cx="655.2" cy="90.3" r="3"><title>1836.1 кэВ (Y-88): МК/эксп 1.016 ± 0.027</title></circle>
+<line class="mcerr" x1="713.0" y1="81.9" x2="713.0" y2="88.4"/>
+<line class="corr" x1="713.0" y1="85.2" x2="713.0" y2="102.9"/>
+<circle class="corrp" cx="713.0" cy="102.9" r="2.4"><title>2614.5 кэВ, с поправкой на суммирование: 0.898</title></circle>
+<circle class="mcp" cx="713.0" cy="85.2" r="3"><title>2614.5 кэВ (Th-228): МК/эксп 1.064 ± 0.030</title></circle>
+<text class="axt" x="406.0" y="169" text-anchor="middle">энергия, кэВ</text>
+</svg>
+<p class="cap">Отношение расчёт/измерение по линиям. Средневзвешенное
+(в логарифме, как в отчёте) 0,921 по 20 точкам, разброс формы RMS 9,3 %; медиана
+0,921. Сиреневым — куда точка уходит после деления на поправку каскадного
+суммирования там, где она посчитана: измерение теряет отсчёты из пика на
+совпадениях, расчёт моноэнергетической сетки — нет.</p>
+</figure>
+<div class="tw"><table>
+<thead><tr><th class="n">E, кэВ</th><th>по нуклиду</th>
+<th class="n">измерено, %</th><th class="n">расчёт, %</th>
+<th class="n">МК/эксп</th><th class="n">C → с поправкой</th>
+<th>расчёт взят</th></tr></thead>
+<tbody><tr><td class='n'>59,5</td><td>Am-241</td><td class='n'>0.2772</td><td class='n'>0.2188</td><td class='n'>0,789</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>81,0</td><td>Ba-133</td><td class='n'>0.3134</td><td class='n'>0.223</td><td class='n'>0,712</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>121,8</td><td>Eu-152</td><td class='n'>0.3068</td><td class='n'>0.2371</td><td class='n'>0,773</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>238,6</td><td>Th-228</td><td class='n'>0.279</td><td class='n'>0.2288</td><td class='n'>0,820</td><td class='n'>—</td><td>узел</td></tr><tr><td class='n'>302,9</td><td>Ba-133</td><td class='n'>0.244</td><td class='n'>0.2065</td><td class='n'>0,846</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>344,3</td><td>Eu-152</td><td class='n'>0.2209</td><td class='n'>0.1912</td><td class='n'>0,865</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>356,0</td><td>Ba-133</td><td class='n'>0.2159</td><td class='n'>0.187</td><td class='n'>0,866</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>583,2</td><td>Th-228</td><td class='n'>0.1412</td><td class='n'>0.125</td><td class='n'>0,885</td><td class='n'>1,146 → 0,773</td><td>узел</td></tr><tr><td class='n'>661,7</td><td>Cs-137</td><td class='n'>0.1222</td><td class='n'>0.113</td><td class='n'>0,925</td><td class='n'>0,983 → 0,942</td><td>узел</td></tr><tr><td class='n'>834,9</td><td>Mn-54</td><td class='n'>0.09984</td><td class='n'>0.09154</td><td class='n'>0,917</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>898,0</td><td>Y-88</td><td class='n'>0.09064</td><td class='n'>0.08572</td><td class='n'>0,946</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>964,1</td><td>Eu-152</td><td class='n'>0.08293</td><td class='n'>0.08045</td><td class='n'>0,970</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>1085,9</td><td>Eu-152</td><td class='n'>0.07768</td><td class='n'>0.0724</td><td class='n'>0,932</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>1112,1</td><td>Eu-152</td><td class='n'>0.07767</td><td class='n'>0.0709</td><td class='n'>0,913</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>1173,2</td><td>Co-60</td><td class='n'>0.06946</td><td class='n'>0.06766</td><td class='n'>0,974</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>1274,5</td><td>Na-22</td><td class='n'>0.06723</td><td class='n'>0.06297</td><td class='n'>0,937</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>1332,5</td><td>Co-60</td><td class='n'>0.06198</td><td class='n'>0.0606</td><td class='n'>0,978</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>1408,0</td><td>Eu-152</td><td class='n'>0.06239</td><td class='n'>0.05778</td><td class='n'>0,926</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>1836,1</td><td>Y-88</td><td class='n'>0.04509</td><td class='n'>0.04583</td><td class='n'>1,016</td><td class='n'>—</td><td>интерп.</td></tr><tr><td class='n'>2614,5</td><td>Th-228</td><td class='n'>0.03054</td><td class='n'>0.0325</td><td class='n'>1,064</td><td class='n'>1,185 → 0,898</td><td>узел</td></tr></tbody></table></div>
+
+
+<h2>Как это воспроизвести</h2>
+
+<p>Страница собирается из того, что лежит в репозитории, одной командой —
+чисел, вписанных руками, здесь нет:</p>
+
+<p><code>python detectors/Gamma-1S/analysis/build_web.py</code></p>
+
+<p><b>Правило отбора точек, чтобы числа можно было проверить.</b> Берутся все
+линии паспортной кривой, попадающие в диапазон расчётной сетки
+(59,5–3000 кэВ). Расчёт берётся из узла сетки, если он ближе 1 кэВ, иначе
+интерполяцией полиномом 5-й степени по log-log — той же процедурой, которой
+строится рабочая кривая. Отношения усредняются в логарифме с весом
+1/&sigma;². Отдельные скрипты в репозитории считают те же геометрии со своим,
+более узким отбором точек: по маринелли и «Денте» результаты совпадают в
+пределах 0,5 %, по Петри расходятся на 5 % — там из 19 линий отбирается 14.
+Все использованные точки перечислены в таблицах выше, так что пересчитать
+можно любым способом.</p>
+
+<p>Расчётные кривые — <code>detectors/Gamma-1S/results/eff_*.csv</code>,
+паспортные — <code>reference/lsrm/efficiency/</code>, поправки на
+суммирование — <code>results/summing_C.csv</code>, пересчёт комплекта —
+<code>results/kit_recalc_*.csv</code>. Сами расчётные спектры (258 файлов) в
+репозиторий не входят: они воспроизводятся драйверами из
+<code>drivers/</code>.</p>
+
+<p class="foot">Полный отчёт со всеми оговорками —
+<a href="https://github.com/VibeEngineering-LLC/geant4-detector-models/blob/main/detectors/Gamma-1S/REPORT.md">REPORT.md</a>.
+Протокол обязательных проверок и список ловушек —
+<a href="https://github.com/VibeEngineering-LLC/geant4-detector-models/tree/main/common/docs">common/docs</a>.
+Исходники —
+<a href="https://github.com/VibeEngineering-LLC/geant4-detector-models">на GitHub</a>.
+Эталонные данные обезличены: фамилии операторов и номера приборов заменены
+псевдонимами, соответствие подлинным не публикуется.<br>
+Текст, код и графики этой страницы подготовлены с участием ИИ (Claude, модель
+Opus&nbsp;5) под проверкой оператора; числа получены расчётом и приведены как
+есть.</p>

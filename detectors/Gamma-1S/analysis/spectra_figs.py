@@ -349,7 +349,7 @@ def record_block(geom, mask, nuc, aspec, dpct, d0, mass, vol, geom_title):
     files = _record_files(geom, mask)
     if not files:
         return "нет спектра записи (маска %s)" % mask
-    sp, bg = bm.read(files[0])
+    sp, bg, calib = bm.read_checked(files[0])
     txt = open(files[0], encoding="utf-8", errors="replace").read()
     md = re.search(r"<StartTime>(\d{4}-\d{2}-\d{2})", txt)
     md = md.group(1) if md else None
@@ -420,6 +420,15 @@ def record_block(geom, mask, nuc, aspec, dpct, d0, mass, vol, geom_title):
     h.append('<p class="cap">Живое время %s с, полный счёт %s имп/с, '
              'поправка на наложения %s. Паспорт на дату измерения %s Бк.</p>'
              % (ru(sp.live, 0), ru(R, 0), ru(pile, 3), ru(A0, 0)))
+    # Калибровка ФОНА проверяется отдельно от калибровки пробы — правило ЛСРМ.
+    if calib and calib.get("reason"):
+        sh = calib.get("shifts") or []
+        h.append('<p class="cap">Калибровка фона (проверяется независимо от '
+                 'пробы): %s.%s</p>'
+                 % (esc(calib["reason"]),
+                    "" if not sh else " Невязки якорей: " + ", ".join(
+                        "%s кэВ %+.2f ПШПВ" % (ru(E, 1), s) for E, s in sh)
+                    + "."))
     import json
     data = spectrum_data(sp, bg, marks, found)
     uid = "sp%d" % (abs(hash((geom, nuc))) % 100000)

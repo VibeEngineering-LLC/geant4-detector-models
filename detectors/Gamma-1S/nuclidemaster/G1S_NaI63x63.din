@@ -1,0 +1,118 @@
+//---------------------------------
+//DETECTOR PARAMETERS BLOCK:
+//---------------------------------
+//Detector types: COAXIAL, WELL, SCINTILLATOR
+//
+// UDS-G-63x63 (Gamma-1S) as modelled in geant4-detector-models,
+// detectors/Gamma-1S/geometry/G1SDetector.hh. Layer mapping, from
+// crystal outward (front): MgO 6.0 mm -> Al can 0.5 mm -> rubber 2.0 mm
+// -> Al case 1.5 mm. Side: MgO 3.65 -> Al 0.5 -> rubber 2.0 -> Al 1.5.
+// Two front layers OUTSIDE the case (air 0.5 mm + rubber protector
+// 1.0 mm) have no slot in this format; they are represented as a
+// 0.15 cm source-to-detector distance in the paired .sin file
+// (rubber vs air there costs ~1% transmission at 60 keV).
+// MgO density 2.0 g/cm3 = powder assumption, NOT sintered 3.58.
+
+
+DetectorType = SCINTILLATOR
+
+// Scintillator detector
+DS_CrystalDiameter = 6.3 cm
+DS_CrystalHeight = 6.3 cm
+DS_CrystalFrontReflectorThickness = 0.6 cm
+DS_CrystalSideReflectorThickness = 0.365 cm
+DS_CrystalFrontCladdingThickness = 0.05 cm
+DS_CrystalSideCladdingThickness = 0.05 cm
+DS_DetectorFrontPackagingThickness = 0.2 cm
+DS_DetectorSidePackagingThickness = 0.2 cm
+DS_DetectorFrontCapThickness = 0.15 cm
+DS_DetectorSideCapThickness = 0.15 cm
+DS_DetectorMountingThickness = 0.2 cm
+
+
+//---------------------------------
+//MATERIAL PARAMETERS BLOCK:
+//---------------------------------
+// Scintillation detector materials:
+//---------------------------
+
+
+// Crystal
+DS_nCrystalElements = 2
+DS_RoCrystal = 3.667
+DS_ZCrystal[0] = 11
+DS_FractionsCrystal[0] = 0.153373
+DS_ZCrystal[1] = 53
+DS_FractionsCrystal[1] = 0.846627
+DS_FractionTypeCrystal = MASS
+M_DS_Crystal.MName = NaI
+M_DS_Crystal.Nmaterials = 1
+M_DS_Crystal.Name[0] = NaI
+M_DS_Crystal.MatRelWeight[0] = 1
+
+
+// Crystal Cladding (hermetic Al can, 0.5 mm)
+DS_nCrystalCladdingElements = 1
+DS_RoCrystalCladding = 2.7
+DS_ZCrystalCladding[0] = 13
+DS_FractionsCrystalCladding[0] = 1
+DS_FractionTypeCrystalCladding = MASS
+M_DS_Crystal_Cladding.MName = Aluminium
+M_DS_Crystal_Cladding.Nmaterials = 1
+M_DS_Crystal_Cladding.Name[0] = Aluminium
+M_DS_Crystal_Cladding.MatRelWeight[0] = 1
+
+
+// Reflector: MgO POWDER, bulk density 2.0 (model assumption; sintered
+// ceramic would be 3.58)
+DS_nCrystalReflectorElements = 2
+DS_RoCrystalReflector = 2.0
+DS_ZCrystalReflector[0] = 8
+DS_FractionsCrystalReflector[0] = 0.396964
+DS_ZCrystalReflector[1] = 12
+DS_FractionsCrystalReflector[1] = 0.603036
+DS_FractionTypeReflector = MASS
+M_DS_Reflector.MName = MgO
+M_DS_Reflector.Nmaterials = 1
+M_DS_Reflector.Name[0] = MgO
+M_DS_Reflector.MatRelWeight[0] = 1
+
+
+// DetectorPackaging: rubber shock absorber 2 mm (natural rubber C5H8)
+DS_nDetectorPackagingElements = 2
+DS_RoDetectorPackaging = 0.92
+DS_ZDetectorPackaging[0] = 1
+DS_FractionsDetectorPackaging[0] = 0.118371
+DS_ZDetectorPackaging[1] = 6
+DS_FractionsDetectorPackaging[1] = 0.881629
+DS_FractionTypeDetectorPackaging = MASS
+M_DS_DetectorPackaging.MName = Rubber
+M_DS_DetectorPackaging.Nmaterials = 1
+M_DS_DetectorPackaging.Name[0] = Rubber
+M_DS_DetectorPackaging.MatRelWeight[0] = 1
+
+
+// DetectorCap: outer Al case 1.5 mm
+DS_nDetectorCapElements = 1
+DS_RoDetectorCap = 2.7
+DS_ZDetectorCap[0] = 13
+DS_FractionsDetectorCap[0] = 1
+DS_FractionTypeDetectorCap = MASS
+M_DS_DetectorCap.MName = Aluminium
+M_DS_DetectorCap.Nmaterials = 1
+M_DS_DetectorCap.Name[0] = Aluminium
+M_DS_DetectorCap.MatRelWeight[0] = 1
+
+
+//---------------------------------
+//COLOR PARAMETERS BLOCK:
+//---------------------------------
+//Scintillation detector colors:
+//---------------------------
+DS_Crystal_Color = 65535
+DS_CrystalCladding_Color = 16776960
+DS_CrystalReflector_Color = 16737843
+DS_CrystalPack_Color = 8421376
+DS_DetectorCap_Color = 65280
+
+

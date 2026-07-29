@@ -310,6 +310,25 @@ int main(int argc, char** argv) {
   rm->SetUserAction(evtAct);
   auto* mess = new OutMessenger(runAct);
 
+  // Угловые корреляции гамма-квантов каскада. По умолчанию в Geant4 выключены
+  // (G4DeexPrecoParameters: fCorrelatedGamma = false), и включить их из
+  // обычного макроса НЕЛЬЗЯ: это параметр деэксцитации, он принимается только
+  // до инициализации, а макрос выполняется после неё. Команда в макросе
+  // отвергается с «Illegal application state», причём КОД ВОЗВРАТА ОСТАЁТСЯ
+  // НУЛЕВЫМ — прогон выглядит успешным, корреляции молча не включаются, и
+  // сравнение «с флагом против без флага» показывает отсутствие эффекта по
+  // причине, не имеющей отношения к физике.
+  //
+  // Отсюда переменная окружения, а не аргумент: позиционные аргументы заняты
+  // и разобраны драйверами, а флаг нужен разово, под одну проверку.
+  if (const char* cg = std::getenv("G1S_CORRELATED_GAMMA")) {
+    if (std::string(cg) == "1") {
+      G4UImanager::GetUIpointer()->ApplyCommand(
+          "/process/had/deex/correlatedGamma true");
+      G4cout << "SETUP correlatedGamma = true (до инициализации)" << G4endl;
+    }
+  }
+
   rm->Initialize();
   det->ReportMasses();
   rm->SetUserAction(new Stepping(evtAct, det->fCrystalLV));

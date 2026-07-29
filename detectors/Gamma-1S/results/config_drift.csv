@@ -1,0 +1,21 @@
+# Сравнение резервного слепка конфигурации прибора (эпоха аттестации) с текущим lsrm.cnf.
+# Значения путей заменены на «(путь изменён)»: содержат личные имена каталогов.
+# Строки с заполненным affects меняют ПЛОЩАДЬ пика или бюджет неопределённости — то есть сопоставимость наших чисел с
+#   аттестационными. Прочие — имя профиля, даты, плагины.
+key,snapshot,current,affects
+CalcPlugins/Special reports,True,False,
+CalibrationFiles/EnergyCalibration,(путь изменён),(путь изменён),
+Default/ActivityCalcMethod,3,8,метод расчёта активности
+Detector/UseDoubleEscape,1,0,пик двойного вылета
+Detector/UseSingleEscape,1,0,пик одиночного вылета
+Detector/XEscCorrection,1,0,поправка на вылет характеристического кванта
+Fitting/Minimize,FWHM; Position; Linear,Position; Linear,
+Other/AppealDateTime,(путь изменён),(путь изменён),
+Processing/Background,(путь изменён),(путь изменён),
+Processing/ChBegin,10,15,начало диапазона обработки (канал)
+Processing/ConsiderApparatusPeaks,1,0,учёт аппаратурных пиков
+Processing/ConsiderBackScattering,0,1,учёт обратного рассеяния
+Representation/Background MDA,1,0,
+Representation/ConsiderMeasTime,0,1,распад за время измерения
+Spectrometer/IntegralNonlinearity,0.3,0,интегральная нелинейность (бюджет)
+Spectrometer/TimeInstability,0.03,0,временная нестабильность (бюджет)

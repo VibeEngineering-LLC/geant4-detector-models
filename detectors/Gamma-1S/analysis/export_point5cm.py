@@ -9,10 +9,14 @@
 площадями, зоны), а значения eps подменяются нашими из сетки p5cm
 (eps_net, лог-лог интерполяция между узлами сетки).
 
-Как и с маринелли: полином зон в шаблоне описывает ЧУЖУЮ кривую, поэтому
-файл годится (а) как вход редактора эффективности, который перестроит
-зоны по нашим точкам, (б) как проба «применяются ли точки вообще» — на
-маринелли ответ был отрицательный, программа считает по полиному.
+ПОЛИНОМ ЗОН ПЕРЕСЧИТЫВАЕТСЯ (efa_zones.py). Прежние версии оставляли
+секцию Zones мастерской, и это обесценивало весь файл: программа считает
+активность по полиному, а не по точкам. Проверено на Th-228 (точечная
+5 см, четыре прогона 30.07.2026, в том числе после применения калибровки
+по эффективности): фактически применённая эффективность равнялась узлам
+ЛСРМ (2614,5 кэВ — 2,915E-03 против узла 2,895E-03), а не нашим
+(3,697E-03), и активность совпадала со штатной до единицы. Выбор
+детектора при мастерском полиноме ни на что не влияет.
 
 Путь к мастеру задаётся переменной окружения G1S_LSRM_MASTER_EFA (файл
 рабочего каталога прибора, в репозиторий не входит: несёт заводской
@@ -30,7 +34,11 @@ Co-60, Na-22, Th-228). Шаблон берётся из committed reference — 
 import bisect
 import math
 import os
+import re
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import efa_zones  # noqa: E402
 
 RESULTS = os.path.abspath(os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "..", "results"))
@@ -89,20 +97,17 @@ if __name__ == "__main__":
         raise SystemExit("в мастере нет блока %s" % GEOM)
     eps = make_interp(curve_nodes(), 1)          # eps_net
 
-    out, n = [], 0
-    for ln in block:
-        if "=" in ln and "," in ln and ln[:1].isdigit():
-            key, rest = ln.split("=", 1)
-            parts = rest.split(",")
-            parts[0] = "%.6E" % eps(float(key))
-            ln = key + "=" + ",".join(parts)
-            n += 1
-        out.append(ln)
+    out, report = efa_zones.rewrite_block(block, eps)
+    n = sum(1 for ln in block
+            if "=" in ln and "," in ln and ln[:1].isdigit())
     body = "\r\n".join(out)
+    print("полином зон пересчитан под наши точки:")
+    for z, emin, emax, k, rms, dmax in report:
+        print("   зона %d: %.0f-%.0f кэВ, узлов %d, СКО %.2f %%,"
+              " макс. отклонение %.2f %%" % (z, emin, emax, k, rms, dmax))
 
     # В репозиторий — только обезличенная копия: заводской номер прибора
     # из шапки мастера заменяется на псевдоним, как в committed reference.
-    import re
     anon = re.sub(r"№\s*\d{3,4}-\d{2}", "№SN-01", body)
     dst = os.path.join(RESULTS, "efa_export", "G4MC_проба_Точечная-5см.efa")
     open(dst, "wb").write(anon.encode("cp1251"))

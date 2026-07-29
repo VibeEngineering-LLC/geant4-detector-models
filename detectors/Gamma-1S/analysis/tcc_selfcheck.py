@@ -43,6 +43,9 @@ from point_recalc import (
 )  # noqa: E402
 
 MONO_TAG = "tcc5cm"
+# Префикс файлов прогона распада: добор статистики пишется отдельно (p5x_),
+# чтобы штатный комплект оставался цел, пока идёт многочасовой счёт.
+DECAY_PREFIX = os.environ.get("G1S_DECAY_PREFIX", "p5_")
 
 # Полки подложки: [E-BG0, E-BG1] слева и [E+BG1, E+BG0] справа, окно пика ±WIN.
 WIN, BG0, BG1 = 6.0, 30.0, 10.0
@@ -194,7 +197,7 @@ def decay_area(tag, E):
     узкой линией, окно ±6 кэВ забирает его целиком, а полки на 10…30 кэВ ниже
     попадают на комптоновский континуум, свободный от соседних пиков.
     """
-    p = os.path.join(BUILD, "p5_%s.csv" % tag)
+    p = os.path.join(BUILD, "%s%s.csv" % (DECAY_PREFIX, tag))
     if not os.path.exists(p):
         return None, None
     hist, N = load_hist(p)
@@ -206,7 +209,7 @@ def decay_area(tag, E):
 
 def yield_with_err(tag, E):
     """Выход линии из emit-файла прогона распада и его погрешность."""
-    p = os.path.join(BUILD, "p5_%s_emit.csv" % tag)
+    p = os.path.join(BUILD, "%s%s_emit.csv" % (DECAY_PREFIX, tag))
     if not os.path.exists(p):
         return None, None
     em, N = load_hist(p)

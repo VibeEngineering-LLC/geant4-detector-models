@@ -82,13 +82,65 @@ def peak_area(hist, E, symmetric=True):
         d = dens(E - BG0, E - BG1)
     return gross - d * (2 * WIN + 1)
 
-# (нуклид, метка прогона, линии, ожидание TCC, чем обосновано ожидание)
+# (нуклид, метка прогона, линии, партнёр по каскаду для каждой линии, довод)
+# Партнёр = None означает, что каскада нет и выбивать линию нечему.
 CASES = [
-    ("Cs-137", "Cs137", [661.657], 1.00,
+    ("Cs-137", "Cs137", [(661.657, None)],
      "распад без каскада: суммироваться нечему"),
-    ("Co-60", "Co60", [1173.23, 1332.49], 0.97,
-     "каскад двух квантов, оценка по Хуртадо"),
+    ("Co-60", "Co60", [(1173.23, 1332.49), (1332.49, 1173.23)],
+     "сум-аут партнёром по каскаду, ожидание считается по линиям порознь"),
 ]
+
+# Критерий решения по расхождению линий — записан ДО набора статистики, чтобы
+# добор не превращался в счёт до нужного ответа. Разность линий берётся за
+# вычетом законной разности ожиданий.
+SIG_REAL, SIG_FLUKE = 3.0, 2.0
+
+
+def expected_tcc(E, partner):
+    """Ожидаемый TCC линии: 1 − p_γ(партнёр) · ε_T(партнёр).
+
+    ε_T берётся не как полная эффективность партнёра, а как доля событий с
+    депозитом БОЛЬШЕ полуширины окна. Событие «линия поглощена полностью плюс
+    партнёр оставил 4 кэВ» даёт 1177 кэВ и из окна ±6 кэВ не выпадает —
+    суммированием оно не является. Туда же уходят рэлеевское рассеяние
+    партнёра и комптон вперёд на малые углы. Поправка мала (0,3 % от ε_T), но
+    при выводе разности линий на несколько сигм она уже сравнима со
+    статистикой.
+
+    Ожидания у двух линий Co-60 РАЗНЫЕ, потому что различаются и выходы, и
+    полные эффективности партнёров: 0,97387 против 0,97291. Законная разность
+    составляет 0,097 процентного пункта — её надо вычесть из наблюдаемой,
+    прежде чем называть остаток расхождением.
+    """
+    if partner is None:
+        return 1.0
+    pg, _ = yield_with_err("Co60", partner)
+    eT = total_deposit(MONO_TAG, partner, above=WIN)
+    if pg is None or eT is None:
+        return None
+    return 1.0 - pg * eT
+
+
+def total_deposit(tag, E, above):
+    """Доля событий моно-прогона с депозитом больше `above`, на изотропный квант."""
+    import glob
+    import re
+    saf = os.path.join(BUILD, "grid", "%s_solidangle.txt" % tag)
+    if not os.path.exists(saf):
+        return None
+    frac = float(open(saf).read().strip())
+    best = None
+    for p in glob.glob(os.path.join(BUILD, "grid", tag + "_E*.csv")):
+        m = re.search(r"_E(\d+\.\d)\.csv$", p)
+        if m and abs(float(m.group(1)) - E) < 1.0:
+            best = p
+    if not best:
+        return None
+    hist, N = load_hist(best)
+    if not N:
+        return None
+    return sum(c for e, c in hist.items() if e > above) / N * frac
 
 
 def mono_with_err(tag, E):
@@ -169,14 +221,21 @@ def main():
     print("та же геометрия, ЛСРМ и паспорт не участвуют.")
     print("Подложка: полка %s.\n"
           % ("симметричная" if SYMMETRIC else "ОДНОСТОРОННЯЯ (слева)"))
-    print("%-8s %9s %11s %8s %11s %9s %7s"
+    print("Критерий (объявлен до набора статистики): остаток разности линий"
+          " ≥ %.0fσ — систематика, < %.0fσ — флуктуация.\n"
+          % (SIG_REAL, SIG_FLUKE))
+    print("%-8s %9s %11s %8s %11s %13s %8s %7s"
           % ("нуклид", "E, кэВ", "eps_распад", "выход", "eps_моно",
-             "TCC", "ожид."))
+             "TCC", "ожид.", "откл."))
 
-    rows, verdicts = [], []
-    for nuc, tag, lines, expect, why in CASES:
+    rows, verdicts, sigmas = [], [], {}
+    for nuc, tag, lines, why in CASES:
         got = []
-        for E in lines:
+        for E, partner in lines:
+            expect = expected_tcc(E, partner)
+            if expect is None:
+                print("%-8s %9.3f   нет данных для ожидания" % (nuc, E))
+                continue
             ed, d_ed = decay_area(tag, E)
             pg, d_pg = yield_with_err(tag, E)
             em, d_em = mono_with_err(MONO_TAG, E)
@@ -189,17 +248,20 @@ def main():
             rel = math.sqrt((d_ed / ed) ** 2 + (d_pg / pg) ** 2
                             + (d_em / em) ** 2)
             d_tcc = tcc * rel
-            print("%-8s %9.3f %11.4e %8.4f %11.4e %6.3f±%.3f %7.2f"
-                  % (nuc, E, ed, pg, em, tcc, d_tcc, expect))
-            got.append((tcc, d_tcc))
+            print("%-8s %9.3f %11.4e %8.4f %11.4e %6.3f±%.3f %7.4f  %+5.1fσ"
+                  % (nuc, E, ed, pg, em, tcc, d_tcc, expect,
+                     (tcc - expect) / d_tcc if d_tcc > 0 else 0.0))
+            got.append((tcc, d_tcc, expect, E))
             rows.append((nuc, "%.3f" % E, "%.5e" % ed, "%.5f" % pg,
                          "%.5e" % em, "%.4f" % tcc, "%.4f" % d_tcc,
-                         "%.2f" % expect))
+                         "%.5f" % expect))
         if got:
             # среднее по линиям нуклида, взвешенное обратно дисперсии
-            w = [1.0 / (d * d) for _, d in got]
-            avg = sum(t * wi for (t, _), wi in zip(got, w)) / sum(w)
-            d_avg = math.sqrt(1.0 / sum(w))
+            w = [1.0 / (d * d) for _, d, _, _ in got]
+            sw = sum(w)
+            avg = sum(t * wi for (t, _, _, _), wi in zip(got, w)) / sw
+            d_avg = math.sqrt(1.0 / sw)
+            expect = sum(e * wi for (_, _, e, _), wi in zip(got, w)) / sw
             dev = (avg - expect) / d_avg if d_avg > 0 else 0.0
             # Согласие линий МЕЖДУ СОБОЙ проверяется отдельно от согласия с
             # ожиданием. У линий одного каскада TCC обязан совпадать: партнёр
@@ -207,9 +269,31 @@ def main():
             # выходы почти одинаковы. Разошедшиеся линии, чьё среднее случайно
             # село на ожидание, дали бы ложное подтверждение — сводное число
             # поверх несогласного набора не подтверждает ничего.
-            chi2 = sum(((t - avg) / d) ** 2 for t, d in got)
+            chi2 = sum(((t - avg) / d) ** 2 for t, d, _, _ in got)
             nu = len(got) - 1
             verdicts.append((nuc, avg, d_avg, expect, dev, chi2, nu, why))
+
+            # Разность пары линий — за вычетом ЗАКОННОЙ разности ожиданий.
+            if len(got) == 2:
+                (t1, d1, e1, E1), (t2, d2, e2, E2) = got
+                diff = (t2 - t1) - (e2 - e1)
+                d_diff = math.hypot(d1, d2)
+                s = abs(diff) / d_diff if d_diff > 0 else 0.0
+                sigmas[nuc] = s
+                print("\n  разность линий %.1f и %.1f кэВ: наблюдаемая %+.4f,"
+                      % (E1, E2, t2 - t1))
+                print("  законная (из ожиданий) %+.4f, остаток %+.4f ± %.4f"
+                      " = %.1fσ" % (e2 - e1, diff, d_diff, s))
+                if s >= SIG_REAL:
+                    print("  ВЫВОД: систематика (порог %.0fσ объявлен до"
+                          " набора). Искать механизм в скоринге." % SIG_REAL)
+                elif s < SIG_FLUKE:
+                    print("  ВЫВОД: флуктуация (ниже %.0fσ). Ветка закрыта,"
+                          " публикуется среднее с честным χ²." % SIG_FLUKE)
+                else:
+                    print("  ВЫВОД: между %.0f и %.0fσ — ещё один добор"
+                          " статистики, но ТОЛЬКО один."
+                          % (SIG_FLUKE, SIG_REAL))
 
     print("\n=== СВОДКА ===")
     print("%-8s %14s %8s %9s %11s  %s"
@@ -220,12 +304,15 @@ def main():
         cn = "%.2f (ν=%d)" % (chi2 / nu, nu) if nu > 0 else "одна линия"
         print("%-8s %8.3f±%.3f %8.2f %+9.1f %11s  %s"
               % (nuc, avg, d_avg, expect, dev, cn, why))
-        if nu > 0 and chi2 / nu > 3.0:
-            discord.append((nuc, chi2 / nu))
+        # Порог тот же, что объявлен для разности линий: иначе сводка
+        # противоречила бы собственному выводу, называя набор несогласным
+        # там, где разность признана флуктуацией.
+        if nu > 0 and sigmas.get(nuc, 0.0) >= SIG_FLUKE:
+            discord.append((nuc, chi2 / nu, sigmas[nuc]))
 
     if discord:
         print("\nЛИНИИ НЕ СОГЛАСНЫ МЕЖДУ СОБОЙ: %s."
-              % ", ".join("%s χ²/ν=%.1f" % d for d in discord))
+              % ", ".join("%s χ²/ν=%.1f (%.1fσ)" % d for d in discord))
         print("Среднее по такому набору не подтверждает ожидание, даже если"
               " совпало с ним:")
         print("у линий одного каскада TCC обязан совпадать, и расходятся они"

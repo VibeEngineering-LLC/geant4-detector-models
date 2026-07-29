@@ -305,7 +305,12 @@ void G1SDetector::BuildCup(G4LogicalVolume* w) {
 
   const G4Colour cPP(0.9, 0.9, 0.6), cSm(0.55, 0.35, 0.15);
   auto* pp = Mat("G4_POLYPROPYLENE");
-  Ring("V_side", rIn, v.outerR, zBot, zTop, pp, w, cPP);
+  // Стенка начинается ОТ ВЕРХА ДНА (zIn), а не от zBot: дно — сплошной диск
+  // на всё сечение, и стенка от zBot перекрывала бы его в кольце
+  // [rIn, outerR] на всю толщину дна. Поймано прогоном /geometry/test/run:
+  // перекрытие 0,74 мм, оба тела полипропилен — на ослабление не влияло,
+  // но геометрия была формально невалидной.
+  Ring("V_side", rIn, v.outerR, zIn, zTop, pp, w, cPP);
   Ring("V_bottom", 0, v.outerR, zBot, zIn, pp, w, cPP);
   Ring("V_lid", 0, rIn, zTop - v.wall, zTop, pp, w, cPP);
 

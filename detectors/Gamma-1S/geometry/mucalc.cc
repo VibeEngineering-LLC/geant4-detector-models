@@ -18,6 +18,7 @@
 #include "G4Event.hh"
 #include "G4LogicalVolume.hh"
 #include "G4Material.hh"
+#include "G4NistManager.hh"
 #include "G4PVPlacement.hh"
 #include "G4ParticleGun.hh"
 #include "G4ParticleTable.hh"
@@ -72,11 +73,24 @@ std::vector<double> LoadGrid(const char* path) {
 G4Material* gOisn = nullptr;
 G4Material* gWater = nullptr;   // для лёгких матриц источников комплекта
 
+// Материалы входного торца — для сверки самого тулкита с NIST XCOM.
+// Плотность здесь произвольна: массовый коэффициент mu/ro от неё не зависит,
+// он определяется только составом.
+G4Material* gMgO = nullptr;
+G4Material* gAl = nullptr;
+G4Material* gRubber = nullptr;
+G4Material* gNaI = nullptr;
+
 class Geom : public G4VUserDetectorConstruction {
 public:
   G4VPhysicalVolume* Construct() override {
     gOisn = G1SDetector::MakeMatrix("OISN16", 1.0, "OISN16_unit");
     gWater = G1SDetector::MakeMatrix("water", 1.0, "Water_unit");
+    auto* nist = G4NistManager::Instance();
+    gMgO = nist->FindOrBuildMaterial("G4_MAGNESIUM_OXIDE");
+    gAl = nist->FindOrBuildMaterial("G4_Al");
+    gRubber = nist->FindOrBuildMaterial("G4_RUBBER_NATURAL");
+    gNaI = nist->FindOrBuildMaterial("G4_SODIUM_IODIDE");
     auto* lv = new G4LogicalVolume(new G4Box("w", 1 * m, 1 * m, 1 * m),
                                    gOisn, "w");
     return new G4PVPlacement(nullptr, {}, lv, "w", nullptr, false, 0);
@@ -133,6 +147,51 @@ int main(int argc, char** argv) {
     std::fclose(f);
     G4cout << "RESULT записано " << NE << " строк в " << o.fn << G4endl;
   }
+
+  // -------------------------------------------------------------------------
+  // Сверка самого тулкита с NIST XCOM: материалы входного торца, компоненты
+  // порознь. Смысл — отделить вопрос «верна ли наша геометрия» от вопроса
+  // «верны ли сечения, которыми она считается».
+  //
+  // Колонка incoh+phot+pair сравнивается с XCOM «WITHOUT coherent», колонка
+  // с Rayleigh — с «WITH coherent». Разделение обязательно: основной расчёт
+  // ослабления в этом файле идёт БЕЗ Rayleigh (см. шапку), и сверять его с
+  // полным XCOM было бы сверкой разных величин.
+  {
+    struct Chk { G4Material* m; const char* title; };
+    const Chk CHKS[] = {
+        {gMgO, "MgO"}, {gAl, "Al"}, {gRubber, "rubber"}, {gNaI, "NaI"},
+        {gOisn, "OISN16"},
+    };
+    FILE* f = std::fopen("mu_xcom_check.csv", "w");
+    std::fprintf(f, "# mu/ro по компонентам, см²/г, EmStandardPhysics_option4,"
+                    " Geant4 11.2.1\n");
+    std::fprintf(f, "# incoh=Compton, phot=фотоэффект, pair=conv, rayl="
+                    "когерентное\n");
+    std::fprintf(f, "# no_coh = incoh+phot+pair  -> XCOM without coherent\n");
+    std::fprintf(f, "# with_coh = no_coh + rayl  -> XCOM with coherent\n");
+    std::fprintf(f, "material,E_keV,incoh,phot,pair,rayl,no_coh,with_coh\n");
+    for (const Chk& c : CHKS) {
+      for (int j = 0; j < NE; ++j) {
+        const double e = E_GRID[j] * keV;
+        const G4String& mn = c.m->GetName();
+        const double rho = c.m->GetDensity() / (g / cm3);
+        // ComputeCrossSectionPerVolume даёт 1/мм при фактической плотности
+        // материала; делим на неё и переводим в см²/г.
+        const double k = 10.0 / rho;
+        const double in = calc.ComputeCrossSectionPerVolume(e, "gamma", "compt", mn) * k;
+        const double ph = calc.ComputeCrossSectionPerVolume(e, "gamma", "phot", mn) * k;
+        const double pr = calc.ComputeCrossSectionPerVolume(e, "gamma", "conv", mn) * k;
+        const double ra = calc.ComputeCrossSectionPerVolume(e, "gamma", "Rayl", mn) * k;
+        std::fprintf(f, "%s,%.3f,%.6e,%.6e,%.6e,%.6e,%.6e,%.6e\n",
+                     c.title, E_GRID[j], in, ph, pr, ra,
+                     in + ph + pr, in + ph + pr + ra);
+      }
+    }
+    std::fclose(f);
+    G4cout << "RESULT записано mu_xcom_check.csv" << G4endl;
+  }
+
   delete rm;
   return 0;
 }

@@ -108,7 +108,9 @@ def mac_vol(tag, lines, well):
 def mac_point(tag, lines):
     t = ["/run/initialize", "/control/verbose 0", "/run/verbose 0",
          "/gps/particle gamma", "/gps/pos/type Point",
-         "/gps/pos/centre 0 0 93 mm", "/gps/ang/type iso",
+         # 50 мм от наружной плоскости торца (Z_FACE); прежнее «93» держало
+         # старую плоскость z=43 (протектор), убранную правкой торца.
+         "/gps/pos/centre 0 0 %.1f mm" % (Z_FACE + 50.0), "/gps/ang/type iso",
          "/gps/ang/maxtheta %.1f deg" % THETA]
     for e in lines:
         t += ["/gps/energy %.3f keV" % e,

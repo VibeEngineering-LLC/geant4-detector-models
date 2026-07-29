@@ -50,6 +50,18 @@ if not os.path.exists(os.path.join(BUILD, EXE)):
         % os.path.join(BUILD, EXE))
 ZSRC = 91.0     # мм: 41 (крышка, стек торца от оператора) + 50
 
+# Добор статистики по одному нуклиду, не трогая штатный комплект.
+#   G1S_DECAY_ONLY    — считать только эту метку (например Co60)
+#   G1S_DECAY_N       — число распадов вместо табличного
+#   G1S_DECAY_PREFIX  — префикс выходных файлов (по умолчанию p5_)
+# Префикс отдельный намеренно: пока идёт многочасовой прогон, штатные
+# p5_*.csv остаются целыми и пригодными для анализа. Перезапись рабочего
+# файла на время счёта оставила бы разбор без входных данных, а при обрыве —
+# с усечёнными.
+ONLY = os.environ.get("G1S_DECAY_ONLY")
+NOVR = os.environ.get("G1S_DECAY_N")
+PREFIX = os.environ.get("G1S_DECAY_PREFIX", "p5_")
+
 # (метка, Z, A, окно nucleusLimits, распадов)
 # Статистика: сильносуммирующим больше; Cs-137 — контроль C=1.
 NUCS = [
@@ -78,9 +90,14 @@ def macro():
          "/gps/pos/type Point", "/gps/pos/centre 0 0 %.1f mm" % ZSRC,
          "/gps/ang/type iso"]
     for name, z, a, lim, n in NUCS:
+        if ONLY and name != ONLY:
+            continue
+        if NOVR:
+            n = int(NOVR)
         t += ["/process/had/rdm/nucleusLimits " + lim,
               "/gps/ion %d %d 0 0" % (z, a),
-              "/g1s/outFile %s" % os.path.join(BUILD, "p5_%s.csv" % name),
+              "/g1s/outFile %s" % os.path.join(BUILD,
+                                               "%s%s.csv" % (PREFIX, name)),
               "/run/beamOn %d" % n]
     return "\n".join(t) + "\n"
 

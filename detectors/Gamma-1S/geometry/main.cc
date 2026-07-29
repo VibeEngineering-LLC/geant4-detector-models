@@ -288,7 +288,7 @@ int main(int argc, char** argv) {
                                                              : mode.substr(c + 1));
   }
   if (argc > 3) det->fVessel.sampleDensity = std::atof(argv[3]);
-  if (argc > 4) det->fVessel.sampleMatrix = argv[4];   // OISN16 | water | risn379
+  if (argc > 4) det->fVessel.sampleMatrix = argv[4];   // OISN16|OISN06|water|risn379
   // Объём засыпки можно переопределить: у источников комплекта разные массы
   // при одном номинальном объёме кюветы, см. kit_inventory.py.
   if (argc > 5) det->fVessel.sampleCm3 = std::atof(argv[5]);

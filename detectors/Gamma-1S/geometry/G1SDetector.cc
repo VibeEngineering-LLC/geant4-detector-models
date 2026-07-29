@@ -155,6 +155,19 @@ G4Material* G1SDetector::MakeMatrix(const G4String& matrix, double rho,
     m->AddElement(nist->FindOrBuildElement("Ca"), 0.2033);
     return m;
   }
+  // Матрица ОИСН-06 — лёгкая (насыпная ро около 0,6), состав по массе из
+  // поля MATERIAL оригинальных .spe поверки 2024 (партия Th-232 420-17031):
+  // в отличие от ОИСН-16 железа всего 15 %, основа углеродная. Нужна для
+  // прямого прогона распада без пересчёта f(мю*ро*d) между матрицами.
+  if (matrix == "OISN06") {
+    auto* m = new G4Material(g4name, rho * g / cm3, 5);
+    m->AddElement(nist->FindOrBuildElement("H"), 0.064);
+    m->AddElement(nist->FindOrBuildElement("C"), 0.612);
+    m->AddElement(nist->FindOrBuildElement("N"), 0.021);
+    m->AddElement(nist->FindOrBuildElement("O"), 0.151);
+    m->AddElement(nist->FindOrBuildElement("Fe"), 0.151);
+    return m;
+  }
   if (matrix != "OISN16") {
     G4Exception("G1SDetector::MakeMatrix", "g1s002", FatalException,
                 ("неизвестная матрица: " + matrix).c_str());
@@ -374,14 +387,21 @@ void G1SDetector::BuildHead(G4LogicalVolume* w) {
   // Между банкой и крышкой — воздушный зазор 1,0 (чертёж, подтверждено
   // оператором).
   Ring("AlCase_side", rRub, rCase, zTail, zAirTop, Mat("G4_Al"), w, cAl);
-  Ring("FaceAir", 0, rRub, zCanTop, zAirTop, Mat("G4_AIR"), w, cAl);
-  Ring("AlCase_face", 0, rCase, zAirTop, zFace, Mat("G4_Al"), w, cAl);
-
-  // Наружная резиновая обёртка 1 мм по боку (чертёж: «резина 1 мм» на
-  // наружной поверхности корпуса; на торец не заходит)
-  if (h.rubberWrap > 0)
-    Ring("RubberWrap_side", rCase, rCase + h.rubberWrap, zTail, zAirTop,
+  // Торцевой зазор банка<->крышка: в центре воздух, по периферии — кольцевая
+  // прокладка «резина 1 мм» (оператор, 29.07.2026: фиксирует банку от
+  // осевого смещения; прежнее чтение ошибочно вешало её обёрткой на бок).
+  // Разница радиусов кольца — 5-6 мм по оператору (принято 5,5), наружный
+  // край у стенки корпуса. Центр торца перед кристаллом остаётся воздухом —
+  // на фронтальный тракт по оси кольцо не влияет, оно прикрывает только
+  // периферию торца (~1 мм резины на косых путях).
+  const double rSeal = rRub - h.faceSealW;
+  Ring("FaceAir", 0, rSeal, zCanTop, zAirTop, Mat("G4_AIR"), w, cAl);
+  if (h.faceSeal > 0)
+    Ring("FaceSeal_ring", rSeal, rRub, zCanTop, zAirTop,
          Mat("G4_RUBBER_NATURAL"), w, cRub);
+  else
+    Ring("FaceAir_rim", rSeal, rRub, zCanTop, zAirTop, Mat("G4_AIR"), w, cAl);
+  Ring("AlCase_face", 0, rCase, zAirTop, zFace, Mat("G4_Al"), w, cAl);
 
   // ФЭУ: баллон Ø71 со стенкой 1,5 и вакуумом внутри
   const double rPmt = 0.5 * h.pmtDia;              // 35,50

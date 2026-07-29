@@ -74,6 +74,23 @@ The OISN-16 matrix — mass composition from the LSRM `.efa`: H 0.022, C 0.206, 
 
 None of the checks is a fit: in every case the calculation was compared against a number that was not built into it.
 
+### 2.0 Checking the tool itself: cross sections against NIST XCOM
+
+The analysis of the low-energy end of the curve (§2.4a, §5a) comes down to the mass thickness of the entrance-face layers and rests on an assumption that has not been tested so far: that the attenuation coefficients the toolkit computes with are correct. Until that assumption is closed, any disagreement between the model and the measurement can be attributed with equal justification either to the geometry or to the cross sections.
+
+The cross-check was made directly: the mass attenuation coefficient μ/ρ from `G4EmCalculator` — the same machinery that computes attenuation in the runs — against NIST XCOM for four entrance-face materials and four reference lines of the kit. The main attenuation calculation runs without coherent scattering, so the comparison is made against the XCOM "without coherent" column; the variant with coherent scattering is given alongside. The distinction matters: at 59.5 keV these two quantities differ by 12%, and cross-checking against the wrong column would have produced a spurious deviation of the same order as the one under investigation.
+
+| Material | Geant4 deviation from XCOM, % |
+|---|---|
+| MgO | −0.66 … −0.12 |
+| Al | −0.82 … −0.10 |
+| Rubber | −0.27 … −0.14 |
+| NaI | −0.38 … +0.05 |
+
+The maximum deviation over all sixteen points is **−0.82%** (Al, 59.5 keV, without coherent scattering), the typical one 0.1…0.3%. The sign of the deviation is predominantly negative, i.e., Geant4 systematically gives slightly less attenuation than XCOM; the magnitude of the offset is an order of magnitude below the model-versus-measurement discrepancies under investigation.
+
+Conclusion: the toolkit's cross sections agree with the primary source, and the observed disagreement between the model and the measured curve is not accounted for by them — it should be sought in the geometry and composition of the layers, not in the physics data. Reproduction — `analysis/compare_xcom.py`, result — `results/mu_geant4_vs_xcom.csv`, reference values and their provenance — `common/docs/references.md`.
+
 ### 2.1 Passport efficiency for a point source
 
 Passport, item 2.10: FEP efficiency at the 662 keV line for a point source at 25 cm from the surface of the detector lid — not less than 0.1%.

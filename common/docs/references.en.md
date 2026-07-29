@@ -27,6 +27,36 @@ to one specific verification chain rather than to modelling in general.
   here, not `master`: a version mismatch is the usual reason why "the
   documentation says otherwise".
 
+## Photon attenuation coefficients
+
+The reference against which the toolkit's own cross sections are checked:
+without it, the analysis of the low-energy end silently rests on the untested
+assumption that Geant4 computes the attenuation in the entrance-face layers
+correctly. Cross-check — `analysis/compare_xcom.py`, result —
+`results/mu_geant4_vs_xcom.csv`.
+
+- **NIST XCOM** — https://physics.nist.gov/PhysRefData/Xcom/html/xcom1.html
+  Computation of μ/ρ by component (coherent, incoherent, photoelectric, pair
+  production) at an arbitrary energy. It gives two totals — with and without
+  coherent scattering; the two must not be confused, at 59.5 keV they differ by
+  12%. The main attenuation calculation in `mucalc.cc` runs WITHOUT coherent
+  scattering, and the "without coherent" column is the one that corresponds
+  to it.
+- **Hubbell J.H., Seltzer S.M.** Tables of X-Ray Mass Attenuation Coefficients
+  and Mass Energy-Absorption Coefficients. NISTIR 5632.
+  https://physics.nist.gov/PhysRefData/XrayMassCoef/cover.html
+  Tables on a fixed grid: Table 3 — elements, Table 4 — compounds and mixtures.
+  The quantity tabulated there is μ/ρ **with** coherent scattering (Section 2
+  defines the total cross section as a sum in which σ_coh enters explicitly;
+  verified on Al: the node 2.778·10⁻¹ at 60 keV matches precisely that column).
+  MgO, NaI and rubbers are absent from Table 4 — for them XCOM is the only
+  primary source.
+- **NIST STAR, material compositions** —
+  https://physics.nist.gov/cgi-bin/Star/compos.pl?matno=243
+  Natural rubber (ICRU-37): H 0.118371 / C 0.881629, ρ = 0.92 g/cm³. NIST has
+  no ready-made μ/ρ table for rubber, so it is computed in XCOM in mixture mode
+  from this composition.
+
 ## MgO reflector density
 
 The reflector is a packed, pressed powder rather than solid oxide, and this is

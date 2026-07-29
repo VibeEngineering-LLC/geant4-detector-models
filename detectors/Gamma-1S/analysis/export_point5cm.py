@@ -1,4 +1,4 @@
-"""Кривая точечной 5 см в формате .efa: наши eps в родной обвязке ЛСРМ.
+"""Кривая точечной 5 см в форматах .efa и .efr: наши eps в обвязке ЛСРМ.
 
 Точечная 5 см раньше не экспортировалась: в committed reference/lsrm для
 неё есть только .efr (точки), а .efa (точки + полином зон) нет — то есть
@@ -17,6 +17,15 @@
 Путь к мастеру задаётся переменной окружения G1S_LSRM_MASTER_EFA (файл
 рабочего каталога прибора, в репозиторий не входит: несёт заводской
 номер). Без неё скрипт сообщает, что делать, и выходит.
+
+.efr — ПОЛНЫЙ набор: 12 блоков-источников, 24 линии от 59,5 до 2614,5
+(Am-241, Cd-109, Ba-133, Co-57, Eu-152, Cs-137, Mn-54, Zn-65, Y-88,
+Co-60, Na-22, Th-228). Шаблон берётся из committed reference — он уже
+обезличен, и никаких подстановок для репозитория не нужно; для программы
+пишется копия с настоящим именем детектора (G1S_LSRM_DETECTOR).
+В блоках сохраняются исходные площади и опорные активности «0,0,1»:
+редактор эффективности не пересчитывает eps из активности, а берёт
+готовые значения и строит по ним зоны.
 """
 import bisect
 import math
@@ -114,3 +123,54 @@ if __name__ == "__main__":
     for E in sorted(lsrm):
         o = eps(E)
         print("%10.1f %12.4e %12.4e %9.3f" % (E, o, lsrm[E], o / lsrm[E]))
+
+    # --- .efr: полный набор источников -------------------------------------
+    # Шаблон — committed reference (уже обезличен). Заменяются значения eps
+    # во ВСЕХ блоках; площади, опорные активности «0,0,1» и выходы линий
+    # остаются исходными: редактор эффективности берёт eps готовыми.
+    tpl = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "reference", "lsrm",
+        "efficiency", "Gamma-1S_NaI_63x63_USB_SN-01",
+        "УДС-ГЦ-63х63-USB__SN-01_-_Точечная-5см.efr")
+    if not os.path.exists(tpl):
+        print("\nшаблон .efr не найден: %s" % tpl)
+        raise SystemExit(0)
+    src = open(tpl, "rb").read().decode("cp1251")
+    lines, m = [], 0
+    for ln in src.replace("\r\n", "\n").split("\n"):
+        if "=" in ln and "," in ln and ln[:1].isdigit():
+            key, rest = ln.split("=", 1)
+            parts = rest.split(",")
+            parts[0] = "%.6E" % eps(float(key))
+            ln = key + "=" + ",".join(parts)
+            m += 1
+        lines.append(ln)
+    body_r = "\r\n".join(lines)
+    dst_r = os.path.join(RESULTS, "efa_export", "G4MC_Точечная-5см.efr")
+    open(dst_r, "wb").write(body_r.encode("cp1251"))
+    print("\n.efr: заменено %d линий в %d блоках -> %s"
+          % (m, body_r.count("["), dst_r))
+
+    # Копия для программы — с настоящим именем детектора. Имя НАБОРА
+    # (третье поле заголовка блока) программа берёт в метаданные результата;
+    # у штатных наборов там стоит фамилия оператора, у наших — «GEANT4»
+    # (указание оператора 29.07.2026), чтобы происхождение кривой было
+    # видно в отчёте и наборы не путались со штатными.
+    det = os.environ.get("G1S_LSRM_DETECTOR")
+    if live and os.path.isdir(live):
+        b = body_r
+        if det:
+            b = b.replace("УДС-ГЦ-63х63-USB №SN-01", det)
+
+        def rename(mt):
+            parts = mt.group(0)[1:-1].split(";")
+            if len(parts) >= 3:
+                nuc = re.search(r"[A-Z][a-z]?-\d+", parts[2])
+                parts[2] = "GEANT4" + (" (%s)" % nuc.group(0) if nuc else "")
+            return "[" + ";".join(parts) + "]"
+        # без $ в шаблоне: строки заканчиваются CRLF, и «конец строки»
+        # оказывается ПОСЛЕ \r — привязка по $ молча не срабатывает
+        b = re.sub(r"^\[[^\r\n]*\]", rename, b, flags=re.M)
+        p = os.path.join(live, "G4MC_Точечная-5см.efr")
+        open(p, "wb").write(b.encode("cp1251"))
+        print("копия для программы: %s" % p)

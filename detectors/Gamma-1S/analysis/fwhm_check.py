@@ -111,9 +111,9 @@ if __name__ == "__main__":
     csvio.write(
         out,
         ["E_keV", "fwhm_model_keV", "fwhm_cfw_keV", "fwhm_spe_keV",
-         "model_over_cfw", "spe_over_cfw"],
-        [("%.3f" % e, "%.2f" % m, "%.2f" % c, "%.2f" % s, "%.4f" % mc,
-          "%.4f" % sc) for e, m, c, s, mc, sc in rows],
+         "fwhm_marinelli_keV", "model_over_cfw", "spe_over_cfw"],
+        [("%.3f" % e, "%.2f" % m, "%.2f" % c, "%.2f" % s, "%.2f" % g,
+          "%.4f" % mc, "%.4f" % sc) for e, m, c, s, g, mc, sc in rows],
         comments=[
             "Три закона ПШПВ: модель конвейера 49,9*sqrt(E/661,657);"
             " Calibr.cfw (реальная калибровка 11 источников, 01.11.2024,"

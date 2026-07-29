@@ -151,28 +151,39 @@ if __name__ == "__main__":
 
     # Сопоставление двух партий по годным линиям (2614,5): согласие между
     # геометриями и между партиями — прямой судья систематики модели.
-    print("\nГодные линии (2614,5), обе партии:")
-    print("   %-13s %18s %18s" % ("геометрия", "420-17031 A/пасп",
-                                  "420-7-17 A/пасп (kit)"))
+    #
+    # Компаратор — ТОЛЬКО Th-232 старой партии (kit_activity_volume, строки
+    # nuclide=Th-232 с их d_ratio), а не сводка сосуда по всем нуклидам:
+    # сравнивать надо одноимённые величины. Замечание аудитора 29.07.2026 —
+    # первая версия сводила новую партию со средним сосуда и получала
+    # «совпадение 1,5 %» с неверным компаратором; честная мера — разность
+    # в единицах суммарной сигмы двух рядов (паспорта партий независимы).
+    print("\nГодные линии (2614,5), обе партии (Th-232 против Th-232):")
+    print("   %-13s %18s %18s %8s" % ("геометрия", "420-17031 A/пасп",
+                                      "420-7-17 A/пасп", "разн."))
     old = {}
     kitcsv = os.path.abspath(os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "..", "results",
-        "kit_recalc_volume.csv"))
+        "kit_activity_volume.csv"))
     if os.path.exists(kitcsv):
         for line in open(kitcsv, encoding="utf-8"):
             if line.startswith("#") or line.startswith("geometry"):
                 continue
             fld = line.strip().split(",")
-            if len(fld) > 11 and fld[1] == "Th-232" and fld[11] == "1":
-                old[fld[0]] = float(fld[7])
+            if len(fld) > 6 and fld[1] == "Th-232":
+                old[fld[0]] = (float(fld[5]), float(fld[6]))
     vals = []
     for g, E, rate, eps, am, ap, rt, fr, us, A, dA, A0, bg in rows:
         if not us:
             continue
         vals.append((rt, dA / A0))
-        print("   %-13s %11.3f±%.3f %18s"
-              % (g, rt, dA / A0,
-                 "%.3f" % old[g] if g in old else "—"))
+        if g in old:
+            o, do = old[g]
+            sig = abs(rt - o) / math.hypot(dA / A0, do)
+            cmp = "%11.3f±%.3f %7.2fσ" % (o, do, sig)
+        else:
+            cmp = "%18s" % "—"
+        print("   %-13s %11.3f±%.3f %s" % (g, rt, dA / A0, cmp))
     if len(vals) > 1:
         av = kr.lsrm_average([(a, d) for a, d in vals])
         c2 = (sum((av[0] - a) ** 2 / d ** 2 for a, d in vals)

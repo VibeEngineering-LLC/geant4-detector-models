@@ -70,9 +70,60 @@ def template_lines(geom):
     return raw.replace("\r\n", "\n").split("\n")
 
 
+def probe_files(outdir):
+    """Пробные файлы после отказа «Incorrect efficiency format».
+
+    Чистый .efa без секции Zones/Curve программа не приняла, а конвенция
+    записи полинома зон не документирована (обратная разработка по 15
+    точкам не дала согласия ни в одной из очевидных систем координат).
+    Поэтому два обходных файла по маринелли:
+
+    G4MC_проба_Маринелли.efa — ПОЛНАЯ копия штатного .efa, в которой
+      заменены только значения eps (первое поле) 15 узловых строк на наши
+      при тех же энергиях/нуклидах/площадях. Секция Zones — РОДНАЯ, то
+      есть описывает СТАРУЮ кривую: если программа считает активности по
+      полиному зон, а не по точкам, файл даст штатные числа — это сам по
+      себе диагностический ответ. Перед боевым использованием зоны
+      перестроить в редакторе эффективности.
+
+    G4MC_проба_Маринелли.efr — копия штатного .efr с теми же заменами
+      eps в блоках источников: родной вход редактора эффективности,
+      которым и была построена кривая 2024; редактор сам строит зоны.
+    """
+    ours = {E: eps for E, eps, _d, _c in read_curve("rho1.60")}
+
+    def sub_lines(text):
+        out, n = [], 0
+        for ln in text.replace("\r\n", "\n").split("\n"):
+            key = ln.split("=", 1)[0]
+            try:
+                E = float(key)
+            except ValueError:
+                out.append(ln)
+                continue
+            hit = [e for e in ours if abs(e - E) < 0.01]
+            if hit and "," in ln:
+                rest = ln.split("=", 1)[1].split(",")
+                rest[0] = "%.6E" % ours[hit[0]]
+                out.append(key + "=" + ",".join(rest))
+                n += 1
+            else:
+                out.append(ln)
+        return "\r\n".join(out), n
+
+    for ext in ("efa", "efr"):
+        p = paths.efficiency_curve("Маринелли", ext=ext)
+        txt = open(str(p), "rb").read().decode("cp1251")
+        body, n = sub_lines(txt)
+        fn = os.path.join(outdir, "G4MC_проба_Маринелли." + ext)
+        open(fn, "wb").write(body.encode("cp1251"))
+        print("проба .%s: заменено %d узлов -> %s" % (ext, n, fn))
+
+
 if __name__ == "__main__":
     outdir = os.path.join(RESULTS, "efa_export")
     os.makedirs(outdir, exist_ok=True)
+    probe_files(outdir)
     for grid, geom in EXPORTS:
         tpl = template_lines(geom)
         head = []

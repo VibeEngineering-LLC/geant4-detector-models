@@ -48,7 +48,7 @@ if not os.path.exists(os.path.join(BUILD, EXE)):
         "Соберите её (см. common/cmake и README детектора) или укажите\n"
         "G4MODELS_BUILD_GAMMA_1S на каталог, где она уже лежит."
         % os.path.join(BUILD, EXE))
-ZSRC = 93.0     # мм: 43 (крышка) + 50
+ZSRC = 91.0     # мм: 41 (крышка, стек торца от оператора) + 50
 
 # (метка, Z, A, окно nucleusLimits, распадов)
 # Статистика: сильносуммирующим больше; Cs-137 — контроль C=1.

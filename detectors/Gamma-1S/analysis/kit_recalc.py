@@ -39,6 +39,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
 import paths  # noqa: E402
+import peakwin  # noqa: E402
+
+# Энергии вылета материала кристалла — обязательный параметр детектора
+# (method-rules §6). NaI(Tl): K-рентген иода. Совпадает с point_recalc.ESCAPES;
+# оба файла описывают ОДИН прибор, и расхождение здесь было бы дефектом.
+ESCAPES = (28.6,)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import becqmoni as bm  # noqa: E402
@@ -165,7 +171,7 @@ def fx(x):
 _BROAD = {}
 
 
-def area_sim(hist, E, fwhm=None, key=None, win=6.0, bg0=30.0, bg1=10.0):
+def area_sim(hist, E, fwhm=None, key=None, detail=None):
     """Площадь пика в модельном спектре.
 
     Если задана ПШПВ — спектр уширяется до разрешения прибора и площадь
@@ -173,16 +179,27 @@ def area_sim(hist, E, fwhm=None, key=None, win=6.0, bg0=30.0, bg1=10.0):
     обязательно там, где линии сливаются: Ac-228 911,2 + 968,97 в NaI —
     один пик, и узкое окно по модели давало завышение активности тория
     по этой линии в полтора раза.
-    Без ПШПВ — прежнее узкое окно (для сеток моноэнергий, где блендов нет).
+    Без ПШПВ — депозитное окно `common/py/peakwin.py`.
+
+    ПОЧИНКА ОКНА ПОЛКИ ДОШЛА СЮДА ПОЗЖЕ, ЧЕМ ДОЛЖНА БЫЛА. Это ОБЪЁМНЫЙ
+    пересчёт — Маринелли, Дента, Петри, то есть опубликованные кривые, — и он
+    оставался на прежнем правиле `[E−30, E−10]` с множителем `13` каналов,
+    когда точечный уже был исправлен: правило было скопировано в четыре места,
+    а правка применена к одному. Нашёл независимый аудит. Теперь параметры окна
+    сюда не передаются вовсе: возможность задать их по месту и была тем, чем
+    копии разошлись.
+
+    ВНИМАНИЕ ДЛЯ ОБЪЁМНЫХ: окно полки может проглотить ЧУЖОЙ фотопик на
+    плотных участках (Eu-152). Перед доверием к числу проверять по библиотеке
+    нуклида, что внутри `[E−25, E−10]` нет другой линии (method-rules §1).
     """
     if fwhm:
         if key not in _BROAD:
             _BROAD[key] = bm.broaden(hist)
-        a, _ = bm.area_broadened(_BROAD[key], E, fwhm)
+        a, _ = bm.area_broadened(_BROAD[key], E, fwhm, escapes=ESCAPES,
+                                 detail=detail)
         return a
-    gross = sum(c for e, c in hist.items() if abs(e - E) <= win)
-    side = sum(c for e, c in hist.items() if E - bg0 <= e <= E - bg1)
-    return gross - side / (bg0 - bg1) * (2 * win + 1)
+    return peakwin.area(hist, E, detail=detail)
 
 
 def eps_mono(tag, E):

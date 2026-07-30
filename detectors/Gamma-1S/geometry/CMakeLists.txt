@@ -51,7 +51,13 @@ if (MSVC)
 endif()
 
 # Коэффициент ослабления матрицы ОИСН-16 — для подгонки эффективной толщины
+# mucalc тоже компилирует G1SDetector.cc, то есть его выход зависит от геометрии
+# и материалов, а читается анализом (compare_xcom.py, selfabs_fit.py). Отсутствие
+# у него провенанса было дефектом, не намеренным исключением: два набора μ/ρ от
+# разных версий материалов выглядели бы одинаково прослеженными.
 add_executable(mucalc mucalc.cc G1SDetector.cc)
+add_dependencies(mucalc g1s_provenance)
+target_include_directories(mucalc PRIVATE "${CMAKE_BINARY_DIR}")
 target_include_directories(mucalc PRIVATE "${G4ROOT}/include/Geant4")
 target_link_libraries(mucalc PRIVATE ${G4_IMPORT_LIBS})
 target_compile_definitions(mucalc PRIVATE G4LIB_BUILD_DLL WIN32 NOMINMAX _USE_MATH_DEFINES)

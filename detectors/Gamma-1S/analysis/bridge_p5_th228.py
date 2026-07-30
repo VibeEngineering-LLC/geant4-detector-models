@@ -124,7 +124,7 @@ def fit_area(xs, ys, E0, hstep, zone_half=3.2):
 
 def find_build():
     b = os.environ.get("G4MODELS_BUILD_GAMMA_1S")
-    cands = ([b] if b else []) + [r"C:\g4work\gamma1s\build"]
+    cands = [b] if b else []
     for c in cands:
         if c and os.path.exists(os.path.join(c, "scat_p5_full_E2614.5.csv")):
             return c

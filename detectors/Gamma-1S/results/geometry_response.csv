@@ -1,6 +1,6 @@
 #@ stamp.version = 1
 #@ src.script = detectors/Gamma-1S/analysis/geometry_response.py
-#@ src.git = 3afe17d-dirty
+#@ src.git = fc36222-dirty
 #@ src.tree_sha1 = bd17f9bea1e4
 #@ src.inputs_verdict = unstamped
 #@ src.inputs_n = 168

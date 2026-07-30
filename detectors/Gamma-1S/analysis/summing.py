@@ -31,6 +31,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import paths  # noqa: E402
+import peakwin  # noqa: E402
 
 BUILD = str(paths.build("Gamma-1S"))
 
@@ -93,12 +94,18 @@ def mono_curve(tag="rho1.60"):
 
 
 def area_var(hist, E0, win, bg0, bg1):
-    """Площадь при заданных окне и полке — для проверки устойчивости."""
-    gross = sum(c for e, c in hist.items() if abs(e - E0) <= win)
+    """Площадь при заданных окне и полке — для проверки устойчивости.
+
+    Единственное место, где параметры окна ЗАКОННО задаются по вызову: смысл
+    функции в том, чтобы их менять. Счёт всё равно идёт через `peakwin`, иначе
+    сканирование устойчивости мерило бы ещё и разницу двух реализаций окна —
+    ровно ту, из-за которой правка окна полки не дошла до объёмного пересчёта.
+    """
     if bg0 is None:
-        return gross
-    side = sum(c for e, c in hist.items() if E0 - bg0 <= e <= E0 - bg1)
-    return gross - side / (bg0 - bg1) * (2 * win + 1)
+        i0, i1, _j0, _j1 = peakwin.channels(E0, win_keV=win)
+        return sum(c for e, c in hist.items()
+                   if max(0, i0) <= e - 0.5 < i1)
+    return peakwin.area(hist, E0, win_keV=win, bg0_keV=bg0, bg1_keV=bg1)
 
 
 def sensitivity(mono):

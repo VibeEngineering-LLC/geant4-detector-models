@@ -94,18 +94,34 @@ def check_inputs(paths, geometry_dir=None, names=None):
     """Свести отпечатки входов и (если задано) сравнить с текущим деревом.
 
     Возвращает (verdict, detail):
-      verdict = "ok"        — все входы со штампом, отпечаток один и совпал с деревом;
-                "stale"     — отпечаток входов НЕ совпал с деревом;
-                "mixed"     — входы посчитаны РАЗНЫМИ отпечатками (худший случай:
-                              смесь геометрий внутри одной таблицы);
-                "unstamped" — есть входы без штампа, судить нельзя.
-    Три разных вердикта вместо булева «годно» — намеренно: «смесь геометрий» и
+      verdict = "ok"         — все входы со штампом, отпечаток один и совпал с деревом;
+                "stale"      — отпечаток входов НЕ совпал с деревом;
+                "mixed"      — входы посчитаны РАЗНЫМИ отпечатками (худший случай:
+                               смесь геометрий внутри одной таблицы);
+                "unstamped"  — есть входы без штампа, судить нельзя;
+                "unverified" — штампы согласны между собой, но с ДЕРЕВОМ не
+                               сверялись (не передан geometry_dir или names).
+    Пять разных вердиктов вместо булева «годно» — намеренно: «смесь геометрий» и
     «все входы одинаково устарели» лечатся по-разному, а «нет штампа» вообще не
     вывод, а отсутствие вывода.
+
+    `unverified` заведён отдельно потому, что прежде эта ветка возвращала `ok` с
+    припиской «не сверялось» в детали. Строка `ok` уходила в
+    `src.inputs_verdict`, сторож её пропускал, и входы с ЧУЖИМ отпечатком
+    получали чистый проход — ловушка API ровно того класса, против которого
+    штамп и заводился (найдено независимым аудитом; воспроизведено на входах с
+    подложным sha).
     """
     seen, missing = {}, []
     for p in paths:
-        st = read_run_stamp(p)
+        try:
+            st = read_run_stamp(p)
+        except OSError:
+            # Нечитаемый или отсутствующий вход — это «судить нельзя», а не
+            # исключение из глубины сборки штампа (прежде отсюда вылетал
+            # FileNotFoundError).
+            missing.append(os.path.basename(p))
+            continue
         sha = st.get("src_sha1")
         if not sha or sha == NO_STAMP:
             missing.append(os.path.basename(p))
@@ -125,7 +141,7 @@ def check_inputs(paths, geometry_dir=None, names=None):
         if cur != got:
             return "stale", {"inputs": got, "tree": cur}
         return "ok", {"sha": got}
-    return "ok", {"sha": got, "tree": "не сверялось"}
+    return "unverified", {"sha": got, "tree": "не сверялось"}
 
 
 def git_describe(repo_dir):
@@ -179,6 +195,13 @@ def lines(script, observable, inputs=None, geometry_dir=None, names=None,
             out.append("#@ src.inputs_unstamped = %d" % detail["n"])
         else:
             out.append("#@ src.inputs_sha1 = %s" % detail["sha"])
+    else:
+        # Вердикт пишется ВСЕГДА, даже когда входы не переданы. Прежде строка
+        # появлялась только `if inputs`, и производитель, забывший `inputs=`
+        # (или у которого набор прочитанных файлов оказался пуст), получал
+        # таблицу без вердикта — а сторож молчание пропускал.
+        out.append("#@ src.inputs_verdict = no_inputs")
+        out.append("#@ src.inputs_n = 0")
     for k in need:
         out.append("#@ obs.%s = %s" % (k, observable[k]))
     for k in sorted(set(observable) - set(need)):

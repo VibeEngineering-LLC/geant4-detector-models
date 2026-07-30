@@ -374,7 +374,13 @@ int main(int argc, char** argv) {
     std::string a;
     for (int i = 1; i < argc; ++i) {
       if (i > 1) a += " ";
-      a += argv[i];
+      // ТОЛЬКО ИМЯ ФАЙЛА, без каталогов. Драйверы передают макрос абсолютным
+      // путём, и полный argv занёс бы путь конкретной машины в шапку каждого
+      // спектра — а спектр может быть скопирован в репозиторий. Запрет на
+      // локальные пути в публичном дереве действует и для служебных полей.
+      std::string v(argv[i]);
+      const size_t s = v.find_last_of("/\\");
+      a += (s == std::string::npos) ? v : v.substr(s + 1);
     }
     const char* cgv = std::getenv("G1S_CORRELATED_GAMMA");
     a += "; G1S_CORRELATED_GAMMA=";

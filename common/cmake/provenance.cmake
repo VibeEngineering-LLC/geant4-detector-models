@@ -45,6 +45,13 @@ string(SUBSTRING "${_sha}" 0 12 _short)
 # Коммит — справочно: он говорит, что ЗАКОММИЧЕНО, а не что СОБРАНО. Правда о
 # собранном — в _short выше; -dirty здесь ровно затем, чтобы несовпадение этих
 # двух ответов было видно.
+#
+# `describe --dirty` НЕ видит неотслеживаемых файлов (найдено независимым
+# аудитом): новый .cc, ещё не добавленный в git, даёт чистое "-dirty"-показание
+# на коммите, где производящего файла не существовало. Поэтому отдельно
+# проверяем `git status --porcelain` по каждому файлу SRC_LIST и, если
+# какой-то из них НЕ отслеживается (статус "??") или изменён, помечаем это
+# явно суффиксом — не полагаемся на то, что --dirty это заметит сам.
 set(_git "нет-git")
 find_program(_GIT git)
 if(_GIT)
@@ -53,6 +60,14 @@ if(_GIT)
                   ERROR_QUIET RESULT_VARIABLE _rc)
   if(NOT _rc EQUAL 0 OR _git STREQUAL "")
     set(_git "нет-git")
+  endif()
+  if(NOT _git STREQUAL "нет-git")
+    execute_process(COMMAND "${_GIT}" -C "${SRC_DIR}" status --porcelain -- ${SRC_LIST}
+                    OUTPUT_VARIABLE _status OUTPUT_STRIP_TRAILING_WHITESPACE
+                    ERROR_QUIET RESULT_VARIABLE _rc2)
+    if(_rc2 EQUAL 0 AND NOT _status STREQUAL "" AND NOT _git MATCHES "-untracked$")
+      string(APPEND _git "-untracked")
+    endif()
   endif()
 endif()
 

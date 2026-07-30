@@ -51,13 +51,29 @@ if (MSVC)
                          /wd4005 /wd4267 /wd4244)
 endif()
 
-# Коэффициент ослабления матрицы ОИСН-16 — для подгонки эффективной толщины
-# mucalc тоже компилирует G1SDetector.cc, то есть его выход зависит от геометрии
-# и материалов, а читается анализом (compare_xcom.py, selfabs_fit.py). Отсутствие
-# у него провенанса было дефектом, не намеренным исключением: два набора μ/ρ от
-# разных версий материалов выглядели бы одинаково прослеженными.
+# Коэффициент ослабления матрицы ОИСН-16 — для подгонки эффективной толщины.
+# СОБСТВЕННЫЙ отпечаток, не общий с g1s: mucalc компилирует mucalc.cc, не
+# main.cc, поэтому его печатал бы отпечаток файла, которого в его бинарнике
+# вообще нет, и не замечал бы правки собственного mucalc.cc — та самая
+# «согласная пропажа» из хвоста аудита (задача 133): mucalc.cc не входил ни в
+# один список исходников, значит правка в нём не меняла ни один печатаемый
+# отпечаток.
+set(G1S_MUCALC_PROV_SRC "${CMAKE_CURRENT_SOURCE_DIR}/mucalc.cc"
+                        "${CMAKE_CURRENT_SOURCE_DIR}/G1SDetector.cc"
+                        "${CMAKE_CURRENT_SOURCE_DIR}/G1SDetector.hh")
+set(G1S_MUCALC_PROV_HH "${CMAKE_BINARY_DIR}/g1s_mucalc_provenance.hh")
+add_custom_target(g1s_mucalc_provenance ALL
+  COMMAND "${CMAKE_COMMAND}"
+          "-DSRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+          "-DOUT=${G1S_MUCALC_PROV_HH}"
+          "-DPREFIX=G1SMU"
+          "-DSRC_LIST=${G1S_MUCALC_PROV_SRC}"
+          -P "${CMAKE_CURRENT_SOURCE_DIR}/../../../common/cmake/provenance.cmake"
+  BYPRODUCTS "${G1S_MUCALC_PROV_HH}"
+  COMMENT "Отпечаток исходников mucalc -> g1s_mucalc_provenance.hh")
+
 add_executable(mucalc mucalc.cc G1SDetector.cc)
-add_dependencies(mucalc g1s_provenance)
+add_dependencies(mucalc g1s_mucalc_provenance)
 target_include_directories(mucalc PRIVATE "${CMAKE_BINARY_DIR}")
 target_include_directories(mucalc PRIVATE "${G4ROOT}/include/Geant4")
 target_link_libraries(mucalc PRIVATE ${G4_IMPORT_LIBS})

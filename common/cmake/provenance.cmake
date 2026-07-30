@@ -17,8 +17,18 @@
 # copy_if_different обязателен: без него заголовок переписывался бы на каждой
 # сборке и тянул за собой перекомпиляцию main.cc даже когда ничего не менялось.
 #
+# ОБЩИЙ НА ВСЕ ДЕТЕКТОРЫ. Лежал в geometry/ Гамма-1С, из-за чего у RadiaCode-103
+# провенанса не было вовсе — при том что RCDetector.cc правится активно, а
+# правила method-rules объявлены обязательными для ЛЮБОГО детектора. Копировать
+# скрипт во второй каталог значило бы завести второе правило в двух местах,
+# чем этот репозиторий уже наказан четырежды.
+#
+# Имя макроса-отпечатка задаётся параметром PREFIX, чтобы заголовки разных
+# приборов не конфликтовали при общей сборке.
+#
 # Вызов (из CMakeLists):
-#   cmake -DSRC_DIR=... -DOUT=... -DSRC_LIST="a.cc;b.cc" -P provenance.cmake
+#   cmake -DSRC_DIR=... -DOUT=... -DPREFIX=G1S -DSRC_LIST="a.cc;b.cc"
+#         -P <репозиторий>/common/cmake/provenance.cmake
 
 set(_acc "")
 foreach(f ${SRC_LIST})
@@ -46,11 +56,14 @@ if(_GIT)
   endif()
 endif()
 
+if(NOT DEFINED PREFIX)
+  set(PREFIX "G1S")
+endif()
 file(WRITE "${OUT}.tmp"
-"// Сгенерировано provenance.cmake перед сборкой. Руками не править.\n"
+"// Сгенерировано common/cmake/provenance.cmake перед сборкой. Не править.\n"
 "#pragma once\n"
-"#define G1S_SRC_SHA1 \"${_short}\"\n"
-"#define G1S_GIT_DESCRIBE \"${_git}\"\n"
+"#define ${PREFIX}_SRC_SHA1 \"${_short}\"\n"
+"#define ${PREFIX}_GIT_DESCRIBE \"${_git}\"\n"
 "// Разбор отпечатка (какой файл что дал):\n"
 "/*\n${_acc}*/\n")
 execute_process(COMMAND "${CMAKE_COMMAND}" -E copy_if_different

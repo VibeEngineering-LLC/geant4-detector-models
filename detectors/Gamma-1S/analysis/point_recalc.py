@@ -42,6 +42,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
 import paths  # noqa: E402
+import stamp  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import becqmoni as bm  # noqa: E402
@@ -127,6 +128,42 @@ OMEGA_RATIO = ((1 - math.cos(math.atan(39.15 / 250.0))) / 2) / \
 # нескольких линий. Порог и полуширина «самой линии» — общие с объёмным
 # пересчётом, иначе две половины комплекта отбирались бы по разным меркам.
 CLEAN_FRAC = 0.95
+
+# Объявление наблюдаемой — В АРТЕФАКТЕ, а не в памяти (method-rules §5).
+#
+# ВАЖНОЕ, ЧТО ВИДНО ТОЛЬКО ПОСЛЕ ВЫПИСЫВАНИЯ: наблюдаемая здесь РАЗНАЯ по
+# геометриям, и заметно это стало ровно при попытке её объявить. На 5 см
+# эффективность идёт через eps_decay_5cm -> area_sim(broad=True) ->
+# bm.area_broadened: спектр размывается приборным ПШПВ, площадь снимается
+# окном ±1,0 ПШПВ с СИММЕТРИЧНЫМИ полками по 1,0 ПШПВ с двух сторон. На 25 см
+# идёт eps_mono_point -> area_sim(broad=False): НЕразмытый депозит, окно
+# ±6 кэВ, ОДНОСТОРОННЯЯ полка [E−30; E−10] — то самое окно, которое
+# method-rules §1 признал дефектным (захватывает пик вылета K-рентгена иода).
+#
+# Отсюда следствие для очереди работ: «два наклона остатка по энергии, по
+# одному на дистанцию» сравнивали бы ДВА РАЗНЫХ ОПРЕДЕЛЕНИЯ, и часть
+# расхождения 5 против 25 см — конвенция съёма площади, а не геометрия.
+# Пока определения не сведены, разность дистанций физикой не трактовать.
+OBS = {
+    "quantity": "A_изм/A_пасп — отношение восстановленной активности"
+                " к паспортной на дату измерения",
+    "area": "пик полного поглощения; вычтена подложка по полкам",
+    "window": "Point_5cm: ±1;0 ПШПВ | Point_25cm: ±6 кэВ",
+    "shelf": "Point_5cm: симметричные по 1;0 ПШПВ с двух сторон"
+             " | Point_25cm: односторонняя [E−30; E−10]",
+    "blurred": "Point_5cm: да (модель размыта до приборного ПШПВ)"
+               " | Point_25cm: нет (депозит как есть)",
+    "split": "наблюдаемая РАЗНАЯ по геометриям — см. три ключа выше;"
+             " 5 и 25 см напрямую не сравнивать",
+    "pileup": "учтён множителем exp(2*тау*R) по полной скорости счёта",
+}
+
+# Расчётные спектры, ФАКТИЧЕСКИ прочитанные за прогон — для штампа провенанса.
+# Именно прочитанные, а не лежащие в каталоге: штамп обязан говорить, из чего
+# получены ЭТИ числа. Список пополняется в eps_decay_5cm / yield_5cm /
+# eps_mono_point / purity, то есть в каждой точке, где расчётный файл входит в
+# результат.
+USED = set()
 CLEAN_HALF = 3.0
 
 
@@ -161,6 +198,7 @@ def purity(tag, E, win):
     p = os.path.join(BUILD, "p5_%s_emit.csv" % tag)
     if not os.path.exists(p):
         return None, []
+    USED.add(p)
     emit, _N = load_hist(p)
     tot = sum(c for e, c in emit.items() if abs(e - E) <= win)
     if tot <= 0:
@@ -213,11 +251,51 @@ def area_sim(hist, E, key=None, broad=True, win=6.0, bg0=30.0, bg1=10.0):
     return gross - side / (bg0 - bg1) * (2 * win + 1)
 
 
+def _stamp():
+    """Штамп для обеих таблиц пересчёта — ОДИН на прогон, из USED.
+
+    Обе таблицы (по линиям и сводка) получают ОДИН И ТОТ ЖЕ штамп намеренно:
+    они одной цепочки, и если штампы разойдутся, значит разошлись входы, чего
+    в одном прогоне быть не может. Разные штампы у пары «по линиям / сводка» —
+    признак того, что сводку посчитал другой прогон.
+    """
+    return stamp.lines(
+        "detectors/Gamma-1S/analysis/point_recalc.py", OBS,
+        inputs=sorted(USED), geometry_dir=str(paths.geometry("Gamma-1S")),
+        names=stamp.SRC_LISTS["Gamma-1S"], repo_dir=str(paths.REPO))
+
+
+def report_provenance():
+    """Вердикт по входам — на экран, ДО чисел.
+
+    Печатается всегда, а не только при беде: вердикт «unstamped» внешне
+    неотличим от «ok», если о нём молчать, а именно это трижды и стоило
+    вывода. Молчание здесь читалось бы как «входы проверены».
+    """
+    verdict, detail = stamp.check_inputs(
+        sorted(USED), str(paths.geometry("Gamma-1S")),
+        stamp.SRC_LISTS["Gamma-1S"])
+    words = {
+        "ok": "входы посчитаны ТЕКУЩИМ деревом исходников",
+        "stale": "!! входы УСТАРЕЛИ: посчитаны другим деревом исходников",
+        "mixed": "!! входы посчитаны РАЗНЫМИ деревьями — смесь геометрий"
+                 " внутри одной таблицы",
+        "unstamped": "?? часть входов БЕЗ ШТАМПА — судить нельзя"
+                     " (перегенерировать драйверами)",
+    }
+    print("\nПРОВЕНАНС: %s\n  %s\n  входов %d, отпечаток дерева %s, деталь %s"
+          % (verdict, words[verdict], len(USED),
+             stamp.source_sha1(str(paths.geometry("Gamma-1S")),
+                               stamp.SRC_LISTS["Gamma-1S"]), detail))
+    return verdict
+
+
 def eps_decay_5cm(tag, E):
     """Эффективность на распад из прогона распада на 5 см (всё внутри)."""
     p = os.path.join(BUILD, "p5_%s.csv" % tag)
     if not os.path.exists(p):
         return None, None
+    USED.add(p)
     hist, N = load_hist(p)
     a = area_sim(hist, E, key="p5:" + tag)
     if a <= 0 or not N:
@@ -229,6 +307,7 @@ def yield_5cm(tag, E):
     p = os.path.join(BUILD, "p5_%s_emit.csv" % tag)
     if not os.path.exists(p):
         return None
+    USED.add(p)
     em, N = load_hist(p)
     tot = sum(c for e, c in em.items() if abs(e - E) <= 2.0)
     return tot / N if (N and tot > 50) else None
@@ -247,6 +326,7 @@ def eps_mono_point(gtag, E):
             best = p
     if not best:
         return None
+    USED.add(best)
     hist, N = load_hist(best)
     # сетка моноэнергий: блендов нет по построению, узкое окно корректно
     a = area_sim(hist, E, broad=False)
@@ -432,6 +512,8 @@ if __name__ == "__main__":
             print("   медиана линий %.3f, разброс %.3f..%.3f"
                   % (statistics.median(raw), min(raw), max(raw)))
 
+    report_provenance()
+
     # Сводка — тем же файлом-источником, что у объёмных (kit_activity_*.csv):
     # страница и отчёт берут числа отсюда и не считают своей формулой.
     if summary:
@@ -464,7 +546,8 @@ if __name__ == "__main__":
                 " что одним",
                 "  числом набор не сводится, какой бы узкой ни вышла"
                 " погрешность.",
-            ])
+            ],
+            stamp=_stamp())
         print("\nсводка: %s (%d строк)" % (sp, len(summary)))
 
     # Числа — файлом (пункт 12 протокола проверок).
@@ -495,5 +578,6 @@ if __name__ == "__main__":
                 "  линия плохо разделена и в активность НЕ ИДЁТ (порог %.2f)."
                 " Такие строки" % CLEAN_FRAC,
                 "  остаются в файле: на них проверяется деконволюция.",
-            ])
+            ],
+            stamp=_stamp())
         print("\nтаблица: %s (%d строк)" % (out, len(rows)))

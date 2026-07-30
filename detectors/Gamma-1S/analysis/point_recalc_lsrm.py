@@ -31,6 +31,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
 import paths  # noqa: E402
+import stamp  # noqa: E402
 
 sys.path.insert(0, str(paths.tools()))
 from fetch_efr import parse_efr  # noqa: E402
@@ -41,8 +42,8 @@ from contam import dirty_shelves  # noqa: E402
 from curvefit import local_quad  # noqa: E402
 from kit_recalc import lsrm_average as kr_average  # noqa: E402
 from point_recalc import (
-    NUC, PASSPORT, TAU_SHAPE, decay_factor, eps_decay_5cm, eps_mono_point,
-    fwhm, purity, record, yield_5cm,
+    NUC, OBS, PASSPORT, TAU_SHAPE, USED, decay_factor, eps_decay_5cm,
+    eps_mono_point, fwhm, purity, record, yield_5cm,
 )  # noqa: E402
 
 
@@ -51,6 +52,28 @@ _LSRM_EV = {}
 
 MAX_GAP = 60.0   # кэВ: дальше НИ С ОДНОЙ стороны — интерполяция ненадёжна
 NEAR_NODE = 5.0  # кэВ: ближе — считается «на узле», дальний край не важен
+
+# Наблюдаемая — та же, что у point_recalc.py (эффективность модели считается
+# ЕГО функциями), но НА СУЖЕННОМ НАБОРЕ ЛИНИЙ: остаются только те, где кривая
+# .efr попадает в надёжную область интерполяции. Столбец ratio_ours поэтому НЕ
+# равен сводке point_recalc.py и подменять её собой не может.
+#
+# Сужение выписано в штамп не для порядка. Расхождение сводок 1,19 против
+# 1,0116 три дня числилось за «третьей цепочкой расчёта» — а на деле сводка
+# point_recalc.py в репозитории просто не была перегенерирована после правок
+# отбора линий и паспортов. Единственная настоящая разница между таблицами —
+# вот это сужение набора, и на 5 см она не сдвигает ничего (1,012 против
+# 1,012), на 25 см даёт 1,027 против 1,040 при 4 рядах вместо 6.
+OBS_LSRM = dict(
+    OBS,
+    quantity="A_изм/A_пасп ПАРОЙ: по нашей модели и по аттестованной кривой"
+             " .efr; rate и паспорт общие",
+    lineset="СУЖЕН: только линии внутри надёжной области интерполяции .efr"
+            " (узел ближе %.0f кэВ либо оба анкера ближе %.0f кэВ)"
+            % (NEAR_NODE, MAX_GAP),
+    warning="ratio_ours НЕ сводка point_recalc.py — набор линий другой;"
+            " для сводки брать kit_activity_point.csv",
+)
 
 
 def eps_lsrm_point(geom, E):
@@ -228,5 +251,15 @@ if __name__ == "__main__":
                 "ours_over_lsrm показывает, сколько нашей систематики"
                 " остаётся ПОСЛЕ вычета того, что не сходится",
                 "  даже у штатной, аттестованной кривой прибора.",
-            ])
+                "ratio_ours посчитан на СУЖЕННОМ наборе линий (см. obs.lineset"
+                " в штампе) и НЕ равен",
+                "  сводке kit_activity_point.csv. Сводка модели — там; здесь"
+                " пара на общем наборе.",
+            ],
+            stamp=stamp.lines(
+                "detectors/Gamma-1S/analysis/point_recalc_lsrm.py", OBS_LSRM,
+                inputs=sorted(USED),
+                geometry_dir=str(paths.geometry("Gamma-1S")),
+                names=stamp.SRC_LISTS["Gamma-1S"],
+                repo_dir=str(paths.REPO)))
         print("\nсводка: %s" % op)

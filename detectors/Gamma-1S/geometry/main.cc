@@ -13,6 +13,22 @@
 // 7 — глубина колодца маринелли мм.
 #include "G1SDetector.hh"
 
+// Отпечаток исходников, запечённый в бинарник (provenance.cmake генерирует его
+// перед каждой сборкой). Идёт в шапку каждого выходного спектра: без него
+// вопрос «этот спектр посчитан ТЕКУЩЕЙ геометрией?» отвечался по mtime, и
+// трижды был отвечен неверно.
+#if defined(__has_include)
+#  if __has_include("g1s_provenance.hh")
+#    include "g1s_provenance.hh"
+#  endif
+#endif
+#ifndef G1S_SRC_SHA1
+// Сборка мимо CMake — не запрещаем, но помечаем, чтобы такой спектр нельзя
+// было принять за прослеженный.
+#  define G1S_SRC_SHA1 "БЕЗ-ШТАМПА"
+#  define G1S_GIT_DESCRIBE "БЕЗ-ШТАМПА"
+#endif
+
 #include "G4Event.hh"
 #include "G4Gamma.hh"
 #include "G4GeneralParticleSource.hh"
@@ -132,6 +148,12 @@ public:
       return;
     }
     std::fprintf(f, "# GAMMA-1S, UDS-GC-63x63-USB, NaI(Tl) 63x63 mm\n");
+    // src_sha1 — отпечаток main.cc + G1SDetector.cc/.hh, из которых собран ЭТОТ
+    // exe; build — время компиляции main.cc (заголовок провенанса меняется при
+    // любой правке геометрии, поэтому main.cc заведомо перекомпилируется).
+    std::fprintf(f, "# src_sha1 = %s\n", G1S_SRC_SHA1);
+    std::fprintf(f, "# git_describe = %s\n", G1S_GIT_DESCRIBE);
+    std::fprintf(f, "# build = %s %s\n", __DATE__, __TIME__);
     std::fprintf(f, "# mode = %s\n", fMode.c_str());
     std::fprintf(f, "# particle = %s\n", fPart.c_str());
     std::fprintf(f, "# E_prim_keV = %.4f\n", fSumEprim / N);
@@ -158,6 +180,11 @@ public:
       FILE* g = std::fopen(en.c_str(), "w");
       if (g) {
         std::fprintf(g, "# гамма, испущенные при распаде, на %ld распадов\n", N);
+        // Штамп и здесь: из _emit.csv берутся выход линии и мера чистоты, то
+        // есть он такой же вход пересчёта, как сам спектр.
+        std::fprintf(g, "# src_sha1 = %s\n", G1S_SRC_SHA1);
+        std::fprintf(g, "# git_describe = %s\n", G1S_GIT_DESCRIBE);
+        std::fprintf(g, "# build = %s %s\n", __DATE__, __TIME__);
         std::fprintf(g, "# N_primaries = %ld\n", N);
         std::fprintf(g, "E_keV,counts\n");
         for (int i = 0; i <= kBins; ++i)

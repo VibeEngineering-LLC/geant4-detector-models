@@ -22,7 +22,26 @@ if(NOT DEFINED G4ROOT)
 endif()
 file(GLOB G4_IMPORT_LIBS "${G4ROOT}/lib/*.lib")
 
+# Штамп провенанса: отпечаток исходников запекается в бинарник и попадает в
+# шапку КАЖДОГО выходного спектра (см. provenance.cmake — там же зачем).
+# Отдельная цель, а не PRE_BUILD: PRE_BUILD честно работает только у генератора
+# Visual Studio, у Ninja и Makefile он молча превращается в PRE_LINK.
+set(G1S_PROV_SRC "${CMAKE_CURRENT_SOURCE_DIR}/main.cc"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/G1SDetector.cc"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/G1SDetector.hh")
+set(G1S_PROV_HH "${CMAKE_BINARY_DIR}/g1s_provenance.hh")
+add_custom_target(g1s_provenance ALL
+  COMMAND "${CMAKE_COMMAND}"
+          "-DSRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+          "-DOUT=${G1S_PROV_HH}"
+          "-DSRC_LIST=${G1S_PROV_SRC}"
+          -P "${CMAKE_CURRENT_SOURCE_DIR}/provenance.cmake"
+  BYPRODUCTS "${G1S_PROV_HH}"
+  COMMENT "Отпечаток исходников -> g1s_provenance.hh")
+
 add_executable(g1s main.cc G1SDetector.cc)
+add_dependencies(g1s g1s_provenance)
+target_include_directories(g1s PRIVATE "${CMAKE_BINARY_DIR}")
 target_include_directories(g1s PRIVATE "${G4ROOT}/include/Geant4")
 target_link_libraries(g1s PRIVATE ${G4_IMPORT_LIBS})
 target_compile_definitions(g1s PRIVATE G4LIB_BUILD_DLL WIN32 NOMINMAX _USE_MATH_DEFINES)

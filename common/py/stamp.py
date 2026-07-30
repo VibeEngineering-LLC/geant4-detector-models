@@ -42,6 +42,13 @@ import subprocess
 SRC_LISTS = {
     "Gamma-1S": ("main.cc", "G1SDetector.cc", "G1SDetector.hh"),
     "RadiaCode-103": ("main.cc", "RCDetector.cc", "RCDetector.hh"),
+    # mucalc/wallfield компилируют другой набор файлов, чем main-исполняемый —
+    # свой отпечаток на каждый бинарник (хвост аудита, задача 133: прежде
+    # mucalc.cc/wallfield.cc не входили ни в один список, правки в них были
+    # невидимы никакому печатаемому отпечатку).
+    "Gamma-1S-mucalc": ("mucalc.cc", "G1SDetector.cc", "G1SDetector.hh"),
+    "RadiaCode-103-mucalc": ("mucalc.cc", "RCDetector.cc", "RCDetector.hh"),
+    "RadiaCode-103-wallfield": ("wallfield.cc",),
 }
 
 NO_STAMP = "БЕЗ-ШТАМПА"
@@ -145,13 +152,32 @@ def check_inputs(paths, geometry_dir=None, names=None):
     return "unverified", {"sha": got, "tree": "не сверялось"}
 
 
-def git_describe(repo_dir):
+def git_describe(repo_dir, paths=None):
+    """Как common/cmake/provenance.cmake: `describe --dirty` + отдельная
+    проверка untracked. `--dirty` не видит файлов вне индекса (найдено
+    независимым аудитом) — новый .cc до `git add` даёт чистое показание на
+    коммите, где производящего файла не существовало. `paths`, если задан, —
+    список файлов SRC_LIST для точечной проверки `git status`; без него
+    untracked-проверка не выполняется (обратная совместимость вызовов без
+    списка файлов).
+    """
     try:
         r = subprocess.run(["git", "-C", repo_dir, "describe", "--always",
                             "--dirty"], capture_output=True, text=True)
-        return r.stdout.strip() or NO_STAMP
+        out = r.stdout.strip() or NO_STAMP
     except OSError:
         return NO_STAMP
+    if out == NO_STAMP or not paths:
+        return out
+    try:
+        rs = subprocess.run(["git", "-C", repo_dir, "status", "--porcelain",
+                             "--"] + list(paths),
+                            capture_output=True, text=True)
+        if rs.returncode == 0 and rs.stdout.strip() and not out.endswith("-untracked"):
+            out += "-untracked"
+    except OSError:
+        pass
+    return out
 
 
 def lines(script, observable, inputs=None, geometry_dir=None, names=None,
@@ -177,7 +203,8 @@ def lines(script, observable, inputs=None, geometry_dir=None, names=None,
             % (script, ", ".join(miss)))
     out = ["#@ stamp.version = 1", "#@ src.script = %s" % script]
     if repo_dir:
-        out.append("#@ src.git = %s" % git_describe(repo_dir))
+        gpaths = [os.path.join(geometry_dir, n) for n in names] if (geometry_dir and names) else None
+        out.append("#@ src.git = %s" % git_describe(repo_dir, gpaths))
     if geometry_dir and names:
         out.append("#@ src.tree_sha1 = %s"
                    % source_sha1(geometry_dir, names))

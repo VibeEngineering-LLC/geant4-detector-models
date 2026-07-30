@@ -46,9 +46,26 @@ if (MSVC)
 endif()
 
 # Коэффициенты ослабления матриц пробы — для приведения поправки на
-# самопоглощение к физической форме с одним параметром
+# самопоглощение к физической форме с одним параметром.
+# СОБСТВЕННЫЙ отпечаток: mucalc компилирует mucalc.cc, не main.cc — общий
+# rc_provenance печатал бы отпечаток файла вне своего бинарника и не видел бы
+# правки mucalc.cc (хвост аудита, задача 133 — тот же дефект, что у Гамма-1С).
+set(RC_MUCALC_PROV_SRC "${CMAKE_CURRENT_SOURCE_DIR}/mucalc.cc"
+                       "${CMAKE_CURRENT_SOURCE_DIR}/RCDetector.cc"
+                       "${CMAKE_CURRENT_SOURCE_DIR}/RCDetector.hh")
+set(RC_MUCALC_PROV_HH "${CMAKE_BINARY_DIR}/rc_mucalc_provenance.hh")
+add_custom_target(rc_mucalc_provenance ALL
+  COMMAND "${CMAKE_COMMAND}"
+          "-DSRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+          "-DOUT=${RC_MUCALC_PROV_HH}"
+          "-DPREFIX=RCMU"
+          "-DSRC_LIST=${RC_MUCALC_PROV_SRC}"
+          -P "${CMAKE_CURRENT_SOURCE_DIR}/../../../common/cmake/provenance.cmake"
+  BYPRODUCTS "${RC_MUCALC_PROV_HH}"
+  COMMENT "Отпечаток исходников mucalc -> rc_mucalc_provenance.hh")
+
 add_executable(mucalc mucalc.cc RCDetector.cc)
-add_dependencies(mucalc rc_provenance)
+add_dependencies(mucalc rc_mucalc_provenance)
 target_include_directories(mucalc PRIVATE "${CMAKE_BINARY_DIR}")
 target_include_directories(mucalc PRIVATE "${G4ROOT}/include/Geant4")
 target_link_libraries(mucalc PRIVATE ${G4_IMPORT_LIBS})
@@ -58,8 +75,24 @@ if (MSVC)
                          /wd4005 /wd4267 /wd4244)
 endif()
 
-# Спектр поля ЕРН в помещении — отдельная задача со своей геометрией
+# Спектр поля ЕРН в помещении — отдельная задача со своей геометрией, у неё
+# нет ни main.cc, ни RCDetector.cc, поэтому третий, независимый отпечаток.
+# Прежде у wallfield провенанса не было вовсе — тихий путь мимо штампа.
+set(RC_WALLFIELD_PROV_SRC "${CMAKE_CURRENT_SOURCE_DIR}/wallfield.cc")
+set(RC_WALLFIELD_PROV_HH "${CMAKE_BINARY_DIR}/rc_wallfield_provenance.hh")
+add_custom_target(rc_wallfield_provenance ALL
+  COMMAND "${CMAKE_COMMAND}"
+          "-DSRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+          "-DOUT=${RC_WALLFIELD_PROV_HH}"
+          "-DPREFIX=RCWF"
+          "-DSRC_LIST=${RC_WALLFIELD_PROV_SRC}"
+          -P "${CMAKE_CURRENT_SOURCE_DIR}/../../../common/cmake/provenance.cmake"
+  BYPRODUCTS "${RC_WALLFIELD_PROV_HH}"
+  COMMENT "Отпечаток исходников wallfield -> rc_wallfield_provenance.hh")
+
 add_executable(wallfield wallfield.cc)
+add_dependencies(wallfield rc_wallfield_provenance)
+target_include_directories(wallfield PRIVATE "${CMAKE_BINARY_DIR}")
 target_include_directories(wallfield PRIVATE "${G4ROOT}/include/Geant4")
 target_link_libraries(wallfield PRIVATE ${G4_IMPORT_LIBS})
 target_compile_definitions(wallfield PRIVATE G4LIB_BUILD_DLL WIN32 NOMINMAX _USE_MATH_DEFINES)

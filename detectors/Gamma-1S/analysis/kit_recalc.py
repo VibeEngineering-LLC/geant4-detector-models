@@ -41,10 +41,12 @@ import csvio  # noqa: E402
 import paths  # noqa: E402
 import peakwin  # noqa: E402
 
-# Энергии вылета материала кристалла — обязательный параметр детектора
-# (method-rules §6). NaI(Tl): K-рентген иода. Совпадает с point_recalc.ESCAPES;
-# оба файла описывают ОДИН прибор, и расхождение здесь было бы дефектом.
-ESCAPES = (28.6,)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Параметры ПРИБОРА — из общего модуля, а не копией. Прежде здесь стояло
+# ESCAPES = (28.6,) с комментарием «совпадает с point_recalc», и оно разошлось
+# с ним в первой же правке: точечная ветвь вырез отключила, объёмная осталась
+# с ним. Найдено независимым аудитом.
+from detector_params import ESCAPES, FWHM662  # noqa: E402,F401
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import becqmoni as bm  # noqa: E402
@@ -161,7 +163,6 @@ MU_O = mu_of("mu_oisn16.csv")
 MU_W = mu_of("mu_water.csv")
 
 # Разрешение прибора: измерено по пику 662 записи цезия (7,5 %); паспорт ≤8 %.
-FWHM662 = 49.9
 
 
 def fx(x):

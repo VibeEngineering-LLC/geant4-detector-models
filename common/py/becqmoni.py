@@ -194,23 +194,79 @@ def fwhm_at(sp, E0, half_win=None):
     return abs(hi - lo)
 
 
-def peak_area(sp, E0, fwhm, roi=1.25, side=1.0):
+def escape_cuts(E0, w, side, fwhm, escapes, esc_roi=0.5):
+    """Полосы исключения из ЛЕВОЙ полки — там, где сидит пик вылета.
+
+    ОДНА реализация на измеренную и на расчётную сторону. Правило, записанное в
+    двух местах, расходится: в этом репозитории такое ловилось трижды, и оба
+    раза цена была вывод, посчитанный по двум разным определениям.
+
+    Полка слева — `[E−(roi+side)·ПШПВ, E−roi·ПШПВ]`; вылет с энергией `E_выл`
+    даёт особенность в `E0 − E_выл` и лежит внутри полки при
+    `roi·ПШПВ ≤ E_выл ≤ (roi+side)·ПШПВ`. Справа особенности нет по построению —
+    вылет всегда НИЖЕ линии, — поэтому заражение односторонне и симметричным
+    усреднением полок не сокращается.
+    """
+    lo, hi = E0 - w - side * fwhm, E0 - w
+    out = []
+    for e in escapes or ():
+        c = E0 - e
+        if lo <= c <= hi:
+            out.append((c - esc_roi * fwhm, c + esc_roi * fwhm))
+    return tuple(out)
+
+
+def peak_area(sp, E0, fwhm, roi=1.25, side=1.0, escapes=(), esc_roi=0.5,
+              keep_frac=0.25, detail=None):
     """Площадь пика с трапецеидальной подложкой.
 
     roi  — полуширина области пика в долях ПШПВ (1,25 ПШПВ = 2,94 сигма, 99,7 %);
     side — ширина каждого фонового окна в долях ПШПВ, вплотную к ROI.
     Возвращает (площадь, погрешность, подложка).
+
+    `escapes` — энергии вылета материала кристалла: каналы вокруг `E0 − E_выл`
+    исключаются из оценки полки. Границы полосы заражения и порядок величины —
+    в docstring `area_broadened`. Правило применяется к ИЗМЕРЕННОЙ стороне тем
+    же кодом, что к расчётной, намеренно: полагаться на сокращение смещения в
+    отношении нельзя, потому что сокращение держится на том, что модель верно
+    воспроизводит вылет, а это и есть проверяемое.
+
+    Лестница откатов — та же (`both` / `right` / `left` / `no_shelf`), и она
+    объявляется через `detail`, а не молчит.
     """
     w = roi * fwhm
     g, ng = sp.counts_between(E0 - w, E0 + w)
-    bl, nl = sp.counts_between(E0 - w - side * fwhm, E0 - w)
+    lo_l, hi_l = E0 - w - side * fwhm, E0 - w
+    bl, nl = sp.counts_between(lo_l, hi_l)
     br, nr = sp.counts_between(E0 + w, E0 + w + side * fwhm)
     if nl == 0 or nr == 0:
         return None
-    # трапеция: средняя плотность подложки по двум окнам
-    dens = 0.5 * (bl / nl + br / nr)
+
+    cut = escape_cuts(E0, w, side, fwhm, escapes, esc_roi)
+    nl_full = nl
+    for c0, c1 in cut:
+        # Вырезаем по каналам того же спектра, а не арифметикой по ширине:
+        # counts_between — единственный способ узнать, сколько каналов реально
+        # попало, и он же считает суммы.
+        cg, cn = sp.counts_between(max(c0, lo_l), min(c1, hi_l))
+        bl -= cg
+        nl -= cn
+
+    left_ok = nl >= max(1, keep_frac * nl_full)
+    if left_ok:
+        dens = 0.5 * (bl / nl + br / nr)
+        var = g + ng * ng * (bl / nl ** 2 + br / nr ** 2) / 4.0
+        mode = "both"
+    else:
+        # Только правая полка: цена — чувствительность к наклону континуума,
+        # но заражённая полка смещает сильнее (5,6 % пика на 81 кэВ).
+        dens = br / nr
+        var = g + ng * ng * (br / nr ** 2)
+        mode = "right"
     bg = dens * ng
-    var = g + ng * ng * (bl / nl ** 2 + br / nr ** 2) / 4.0
+    if detail is not None:
+        detail.update(mode=mode, n_left=nl, n_left_full=nl_full, n_right=nr,
+                      cut=cut)
     return g - bg, math.sqrt(max(var, 1.0)), bg
 
 
@@ -372,19 +428,81 @@ def broaden(hist, fwhm_at_662=49.9, emax=3200.0, bin_keV=1.0, fwhm_of=None):
     return out
 
 
-def area_broadened(arr, E0, fwhm, roi=1.0, side=1.0, bin_keV=1.0):
+def area_broadened(arr, E0, fwhm, roi=1.0, side=1.0, bin_keV=1.0,
+                   escapes=(), esc_roi=0.5, keep_frac=0.25, detail=None):
     """Площадь пика в уширенном модельном спектре — ТЕМ ЖЕ окном и полками,
-    что и в измеренном (peak_area). Возвращает (площадь, подложка)."""
-    def win(a, b):
+    что и в измеренном (peak_area). Возвращает (площадь, подложка).
+
+    ПОЛКА НЕ ДОЛЖНА СОДЕРЖАТЬ ИЗВЕСТНЫХ ОСОБЕННОСТЕЙ. Правило выведено на
+    депозитном окне `[E−30, E−10]`, где в полку попадал пик вылета K-рентгена
+    иода (`E−28,6`), но оно относится к ЛЮБОЙ полочной конвенции, включая эту,
+    заданную в долях ПШПВ (указание аудитора 30.07.2026). Полка слева здесь —
+    `[E−2·ПШПВ, E−1·ПШПВ]`, и вылет лежит внутри неё тогда и только тогда, когда
+    `ПШПВ(E) ≤ E_выл ≤ 2·ПШПВ(E)`. При `ПШПВ = k·√E` это замкнутая полоса
+    энергий `[(E_выл/2k)², (E_выл/k)²]`: для иода 28,6 кэВ — **54,3…217,4 кэВ**,
+    для цезия 30,97 — 63,7…254,9 (CsI). В неё попадают пять линий комплекта:
+    59,5; 81,0; 88,0; 122,1; 165,9 — весь мягкий край.
+
+    Порядок величины смещения: вылет/пик на 81 кэВ = 5,64 %; вклад целиком
+    садится в левую полку шириной 1 ПШПВ, а вычитается по окну шириной 2 ПШПВ,
+    и симметричное усреднение делит вклад надвое — итого около 5,6 % пика.
+    Справа особенности нет по построению (вылет всегда НИЖЕ линии), поэтому
+    заражение односторонне и усреднением не сокращается.
+
+    `escapes` — энергии вылета материала кристалла, кэВ (NaI: 28,6; CsI: 28,6 и
+    30,97). Каналы в пределах `±esc_roi·ПШПВ` от `E0 − E_выл` из оценки полки
+    ИСКЛЮЧАЮТСЯ. Плотность считается как `сумма/число каналов`, поэтому
+    исключение само по себе смещения не вносит.
+
+    ЛЕСТНИЦА ОТКАТА, объявляемая наружу через `detail`, а не молчаливая:
+      `both`      — обе полки, вылет исключён, с каждой стороны осталось не
+                    меньше `keep_frac` каналов;
+      `right`     — слева осталось слишком мало: берётся только правая полка
+                    (ценой чувствительности к наклону континуума);
+      `no_shelf`  — не осталось ни одной годной полки, подложка не вычитается.
+    Молчаливый откат был бы тем же дефектом, что и заражённая полка: число
+    меняется, а причина не видна.
+    """
+    def win(a, b, cut=()):
         i0, i1 = int(round(a / bin_keV)), int(round(b / bin_keV))
         i0, i1 = max(0, i0), min(len(arr), i1)
-        return arr[i0:i1].sum(), max(1, i1 - i0)
+        if i1 <= i0:
+            return 0.0, 0
+        seg = arr[i0:i1]
+        n = i1 - i0
+        if cut:
+            idx = np.arange(i0, i1) * bin_keV
+            mask = np.ones(n, dtype=bool)
+            for c0, c1 in cut:
+                mask &= ~((idx >= c0) & (idx <= c1))
+            return float(seg[mask].sum()), int(mask.sum())
+        return float(seg.sum()), n
 
     w = roi * fwhm
     g, ng = win(E0 - w, E0 + w)
-    bl, nl = win(E0 - w - side * fwhm, E0 - w)
+
+    lo_l, hi_l = E0 - w - side * fwhm, E0 - w
+    cut = escape_cuts(E0, w, side, fwhm, escapes, esc_roi)
+    nl_full = max(1, int(round(hi_l / bin_keV)) - int(round(lo_l / bin_keV)))
+    bl, nl = win(lo_l, hi_l, cut)
     br, nr = win(E0 + w, E0 + w + side * fwhm)
-    dens = 0.5 * (bl / nl + br / nr)
+
+    left_ok = nl >= max(1, keep_frac * nl_full)
+    if left_ok and nr:
+        dens = 0.5 * (bl / nl + br / nr)
+        mode = "both"
+    elif nr:
+        dens = br / nr
+        mode = "right"
+    elif left_ok:
+        dens = bl / nl
+        mode = "left"
+    else:
+        dens = 0.0
+        mode = "no_shelf"
+    if detail is not None:
+        detail.update(mode=mode, n_left=nl, n_left_full=nl_full, n_right=nr,
+                      cut=tuple(cut))
     return g - dens * ng, dens * ng
 
 

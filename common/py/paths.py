@@ -209,6 +209,11 @@ def results(detector="Gamma-1S"):
     return REPO / "detectors" / detector / "results"
 
 
+def geometry(detector="Gamma-1S"):
+    """Исходники геометрии и физики — по ним считается отпечаток провенанса."""
+    return REPO / "detectors" / detector / "geometry"
+
+
 def measured(detector="RadiaCode-103"):
     """Каталог ИЗМЕРЕННЫХ спектров прибора (не расчётных).
 

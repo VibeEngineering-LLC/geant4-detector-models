@@ -34,8 +34,9 @@ add_custom_target(g1s_provenance ALL
   COMMAND "${CMAKE_COMMAND}"
           "-DSRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
           "-DOUT=${G1S_PROV_HH}"
+          "-DPREFIX=G1S"
           "-DSRC_LIST=${G1S_PROV_SRC}"
-          -P "${CMAKE_CURRENT_SOURCE_DIR}/provenance.cmake"
+          -P "${CMAKE_CURRENT_SOURCE_DIR}/../../../common/cmake/provenance.cmake"
   BYPRODUCTS "${G1S_PROV_HH}"
   COMMENT "Отпечаток исходников -> g1s_provenance.hh")
 

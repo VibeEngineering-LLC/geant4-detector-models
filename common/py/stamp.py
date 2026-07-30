@@ -41,6 +41,7 @@ import subprocess
 # разные суммы на одном и том же дереве.
 SRC_LISTS = {
     "Gamma-1S": ("main.cc", "G1SDetector.cc", "G1SDetector.hh"),
+    "RadiaCode-103": ("main.cc", "RCDetector.cc", "RCDetector.hh"),
 }
 
 NO_STAMP = "БЕЗ-ШТАМПА"

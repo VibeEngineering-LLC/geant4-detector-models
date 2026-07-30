@@ -179,6 +179,11 @@ OBS = {
 # eps_mono_point / purity, то есть в каждой точке, где расчётный файл входит в
 # результат.
 USED = set()
+
+# Сетки, у которых доля телесного угла НЕ прочитана, а принята равной 1,0:
+# прогон старого exe без шапки и без файла-сателлита. Печатается вызывающим —
+# принятое допущение о чужом прогоне обязано быть видно рядом с числами.
+NO_FRAC = set()
 CLEAN_HALF = 3.0
 
 
@@ -353,10 +358,19 @@ def solid_angle_frac(spectrum_path, gtag):
         if "solid_angle_frac" in ln:
             return float(ln.split("=")[1])
     saf = os.path.join(BUILD, "grid", "%s_solidangle.txt" % gtag)
-    if not os.path.exists(saf):
-        return None
-    USED.add(saf)
-    return float(open(saf).read().strip())
+    if os.path.exists(saf):
+        USED.add(saf)
+        return float(open(saf).read().strip())
+    # Ни шапки, ни файла-сателлита: прогон сделан старым exe и БЕЗ конуса —
+    # сателлит писался ровно для конусных сеток (POINTS в run_all_grids.py), а
+    # объёмные разыгрывались в полный 4pi. Возвращаем 1,0, но это ДОПУЩЕНИЕ о
+    # чужом прогоне, поэтому:
+    #  * оно верно для существующих данных по построению драйвера;
+    #  * после регенерации становится ненужным — шапку пишет сам exe;
+    #  * молчать о нём нельзя, иначе конусный прогон старого exe без сателлита
+    #    получил бы 1,0 и завысил eps в четыре раза.
+    NO_FRAC.add(gtag)
+    return 1.0
 
 
 def eps_mono_point(gtag, E):

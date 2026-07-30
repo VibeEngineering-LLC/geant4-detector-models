@@ -12,6 +12,18 @@
 // именно так считался mu в контуре radiacode-curves — сохраняем сопоставимость.
 #include "G1SDetector.hh"
 
+// Тот же штамп провенанса, что у основного расчёта: выход зависит от материалов
+// геометрии, читается анализом, значит обязан отвечать «из чего получен».
+#if defined(__has_include)
+#  if __has_include("g1s_provenance.hh")
+#    include "g1s_provenance.hh"
+#  endif
+#endif
+#ifndef G1S_SRC_SHA1
+#  define G1S_SRC_SHA1 "БЕЗ-ШТАМПА"
+#  define G1S_GIT_DESCRIBE "БЕЗ-ШТАМПА"
+#endif
+
 #include "G4Box.hh"
 #include "G4EmCalculator.hh"
 #include "G4EmStandardPhysics_option4.hh"
@@ -136,6 +148,9 @@ int main(int argc, char** argv) {
     FILE* f = std::fopen(o.fn, "w");
     std::fprintf(f, "# %s, массовый коэффициент ослабления, см²/г\n", o.title);
     std::fprintf(f, "# compt+phot+conv, EmStandardPhysics_option4, Geant4 11.2.1\n");
+    std::fprintf(f, "# src_sha1 = %s\n", G1S_SRC_SHA1);
+    std::fprintf(f, "# git_describe = %s\n", G1S_GIT_DESCRIBE);
+    std::fprintf(f, "# build = %s %s\n", __DATE__, __TIME__);
     std::fprintf(f, "E_keV,mu_over_rho_cm2_g\n");
     for (int j = 0; j < NE; ++j) {
       double mu = 0;                  // 1/мм при ро = 1 г/см³

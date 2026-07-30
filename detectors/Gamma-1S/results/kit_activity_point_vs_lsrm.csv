@@ -1,16 +1,17 @@
 #@ stamp.version = 1
 #@ src.script = detectors/Gamma-1S/analysis/point_recalc_lsrm.py
-#@ src.git = 698e8b2-dirty
-#@ src.tree_sha1 = bb5675dc3413
+#@ src.git = 5ac8cff-dirty
+#@ src.tree_sha1 = 65977db81784
 #@ src.inputs_verdict = unstamped
-#@ src.inputs_n = 34
+#@ src.inputs_n = 35
 #@ src.inputs_sha1 = БЕЗ-ШТАМПА
-#@ src.inputs_unstamped = 34
+#@ src.inputs_unstamped = 35
 #@ obs.quantity = A_изм/A_пасп ПАРОЙ: по нашей модели и по аттестованной кривой .efr; rate и паспорт общие
 #@ obs.area = пик полного поглощения; вычтена подложка по полкам
-#@ obs.window = Point_5cm: ±1;0 ПШПВ | Point_25cm: ±6 кэВ
-#@ obs.shelf = Point_5cm: симметричные по 1;0 ПШПВ с двух сторон | Point_25cm: односторонняя [E−30; E−10]
-#@ obs.blurred = Point_5cm: да (модель размыта до приборного ПШПВ) | Point_25cm: нет (депозит как есть)
+#@ obs.window = Point_5cm: +-1;0 ПШПВ | Point_25cm: +-6.0 кэВ = 12 каналов (счёт в каналах; ширина не зависит от дробной части E)
+#@ obs.shelf = Point_5cm: симметричные по 1;0 ПШПВ с двух сторон; полосы вылета 28.6 кэВ исключены | Point_25cm: односторонняя [E-25; E-10] = 15 каналов; множитель вычитания 12/15
+#@ obs.blurred = Point_5cm: да (модель размыта до приборного ПШПВ) | Point_25cm: нет (депозит как есть; на ПШПВ не нормируется)
+#@ obs.escapes_keV = 28.60
 #@ obs.lineset = СУЖЕН: только линии внутри надёжной области интерполяции .efr (узел ближе 5 кэВ либо оба анкера ближе 60 кэВ)
 #@ obs.pileup = учтён множителем exp(2*тау*R) по полной скорости счёта
 #@ obs.split = наблюдаемая РАЗНАЯ по геометриям — см. три ключа выше; 5 и 25 см напрямую не сравнивать
@@ -22,5 +23,5 @@
 # ratio_ours посчитан на СУЖЕННОМ наборе линий (см. obs.lineset в штампе) и НЕ равен
 #   сводке kit_activity_point.csv. Сводка модели — там; здесь пара на общем наборе.
 geometry,ratio_ours,d_ratio_ours,ratio_lsrm,d_ratio_lsrm,ours_over_lsrm
-Point_5cm,1.0116,0.0115,0.9601,0.0271,1.0536
-Point_25cm,1.0272,0.0422,0.9564,0.0142,1.0741
+Point_5cm,1.0158,0.0126,1.0020,0.0287,1.0138
+Point_25cm,1.0722,0.0653,1.0024,0.0379,1.0696

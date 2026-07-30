@@ -42,7 +42,7 @@ from contam import dirty_shelves  # noqa: E402
 from curvefit import local_quad  # noqa: E402
 from kit_recalc import lsrm_average as kr_average  # noqa: E402
 from point_recalc import (
-    NUC, OBS, PASSPORT, TAU_SHAPE, USED, decay_factor, eps_decay_5cm,
+    ESCAPES, NUC, OBS, PASSPORT, TAU_SHAPE, USED, decay_factor, eps_decay_5cm,
     eps_mono_point, fwhm, purity, record, yield_5cm,
 )  # noqa: E402
 
@@ -159,7 +159,8 @@ if __name__ == "__main__":
                     bad = dirty_shelves(nuc, E, fw)
                     if bad:
                         continue
-                r = bm.net_rate(s, b, E, fw, roi=1.0, side=1.0)
+                r = bm.net_rate(s, b, E, fw, roi=1.0, side=1.0,
+                                escapes=ESCAPES)
                 if r is None or r[0] <= 0:
                     continue
                 rate = r[0] * pile

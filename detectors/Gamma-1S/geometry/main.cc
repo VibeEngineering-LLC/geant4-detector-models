@@ -76,6 +76,18 @@ class Primary : public G4VUserPrimaryGeneratorAction {
   G4GeneralParticleSource fGPS;
 public:
   void GeneratePrimaries(G4Event* e) override { fGPS.GeneratePrimaryVertex(e); }
+
+  // Доля телесного угла ФАКТИЧЕСКОГО розыгрыша, (1−cos θmax)/2, спрошенная у
+  // самого генератора после исполнения макроса. Прежде это число вычислял
+  // драйвер по своей таблице и складывал в отдельный файл рядом с данными:
+  // прямой множитель на каждую точечную eps лежал вне цепочки провенанса, и
+  // никакая сверка не заметила бы, что прогон шёл с другим углом.
+  double SolidAngleFrac() {
+    auto* src = fGPS.GetCurrentSource();
+    if (!src || !src->GetAngDist()) return 1.0;
+    const double th = src->GetAngDist()->GetMaxTheta();
+    return 0.5 * (1.0 - std::cos(th));
+  }
 };
 
 // Время разрешения тракта: энерговыделения, разнесённые больше чем на столько,
@@ -106,6 +118,17 @@ public:
   double fSumEprim = 0;
   G4String fPart = "?";
   G4String fMode = "shield";
+  // Фактические параметры прогона — в шапку выхода. Без них штамп отвечает
+  // только «из каких исходников собран exe», и два спектра, различающиеся
+  // глубиной колодца или матрицей, выглядят одинаково прослеженными.
+  G4String fArgs = "?";
+  // Доля телесного угла розыгрыша (1−cos θ)/2 при конусе, иначе 1. Прямой
+  // множитель на eps конусных сеток; сообщает его тот, кто разыгрывал.
+  // Спрашивается в EndOfRunAction, а не при настройке: угол задаётся макросом,
+  // то есть ПОСЛЕ создания действий, и опрос до /run/beamOn вернул бы значение
+  // по умолчанию — молча и правдоподобно.
+  double fSolidAngleFrac = 1.0;
+  Primary* fPrimary = nullptr;
   G4String fOut = "spectrum.csv";
 
   RunAct() : fHist(kBins + 1, 0), fEmit(kBins + 1, 0) {}
@@ -142,6 +165,7 @@ public:
   void EndOfRunAction(const G4Run* run) override {
     const long N = run->GetNumberOfEvent();
     if (N == 0) return;
+    if (fPrimary) fSolidAngleFrac = fPrimary->SolidAngleFrac();
     FILE* f = std::fopen(fOut.c_str(), "w");
     if (!f) {
       G4cerr << "!! не открыть " << fOut << G4endl;
@@ -155,6 +179,17 @@ public:
     std::fprintf(f, "# git_describe = %s\n", G1S_GIT_DESCRIBE);
     std::fprintf(f, "# build = %s %s\n", __DATE__, __TIME__);
     std::fprintf(f, "# mode = %s\n", fMode.c_str());
+    // Фактические параметры прогона, а НЕ только исходники. Отпечаток отвечает
+    // «из каких исходников собран exe»; два спектра с одним src_sha1 и разной
+    // глубиной колодца или разной матрицей неразличимы, а глубина колодца в
+    // этом же файле названа главным подозреваемым. Найдено независимым
+    // аудитом: печатался mode и ни один из позиционных аргументов.
+    std::fprintf(f, "# run_args = %s\n", fArgs.c_str());
+    // Доля телесного угла розыгрыша: конусные сетки приводятся делением на неё,
+    // то есть это ПРЯМОЙ множитель на каждую точечную eps. Прежде он лежал в
+    // отдельном файле, который писал драйвер, и в цепочку провенанса не входил
+    // вовсе. Здесь его сообщает сам exe, разыгравший события.
+    std::fprintf(f, "# solid_angle_frac = %.8f\n", fSolidAngleFrac);
     std::fprintf(f, "# particle = %s\n", fPart.c_str());
     std::fprintf(f, "# E_prim_keV = %.4f\n", fSumEprim / N);
     std::fprintf(f, "# N_primaries = %ld\n", N);
@@ -328,10 +363,25 @@ int main(int argc, char** argv) {
 
   rm->SetUserInitialization(det);
   rm->SetUserInitialization(new PhysList());
-  rm->SetUserAction(new Primary());
+  auto* primary = new Primary();
+  rm->SetUserAction(primary);
 
   auto* runAct = new RunAct();
   runAct->fMode = mode;
+  // Все аргументы как есть, плюс env-флаг: перечислять поля по одному значит
+  // забыть новое поле при следующей правке.
+  {
+    std::string a;
+    for (int i = 1; i < argc; ++i) {
+      if (i > 1) a += " ";
+      a += argv[i];
+    }
+    const char* cgv = std::getenv("G1S_CORRELATED_GAMMA");
+    a += "; G1S_CORRELATED_GAMMA=";
+    a += (cgv ? cgv : "unset");
+    runAct->fArgs = a;
+  }
+  runAct->fPrimary = primary;
   rm->SetUserAction(runAct);
   auto* evtAct = new EventAct(runAct);
   rm->SetUserAction(evtAct);

@@ -9,6 +9,18 @@
 // эффект в 10..15 % тонет в статистике прогонов.
 #include "RCDetector.hh"
 
+// Собственный штамп провенанса (mucalc.cc + RCDetector.cc/.hh) — не общий с
+// main.cc, которого в этом бинарнике нет.
+#if defined(__has_include)
+#  if __has_include("rc_mucalc_provenance.hh")
+#    include "rc_mucalc_provenance.hh"
+#  endif
+#endif
+#ifndef RCMU_SRC_SHA1
+#  define RCMU_SRC_SHA1 "БЕЗ-ШТАМПА"
+#  define RCMU_GIT_DESCRIBE "БЕЗ-ШТАМПА"
+#endif
+
 #include "G4Box.hh"
 #include "G4EmCalculator.hh"
 #include "G4EmStandardPhysics_option4.hh"
@@ -93,6 +105,9 @@ int main(int argc, char** argv) {
   FILE* f = std::fopen(fname, "w");
   std::fprintf(f, "# массовый коэффициент ослабления, см²/г (compt+phot+conv)\n");
   std::fprintf(f, "# physics: EmStandardPhysics_option4, Geant4 11.2.1\n");
+  std::fprintf(f, "# src_sha1 = %s\n", RCMU_SRC_SHA1);
+  std::fprintf(f, "# git_describe = %s\n", RCMU_GIT_DESCRIBE);
+  std::fprintf(f, "# build = %s %s\n", __DATE__, __TIME__);
   std::fprintf(f, "matrix,rho_gcm3,E_keV,mu_over_rho_cm2_g,mu_cm-1\n");
   for (int i = 0; i < NCFG; ++i) {
     auto* m = gMats[i];

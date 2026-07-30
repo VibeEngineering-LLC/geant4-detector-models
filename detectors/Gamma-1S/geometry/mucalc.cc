@@ -12,16 +12,16 @@
 // именно так считался mu в контуре radiacode-curves — сохраняем сопоставимость.
 #include "G1SDetector.hh"
 
-// Тот же штамп провенанса, что у основного расчёта: выход зависит от материалов
-// геометрии, читается анализом, значит обязан отвечать «из чего получен».
+// Собственный штамп провенанса mucalc (mucalc.cc + G1SDetector.cc/.hh) — не
+// общий с main.cc, которого в этом бинарнике нет.
 #if defined(__has_include)
-#  if __has_include("g1s_provenance.hh")
-#    include "g1s_provenance.hh"
+#  if __has_include("g1s_mucalc_provenance.hh")
+#    include "g1s_mucalc_provenance.hh"
 #  endif
 #endif
-#ifndef G1S_SRC_SHA1
-#  define G1S_SRC_SHA1 "БЕЗ-ШТАМПА"
-#  define G1S_GIT_DESCRIBE "БЕЗ-ШТАМПА"
+#ifndef G1SMU_SRC_SHA1
+#  define G1SMU_SRC_SHA1 "БЕЗ-ШТАМПА"
+#  define G1SMU_GIT_DESCRIBE "БЕЗ-ШТАМПА"
 #endif
 
 #include "G4Box.hh"
@@ -148,8 +148,8 @@ int main(int argc, char** argv) {
     FILE* f = std::fopen(o.fn, "w");
     std::fprintf(f, "# %s, массовый коэффициент ослабления, см²/г\n", o.title);
     std::fprintf(f, "# compt+phot+conv, EmStandardPhysics_option4, Geant4 11.2.1\n");
-    std::fprintf(f, "# src_sha1 = %s\n", G1S_SRC_SHA1);
-    std::fprintf(f, "# git_describe = %s\n", G1S_GIT_DESCRIBE);
+    std::fprintf(f, "# src_sha1 = %s\n", G1SMU_SRC_SHA1);
+    std::fprintf(f, "# git_describe = %s\n", G1SMU_GIT_DESCRIBE);
     std::fprintf(f, "# build = %s %s\n", __DATE__, __TIME__);
     std::fprintf(f, "E_keV,mu_over_rho_cm2_g\n");
     for (int j = 0; j < NE; ++j) {

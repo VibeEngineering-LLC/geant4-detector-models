@@ -15,6 +15,19 @@
 // флюенс. Абсолютная нормировка — через объёмную скорость испускания.
 //
 // Запуск:  wallfield [число событий] [выходной файл]
+//
+// Собственный штамп провенанса: нет ни main.cc, ни RCDetector.cc, поэтому
+// отпечаток свой (rc_wallfield_provenance.hh), не общий с rc_curves/mucalc.
+#if defined(__has_include)
+#  if __has_include("rc_wallfield_provenance.hh")
+#    include "rc_wallfield_provenance.hh"
+#  endif
+#endif
+#ifndef RCWF_SRC_SHA1
+#  define RCWF_SRC_SHA1 "БЕЗ-ШТАМПА"
+#  define RCWF_GIT_DESCRIBE "БЕЗ-ШТАМПА"
+#endif
+
 #include "G4Box.hh"
 #include "G4Event.hh"
 #include "G4EmStandardPhysics_option4.hh"
@@ -177,6 +190,9 @@ public:
 
     FILE* f = std::fopen(fOut.c_str(), "w");
     std::fprintf(f, "# поле ЕРН в помещении: флюенс в воздушной полости\n");
+    std::fprintf(f, "# src_sha1 = %s\n", RCWF_SRC_SHA1);
+    std::fprintf(f, "# git_describe = %s\n", RCWF_GIT_DESCRIBE);
+    std::fprintf(f, "# build = %s %s\n", __DATE__, __TIME__);
     std::fprintf(f, "# concrete: K-40 %.0f, Ra-226 %.0f, Th-232 %.0f Bq/kg, rho %.2f\n",
                  A_K40, A_RA226, A_TH232, RHO_CONCRETE);
     std::fprintf(f, "# R_wall_cm = %.1f  R_cav_cm = %.1f\n", R_WALL / cm, R_CAV / cm);

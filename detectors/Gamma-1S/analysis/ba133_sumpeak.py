@@ -54,7 +54,7 @@ def peak(path, E0, half=3.0):
 
 def find_build():
     b = os.environ.get("G4MODELS_BUILD_GAMMA_1S")
-    for c in ([b] if b else []) + [r"C:\g4work\gamma1s\build"]:
+    for c in ([b] if b else []):
         if c and os.path.exists(os.path.join(c, "p5_Ba133.csv")):
             return c
     raise SystemExit(

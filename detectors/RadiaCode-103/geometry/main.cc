@@ -6,6 +6,20 @@
 //          rc_curves <макрос> bare       — «голый» прибор в воздухе
 #include "RCDetector.hh"
 
+// Отпечаток исходников, запекаемый в бинарник общим генератором
+// common/cmake/provenance.cmake (то же правило, что у Гамма-1С).
+#if defined(__has_include)
+#  if __has_include("rc_provenance.hh")
+#    include "rc_provenance.hh"
+#  endif
+#endif
+#ifndef RC_SRC_SHA1
+// Сборка мимо CMake — не запрещаем, но помечаем, чтобы такой спектр нельзя
+// было принять за прослеженный.
+#  define RC_SRC_SHA1 "БЕЗ-ШТАМПА"
+#  define RC_GIT_DESCRIBE "БЕЗ-ШТАМПА"
+#endif
+
 #include "G4Event.hh"
 #include "G4GeneralParticleSource.hh"
 #include "G4ParticleDefinition.hh"
@@ -100,6 +114,12 @@ public:
       return;
     }
     std::fprintf(f, "# RadiaCode 101/102/103, CsI(Tl) 10x10x10 mm\n");
+    // Отпечаток исходников, из которых собран ЭТОТ exe. Правило одно на все
+    // детекторы (common/docs/method-rules.md): вопрос «из чего получено»
+    // решается бинарником, а не временем файла.
+    std::fprintf(f, "# src_sha1 = %s\n", RC_SRC_SHA1);
+    std::fprintf(f, "# git_describe = %s\n", RC_GIT_DESCRIBE);
+    std::fprintf(f, "# build = %s %s\n", __DATE__, __TIME__);
     std::fprintf(f, "# particle = %s\n", fPart.c_str());
     std::fprintf(f, "# E_prim_keV = %.4f\n", eMean);
     std::fprintf(f, "# N_primaries = %ld\n", N);

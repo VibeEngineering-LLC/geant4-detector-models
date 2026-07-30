@@ -29,8 +29,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "common", "py"))
 import stamp  # noqa: E402
 
-NEED = ("obs.quantity", "obs.area", "obs.window", "obs.shelf", "obs.blurred")
+NEED = ("obs.quantity", "obs.area", "obs.window", "obs.shelf", "obs.blurred",
+        "src.inputs_verdict")
 BAD_VERDICTS = ("stale", "mixed")
+# Вердикты, которые не ошибка, но и не подтверждение. Прежде `unverified`
+# отдавался как `ok`, и таблица с ЧУЖИМ отпечатком входов проходила молча.
+SOFT_VERDICTS = ("unstamped", "unverified", "no_inputs")
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                     ".."))
@@ -45,8 +49,12 @@ def main(argv):
                       if os.path.isdir(p))
     stamped, plain, errs, warns = [], [], [], []
     for det in dets:
+        # Рекурсивно: 16 таблиц лежат в подкаталогах results/ (m200, m500,
+        # efa_export) и прежде не проверялись и даже не попадали в счётчик
+        # долга — «38 из 41» было занижено.
         for p in sorted(glob.glob(os.path.join(
-                REPO, "detectors", det, "results", "*.csv"))):
+                REPO, "detectors", det, "results", "**", "*.csv"),
+                recursive=True)):
             rel = os.path.relpath(p, REPO).replace("\\", "/")
             st = stamp.read_table_stamp(p)
             if not st:
@@ -61,11 +69,14 @@ def main(argv):
             if v in BAD_VERDICTS:
                 errs.append("%s: вердикт по входам «%s» (отпечаток %s)"
                             % (rel, v, st.get("src.inputs_sha1", "?")))
-            elif v == "unstamped":
-                warns.append("%s: входы без штампа (%s из %s) — числа"
-                             " непрослежены"
-                             % (rel, st.get("src.inputs_unstamped", "?"),
-                                st.get("src.inputs_n", "?")))
+            elif v in SOFT_VERDICTS:
+                warns.append("%s: вердикт «%s» — числа не прослежены"
+                             " (входов %s; без штампа %s)"
+                             % (rel, v, st.get("src.inputs_n", "?"),
+                                st.get("src.inputs_unstamped", "—")))
+            elif v != "ok":
+                errs.append("%s: неизвестный вердикт по входам «%s» —"
+                            " сторож не знает, что это значит" % (rel, v))
 
     total = len(stamped) + len(plain)
     print("Таблиц %d: со штампом %d, без штампа %d."

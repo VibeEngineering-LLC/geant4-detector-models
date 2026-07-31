@@ -27,12 +27,14 @@
 """
 import io
 import os
+import re
 import sys
 import zipfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
+import paths  # noqa: E402
 import stamp  # noqa: E402
 
 # Ключи, влияющие на ПЛОЩАДЬ пика и на бюджет неопределённости, с пояснением
@@ -109,6 +111,19 @@ def is_path(v):
     return "\\" in v or ":" in v
 
 
+# Заводской номер прибора — квазиидентификатор (правило задачи 48/68): в
+# репозиторий не попадает ни в каком виде. Слепок несёт его в имени профиля
+# (General/Name = «Гамма-1С_№NNNN-NN»), а маскировались только пути — так
+# номер и утёк в CSV; пойман сторожем check_paths при прогоне задачи 151.
+# Знак № обязателен: без него шаблон \d{4}-\d{2} съедал бы даты «2024-11»
+# в произвольных ключах конфигурации (найдено ревью).
+_SERIAL = re.compile(r"№\s*\d{4}-\d{2}")
+
+
+def mask_serial(v):
+    return _SERIAL.sub("(номер прибора скрыт)", v)
+
+
 if __name__ == "__main__":
     zp = os.environ.get("G1S_LSRM_BACKUP_ZIP")
     cp = os.environ.get("G1S_LSRM_CNF")
@@ -130,6 +145,7 @@ if __name__ == "__main__":
             continue
         if is_path(a) or is_path(b):
             a = b = "(путь изменён)"
+        a, b = mask_serial(a), mask_serial(b)
         rows.append((k, a, b, MEANING.get(k, "")))
 
     key_rows = [r for r in rows if r[3]]

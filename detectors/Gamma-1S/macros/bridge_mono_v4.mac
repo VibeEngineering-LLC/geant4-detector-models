@@ -1,0 +1,61 @@
+# Мост методик (задача 115) — ЧИСТЫЕ 4pi-моно на ТЕКУЩЕМ дереве.
+#
+# Зачем заново. Прежние scat_p5_full_E*.csv (28.07) сняты ДО правки торца
+# (коммит 1a29dee) и штампа провенанса не несут; scat_v3_E*.csv (30.07 10:55)
+# сняты exe без штампа. Оба набора судить нельзя: отсутствие штампа — не
+# «сошлось», а «неизвестно». Здесь все линии снимаются ОДНИМ прогоном, одним
+# exe, с отпечатком в шапке каждого файла.
+#
+# Геометрия та же, что у scat_test/scat_mono_81_861: точечный источник на оси,
+# z = 91 мм = 41 мм (наружная поверхность корпуса) + 50 мм, полный 4pi без
+# maxtheta — конус не режем, рассеяние на защите входит целиком.
+#
+# Набор энергий. Шесть линий, на которых ПРИБОРНАЯ ПШПВ измерена напрямую
+# (сеанс СпектраЛайн 30.07: 238,632 / 300,087 / 583,187 / 727,330 / 860,557 /
+# 2614,511) — на них B(E) не опирается на экстраполяцию параметризации.
+# Плюс три точки для протяжённости диапазона: 80,998 (мягкий край; читать с
+# оговоркой — окно полки E-10 там внутри пика), 122,100 и 661,657.
+/run/initialize
+/control/verbose 0
+/run/verbose 0
+
+/gps/particle gamma
+/gps/pos/type Point
+/gps/pos/centre 0 0 91 mm
+/gps/ang/type iso
+
+/gps/energy 80.998 keV
+/g1s/outFile bridge4pi_E0081.0.csv
+/run/beamOn 1600000
+
+/gps/energy 122.100 keV
+/g1s/outFile bridge4pi_E0122.1.csv
+/run/beamOn 1600000
+
+/gps/energy 238.632 keV
+/g1s/outFile bridge4pi_E0238.6.csv
+/run/beamOn 1600000
+
+/gps/energy 300.087 keV
+/g1s/outFile bridge4pi_E0300.1.csv
+/run/beamOn 1600000
+
+/gps/energy 583.187 keV
+/g1s/outFile bridge4pi_E0583.2.csv
+/run/beamOn 1600000
+
+/gps/energy 661.657 keV
+/g1s/outFile bridge4pi_E0661.7.csv
+/run/beamOn 1600000
+
+/gps/energy 727.330 keV
+/g1s/outFile bridge4pi_E0727.3.csv
+/run/beamOn 1600000
+
+/gps/energy 860.557 keV
+/g1s/outFile bridge4pi_E0860.6.csv
+/run/beamOn 1600000
+
+/gps/energy 2614.511 keV
+/g1s/outFile bridge4pi_E2614.5.csv
+/run/beamOn 1600000

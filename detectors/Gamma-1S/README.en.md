@@ -52,10 +52,13 @@ Both point distances are now extracted with ONE peak-area convention (unified
 on 2026-07-31) and agree with each other; the certified curve itself
 reproduces the same passports with deviations of 3.9% at 5 cm and 4.4% at
 25 cm — this sets the scale against which the calculation is meaningfully
-compared. The jump of the discrepancy at the hard edge (2614.5 keV) belongs
-to the peak-area extraction convention, not to the physics of the model;
-after both sides are brought to one convention the residual is flat, about
-7% (a lower bound) — details in [docs/report.md](docs/report.md) §5.3.
+compared. The peak-area extraction convention explains ~5 of the 27.6
+percentage points of the hard-edge jump (2614.5 keV); the residual after
+bringing both sides to one convention is NOT flat — 7.0…9.2% on the plateau
+and 22.6 ± 2.3% at the edge, an energy-dependent contribution remains open
+(the conclusion was revised by the internal audit on the evening of
+2026-07-31; the previous revision of this paragraph attributed the whole
+jump to the convention) — details in [docs/report.md](docs/report.md) §5.3.
 
 Independently of the `.efr`, **the entire kit was recalculated against the
 source passports** — tables in
@@ -110,12 +113,16 @@ extracted with one convention, give calc/passport 1.0365 ± 0.0112 and
 1.0381 ± 0.0214 and agree with each other; the certified curve itself
 reproduces the same passports with deviations of 3.9% and 4.4%.
 
-**The jump of the discrepancy at the hard edge belongs to the peak-area
-extraction method.** The convention correction `B(E)`, measured on clean
-monoenergetic runs, absorbs the break at 2614.5 keV; what remains
-unexplained is a flat plateau of about 7% (a lower bound — the calculation
-uses a linear background against the second-degree polynomial of the
-processing software). Decomposing the plateau is tasks 109/111/122/142.
+**The peak-area extraction convention explains the smaller part of the
+hard-edge jump.** The correction `B(E)`, measured on clean monoenergetic
+runs in the instrument's own convention (±2.5 FWHM zone, second-degree
+polynomial), removes ~5 of the 27.6 percentage points at 2614.5 keV. The
+residual is NOT flat: 7.0…9.2% on the plateau and 22.6 ± 2.3% at the edge —
+an energy-dependent contribution beyond the plateau remains open and has
+been returned to task 93. The earlier conclusion "the jump belongs to the
+convention" was revised by the internal audit of 2026-07-31: it rested on a
+fit zone that pulled the Compton edge inside, and on a linear background.
+Decomposing the residual is tasks 93/109/111/122/142.
 
 **The response to a change of geometry was verified across seven grids**:
 the agreement with the certification improves the farther the sample

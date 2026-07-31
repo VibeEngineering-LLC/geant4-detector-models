@@ -23,11 +23,27 @@ import sys
 # было ни одного пути, привязанного к конкретной машине.
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
+import csvio  # noqa: E402
 import paths  # noqa: E402
+import stamp  # noqa: E402
 
 # parse_efr живёт в инструментах репозитория, а не среди данных
 sys.path.insert(0, str(paths.tools()))
 from fetch_efr import parse_efr  # noqa: E402
+
+# Объявление наблюдаемой. ВАЖНОЕ ОТЛИЧИЕ от compare_lsrm.py: здесь площадь
+# ВАЛОВАЯ — сумма отсчётов окна ±6 кэВ БЕЗ вычета полки. Поэтому сводка по
+# Маринелли здесь (1,28) закономерно отличается от compare_lsrm (1,2526):
+# это разные наблюдаемые, и сравнивать их между собой напрямую нельзя.
+OBS_SUMMARY = {
+    "quantity": "средневзвешенное МК/эксп по кюветам против кривой .efr;"
+                " и его разброс формы",
+    "area": "валовая сумма отсчётов окна; полка НЕ вычитается — этим"
+            " отличается от compare_lsrm",
+    "window": "+-6 кэВ вокруг моноэнергии",
+    "shelf": "не вычитается",
+    "blurred": "нет — депозит-спектры сетки как есть",
+}
 
 BUILD = str(paths.build("Gamma-1S"))
 
@@ -73,6 +89,7 @@ def mc_curve(tag):
 
 
 if __name__ == "__main__":
+    rows = []
     for tag, efr, title in CASES:
         mc = mc_curve(tag)
         path = paths.efficiency_curve(efr)
@@ -98,9 +115,29 @@ if __name__ == "__main__":
         if logs:
             lw = sum(l * w for l, w in zip(logs, ws)) / sum(ws)
             k = math.exp(lw)
+            dk = k / math.sqrt(sum(ws))
             dev = [math.exp(l - lw) - 1 for l in logs]
             rms = math.sqrt(sum(d * d for d in dev) / len(dev))
-            print("   средневзвешенное МК/эксп = %.3f по %d точкам, "
-                  "RMS формы %.1f %%" % (k, len(logs), 100 * rms))
+            print("   средневзвешенное МК/эксп = %.3f +- %.3f по %d точкам, "
+                  "RMS формы %.1f %%" % (k, dk, len(logs), 100 * rms))
+            rows.append(("%s" % tag, "%.4f" % k, "%.4f" % dk,
+                         "%d" % len(logs), "%.4f" % rms))
+    # Сводка кладётся файлом: README цитировал эти числа «из стдаута скрипта»,
+    # то есть мимо сторожей формата и штампа — тот же класс дыры, что закрыт
+    # для marinelli_k в compare_lsrm.py (задача 148).
+    out = os.path.join(str(paths.results("Gamma-1S")),
+                       "compare_cups_summary.csv")
+    csvio.write(
+        out,
+        ["grid", "k_mc_over_exp", "d_k", "n_points", "rms_shape"],
+        rows,
+        comments=["площадь валовая (полка не вычитается) — наблюдаемая"
+                  " ИНАЯ; чем в compare_lsrm_summary; сравнивать напрямую"
+                  " нельзя"],
+        stamp=stamp.lines(
+            "detectors/Gamma-1S/analysis/compare_cups.py", OBS_SUMMARY,
+            geometry_dir=str(paths.geometry("Gamma-1S")),
+            names=stamp.SRC_LISTS["Gamma-1S"], repo_dir=str(paths.REPO)))
+    print("\n    сводка: %s (%d строк)" % (out, len(rows)))
     print("\nЕсли у кювет отношение около 1, геометрия кювет НЕ виновата —")
     print("тогда искать в прогонах цепочек. Если поехало — виновата геометрия.")

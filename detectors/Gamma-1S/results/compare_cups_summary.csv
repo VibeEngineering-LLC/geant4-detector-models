@@ -1,0 +1,16 @@
+#@ stamp.version = 1
+#@ src.script = detectors/Gamma-1S/analysis/compare_cups.py
+#@ src.git = c4913ba-dirty
+#@ src.tree_sha1 = bd17f9bea1e4
+#@ src.inputs_verdict = no_inputs
+#@ src.inputs_n = 0
+#@ obs.quantity = средневзвешенное МК/эксп по кюветам против кривой .efr; и его разброс формы
+#@ obs.area = валовая сумма отсчётов окна; полка НЕ вычитается — этим отличается от compare_lsrm
+#@ obs.window = +-6 кэВ вокруг моноэнергии
+#@ obs.shelf = не вычитается
+#@ obs.blurred = нет — депозит-спектры сетки как есть
+# площадь валовая (полка не вычитается) — наблюдаемая ИНАЯ; чем в compare_lsrm_summary; сравнивать напрямую нельзя
+grid,k_mc_over_exp,d_k,n_points,rms_shape
+denta1.60,1.0107,0.0106,13,0.1437
+petri1.60,0.9413,0.0094,14,0.1310
+rho1.60,1.2823,0.0123,15,0.0946

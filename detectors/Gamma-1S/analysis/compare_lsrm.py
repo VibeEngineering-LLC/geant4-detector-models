@@ -21,15 +21,21 @@ import csvio  # noqa: E402
 import paths  # noqa: E402
 import stamp  # noqa: E402
 
-# Объявление наблюдаемой — что именно за число лежит в сводке.
-OBS_SUMMARY = {
-    "quantity": "сводка сверки расчётной кривой Маринелли с аттестованной"
-                " .efr: нормировка; разброс формы; хи2 на степень свободы",
-    "area": "чистая площадь пика за вычетом левой полки континуума",
-    "window": "+-6 кэВ; полка E-30…E-10 кэВ",
-    "shelf": "односторонняя слева — при моноэнергии справа отсчётов нет",
-    "blurred": "нет — депозит-спектры сетки как есть",
-}
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import peakwin  # noqa: E402
+
+# Объявление наблюдаемой — что именно за число лежит в сводке. Строки окна
+# и полки собираются из констант peakwin: прежде здесь стояло рукописное
+# «полка E-30…E-10», а правило мигрировало на [E-25; E-10] — объявление лгало
+# (внутренний аудит 31.07.2026).
+OBS_SUMMARY = dict(
+    {
+        "quantity": "сводка сверки расчётной кривой Маринелли с аттестованной"
+                    " .efr: нормировка; разброс формы; хи2 на степень свободы",
+        "area": "чистая площадь пика за вычетом полки континуума"
+                " (правило common/py/peakwin)",
+    },
+    **peakwin.declare())
 
 # parse_efr живёт в инструментах репозитория, а не среди данных
 sys.path.insert(0, str(paths.tools()))
@@ -66,15 +72,12 @@ def marinelli_k():
         return "неизвестно (запустите compare_lsrm.py)"
 
 
-# Окно ППП: расчёт без уширения, пик острый; края учитывают утечку в
-# соседний канал.
-WIN = 6.0        # +- кэВ вокруг E0
-BG0, BG1 = 30.0, 10.0   # левая полка континуума: E0-30 .. E0-10
-
+# Окно ППП и полка — единственная реализация common/py/peakwin (полка
+# [E−25; E−10], счёт в каналах). Прежняя собственная копия правила держала
+# полку E−30, захватывающую пик вылета иода E−28,6 (аудит 31.07.2026).
 # Континуум под пиком образуют события с почти полным энерговыделением
 # (многократное рассеяние с малой потерей). Справа от E0 при моноэнергетическом
 # источнике без наложений отсчётов нет, поэтому полка только левая.
-SUBTRACT_BG = True
 
 
 def read_run(path):
@@ -90,16 +93,14 @@ def read_run(path):
         if line and line[0].isdigit():
             e, c = line.split(",")
             hist[float(e)] = int(c)
-    gross = sum(c for e, c in hist.items() if abs(e - E0) <= WIN)
-    side = sum(c for e, c in hist.items() if E0 - BG0 <= e <= E0 - BG1)
-    # Каналов в окне — по факту: центры полуцелые, окно 2·WIN содержит 2·WIN
-    # каналов, а не 2·WIN+1. См. nchan() в export_curves.py.
-    n = math.floor(E0 + WIN - 0.5) - math.ceil(E0 - WIN - 0.5) + 1
-    nside = math.floor(E0 - BG1 - 0.5) - math.ceil(E0 - BG0 - 0.5) + 1
-    bg = side / nside * n if SUBTRACT_BG else 0.0
-    # D(bg) = (n/nside)^2 * side = (n/nside)*bg; вывод — в export_curves.py
-    var = gross + (n / nside) * bg
-    return E0, gross - bg, math.sqrt(max(var, 1.0)), N
+    det = {}
+    net = peakwin.area(hist, E0, detail=det)
+    bg = (det["side"] / det["n_side"] * det["n_peak"]
+          if det["n_side"] else 0.0)
+    # D(bg) = (n/nside)^2 * side = (n/nside)*bg
+    var = (det["gross"] + (det["n_peak"] / det["n_side"]) * bg
+           if det["n_side"] else det["gross"])
+    return E0, net, math.sqrt(max(var, 1.0)), N
 
 
 def mc_curve(rho_tag="rho1.60"):

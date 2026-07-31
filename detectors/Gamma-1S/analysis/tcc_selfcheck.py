@@ -36,6 +36,8 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
+import stamp  # noqa: E402
+import paths  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from point_recalc import (
@@ -50,6 +52,31 @@ DECAY_PREFIX = os.environ.get("G1S_DECAY_PREFIX", "p5_")
 # Полки подложки: [E-BG0, E-BG1] слева и [E+BG1, E+BG0] справа, окно пика ±WIN.
 WIN, BG0, BG1 = 6.0, 30.0, 10.0
 SYMMETRIC = True
+
+
+# Объявление наблюдаемой — что именно за число лежит в таблице. Без него
+# таблицу нельзя сравнивать ни с какой другой: за один вечер 30.07.2026
+# подмена определения стоила вывода четыре раза (method-rules §5).
+OBS = {
+    "quantity":
+        "поправка на истинное совпадение; измеренная моделью на самой себе: прогон распада против моноэнергии",
+    "area":
+        "чистая площадь пика; ОДНО правило на обе стороны отношения",
+    "window":
+        "узкое окно по депозиту — воспроизводимость; а не абсолют",
+    "shelf":
+        "вычитается одинаково с обеих сторон",
+    "blurred":
+        "нет — депозит-спектры как есть",
+}
+
+
+def _stamp(inputs=None):
+    return stamp.lines("detectors/Gamma-1S/analysis/tcc_selfcheck.py", OBS,
+                       inputs=inputs,
+                       geometry_dir=str(paths.geometry("Gamma-1S")),
+                       names=stamp.SRC_LISTS["Gamma-1S"],
+                       repo_dir=str(paths.REPO))
 
 
 def peak_area(hist, E, symmetric=True):
@@ -355,7 +382,8 @@ def main():
                 " фактический, а не табличный.",
                 "Cs-137 — контроль метода (каскада нет), Co-60 — рабочая"
                 " точка.",
-            ])
+            ],
+        stamp=_stamp())
         print("\nсводка: %s" % op)
 
 

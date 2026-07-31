@@ -33,6 +33,7 @@ import zipfile
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
+import stamp  # noqa: E402
 
 # Ключи, влияющие на ПЛОЩАДЬ пика и на бюджет неопределённости, с пояснением
 MEANING = {
@@ -64,6 +65,31 @@ MEANING = {
     "Spectrometer/HighLoadCorrection": "поправка на высокую загрузку",
     "Default/ActivityCalcMethod": "метод расчёта активности",
 }
+
+
+# Объявление наблюдаемой — что именно за число лежит в таблице. Без него
+# таблицу нельзя сравнивать ни с какой другой: за один вечер 30.07.2026
+# подмена определения стоила вывода четыре раза (method-rules §5).
+OBS = {
+    "quantity":
+        "расхождение ключей конфигурации прибора между слепком эпохи аттестации и текущим состоянием — величина НЕ числовая",
+    "area":
+        "не применимо",
+    "window":
+        "не применимо",
+    "shelf":
+        "не применимо",
+    "blurred":
+        "не применимо",
+}
+
+
+def _stamp(inputs=None):
+    return stamp.lines("detectors/Gamma-1S/analysis/config_drift.py", OBS,
+                       inputs=inputs,
+                       geometry_dir=str(paths.geometry("Gamma-1S")),
+                       names=stamp.SRC_LISTS["Gamma-1S"],
+                       repo_dir=str(paths.REPO))
 
 
 def parse_cnf(text):
@@ -138,5 +164,6 @@ if __name__ == "__main__":
             "Строки с заполненным affects меняют ПЛОЩАДЬ пика или бюджет"
             " неопределённости — то есть сопоставимость наших чисел с",
             "  аттестационными. Прочие — имя профиля, даты, плагины.",
-        ])
+        ],
+        stamp=_stamp())
     print("\nтаблица: %s" % out)

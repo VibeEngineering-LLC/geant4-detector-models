@@ -31,6 +31,8 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
+import stamp  # noqa: E402
+import paths  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from point_recalc import BUILD, area_sim, load_hist  # noqa: E402
@@ -38,6 +40,31 @@ from point_recalc import BUILD, area_sim, load_hist  # noqa: E402
 # Метки без запятых: csvio требует, чтобы файл читался наивным split(",").
 LINES = [("пик 1173 кэВ", 1173.23), ("пик 1332 кэВ", 1332.49)]
 SUM_PEAK = ("сумм-пик 2506 кэВ", 2505.72)
+
+
+# Объявление наблюдаемой — что именно за число лежит в таблице. Без него
+# таблицу нельзя сравнивать ни с какой другой: за один вечер 30.07.2026
+# подмена определения стоила вывода четыре раза (method-rules §5).
+OBS = {
+    "quantity":
+        "отношение эффективности с включённым флагом correlatedGamma к эффективности без него",
+    "area":
+        "чистая площадь пика за вычетом полки; одно правило на оба прогона",
+    "window":
+        "+-6 кэВ в каналах; полка [E-25; E-10]",
+    "shelf":
+        "односторонняя слева; вычитается одинаково в обоих прогонах",
+    "blurred":
+        "нет — депозит-спектры как есть",
+}
+
+
+def _stamp(inputs=None):
+    return stamp.lines("detectors/Gamma-1S/analysis/corr_gamma_effect.py", OBS,
+                       inputs=inputs,
+                       geometry_dir=str(paths.geometry("Gamma-1S")),
+                       names=stamp.SRC_LISTS["Gamma-1S"],
+                       repo_dir=str(paths.REPO))
 
 
 def peak(hist, N, E):
@@ -102,7 +129,8 @@ def main():
                 " составил бы 0,23 процентного пункта и потребовал бы",
                 "  около 130 млн распадов, чтобы отличаться от нуля на трёх"
                 " сигмах.",
-            ])
+            ],
+        stamp=_stamp())
         print("\nсводка: %s" % op)
 
 

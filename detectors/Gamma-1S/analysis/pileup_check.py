@@ -35,6 +35,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
 import paths  # noqa: E402
+import stamp  # noqa: E402
 
 RESULTS = os.path.abspath(os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "..", "results"))
@@ -42,6 +43,31 @@ RESULTS = os.path.abspath(os.path.join(
 TAU_S = 5.0e-6           # время формирования тракта, с (ориентир для NaI+ADC)
 GEOMS = ("Точечная-5см", "Точечная-25см", "Маринелли", "Петри-60мл",
          "Дента-120мл")
+
+
+# Объявление наблюдаемой — что именно за число лежит в таблице. Без него
+# таблицу нельзя сравнивать ни с какой другой: за один вечер 30.07.2026
+# подмена определения стоила вывода четыре раза (method-rules §5).
+OBS = {
+    "quantity":
+        "мёртвое время и оценка потерь пика на наложения по аттестационным записям",
+    "area":
+        "не применимо — берутся полный счёт; живое и реальное время",
+    "window":
+        "не применимо — величина относится к записи целиком",
+    "shelf":
+        "не применимо",
+    "blurred":
+        "не применимо — измеренные записи как есть",
+}
+
+
+def _stamp(inputs=None):
+    return stamp.lines("detectors/Gamma-1S/analysis/pileup_check.py", OBS,
+                       inputs=inputs,
+                       geometry_dir=str(paths.geometry("Gamma-1S")),
+                       names=stamp.SRC_LISTS["Gamma-1S"],
+                       repo_dir=str(paths.REPO))
 
 
 def main():
@@ -113,7 +139,8 @@ def main():
             "Мёртвое время измеренное: 1 - TLIVE/TREAL.",
             "На записях наших выводов пайлап единицы процентов (Th-228"
             " точечная 5 см 3;7 %; Ba-133 0;7 %; Am-241 0;9 %).",
-        ])
+        ],
+        stamp=_stamp())
     print("\nтаблица: %s" % os.path.join(RESULTS, "pileup_check.csv"))
 
 

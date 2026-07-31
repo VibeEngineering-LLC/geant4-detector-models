@@ -38,6 +38,31 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
+import stamp  # noqa: E402
+import paths  # noqa: E402
+
+# Объявление наблюдаемой — что именно за число лежит в таблице.
+OBS = {
+    "quantity":
+        "активность Am-241 по чистой монолинии 59;5 кэВ на нашей и штатной кривых",
+    "area":
+        "площадь снимает СпектраЛайн; сюда приходит готовое число",
+    "window":
+        "конвенция программы (границы пиков в долях ПШПВ)",
+    "shelf":
+        "ступенька-из-образа плюс полином — конвенция программы",
+    "blurred":
+        "не применимо — измеренный спектр",
+}
+
+
+def _stamp(inputs=None):
+    return stamp.lines("detectors/Gamma-1S/analysis/soft_edge_am241.py", OBS,
+                       inputs=inputs,
+                       geometry_dir=str(paths.geometry("Gamma-1S")),
+                       names=stamp.SRC_LISTS["Gamma-1S"],
+                       repo_dir=str(paths.REPO))
+
 
 RESULTS = os.path.abspath(os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "..", "results"))
@@ -136,5 +161,6 @@ if __name__ == "__main__":
             " активность на 6 %; на 2614;5 кэВ занижает на 22 %;",
             "  полиномы пересекаются на 81;0 кэВ — единым множителем"
             " расхождение не объясняется.",
-        ])
+        ],
+        stamp=_stamp())
     print("\nтаблица: %s" % os.path.join(RESULTS, "soft_edge_am241.csv"))

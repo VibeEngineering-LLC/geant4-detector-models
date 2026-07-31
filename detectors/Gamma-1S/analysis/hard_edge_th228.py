@@ -64,6 +64,8 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
+import stamp  # noqa: E402
+import paths  # noqa: E402
 
 RESULTS = os.path.abspath(os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "..", "results"))
@@ -106,6 +108,31 @@ PRED = {
     "ZoneByZone_Plus": {238.632: 87141, 300.087: 64542, 583.187: 84709,
                         727.330: 80408, 860.557: 76004, 2614.511: 68770},
 }
+
+
+# Объявление наблюдаемой — что именно за число лежит в таблице. Без него
+# таблицу нельзя сравнивать ни с какой другой: за один вечер 30.07.2026
+# подмена определения стоила вывода четыре раза (method-rules §5).
+OBS = {
+    "quantity":
+        "активность Th-228 по точечной записи 5 см на нашей и штатной кривых; двумя методами программы",
+    "area":
+        "площадь снимает СпектраЛайн; сюда приходит готовое число из окна программы",
+    "window":
+        "конвенция программы (границы пиков в долях ПШПВ)",
+    "shelf":
+        "ступенька-из-образа плюс полином — конвенция программы",
+    "blurred":
+        "не применимо — измеренный спектр",
+}
+
+
+def _stamp(inputs=None):
+    return stamp.lines("detectors/Gamma-1S/analysis/hard_edge_th228.py", OBS,
+                       inputs=inputs,
+                       geometry_dir=str(paths.geometry("Gamma-1S")),
+                       names=stamp.SRC_LISTS["Gamma-1S"],
+                       repo_dir=str(paths.REPO))
 
 
 def applied_eps(S, A, E):
@@ -213,5 +240,6 @@ if __name__ == "__main__":
             " исключены по неразделимости; 510;77 блендится с 511 кэВ.",
             "sqrt(1/Sw) как оценка sigma завышена: линии делят паспорт;"
             " время и кривую — интервал не трактовать как согласие.",
-        ])
+        ],
+        stamp=_stamp())
     print("\nтаблица: %s" % os.path.join(RESULTS, "hard_edge_th228.csv"))

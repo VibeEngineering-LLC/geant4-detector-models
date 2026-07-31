@@ -38,6 +38,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
 import csvio  # noqa: E402
 import stamp  # noqa: E402
 import paths  # noqa: E402
+import peakwin  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from point_recalc import (
@@ -45,34 +46,45 @@ from point_recalc import (
 )  # noqa: E402
 
 MONO_TAG = "tcc5cm"
+# Реестр фактически прочитанных входов — уходит в штамп (inputs=...), иначе
+# сторож check_stamp ставит вердикт no_inputs: числа не прослежены.
+USED_INPUTS = []
+
+
+def _used(path):
+    if path not in USED_INPUTS:
+        USED_INPUTS.append(path)
+    return path
 # Префикс файлов прогона распада: добор статистики пишется отдельно (p5x_),
 # чтобы штатный комплект оставался цел, пока идёт многочасовой счёт.
 DECAY_PREFIX = os.environ.get("G1S_DECAY_PREFIX", "p5_")
 
-# Полки подложки: [E-BG0, E-BG1] слева и [E+BG1, E+BG0] справа, окно пика ±WIN.
-WIN, BG0, BG1 = 6.0, 30.0, 10.0
+# Окно пика и полки — общей реализацией peakwin (счёт в каналах); симметрия
+# включается режимом side="both". WIN остаётся как полуширина окна для
+# expected_tcc (порог депозита партнёра).
+WIN = peakwin.WIN_KEV
 SYMMETRIC = True
 
 
-# Объявление наблюдаемой — что именно за число лежит в таблице. Без него
-# таблицу нельзя сравнивать ни с какой другой: за один вечер 30.07.2026
-# подмена определения стоила вывода четыре раза (method-rules §5).
-OBS = {
-    "quantity":
-        "поправка на истинное совпадение; измеренная моделью на самой себе: прогон распада против моноэнергии",
-    "area":
-        "чистая площадь пика; ОДНО правило на обе стороны отношения",
-    "window":
-        "узкое окно по депозиту — воспроизводимость; а не абсолют",
-    "shelf":
-        "вычитается одинаково с обеих сторон",
-    "blurred":
-        "нет — депозит-спектры как есть",
-}
+def _obs():
+    """Объявление наблюдаемой — что именно за число лежит в таблице. Без него
+    таблицу нельзя сравнивать ни с какой другой: за один вечер 30.07.2026
+    подмена определения стоила вывода четыре раза (method-rules §5).
+    Строки окна и полки — из peakwin.declare(), с фактическим режимом."""
+    return dict(
+        {
+            "quantity":
+                "поправка на истинное совпадение; измеренная моделью на самой"
+                " себе: прогон распада против моноэнергии",
+            "area":
+                "чистая площадь пика; ОДНО правило на обе стороны отношения"
+                " (common/py/peakwin.area)",
+        },
+        **peakwin.declare(side="both" if SYMMETRIC else "left"))
 
 
 def _stamp(inputs=None):
-    return stamp.lines("detectors/Gamma-1S/analysis/tcc_selfcheck.py", OBS,
+    return stamp.lines("detectors/Gamma-1S/analysis/tcc_selfcheck.py", _obs(),
                        inputs=inputs,
                        geometry_dir=str(paths.geometry("Gamma-1S")),
                        names=stamp.SRC_LISTS["Gamma-1S"],
@@ -80,37 +92,33 @@ def _stamp(inputs=None):
 
 
 def peak_area(hist, E, symmetric=True):
-    """Площадь пика узким окном; подложка — по полкам.
+    """Площадь пика узким окном; подложка — по полкам (peakwin.area).
 
     ОДНОСТОРОННЯЯ ПОЛКА НЕПРИГОДНА, когда подложка слева и справа устроена
     по-разному, а у Co-60 это именно так. Комптоновский край линии 1332,49
     приходится на 1118,1 кэВ, край линии 1173,23 — на 963,4 кэВ. Левая полка
-    пика 1173 ([1143…1163] кэВ) попадает в крутой спад сразу за краем от
-    соседней линии: собственного комптона у 1173 здесь нет, а континуум от 1332
-    только что оборвался. Левая полка пика 1332 ([1302…1322] кэВ) лежит на
-    пологом хвосте многократного рассеяния, никаких краёв рядом. Односторонняя
-    подложка снимается поэтому с разным смещением, и линии расходятся.
+    пика 1173 попадает в крутой спад сразу за краем от соседней линии:
+    собственного комптона у 1173 здесь нет, а континуум от 1332 только что
+    оборвался. Левая полка пика 1332 лежит на пологом хвосте многократного
+    рассеяния, никаких краёв рядом. Односторонняя подложка снимается поэтому
+    с разным смещением, и линии расходятся.
 
-    Насколько это существенно: с левой полкой TCC вышел 0,944 ± 0,019 на 1173
-    и 1,000 ± 0,021 на 1332 — разность 2,0σ там, где физика требует совпадения
-    в пределах 0,3 % (партнёр по каскаду у каждой линии — другая, полные
-    эффективности различаются на единицы процентов, выходы у обеих около 100 %).
-    Взвешенное среднее 0,970 при этом случайно совпало с ожиданием, то есть
-    сводное число подтвердило бы вывод, которого набор не поддерживает.
+    Насколько это существенно: с левой полкой TCC выходил 0,944 ± 0,019 на
+    1173 и 1,000 ± 0,021 на 1332 — разность 2,0σ там, где физика требует
+    совпадения в пределах 0,3 % (партнёр по каскаду у каждой линии — другая,
+    полные эффективности различаются на единицы процентов, выходы у обеих
+    около 100 %). Взвешенное среднее 0,970 при этом случайно совпало с
+    ожиданием, то есть сводное число подтвердило бы вывод, которого набор
+    не поддерживает.
 
     Симметричная полка усредняет плотность подложки по обе стороны и убирает
     вклад односторонней особенности в первом порядке.
-    """
-    def dens(lo, hi):
-        s = sum(c for e, c in hist.items() if lo <= e <= hi)
-        return s / (hi - lo)
 
-    gross = sum(c for e, c in hist.items() if abs(e - E) <= WIN)
-    if symmetric:
-        d = 0.5 * (dens(E - BG0, E - BG1) + dens(E + BG1, E + BG0))
-    else:
-        d = dens(E - BG0, E - BG1)
-    return gross - d * (2 * WIN + 1)
+    Прежде здесь жила СВОЯ копия правила (окно в кэВ, полка E-30..E-10 с
+    вылетом иода внутри) — мигрировано на peakwin задачей 151; счёт в
+    каналах, полка [E-25; E-10] (и зеркально справа при symmetric).
+    """
+    return peakwin.area(hist, E, side="both" if symmetric else "left")
 
 # (нуклид, метка прогона, линии, партнёр по каскаду для каждой линии, довод)
 # Партнёр = None означает, что каскада нет и выбивать линию нечему.
@@ -159,7 +167,7 @@ def total_deposit(tag, E, above):
     saf = os.path.join(BUILD, "grid", "%s_solidangle.txt" % tag)
     if not os.path.exists(saf):
         return None
-    frac = float(open(saf).read().strip())
+    frac = float(open(_used(saf)).read().strip())
     best = None
     for p in glob.glob(os.path.join(BUILD, "grid", tag + "_E*.csv")):
         m = re.search(r"_E(\d+\.\d)\.csv$", p)
@@ -167,7 +175,7 @@ def total_deposit(tag, E, above):
             best = p
     if not best:
         return None
-    hist, N = load_hist(best)
+    hist, N = load_hist(_used(best))
     if not N:
         return None
     return sum(c for e, c in hist.items() if e > above) / N * frac
@@ -185,7 +193,7 @@ def mono_with_err(tag, E):
     saf = os.path.join(BUILD, "grid", "%s_solidangle.txt" % tag)
     if not os.path.exists(saf):
         return None, None
-    frac = float(open(saf).read().strip())
+    frac = float(open(_used(saf)).read().strip())
     best = None
     for p in glob.glob(os.path.join(BUILD, "grid", tag + "_E*.csv")):
         m = re.search(r"_E(\d+\.\d)\.csv$", p)
@@ -193,7 +201,7 @@ def mono_with_err(tag, E):
             best = p
     if not best:
         return None, None
-    hist, N = load_hist(best)
+    hist, N = load_hist(_used(best))
     a = peak_area(hist, E, symmetric=SYMMETRIC)
     if not N or a <= 0:
         return None, None
@@ -227,7 +235,7 @@ def decay_area(tag, E):
     p = os.path.join(BUILD, "%s%s.csv" % (DECAY_PREFIX, tag))
     if not os.path.exists(p):
         return None, None
-    hist, N = load_hist(p)
+    hist, N = load_hist(_used(p))
     a = peak_area(hist, E, symmetric=SYMMETRIC)
     if not N or a <= 0:
         return None, None
@@ -239,7 +247,7 @@ def yield_with_err(tag, E):
     p = os.path.join(BUILD, "%s%s_emit.csv" % (DECAY_PREFIX, tag))
     if not os.path.exists(p):
         return None, None
-    em, N = load_hist(p)
+    em, N = load_hist(_used(p))
     tot = sum(c for e, c in em.items() if abs(e - E) <= 2.0)
     if not N or tot <= 50:
         return None, None
@@ -361,7 +369,12 @@ def main():
         print("\nконтроль тегов на 661,657 кэВ: %s %.4e против p5cm %.4e,"
               " расхождение %+.2f %%" % (MONO_TAG, a, b, 100.0 * (a - b) / b))
 
-    if rows:
+    if rows and not SYMMETRIC:
+        # Диагностический режим --one-sided существует, чтобы ПОКАЗАТЬ разницу,
+        # а не чтобы ею пользоваться; штатный файл results/ он не перетирает
+        # (найдено при прогоне задачи 151: перетирал).
+        print("\n--one-sided: сводка в results/ НЕ пишется (диагностика).")
+    if rows and SYMMETRIC:
         op = os.path.abspath(os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "..", "results",
             "tcc_selfcheck.csv"))
@@ -383,7 +396,7 @@ def main():
                 "Cs-137 — контроль метода (каскада нет), Co-60 — рабочая"
                 " точка.",
             ],
-        stamp=_stamp())
+        stamp=_stamp(inputs=USED_INPUTS))
         print("\nсводка: %s" % op)
 
 

@@ -42,6 +42,23 @@ def check(path):
     return [(i, len(r)) for i, r in rows if len(r) != n]
 
 
+def read(path):
+    """Список словарей из таблицы репозитория; строки «#» пропускаются.
+
+    ЗАЧЕМ ОТДЕЛЬНАЯ ФУНКЦИЯ. Правило «шапка — первая строка, НЕ начинающаяся с
+    решётки» жило россыпью: часть читателей писала
+    `csv.DictReader(l for l in fh if not l.startswith("#"))`, часть —
+    `csv.DictReader(fh)` без фильтра. Пока таблицы открывались данными, обе
+    формы работали одинаково. Как только выгрузка кривых получила штамп
+    провенанса, вторая форма приняла `#@ stamp.version = 1` за шапку и упала
+    на `KeyError: 'E_keV'` — то есть правило чтения разошлось с правилом
+    записи. Запись живёт в `write()` этого же модуля; чтение теперь тоже здесь.
+    """
+    with open(path, encoding="utf-8", newline="") as fh:
+        return list(csv.DictReader(
+            ln for ln in fh if not ln.lstrip().startswith("#")))
+
+
 def write(path, header, rows, comments=(), stamp=()):
     """Записать таблицу и тут же перечитать её штатным парсером.
 

@@ -24,6 +24,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
+import csvio  # noqa: E402
 import paths  # noqa: E402
 
 sys.path.insert(0, str(paths.tools()))
@@ -185,12 +186,12 @@ def measured(name):
 
 def computed(fn):
     """Расчётная кривая: [(E, eps_net, d_eps, eps_gross)]."""
-    out = []
-    with open(os.path.join(RES, fn), encoding="utf-8") as fh:
-        for r in csv.DictReader(fh):
-            out.append((float(r["E_keV"]), float(r["eps_net"]),
-                        float(r["d_eps"]), float(r["eps_gross"])))
-    return out
+    # Чтение — общей реализацией csvio.read(): она пропускает строки «#»,
+    # включая штамп провенанса. Прежний csv.DictReader(fh) без фильтра принимал
+    # первую строку штампа за шапку и падал на KeyError: 'E_keV'.
+    return [(float(r["E_keV"]), float(r["eps_net"]),
+             float(r["d_eps"]), float(r["eps_gross"]))
+            for r in csvio.read(os.path.join(RES, fn))]
 
 
 def summing():

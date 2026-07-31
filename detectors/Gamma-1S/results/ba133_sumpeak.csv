@@ -1,10 +1,11 @@
 #@ stamp.version = 1
 #@ src.script = detectors/Gamma-1S/analysis/ba133_sumpeak.py
-#@ src.git = 8fe3604-dirty
+#@ src.git = 994699c-dirty-untracked
 #@ src.tree_sha1 = bd17f9bea1e4
 #@ src.inputs_verdict = ok
 #@ src.inputs_n = 2
 #@ src.inputs_sha1 = bd17f9bea1e4
+#@ src.inputs_digest = aa33f88f003d
 #@ obs.quantity = сумма отсчётов в окне вокруг линии — депозит и эмиссия по отдельности; активность не вычисляется
 #@ obs.area = сырая сумма БЕЗ вычета подложки (окно +-3 кэВ); сум-пик 437;011 кэВ сравнивается с суммой предшественников; а не с чистой площадью пика
 #@ obs.window = +-3.0 кэВ по энергии (не в каналах)

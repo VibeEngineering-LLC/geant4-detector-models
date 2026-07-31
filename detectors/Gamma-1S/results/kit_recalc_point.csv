@@ -1,10 +1,11 @@
 #@ stamp.version = 1
 #@ src.script = detectors/Gamma-1S/analysis/point_recalc.py
-#@ src.git = 9a8b949-dirty
+#@ src.git = 994699c-dirty-untracked
 #@ src.tree_sha1 = bd17f9bea1e4
 #@ src.inputs_verdict = ok
 #@ src.inputs_n = 42
 #@ src.inputs_sha1 = bd17f9bea1e4
+#@ src.inputs_digest = a3d5f5d5c09c
 #@ obs.quantity = A_изм/A_пасп — отношение восстановленной активности к паспортной на дату измерения
 #@ obs.area = пик полного поглощения; вычтена подложка по полкам
 #@ obs.window = +-1;0 ПШПВ (единая конвенция на обеих дистанциях; задача 132)

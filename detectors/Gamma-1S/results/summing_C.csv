@@ -1,3 +1,14 @@
+#@ stamp.version = 1
+#@ src.script = detectors/Gamma-1S/analysis/export_curves.py
+#@ src.git = 7beacb0-dirty
+#@ src.tree_sha1 = bd17f9bea1e4
+#@ src.inputs_verdict = no_inputs
+#@ src.inputs_n = 0
+#@ obs.quantity = C — поправка на каскадное суммирование: отношение эффективности на моноэнергии к эффективности той же линии в прогоне полного распада
+#@ obs.area = чистая площадь пика за вычетом полки; ОДНО правило на обе стороны отношения
+#@ obs.window = +-6 кэВ в каналах; полка [E-25; E-10]
+#@ obs.shelf = односторонняя слева; вычитается одинаково с обеих сторон
+#@ obs.blurred = нет — депозит-спектры как есть
 nuclide,E_keV,run,N_decays,N_emitted,eps_decay,eps_mono,C_summing,d_C,note
 Bi-214,609.32,decay_Bi214,600000,274429,0.021627,0.026023,1.2033,0.0201,
 Bi-214,768.36,decay_Bi214,600000,29877,0.017726,0.021228,1.1976,0.067,

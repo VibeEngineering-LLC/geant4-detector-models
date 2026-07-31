@@ -1,3 +1,14 @@
+#@ stamp.version = 1
+#@ src.script = detectors/Gamma-1S/analysis/compare_xcom.py
+#@ src.git = 7beacb0-dirty
+#@ src.tree_sha1 = bd17f9bea1e4
+#@ src.inputs_verdict = no_inputs
+#@ src.inputs_n = 0
+#@ obs.quantity = массовый коэффициент ослабления; см2/г: Geant4 против NIST XCOM
+#@ obs.area = не применимо — сечения; а не спектры
+#@ obs.window = не применимо
+#@ obs.shelf = не применимо
+#@ obs.blurred = не применимо
 # Массовый коэффициент ослабления, см²/г: Geant4 11.2.1 (EmStandardPhysics_option4) против NIST XCOM.
 # no_coh = compt+phot+conv, сверяется с XCOM without coherent; with_coh добавляет Rayleigh.
 # Эталон: https://physics.nist.gov/PhysRefData/Xcom/html/xcom1.html

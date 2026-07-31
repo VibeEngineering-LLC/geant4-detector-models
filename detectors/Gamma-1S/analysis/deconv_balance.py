@@ -29,7 +29,20 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
+import csvio  # noqa: E402
 import paths  # noqa: E402
+import stamp  # noqa: E402
+
+# Объявление наблюдаемой — что именно за число лежит в таблице.
+OBS_BALANCE = {
+    "quantity": "доля площади окна; отданная подгонкой ПИКАМ; в измерении и"
+                " в модели — и отношение этих долей",
+    "area": "площади линий из совместной подгонки окна; подложка отдельным"
+            " членом той же подгонки",
+    "window": "окно группы охватывает все линии бленда",
+    "shelf": "подложка подгоняется вместе с линиями; отдельно не вычитается",
+    "blurred": "измерение как есть; модель размыта приборной ПШПВ",
+}
 import becqmoni as bm  # noqa: E402
 import deconv as dc  # noqa: E402
 import kit_recalc as kr  # noqa: E402
@@ -108,10 +121,18 @@ def main():
                         % (geom, E0, len(lines), sh_m[0], sh_g[0],
                            sh_m[0] / sh_g[0]))
     out = os.path.join(str(paths.results("Gamma-1S")), "deconv_balance.csv")
-    with open(out, "w", encoding="utf-8", newline="") as fh:
-        fh.write("# доля площади окна, отданная подгонкой ПИКАМ\n")
-        fh.write("geometry,E_keV,n_lines,peak_frac_meas,peak_frac_model,ratio\n")
-        fh.write("\n".join(rows) + "\n")
+    # Запись общей реализацией csvio: ручной fh.write обходил и сторожа
+    # формата, и объявление наблюдаемой.
+    csvio.write(
+        out,
+        ["geometry", "E_keV", "n_lines", "peak_frac_meas", "peak_frac_model",
+         "ratio"],
+        [tuple(r.split(",")) for r in rows],
+        comments=["доля площади окна; отданная подгонкой ПИКАМ"],
+        stamp=stamp.lines(
+            "detectors/Gamma-1S/analysis/deconv_balance.py", OBS_BALANCE,
+            geometry_dir=str(paths.geometry("Gamma-1S")),
+            names=stamp.SRC_LISTS["Gamma-1S"], repo_dir=str(paths.REPO)))
     print("\n    таблица: %s (%d строк)" % (out, len(rows)))
     print("\nСтолбец изм/мод — во сколько раз подгонка отдала пикам больше на\n"
           "измерении, чем на модели. Единица означает, что формы совпали и\n"

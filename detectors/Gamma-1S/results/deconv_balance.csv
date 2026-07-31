@@ -1,4 +1,15 @@
-# доля площади окна, отданная подгонкой ПИКАМ
+#@ stamp.version = 1
+#@ src.script = detectors/Gamma-1S/analysis/deconv_balance.py
+#@ src.git = 7beacb0-dirty
+#@ src.tree_sha1 = bd17f9bea1e4
+#@ src.inputs_verdict = no_inputs
+#@ src.inputs_n = 0
+#@ obs.quantity = доля площади окна; отданная подгонкой ПИКАМ; в измерении и в модели — и отношение этих долей
+#@ obs.area = площади линий из совместной подгонки окна; подложка отдельным членом той же подгонки
+#@ obs.window = окно группы охватывает все линии бленда
+#@ obs.shelf = подложка подгоняется вместе с линиями; отдельно не вычитается
+#@ obs.blurred = измерение как есть; модель размыта приборной ПШПВ
+# доля площади окна; отданная подгонкой ПИКАМ
 geometry,E_keV,n_lines,peak_frac_meas,peak_frac_model,ratio
 Marinelli_1L,583.187,3,0.46958,0.45984,1.02119
 Marinelli_1L,911.204,7,0.68887,0.68162,1.01063

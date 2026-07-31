@@ -27,11 +27,37 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
 import paths  # noqa: E402
+import stamp  # noqa: E402
 
 TAU_SHAPE = 3.0e-6      # мкс, как в kit_recalc
 POVERKA = os.path.join("detectors", "Gamma-1S", "raw_lsrm", "Work", "BG",
                        "Gamma-1S", "Spe - поверки", "Поверка 2024")
 DIRS = {"p5cm": "Точечная-5см", "p25cm": "Точечная-25см"}
+
+
+# Объявление наблюдаемой — что именно за число лежит в таблице. Без него
+# таблицу нельзя сравнивать ни с какой другой: за один вечер 30.07.2026
+# подмена определения стоила вывода четыре раза (method-rules §5).
+OBS = {
+    "quantity":
+        "скорость счёта поверочной записи и оценка доли пика; потерянной на наложения; как 2*тау*R",
+    "area":
+        "не применимо — площади не снимаются; берутся полный счёт и живое время из шапки записи",
+    "window":
+        "не применимо — величина относится к записи целиком; не к линии",
+    "shelf":
+        "не применимо",
+    "blurred":
+        "не применимо — измеренные записи как есть",
+}
+
+
+def _stamp(inputs=None):
+    return stamp.lines("detectors/Gamma-1S/analysis/attestation_pileup.py", OBS,
+                       inputs=inputs,
+                       geometry_dir=str(paths.geometry("Gamma-1S")),
+                       names=stamp.SRC_LISTS["Gamma-1S"],
+                       repo_dir=str(paths.REPO))
 
 
 def header(path):
@@ -85,5 +111,6 @@ if __name__ == "__main__":
             " сумм-континуум: если аттестация не вводила поправку,",
             "аттестованная eps занижена на pileup_loss_pct, сильнее всего"
             " на 5 см. tau_dead_us = dead/(R) - контроль постоянной тракта.",
-        ])
+        ],
+        stamp=_stamp())
     print("\nтаблица: %s (%d строк)" % (out, len(rows)))

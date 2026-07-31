@@ -1,6 +1,6 @@
 #@ stamp.version = 1
 #@ src.script = detectors/Gamma-1S/analysis/export_curves.py
-#@ src.git = 994699c-dirty-untracked
+#@ src.git = 7beacb0-dirty
 #@ src.tree_sha1 = bd17f9bea1e4
 #@ src.inputs_verdict = ok
 #@ src.inputs_n = 216

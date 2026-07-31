@@ -1,3 +1,14 @@
+#@ stamp.version = 1
+#@ src.script = detectors/Gamma-1S/analysis/corr_gamma_effect.py
+#@ src.git = 7beacb0-dirty
+#@ src.tree_sha1 = bd17f9bea1e4
+#@ src.inputs_verdict = no_inputs
+#@ src.inputs_n = 0
+#@ obs.quantity = отношение эффективности с включённым флагом correlatedGamma к эффективности без него
+#@ obs.area = чистая площадь пика за вычетом полки; одно правило на оба прогона
+#@ obs.window = +-6 кэВ в каналах; полка [E-25; E-10]
+#@ obs.shelf = односторонняя слева; вычитается одинаково в обоих прогонах
+#@ obs.blurred = нет — депозит-спектры как есть
 # Влияние /process/had/deex/correlatedGamma на суммирование: Co-60 вплотную к торцу.
 # Флаг по умолчанию ВЫКЛЮЧЕН, и включить его из макроса нельзя — параметр деэксцитации принимается только до инициализации,
 #   а команда в макросе отвергается с нулевым кодом возврата. Включается переменной G1S_CORRELATED_GAMMA.

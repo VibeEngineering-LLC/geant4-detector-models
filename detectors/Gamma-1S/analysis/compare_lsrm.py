@@ -17,7 +17,19 @@ import sys
 # было ни одного пути, привязанного к конкретной машине.
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
+import csvio  # noqa: E402
 import paths  # noqa: E402
+import stamp  # noqa: E402
+
+# Объявление наблюдаемой — что именно за число лежит в сводке.
+OBS_SUMMARY = {
+    "quantity": "сводка сверки расчётной кривой Маринелли с аттестованной"
+                " .efr: нормировка; разброс формы; хи2 на степень свободы",
+    "area": "чистая площадь пика за вычетом левой полки континуума",
+    "window": "+-6 кэВ; полка E-30…E-10 кэВ",
+    "shelf": "односторонняя слева — при моноэнергии справа отсчётов нет",
+    "blurred": "нет — депозит-спектры сетки как есть",
+}
 
 # parse_efr живёт в инструментах репозитория, а не среди данных
 sys.path.insert(0, str(paths.tools()))
@@ -152,6 +164,15 @@ if __name__ == "__main__":
     # Сводка кладётся файлом, чтобы это число ЖИЛО В ОДНОМ МЕСТЕ. Раньше оно
     # было переписано от руки в compare_point.py и в отчёте и отставало после
     # каждого пересчёта сетки.
-    with open(SUMMARY, "w", encoding="utf-8", newline="") as fh:
-        fh.write("k_mc_over_exp,d_k,n_points,rms_shape,chi2_dof\n")
-        fh.write("%.4f,%.4f,%d,%.4f,%.3f\n" % (k, k * dk, len(logs), rms, chi2))
+    # Запись — общей реализацией csvio, а не ручным fh.write: ручная запись
+    # обходит и сторожа формата, и объявление наблюдаемой, из-за чего эта
+    # таблица оставалась несравнимой ни с какой другой.
+    csvio.write(
+        SUMMARY,
+        ["k_mc_over_exp", "d_k", "n_points", "rms_shape", "chi2_dof"],
+        [("%.4f" % k, "%.4f" % (k * dk), "%d" % len(logs), "%.4f" % rms,
+          "%.3f" % chi2)],
+        stamp=stamp.lines(
+            "detectors/Gamma-1S/analysis/compare_lsrm.py", OBS_SUMMARY,
+            geometry_dir=str(paths.geometry("Gamma-1S")),
+            names=stamp.SRC_LISTS["Gamma-1S"], repo_dir=str(paths.REPO)))

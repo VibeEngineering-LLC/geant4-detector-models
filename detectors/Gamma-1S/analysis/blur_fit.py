@@ -34,6 +34,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
 import paths  # noqa: E402
+import stamp  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fwhm_check import MAR_POLY, poly_sqrtE  # noqa: E402
@@ -52,6 +53,31 @@ ZONES = [
 ]
 # 609,3 — Bi-214 фона в измерении; в модельном спектре чистого Th-232 его
 # нет, но лишняя свободная линия там просто занулится.
+
+
+# Объявление наблюдаемой — что именно за число лежит в таблице. Без него
+# таблицу нельзя сравнивать ни с какой другой: за один вечер 30.07.2026
+# подмена определения стоила вывода четыре раза (method-rules §5).
+OBS = {
+    "quantity":
+        "площадь линии четырьмя способами: фит измеренного спектра; значение сеанса СпектраЛайн; фит размытого модельного; окно по модельному депозиту",
+    "area":
+        "площадь гауссианы фита либо сумма в окне — столбец называет; какая",
+    "window":
+        "фит в зоне вокруг линии; оконный съём +-6 кэВ по депозиту",
+    "shelf":
+        "в фите подложка подгоняется; в оконном съёме вычитается полка",
+    "blurred":
+        "столбцы area_mc_fit — да; area_mc_window — нет",
+}
+
+
+def _stamp(inputs=None):
+    return stamp.lines("detectors/Gamma-1S/analysis/blur_fit.py", OBS,
+                       inputs=inputs,
+                       geometry_dir=str(paths.geometry("Gamma-1S")),
+                       names=stamp.SRC_LISTS["Gamma-1S"],
+                       repo_dir=str(paths.REPO))
 
 
 def fwhm_of(E):
@@ -204,5 +230,6 @@ if __name__ == "__main__":
             " пика-образа+линейный фон), ширина in-situ.",
             "area_meas_fit против area_SL_session — валидация фита;"
             " area_mc_fit против area_mc_window — цена конвенции площади.",
-        ])
+        ],
+        stamp=_stamp())
     print("таблица: %s" % out)

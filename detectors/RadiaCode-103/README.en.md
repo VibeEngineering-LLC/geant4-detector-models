@@ -56,11 +56,14 @@ discrepancy with the RadiaCode is 4.2%, not 3%. The retraction does not
 affect the argument below — the case against a "common systematic" never
 relied on how close the two numbers were.)
 
-For the Gamma-1S, point geometries gave 0.971 and 0.928, meaning the
-detector model there is correct, and the excess in the Marinelli beaker
-turned out to be a property of the beaker geometry, not of the method. The
-coincidence of two coefficients obtained in the SAME Marinelli-beaker setup
-proves nothing about the method.
+For the Gamma-1S, point geometries separated the detector model from the
+vessel model: on the current geometry and the unified extraction convention,
+calc/passport is 1.0365 ± 0.0112 and 1.0381 ± 0.0214 at the two distances
+(the 0.971 and 0.928 of the earlier revision were retracted by the
+entrance-face fix of 2026-07-28), whereas the excess in the Marinelli
+beaker — 1.2526 — turned out to be a property of the beaker geometry, not
+of the method. The coincidence of two coefficients obtained in the SAME
+Marinelli-beaker setup proves nothing about the method.
 
 What follows from this for the RadiaCode: the value 0.833 remains valid as
 an empirical normalization **for this particular setup**, but its physical

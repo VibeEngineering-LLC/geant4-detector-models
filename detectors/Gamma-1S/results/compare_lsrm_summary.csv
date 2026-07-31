@@ -1,2 +1,13 @@
+#@ stamp.version = 1
+#@ src.script = detectors/Gamma-1S/analysis/compare_lsrm.py
+#@ src.git = 7beacb0-dirty
+#@ src.tree_sha1 = bd17f9bea1e4
+#@ src.inputs_verdict = no_inputs
+#@ src.inputs_n = 0
+#@ obs.quantity = сводка сверки расчётной кривой Маринелли с аттестованной .efr: нормировка; разброс формы; хи2 на степень свободы
+#@ obs.area = чистая площадь пика за вычетом левой полки континуума
+#@ obs.window = +-6 кэВ; полка E-30…E-10 кэВ
+#@ obs.shelf = односторонняя слева — при моноэнергии справа отсчётов нет
+#@ obs.blurred = нет — депозит-спектры сетки как есть
 k_mc_over_exp,d_k,n_points,rms_shape,chi2_dof
 1.2526,0.0120,15,0.1043,8.372

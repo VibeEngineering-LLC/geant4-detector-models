@@ -65,6 +65,8 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
+import stamp  # noqa: E402
+import paths  # noqa: E402
 
 RESULTS = os.path.abspath(os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "..", "results"))
@@ -93,6 +95,31 @@ A_PASS, D_PASS, T12_Y, DT_Y = 44100.0, 2.0, 10.551, 16.0575
 PRED = {80.998: 15600.0, 276.399: 11139.0, 302.851: 13398.0,
         356.013: 13967.0, 383.849: 19081.0}
 PRED_SUM_RATIO = 0.915
+
+
+# Объявление наблюдаемой — что именно за число лежит в таблице. Без него
+# таблицу нельзя сравнивать ни с какой другой: за один вечер 30.07.2026
+# подмена определения стоила вывода четыре раза (method-rules §5).
+OBS = {
+    "quantity":
+        "активность Ba-133 по точечной записи 5 см на двух кривых — нашей и штатной",
+    "area":
+        "площадь снимает СпектраЛайн; сюда приходит готовое число",
+    "window":
+        "конвенция программы (границы пиков в долях ПШПВ)",
+    "shelf":
+        "ступенька-из-образа плюс полином — конвенция программы",
+    "blurred":
+        "не применимо — измеренный спектр",
+}
+
+
+def _stamp(inputs=None):
+    return stamp.lines("detectors/Gamma-1S/analysis/curve_crossing_p5cm.py", OBS,
+                       inputs=inputs,
+                       geometry_dir=str(paths.geometry("Gamma-1S")),
+                       names=stamp.SRC_LISTS["Gamma-1S"],
+                       repo_dir=str(paths.REPO))
 
 
 def lsrm_average(d):
@@ -195,5 +222,6 @@ if __name__ == "__main__":
             " в [TemplateCalc]); у ОБЕИХ кривых — механизм физический.",
             "Отношения по методам числами не сверены (штат — Зоны+;"
             " наш — Все зоны): презумпция; открыто в задаче 121.",
-        ])
+        ],
+        stamp=_stamp())
     print("\nтаблица: %s" % os.path.join(RESULTS, "curve_crossing_p5cm.csv"))

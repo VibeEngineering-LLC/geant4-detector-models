@@ -1,3 +1,14 @@
+#@ stamp.version = 1
+#@ src.script = detectors/Gamma-1S/analysis/export_curves.py
+#@ src.git = 7beacb0-dirty
+#@ src.tree_sha1 = bd17f9bea1e4
+#@ src.inputs_verdict = no_inputs
+#@ src.inputs_n = 0
+#@ obs.quantity = перечень сеток прогонов: чем и с какими доводами посчитана каждая — величина НЕ числовая
+#@ obs.area = не применимо — площади здесь не снимаются
+#@ obs.window = не применимо
+#@ obs.shelf = не применимо
+#@ obs.blurred = не применимо
 grid,geometry,matrix,density_g_cm3,fill_ml,shield_lid,driver,n_points,solid_angle_fraction,note
 rho1.00,Маринелли 1 л,ОИСН-16,1.0,1000.0,закрыта,run_grid.py,24,1.0,нижняя плотность для подгонки d_eff
 rho1.60,Маринелли 1 л,ОИСН-16,1.6,1000.0,закрыта,run_grid.py,24,1.0,рабочая кривая; сверялась с .efr ЛСРМ

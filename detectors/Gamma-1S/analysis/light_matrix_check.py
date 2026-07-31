@@ -19,9 +19,33 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
 import paths  # noqa: E402
+import stamp  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import kit_recalc as kr  # noqa: E402
+
+# Объявление наблюдаемой — что именно за число лежит в таблице.
+OBS = {
+    "quantity":
+        "цена пересчёта эффективности между матрицами пробы через f(mu*ro*d_eff) — против прямого прогона",
+    "area":
+        "чистая площадь пика за вычетом полки; одно правило на обе стороны",
+    "window":
+        "+-6 кэВ в каналах; полка [E-25; E-10]",
+    "shelf":
+        "односторонняя слева",
+    "blurred":
+        "нет — депозит-спектры как есть",
+}
+
+
+def _stamp(inputs=None):
+    return stamp.lines("detectors/Gamma-1S/analysis/light_matrix_check.py", OBS,
+                       inputs=inputs,
+                       geometry_dir=str(paths.geometry("Gamma-1S")),
+                       names=stamp.SRC_LISTS["Gamma-1S"],
+                       repo_dir=str(paths.REPO))
+
 
 BUILD = str(paths.build("Gamma-1S"))
 LINES = [583.187, 911.204, 2614.511]
@@ -68,5 +92,6 @@ if __name__ == "__main__":
             " лёгкая среда), окна одинаковые.",
             "formula_over_direct < 1 — формула ЗАНИЖАЕТ eps (и завышает"
             " активность) на этой линии.",
-        ])
+        ],
+        stamp=_stamp())
     print("\nтаблица: %s" % out)

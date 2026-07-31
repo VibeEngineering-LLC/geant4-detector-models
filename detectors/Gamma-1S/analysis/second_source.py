@@ -37,10 +37,36 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
 import paths  # noqa: E402
+import stamp  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import becqmoni as bm  # noqa: E402
 import kit_recalc as kr  # noqa: E402
+
+
+# Объявление наблюдаемой — что именно за число лежит в таблице. Без него
+# таблицу нельзя сравнивать ни с какой другой: за один вечер 30.07.2026
+# подмена определения стоила вывода четыре раза (method-rules §5).
+OBS = {
+    "quantity":
+        "активность второй партии Th-232 по нашей кривой против паспортной — независимый от комплекта источник",
+    "area":
+        "чистая площадь пика за вычетом подложки",
+    "window":
+        "окно конвейера в долях ПШПВ",
+    "shelf":
+        "симметричные полки той же доли ПШПВ",
+    "blurred":
+        "измерение как есть; модель размыта приборной ПШПВ",
+}
+
+
+def _stamp(inputs=None):
+    return stamp.lines("detectors/Gamma-1S/analysis/second_source.py", OBS,
+                       inputs=inputs,
+                       geometry_dir=str(paths.geometry("Gamma-1S")),
+                       names=stamp.SRC_LISTS["Gamma-1S"],
+                       repo_dir=str(paths.REPO))
 
 
 def spe_reader():
@@ -146,7 +172,8 @@ if __name__ == "__main__":
             "ratio = A_изм/A_пасп; usable=0 — линия плохо разделена, в"
             " активность не идёт (порог чистоты %.2f)." % kr.CLEAN_FRAC,
             "Фон — из kit-XML записи Th-232 той же геометрии (bg_ref).",
-        ])
+        ],
+        stamp=_stamp())
     print("\nтаблица: %s (%d строк)" % (out, len(rows)))
 
     # Сопоставление двух партий по годным линиям (2614,5): согласие между

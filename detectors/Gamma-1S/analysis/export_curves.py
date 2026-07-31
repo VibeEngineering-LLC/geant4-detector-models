@@ -217,7 +217,30 @@ def curve(tag, dropped=None, used=None):
     return rows
 
 
-def _stamp(inputs):
+# Манифест и поправки на суммирование — ДРУГИЕ наблюдаемые, и объявление у
+# них своё. Один OBS на три разные таблицы означал бы, что штамп лжёт ровно
+# там, где заводится против лжи.
+OBS_MANIFEST = {
+    "quantity": "перечень сеток прогонов: чем и с какими доводами посчитана"
+                " каждая — величина НЕ числовая",
+    "area": "не применимо — площади здесь не снимаются",
+    "window": "не применимо",
+    "shelf": "не применимо",
+    "blurred": "не применимо",
+}
+OBS_SUMMING = {
+    "quantity": "C — поправка на каскадное суммирование: отношение"
+                " эффективности на моноэнергии к эффективности той же линии"
+                " в прогоне полного распада",
+    "area": "чистая площадь пика за вычетом полки; ОДНО правило на обе"
+            " стороны отношения",
+    "window": "+-6 кэВ в каналах; полка [E-25; E-10]",
+    "shelf": "односторонняя слева; вычитается одинаково с обеих сторон",
+    "blurred": "нет — депозит-спектры как есть",
+}
+
+
+def _stamp(inputs, obs=None):
     """Строки штампа для выгружаемой кривой.
 
     ЗАЧЕМ ОН ЗДЕСЬ. Таблицы этого экспортёра штампа не несли, и это дорого
@@ -231,12 +254,13 @@ def _stamp(inputs):
     сама объявляет, каким отпечатком посчитаны её входы.
     """
     return stamp.lines(
-        "detectors/Gamma-1S/analysis/export_curves.py", OBS, inputs=inputs,
+        "detectors/Gamma-1S/analysis/export_curves.py", obs or OBS,
+        inputs=inputs,
         geometry_dir=str(paths.geometry("Gamma-1S")),
         names=stamp.SRC_LISTS["Gamma-1S"], repo_dir=str(paths.REPO))
 
 
-def write_csv(path, header, rows, inputs=None):
+def write_csv(path, header, rows, inputs=None, obs=None):
     """Запись таблицы — общей реализацией из common/py/csvio.py.
 
     Ручной ",".join не экранирует ничего, и любое поле с запятой рвёт строку.
@@ -250,7 +274,8 @@ def write_csv(path, header, rows, inputs=None):
     tools/check_csv.py по обращению с комментариями.
     """
     csvio.write(path, header, rows,
-                stamp=_stamp(inputs) if inputs is not None else ())
+                stamp=_stamp(inputs, obs) if obs is not None
+                or inputs is not None else ())
 
 
 def export_curves():
@@ -317,7 +342,7 @@ def export_manifest(made):
     write_csv(os.path.join(OUT, "runs_manifest.csv"),
               ["grid", "geometry", "matrix", "density_g_cm3", "fill_ml",
                "shield_lid", "driver", "n_points", "solid_angle_fraction",
-               "note"], rows)
+               "note"], rows, obs=OBS_MANIFEST)
     return rows
 
 
@@ -415,7 +440,8 @@ def export_summing():
     if rows:
         write_csv(os.path.join(OUT, "summing_C.csv"),
                   ["nuclide", "E_keV", "run", "N_decays", "N_emitted",
-                   "eps_decay", "eps_mono", "C_summing", "d_C", "note"], rows)
+                   "eps_decay", "eps_mono", "C_summing", "d_C", "note"],
+                  rows, obs=OBS_SUMMING)
     return rows
 
 

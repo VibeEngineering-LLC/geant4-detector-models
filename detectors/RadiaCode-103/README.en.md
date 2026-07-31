@@ -50,7 +50,11 @@ See [common/docs/validation.md](../../common/docs/validation.en.md).
 
 This coefficient was compared with 0.858 for [Gamma-1S](../Gamma-1S/) as
 confirmation of a "common systematic of the method." **That reading is
-wrong.**
+wrong.** (The 0.858 value itself was retracted on 2026-07-31: it rested on a
+stale export of the calculation grids; the current value is 0.798, and the
+discrepancy with the RadiaCode is 4.2%, not 3%. The retraction does not
+affect the argument below — the case against a "common systematic" never
+relied on how close the two numbers were.)
 
 For the Gamma-1S, point geometries gave 0.971 and 0.928, meaning the
 detector model there is correct, and the excess in the Marinelli beaker

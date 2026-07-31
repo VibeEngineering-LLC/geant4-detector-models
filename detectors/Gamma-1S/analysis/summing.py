@@ -44,7 +44,8 @@ if not os.path.isdir(BUILD):
         "Либо укажите G4MODELS_BUILD_GAMMA_1S на готовый каталог."
         % BUILD)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from compare_lsrm import read_run, WIN, BG0, BG1  # noqa: E402
+from compare_lsrm import read_run  # noqa: E402
+import peakwin  # noqa: E402
 
 # Линии, по которым ЛСРМ строил кривую, с указанием прогона распада
 LINES = {
@@ -71,17 +72,20 @@ def load(path):
 
 
 def area(hist, E0, sub=True):
-    """Площадь пика с вычетом континуума по левой полке."""
-    gross = sum(c for e, c in hist.items() if abs(e - E0) <= WIN)
-    side = sum(c for e, c in hist.items() if E0 - BG0 <= e <= E0 - BG1)
-    # Центры каналов полуцелые ((i+0,5)·bin в main.cc), поэтому окно шириной
-    # 2·WIN содержит 2·WIN каналов, а не 2·WIN+1: считаем по факту, иначе
-    # подложка вычитается с лишними 8 %.
-    n = math.floor(E0 + WIN - 0.5) - math.ceil(E0 - WIN - 0.5) + 1
-    nside = math.floor(E0 - BG1 - 0.5) - math.ceil(E0 - BG0 - 0.5) + 1
-    bg = side / nside * n if sub else 0.0
-    # D(bg) = (n/nside)^2 * side = (n/nside)*bg; вывод — в export_curves.py
-    return gross - bg, math.sqrt(max(gross + (n / nside) * bg, 1.0))
+    """Площадь пика — единственной реализацией common/py/peakwin.
+
+    Прежде здесь была собственная копия правила с полкой E−30 (захватывает
+    пик вылета иода E−28,6); убрана при миграции 31.07.2026 (внутренний
+    аудит, сверх ТЗ п.1).
+    """
+    det = {}
+    net = peakwin.area(hist, E0, detail=det)
+    if not sub or not det["n_side"]:
+        return det["gross"], math.sqrt(max(det["gross"], 1.0))
+    bg = det["side"] / det["n_side"] * det["n_peak"]
+    # D(bg) = (n/nside)^2 * side = (n/nside)*bg
+    var = det["gross"] + (det["n_peak"] / det["n_side"]) * bg
+    return net, math.sqrt(max(var, 1.0))
 
 
 def mono_curve(tag="rho1.60"):

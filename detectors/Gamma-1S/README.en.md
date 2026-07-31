@@ -44,7 +44,7 @@ the stale export, task 137).
 | resolution at the 662 keV peak | 7.5 % | passport ≤8 % | `analysis/detector_params.py` |
 | **point source 5 cm, calc/passport, 21 lines** | **1.0365 ± 0.0112** | χ²/ν = 1.79 | `results/kit_activity_point.csv` |
 | **point source 25 cm, calc/passport, 7 lines** | **1.0381 ± 0.0214** | χ²/ν = 2.10; lid open | `results/kit_activity_point.csv` |
-| Marinelli against `.efr`, 15 lines | 1.2526 ± 0.0120 | calculation overestimates | `results/compare_lsrm_summary.csv` |
+| Marinelli against `.efr`, 15 lines | 1.257 ± 0.012 | calculation overestimates | `results/compare_lsrm_summary.csv` |
 | "Denta" against `.efr`, 13 points | 1.011 ± 0.011 | agreement | `results/compare_cups_summary.csv` |
 | Petri dish against `.efr`, 14 points | 0.941 ± 0.009 | calculation underestimates | `results/compare_cups_summary.csv` |
 

@@ -42,7 +42,7 @@
 | разрешение по пику 662 кэВ | 7,5 % | паспорт ≤8 % | `analysis/detector_params.py` |
 | **точечная 5 см, расчёт/паспорт, 21 линия** | **1,0365 ± 0,0112** | χ²/ν = 1,79 | `results/kit_activity_point.csv` |
 | **точечная 25 см, расчёт/паспорт, 7 линий** | **1,0381 ± 0,0214** | χ²/ν = 2,10; крышка открыта | `results/kit_activity_point.csv` |
-| маринелли против `.efr`, 15 линий | 1,2526 ± 0,0120 | расчёт завышает | `results/compare_lsrm_summary.csv` |
+| маринелли против `.efr`, 15 линий | 1,257 ± 0,012 | расчёт завышает | `results/compare_lsrm_summary.csv` |
 | «Дента» против `.efr`, 13 точек | 1,011 ± 0,011 | согласие | `results/compare_cups_summary.csv` |
 | Петри против `.efr`, 14 точек | 0,941 ± 0,009 | расчёт занижает | `results/compare_cups_summary.csv` |
 

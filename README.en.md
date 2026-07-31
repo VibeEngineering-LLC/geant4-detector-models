@@ -17,10 +17,10 @@ Geant4 that does the transport.
 | [RadiaCode 101–103](detectors/RadiaCode-103/) | CsI(Tl) 10×10×10 | custom-authored 200 and 500 mL Marinelli vessels | curves built and cross-checked; **three protocol items not completed** — [details](detectors/RadiaCode-103/README.en.md) |
 
 Both instruments were checked against LSRM curves in the Marinelli-vessel
-setup and gave normalization coefficients of the same scale (0.798 and 0.833;
-a 4.2% discrepancy. The earlier Gamma-1S value of 0.858 was retracted on
-2026-07-31 — it rested on a stale export of the calculation grids, see the
-callout in §2.2 of the report). **This is not evidence of a systematic bias
+setup and gave normalization coefficients of the same scale (0.795 and 0.833;
+a 4.8% discrepancy. The earlier Gamma-1S value of 0.858 was retracted on
+2026-07-31 — it rested on a stale export of the calculation grids; the current value
+comes from results/compare_lsrm_summary.csv). **This is not evidence of a systematic bias
 common to the method**: for the Gamma-1S, point-source geometries showed that
 the detector model itself is correct, and the excess belongs to the vessel
 geometry. Two numbers agreeing, obtained in the same setup, proves nothing

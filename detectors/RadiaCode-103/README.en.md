@@ -51,8 +51,9 @@ See [common/docs/validation.md](../../common/docs/validation.en.md).
 This coefficient was compared with 0.858 for [Gamma-1S](../Gamma-1S/) as
 confirmation of a "common systematic of the method." **That reading is
 wrong.** (The 0.858 value itself was retracted on 2026-07-31: it rested on a
-stale export of the calculation grids; the current value is 0.798, and the
-discrepancy with the RadiaCode is 4.2%, not 3%. The retraction does not
+stale export of the calculation grids; the current value is 0.795
+(results/compare_lsrm_summary.csv), and the discrepancy with the RadiaCode
+is 4.8%, not 3%. The retraction does not
 affect the argument below — the case against a "common systematic" never
 relied on how close the two numbers were.)
 
@@ -61,7 +62,7 @@ vessel model: on the current geometry and the unified extraction convention,
 calc/passport is 1.0365 ± 0.0112 and 1.0381 ± 0.0214 at the two distances
 (the 0.971 and 0.928 of the earlier revision were retracted by the
 entrance-face fix of 2026-07-28), whereas the excess in the Marinelli
-beaker — 1.2526 — turned out to be a property of the beaker geometry, not
+beaker — 1.257 — turned out to be a property of the beaker geometry, not
 of the method. The coincidence of two coefficients obtained in the SAME
 Marinelli-beaker setup proves nothing about the method.
 

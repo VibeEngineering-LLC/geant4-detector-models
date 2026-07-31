@@ -39,7 +39,7 @@ import csvio  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from point_recalc import (
-    BUILD, area_sim, eps_mono_point, load_hist,
+    BUILD, area_sim, load_hist,
 )  # noqa: E402
 
 MONO_TAG = "tcc5cm"
@@ -321,9 +321,15 @@ def main():
         print("у линий одного каскада TCC обязан совпадать, и расходятся они"
               " не по физике.")
 
-    # Контроль воспроизводимости: та же энергия в двух независимых тегах.
+    # Контроль воспроизводимости: та же энергия в двух независимых тегах,
+    # ОДНИМ окном (mono_with_err на обеих сторонах — не eps_mono_point).
+    # eps_mono_point с задачи 132 размывает и снимает площадь в долях ПШПВ
+    # (единая конвенция с 25 см в point_recalc.py) — для контроля
+    # воспроизводимости сетки узкое окно mono_with_err подходит лучше, им и
+    # заведомо сравнивались обе стороны раньше; смешивать конвенции здесь
+    # значило бы мерить не воспроизводимость, а разницу окон.
     a, _ = mono_with_err(MONO_TAG, 661.657)
-    b = eps_mono_point("p5cm", 661.657)
+    b, _ = mono_with_err("p5cm", 661.657)
     if a and b:
         print("\nконтроль тегов на 661,657 кэВ: %s %.4e против p5cm %.4e,"
               " расхождение %+.2f %%" % (MONO_TAG, a, b, 100.0 * (a - b) / b))

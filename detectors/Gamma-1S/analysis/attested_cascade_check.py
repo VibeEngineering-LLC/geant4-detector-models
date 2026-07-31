@@ -51,7 +51,19 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
 from fetch_efr import parse_efr  # noqa: E402
 
 OUT = str(paths.results("Gamma-1S"))
-EFR = "УДС-ГЦ-63х63-USB__SN-01_-_Точечная-5см.efr"
+
+# ВСЕ аттестованные геометрии прибора, а не одна. Источники комплекта те же,
+# поэтому просадка узлов каскадного нуклида обязана повториться в каждой
+# геометрии, если механизм — суммирование, а не особенность одной записи.
+# Четыре независимые геометрии дают проверку, которой одна дать не может, и
+# не требуют ни одного нового измерения.
+EFR_FILES = [
+    ("точечная 5 см", "УДС-ГЦ-63х63-USB__SN-01_-_Точечная-5см.efr"),
+    ("точечная 25 см", "УДС-ГЦ-63х63-USB__SN-01_-_Точечная-25см.efr"),
+    ("Маринелли 1 л", "УДС-ГЦ-63х63-USB__SN-01_-_Маринелли.efr"),
+    ("Дента 120 мл", "УДС-ГЦ-63х63-USB__SN-01_-_Дента.efr"),
+    ("Петри 60 мл", "УДС-ГЦ-63х63-USB__SN-01_-_Петри.efr"),
+]
 
 # Одиночные гамма-излучатели: в одном акте распада один регистрируемый квант,
 # складывать не с чем. Опорный набор.
@@ -90,14 +102,12 @@ OBS = {
 }
 
 
-def read_nodes():
-    p = os.path.join(str(paths.ref("Gamma-1S")), EFR)
+def read_nodes(fname):
+    p = os.path.join(str(paths.ref("Gamma-1S")), fname)
     if not os.path.exists(p):
-        p = os.path.join(os.environ.get("G1S_EFR_DIR", ""), EFR)
+        p = os.path.join(os.environ.get("G1S_EFR_DIR", ""), fname)
     if not os.path.exists(p):
-        raise SystemExit(
-            "Не найден %s.\nЗадайте G1S_EFR_DIR на каталог с файлами .efr"
-            " комплекта." % EFR)
+        return None
     txt = open(p, "rb").read().decode("utf-8", errors="replace")
     nodes = []
     for s in parse_efr(txt):
@@ -120,23 +130,17 @@ def power_fit(pts):
     return k, p
 
 
-def main():
-    nodes = read_nodes()
+def analyse(label, nodes, verbose=True):
+    """Разбор одной геометрии -> (строки; систематический пол) или None."""
     ref = [(E, y) for E, y, _, nuc in nodes if nuc in SINGLE]
     if len(ref) < 3:
-        raise SystemExit(
-            "Опорных одиночных узлов %d — меньше трёх; линию строить не по"
-            " чему." % len(ref))
+        if verbose:
+            print("  %s: опорных одиночных узлов %d — линию строить не по"
+                  " чему; геометрия пропущена." % (label, len(ref)))
+        return None
     k, p = power_fit(ref)
     lo = min(E for E, _ in ref)
     hi = max(E for E, _ in ref)
-
-    print("Просадка аттестованной кривой на каскадных нуклидах.")
-    print("Опора: %s — %d узла; eps = %.4g * E^%.4f; диапазон %.1f…%.1f кэВ.\n"
-          % ("; ".join(sorted(SINGLE)), len(ref), k, p, lo, hi))
-    print("%10s %-8s %12s %12s %8s %7s %s"
-          % ("E, кэВ", "нуклид", "eps узла", "опорная", "откл.%", "сигм",
-             "роль"))
     rows = []
     for E, y, dpct, nuc in nodes:
         if not (lo <= E <= hi):
@@ -145,9 +149,42 @@ def main():
         dev = 100 * (y - pred) / pred
         sig = abs(dev) / dpct if dpct > 0 else float("inf")
         role = "опора" if nuc in SINGLE else "каскад"
-        print("%10.3f %-8s %12.6e %12.6e %+8.2f %7.1f %s"
-              % (E, nuc, y, pred, dev, sig, role))
-        rows.append((E, nuc, y, pred, dev, dpct, sig, role))
+        rows.append((E, nuc, y, pred, dev, dpct, sig, role, label))
+    refdev = [r[4] for r in rows if r[7] == "опора"]
+    floor = math.sqrt(sum(d * d for d in refdev) / len(refdev))
+    if verbose:
+        print("\n--- %s: опора %d узла; eps = %.4g * E^%.4f; %.1f…%.1f кэВ;"
+              " пол %.2f %%" % (label, len(ref), k, p, lo, hi, floor))
+        for E, nuc, y, pred, dev, dpct, sig, role, _ in rows:
+            print("%10.3f %-8s %12.6e %12.6e %+8.2f %7.1f %s"
+                  % (E, nuc, y, pred, dev, sig, role))
+    return rows, floor
+
+
+def main():
+    print("Просадка аттестованной кривой на каскадных нуклидах.")
+    print("Опора — только одиночные излучатели: %s.\n"
+          % "; ".join(sorted(SINGLE)))
+    print("%10s %-8s %12s %12s %8s %7s %s"
+          % ("E, кэВ", "нуклид", "eps узла", "опорная", "откл.%", "сигм",
+             "роль"))
+    per_geom = []
+    for label, fname in EFR_FILES:
+        nodes = read_nodes(fname)
+        if nodes is None:
+            print("  %s: файл %s не найден — пропущена." % (label, fname))
+            continue
+        got = analyse(label, nodes)
+        if got:
+            per_geom.append((label,) + got)
+    if not per_geom:
+        raise SystemExit(
+            "Ни одной пригодной геометрии.\nЗадайте G1S_EFR_DIR на каталог с"
+            " файлами .efr комплекта.")
+
+    rows = [r for _, rr, _ in per_geom for r in rr]
+    lo = min(r[0] for r in rows)
+    hi = max(r[0] for r in rows)
 
     # СИСТЕМАТИЧЕСКИЙ ПОЛ МЕТОДА. Опорные узлы сами не ложатся на степенной
     # закон идеально: их остатки и есть мера того, насколько форма кривой в
@@ -155,19 +192,22 @@ def main():
     # этого разброса, методом не различается — сравнивать просадку каскадных
     # узлов только с их собственной погрешностью значило бы объявить значимым
     # то, что тонет в негодности самой опоры.
-    refdev = [r[4] for r in rows if r[7] == "опора"]
-    floor = math.sqrt(sum(d * d for d in refdev) / len(refdev))
-    print("\nСИСТЕМАТИЧЕСКИЙ ПОЛ. Опорные узлы отклоняются от собственной"
-          " линии на %s %% — СКО %.2f %%."
-          % ("; ".join("%+.2f" % d for d in refdev), floor))
-    print("  Эта величина входит в оценку значимости наравне со статистикой:"
-          " ниже неё метод не различает.")
+    # Пол у каждой геометрии свой — он мера негодности ЕЁ опоры; поэтому он
+    # берётся по геометрии, из которой пришёл узел, а не общим числом.
+    floors = {lbl: fl for lbl, _, fl in per_geom}
+    print("\nСИСТЕМАТИЧЕСКИЙ ПОЛ ПО ГЕОМЕТРИЯМ (СКО остатков самой опоры;"
+          " ниже него метод не различает):")
+    for lbl in sorted(floors):
+        print("  %-16s %.2f %%" % (lbl, floors[lbl]))
 
     def wmean(sub):
         w = [1.0 / r[5] ** 2 for r in sub]
         m = sum(r[4] * ww for r, ww in zip(sub, w)) / sum(w)
         stat = (1.0 / sum(w)) ** 0.5
-        return m, stat, math.hypot(stat, floor)
+        # Пол не усредняется как случайная величина: он одинаково смещает все
+        # узлы одной геометрии. Берётся средневзвешенный по вкладам геометрий.
+        fl = sum(floors[r[8]] * ww for r, ww in zip(sub, w)) / sum(w)
+        return m, stat, math.hypot(stat, fl)
 
     casc = [r for r in rows if r[7] == "каскад"]
     print("\nПО НУКЛИДАМ (усреднять всё вместе нельзя: сила каскада у каждого"
@@ -225,11 +265,11 @@ def main():
 
     csvio.write(
         os.path.join(OUT, "attested_cascade_check.csv"),
-        ["E_keV", "nuclide", "eps_attested", "eps_reference", "dev_pct",
-         "d_node_pct", "n_sigma", "role"],
-        [("%.3f" % E, nuc, "%.6e" % y, "%.6e" % pr, "%+.2f" % d,
+        ["geometry", "E_keV", "nuclide", "eps_attested", "eps_reference",
+         "dev_pct", "d_node_pct", "n_sigma", "role"],
+        [(lbl, "%.3f" % E, nuc, "%.6e" % y, "%.6e" % pr, "%+.2f" % d,
           "%.4f" % dp, "%.1f" % s, role)
-         for E, nuc, y, pr, d, dp, s, role in rows],
+         for E, nuc, y, pr, d, dp, s, role, lbl in rows],
         comments=[
             "Проверка БЕЗ внешнего эталона: кривая обязана быть гладкой;"
             " одиночные излучатели задают опору; каскадные проверяются.",

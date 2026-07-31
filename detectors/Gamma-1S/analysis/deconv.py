@@ -110,6 +110,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
 import paths  # noqa: E402
+import stamp  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import becqmoni as bm  # noqa: E402
@@ -128,6 +129,31 @@ MIN_FRAC = 0.02            # порог интенсивности линии в
 # автомат намерил 66 кэВ — это шум, а не разрешение).
 _FWHM_PROBES = (("*M_cs_*", 661.657), ("*M_k_*", 1460.822),
                 ("*Th232*", 2614.511))
+
+
+# Объявление наблюдаемой — что именно за число лежит в таблице. Без него
+# таблицу нельзя сравнивать ни с какой другой: за один вечер 30.07.2026
+# подмена определения стоила вывода четыре раза (method-rules §5).
+OBS = {
+    "quantity":
+        "активность по группе линий; восстановленная связанной деконволюцией окна",
+    "area":
+        "площади линий группы из совместной подгонки; не по отдельности",
+    "window":
+        "окно группы охватывает все линии бленда",
+    "shelf":
+        "подложка подгоняется вместе с линиями группы",
+    "blurred":
+        "измерение как есть; модель размыта приборной ПШПВ",
+}
+
+
+def _stamp(inputs=None):
+    return stamp.lines("detectors/Gamma-1S/analysis/deconv.py", OBS,
+                       inputs=inputs,
+                       geometry_dir=str(paths.geometry("Gamma-1S")),
+                       names=stamp.SRC_LISTS["Gamma-1S"],
+                       repo_dir=str(paths.REPO))
 
 
 def _fwhm_calibrate():
@@ -464,7 +490,8 @@ def _run():
                 "  одной и той же подгонкой, см. шапку deconv.py.",
                 "ratio_window — то же отношение оконным съёмом; у чистых",
                 "  линий (purity>=0.95) обязано совпадать.",
-            ])
+            ],
+        stamp=_stamp())
         print("\nтаблица: %s (%d строк)" % (out, len(rows)))
 
 

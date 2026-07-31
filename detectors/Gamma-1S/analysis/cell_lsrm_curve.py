@@ -23,11 +23,37 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
 import paths  # noqa: E402
+import stamp  # noqa: E402
 
 RESULTS = os.path.abspath(os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "..", "results"))
 A0 = 3104.0          # Бк: паспорт 1940 Бк/кг x 1,6 кг
 TLIVE = 11359.164    # с, живое время записи (свойства спектра)
+
+
+# Объявление наблюдаемой — что именно за число лежит в таблице. Без него
+# таблицу нельзя сравнивать ни с какой другой: за один вечер 30.07.2026
+# подмена определения стоила вывода четыре раза (method-rules §5).
+OBS = {
+    "quantity":
+        "скорости счёта нашего конвейера на кривой ЛСРМ — клетка эксперимента 2x2",
+    "area":
+        "чистая площадь пика за вычетом подложки; съём нашим конвейером",
+    "window":
+        "окно нашего конвейера в долях ПШПВ",
+    "shelf":
+        "симметричные полки той же доли ПШПВ",
+    "blurred":
+        "не применимо — измеренный спектр",
+}
+
+
+def _stamp(inputs=None):
+    return stamp.lines("detectors/Gamma-1S/analysis/cell_lsrm_curve.py", OBS,
+                       inputs=inputs,
+                       geometry_dir=str(paths.geometry("Gamma-1S")),
+                       names=stamp.SRC_LISTS["Gamma-1S"],
+                       repo_dir=str(paths.REPO))
 
 
 def efa_lines():
@@ -101,7 +127,8 @@ if __name__ == "__main__":
             "Контроль площади 2614,5 (один спектр, три обработки): наша"
             " %.0f, сеанс СпектраЛайн 54000, аттестация .efr 59668."
             % (rates.get(2614.511, (0, 0))[0] * TLIVE),
-        ])
+        ],
+        stamp=_stamp())
     print("\nтаблица: %s" % out)
     print("контроль площади 2614,5: наша %.0f, СпектраЛайн 54000,"
           " аттестация .efr 59668 (+%.1f%% к нашей)"

@@ -32,6 +32,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
 import paths  # noqa: E402
+import stamp  # noqa: E402
 
 # NIST XCOM, см²/г: (без когерентного, с когерентным).
 # Энергии — реперные линии комплекта: Am-241, Cd-109, Co-57, Cs-137.
@@ -58,6 +59,31 @@ XCOM = {
 # уровня зрелости обязаны сходиться заметно лучше процента, и всё, что выше,
 # требует разбора, а не списания на округление.
 TOL_PCT = 1.0
+
+
+# Объявление наблюдаемой — что именно за число лежит в таблице. Без него
+# таблицу нельзя сравнивать ни с какой другой: за один вечер 30.07.2026
+# подмена определения стоила вывода четыре раза (method-rules §5).
+OBS = {
+    "quantity":
+        "массовый коэффициент ослабления; см2/г: Geant4 против NIST XCOM",
+    "area":
+        "не применимо — сечения; а не спектры",
+    "window":
+        "не применимо",
+    "shelf":
+        "не применимо",
+    "blurred":
+        "не применимо",
+}
+
+
+def _stamp(inputs=None):
+    return stamp.lines("detectors/Gamma-1S/analysis/compare_xcom.py", OBS,
+                       inputs=inputs,
+                       geometry_dir=str(paths.geometry("Gamma-1S")),
+                       names=stamp.SRC_LISTS["Gamma-1S"],
+                       repo_dir=str(paths.REPO))
 
 
 def main():
@@ -120,7 +146,8 @@ def main():
             "Эталон: https://physics.nist.gov/PhysRefData/Xcom/html/xcom1.html",
             "Резина — состав ICRU-37 (NIST STAR, материал 243), готовой"
             " таблицы mu/ro для неё у NIST нет.",
-        ])
+        ],
+        stamp=_stamp())
     print("\nсводка: %s" % op)
 
 

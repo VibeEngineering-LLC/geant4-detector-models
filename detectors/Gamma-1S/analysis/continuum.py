@@ -31,7 +31,21 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
+import csvio  # noqa: E402
 import paths  # noqa: E402
+import stamp  # noqa: E402
+
+# Объявление наблюдаемой — что именно за число лежит в таблице.
+OBS_CONTINUUM = {
+    "quantity": "активность по УЧАСТКУ континуума вне пиков; отнесённая к"
+                " активности по опорной линии",
+    "area": "сумма отсчётов участка; подложка НЕ вычитается — участок и есть"
+            " подложка",
+    "window": "участки шириной E_STEP вне пиков; границы в столбцах"
+              " E_lo_keV и E_hi_keV",
+    "shelf": "не применимо — снимается сам континуум; а не пик над ним",
+    "blurred": "измерение как есть; модель размыта приборной ПШПВ",
+}
 import becqmoni as bm  # noqa: E402
 import deconv as dc  # noqa: E402
 import kit_recalc as kr  # noqa: E402
@@ -126,10 +140,18 @@ def main():
             E += E_STEP
         print()
     out = os.path.join(str(paths.results("Gamma-1S")), "continuum.csv")
-    with open(out, "w", encoding="utf-8", newline="") as fh:
-        fh.write("# континуум вне пиков: активность по участку против опоры\n")
-        fh.write("geometry,E_lo_keV,E_hi_keV,A_Bq,ratio_to_anchor,d_ratio\n")
-        fh.write("\n".join(rows) + "\n")
+    # Запись общей реализацией csvio: ручной fh.write обходил и сторожа
+    # формата, и объявление наблюдаемой.
+    csvio.write(
+        out,
+        ["geometry", "E_lo_keV", "E_hi_keV", "A_Bq", "ratio_to_anchor",
+         "d_ratio"],
+        [tuple(r.split(",")) for r in rows],
+        comments=["континуум вне пиков: активность по участку против опоры"],
+        stamp=stamp.lines(
+            "detectors/Gamma-1S/analysis/continuum.py", OBS_CONTINUUM,
+            geometry_dir=str(paths.geometry("Gamma-1S")),
+            names=stamp.SRC_LISTS["Gamma-1S"], repo_dir=str(paths.REPO)))
     print("    таблица: %s (%d строк)" % (out, len(rows)))
     print("Единица в столбце «к опоре» означает, что расчётный континуум на\n"
           "этом участке согласен с измеренным в той же шкале, в какой согласован\n"

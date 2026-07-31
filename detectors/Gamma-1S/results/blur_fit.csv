@@ -1,3 +1,14 @@
+#@ stamp.version = 1
+#@ src.script = detectors/Gamma-1S/analysis/blur_fit.py
+#@ src.git = 7beacb0-dirty
+#@ src.tree_sha1 = bd17f9bea1e4
+#@ src.inputs_verdict = no_inputs
+#@ src.inputs_n = 0
+#@ obs.quantity = площадь линии четырьмя способами: фит измеренного спектра; значение сеанса СпектраЛайн; фит размытого модельного; окно по модельному депозиту
+#@ obs.area = площадь гауссианы фита либо сумма в окне — столбец называет; какая
+#@ obs.window = фит в зоне вокруг линии; оконный съём +-6 кэВ по депозиту
+#@ obs.shelf = в фите подложка подгоняется; в оконном съёме вычитается полка
+#@ obs.blurred = столбцы area_mc_fit — да; area_mc_window — нет
 # Мост методик (Трек 1c): измеренный и размытый модельный спектры фитуются одной функцией (гаусс+ступенька из пика-образа+линейный фон), ширина in-situ.
 # area_meas_fit против area_SL_session — валидация фита; area_mc_fit против area_mc_window — цена конвенции площади.
 E_keV,area_meas_fit,area_SL_session,area_mc_fit,area_mc_window

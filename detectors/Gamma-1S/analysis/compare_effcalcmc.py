@@ -43,6 +43,9 @@ DET = os.path.join(HERE, "..")
 sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "tools"))
 from fetch_efr import parse_efr  # noqa: E402
 
+sys.path.insert(0, os.path.join(HERE, "..", "..", "..", "common", "py"))
+import csvio  # noqa: E402
+
 sys.path.insert(0, HERE)
 from curvefit import local_quad  # noqa: E402
 
@@ -70,7 +73,9 @@ def main(argv):
     # с вычетом континуума боковой полкой, как наш eps_net. Сравнивать наш
     # результат с вычетом фона (континуума) против их результата без вычета —
     # разные величины уже по определению, ещё до какой-либо физики детектора.
-    rows = list(csv.DictReader(open(ours, encoding="utf-8", newline="")))
+    # csvio.read() — общая читалка: пропускает «#», в том числе штамп
+    # провенанса выгрузки кривых (иначе шапкой станет строка штампа).
+    rows = csvio.read(ours)
     grid = sorted((float(r["E_keV"]), float(r["eps_gross"]), float(r["d_eps"]))
                   for r in rows)
 

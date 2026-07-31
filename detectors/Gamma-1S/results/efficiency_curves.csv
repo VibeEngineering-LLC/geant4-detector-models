@@ -1,10 +1,11 @@
 #@ stamp.version = 1
 #@ src.script = detectors/Gamma-1S/analysis/export_curves.py
-#@ src.git = 27b2f77-dirty
+#@ src.git = 994699c-dirty-untracked
 #@ src.tree_sha1 = bd17f9bea1e4
 #@ src.inputs_verdict = ok
 #@ src.inputs_n = 216
 #@ src.inputs_sha1 = bd17f9bea1e4
+#@ src.inputs_digest = ead406b59781
 #@ obs.quantity = абсолютная эффективность регистрации в ППП — доля испущенных квантов данной энергии; давших отсчёт в пике
 #@ obs.area = eps_net — площадь пика за вычетом левой полки континуума; eps_gross — та же площадь без вычета (столбцы намеренно оба)
 #@ obs.window = +-6.0 кэВ по энергии; спектр расчётный с шагом 1 кэВ

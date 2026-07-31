@@ -189,6 +189,19 @@ assumption (there are no cuvette drawings, see `geometries/README.md`).
 | `N_primaries` | how many quanta were sampled in the run |
 | `net_counts` | net peak area in counts |
 | `solid_angle_fraction` | fraction of the solid angle (see below); 1.0 for volume geometries |
+| `in_range` | 1 — node inside the datasheet detection range 50…3000 keV; 0 — outside it |
+
+**About `in_range`.** The instrument's datasheet detection range is
+50…3000 keV (item 2.2). The grid extends beyond it in both directions: 45.3 keV
+below, 3304.8 and 3552.5 above — three nodes out of twenty-four in every
+geometry. Outside those bounds the instrument is not certified, so neither
+agreement nor disagreement between calculation and measurement counts as
+evidence there — for the model or against it. The nodes are not removed: they
+are still usable for cross-checks against another Monte-Carlo code (EffCalcMC),
+where the datasheet is irrelevant. The bounds come from
+`analysis/detector_params.ATTESTED_RANGE_KEV`, and the flag is derived from
+them — there is no hand-written list of energies that could drift apart from
+the bounds.
 
 **Why there are two efficiency columns.** The FEP window is ±6 keV around the
 line, the continuum shelf runs from E−30 to E−10 keV. `eps_net` subtracts the

@@ -29,6 +29,15 @@ detectors/Gamma-1S/results/.
 расчёта. Публиковать одно число, умолчав о втором, значило бы выдать выбор
 обработки за свойство детектора.
 
+СТОЛБЕЦ in_range. Паспортный диапазон регистрируемых энергий прибора —
+50…3000 кэВ (п. 2.2), а сетка выходит за него в обе стороны: 45,3 кэВ снизу,
+3304,8 и 3552,5 сверху. За границами прибор не аттестован, поэтому согласие
+или расхождение расчёта с измерением там не довод ни за модель, ни против
+неё. Узлы НЕ удаляются — они годятся для сверки с другим кодом (EffCalcMC), —
+но помечаются: in_range = 1 внутри диапазона, 0 вне его. Границы берутся из
+detector_params.ATTESTED_RANGE_KEV, то есть оттуда же, откуда их читает любой
+другой скрипт.
+
 ТОЧЕЧНЫЕ ГЕОМЕТРИИ СЧИТАНЫ В КОНУС. Изотропный источник на 25 см тратит
 99,4 % событий впустую, поэтому кванты разыгрывались в конус вокруг
 направления на детектор, а эффективность приведена к полному телесному углу
@@ -48,6 +57,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import csvio  # noqa: E402
 import paths  # noqa: E402
+import stamp  # noqa: E402
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import detector_params as dp  # noqa: E402
 
 BUILD = str(paths.build("Gamma-1S"))
 OUT = str(paths.results("Gamma-1S"))
@@ -142,7 +155,25 @@ def solid_angle(tag):
     return 1.0
 
 
-def curve(tag, dropped=None):
+# Объявление наблюдаемой для выгружаемых кривых. Одно на все eff_*.csv и на
+# сводную efficiency_curves.csv: обе таблицы содержат ОДНУ величину, снятую
+# ОДНИМ правилом, и разойтись объявлениям здесь не с чего.
+OBS = {
+    "quantity": "абсолютная эффективность регистрации в ППП — доля испущенных"
+                " квантов данной энергии; давших отсчёт в пике",
+    "area": "eps_net — площадь пика за вычетом левой полки континуума;"
+            " eps_gross — та же площадь без вычета (столбцы намеренно оба)",
+    "window": "+-6.0 кэВ по энергии; спектр расчётный с шагом 1 кэВ",
+    "shelf": "односторонняя слева E-30…E-10 кэВ (конвенция compare_lsrm.py)",
+    "blurred": "нет — депозит-спектр как есть; приборная ПШПВ не применяется",
+    "solid_angle": "точечные сетки разыграны в конус; eps приведена к 4pi"
+                   " множителем из grid/<метка>_solidangle.txt",
+    "in_range": "1 внутри паспортного диапазона 50…3000 кэВ (п. 2.2); 0 вне"
+                " его — там прибор не аттестован",
+}
+
+
+def curve(tag, dropped=None, used=None):
     """Кривая по сетке. dropped — сюда складываются ПРОПУЩЕННЫЕ узлы.
 
     Пропуск обязан быть слышен. Узел с нулевой площадью молча выпадал из
@@ -173,12 +204,39 @@ def curve(tag, dropped=None):
             "N_primaries": N,
             "net_counts": round(net, 1),
             "solid_angle_fraction": frac,
+            # 1/0, а не текст: столбец читается фильтром потребителя. Признак
+            # ВЫВОДИТСЯ из паспортных границ в detector_params, а не вписан
+            # списком энергий — вписанный разъедется с границами при первой же
+            # правке, и это ровно тот класс дефекта, который в отчёте назван
+            # главным уроком линии.
+            "in_range": 1 if dp.in_attested_range(E0) else 0,
         })
+        if used is not None:
+            used.append(p)
     rows.sort(key=lambda r: r["E_keV"])
     return rows
 
 
-def write_csv(path, header, rows):
+def _stamp(inputs):
+    """Строки штампа для выгружаемой кривой.
+
+    ЗАЧЕМ ОН ЗДЕСЬ. Таблицы этого экспортёра штампа не несли, и это дорого
+    обошлось: сетки в каталоге прогонов были пересчитаны 30.07 на исправленной
+    геометрии плоских кювет (коммит 2df1eb2) и на текущем exe, а выгрузка в
+    results/ осталась от 28.07. Опубликованные кривые Петри и Дента разошлись
+    с расчётом на 15…28 %, Маринелли на 8 %, и НИЧТО об этом не сказало:
+    незаштампованная таблица внешне не отличается от свежей. Скрипты анализа
+    читают grid/ напрямую, поэтому выводы отчёта на этом не стояли, — но
+    потребитель выгрузки получал устаревшие числа. Со штампом такая таблица
+    сама объявляет, каким отпечатком посчитаны её входы.
+    """
+    return stamp.lines(
+        "detectors/Gamma-1S/analysis/export_curves.py", OBS, inputs=inputs,
+        geometry_dir=str(paths.geometry("Gamma-1S")),
+        names=stamp.SRC_LISTS["Gamma-1S"], repo_dir=str(paths.REPO))
+
+
+def write_csv(path, header, rows, inputs=None):
     """Запись таблицы — общей реализацией из common/py/csvio.py.
 
     Ручной ",".join не экранирует ничего, и любое поле с запятой рвёт строку.
@@ -191,7 +249,8 @@ def write_csv(path, header, rows):
     в csvio, потому что копия сторожа успела разъехаться с копией в
     tools/check_csv.py по обращению с комментариями.
     """
-    csvio.write(path, header, rows)
+    csvio.write(path, header, rows,
+                stamp=_stamp(inputs) if inputs is not None else ())
 
 
 def export_curves():
@@ -199,14 +258,17 @@ def export_curves():
     long_rows = []
     made = []
     dropped = []
+    all_inputs = []
     for (tag, vessel, matrix, rho, vol, lid, driver, note) in GRIDS:
-        rows = curve(tag, dropped)
+        used = []
+        rows = curve(tag, dropped, used)
         if not rows:
             print("нет сетки %s — пропущена" % tag)
             continue
+        all_inputs.extend(used)
         head = ["E_keV", "eps_net", "d_eps", "eps_gross", "N_primaries",
-                "net_counts", "solid_angle_fraction"]
-        write_csv(os.path.join(OUT, "eff_%s.csv" % tag), head, rows)
+                "net_counts", "solid_angle_fraction", "in_range"]
+        write_csv(os.path.join(OUT, "eff_%s.csv" % tag), head, rows, used)
         made.append((tag, len(rows)))
         for r in rows:
             long_rows.append(dict(r, geometry=vessel, matrix=matrix,
@@ -216,9 +278,18 @@ def export_curves():
     if long_rows:
         head = ["grid", "geometry", "matrix", "density_g_cm3", "fill_ml",
                 "shield_lid", "E_keV", "eps_net", "d_eps", "eps_gross",
-                "N_primaries", "net_counts", "solid_angle_fraction"]
+                "N_primaries", "net_counts", "solid_angle_fraction",
+                "in_range"]
         long_rows.sort(key=lambda r: (r["grid"], r["E_keV"]))
-        write_csv(os.path.join(OUT, "efficiency_curves.csv"), head, long_rows)
+        write_csv(os.path.join(OUT, "efficiency_curves.csv"), head, long_rows,
+                  all_inputs)
+    out = sorted({r["E_keV"] for r in long_rows if not r["in_range"]})
+    if out:
+        lo, hi = dp.ATTESTED_RANGE_KEV
+        print("\nВНЕ ПАСПОРТНОГО ДИАПАЗОНА %.0f…%.0f кэВ (in_range=0): %s"
+              % (lo, hi, "; ".join("%.1f" % E for E in out)))
+        print("   Там прибор не аттестован — расхождение расчёта с измерением"
+              " не довод ни за модель, ни против.")
     if dropped:
         print("\nПРОПУЩЕНЫ УЗЛЫ СЕТКИ (%d) — кривая короче задуманной:"
               % len(dropped))

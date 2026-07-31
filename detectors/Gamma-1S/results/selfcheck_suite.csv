@@ -1,6 +1,6 @@
 #@ stamp.version = 1
 #@ src.script = detectors/Gamma-1S/analysis/selfcheck_suite.py
-#@ src.git = 7beacb0-dirty
+#@ src.git = 7646c87-dirty
 #@ src.tree_sha1 = bd17f9bea1e4
 #@ src.inputs_verdict = no_inputs
 #@ src.inputs_n = 0
@@ -21,4 +21,4 @@ check,verdict,value,threshold,detail
 4. замыкание на рентгене,ok,0.91672094789203,,eps(Kalpha)/eps(Kbeta) = 0.917 (зарегистрировано 8165/2014; испущено 391030/88420)
 5. атомная релаксация,warn,0.22612075799810757,,Kbeta/Kalpha модели = 0.2261 (88420/391030); опорное значение внешнее и в этой сессии не сверялось с первоисточником
 6. штамп провенанса,ok,ok,ok,входов 35; вердикт «ok»; {'sha': 'bd17f9bea1e4'}
-7. наблюдаемая объявлена,fail,2.0833333333333335,0.0,таблиц 48; без объявления 1 (2 %); первые: config_drift.csv
+7. наблюдаемая объявлена,fail,2.0,0.0,таблиц 50; без объявления 1 (2 %); первые: config_drift.csv

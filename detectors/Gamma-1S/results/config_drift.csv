@@ -1,21 +1,40 @@
+#@ stamp.version = 1
+#@ src.script = detectors/Gamma-1S/analysis/config_drift.py
+#@ src.git = 6e620d0-dirty
+#@ src.tree_sha1 = bd17f9bea1e4
+#@ src.inputs_verdict = no_inputs
+#@ src.inputs_n = 0
+#@ obs.quantity = расхождение ключей конфигурации прибора между слепком эпохи аттестации и текущим состоянием — величина НЕ числовая
+#@ obs.area = не применимо
+#@ obs.window = не применимо
+#@ obs.shelf = не применимо
+#@ obs.blurred = не применимо
 # Сравнение резервного слепка конфигурации прибора (эпоха аттестации) с текущим lsrm.cnf.
 # Значения путей заменены на «(путь изменён)»: содержат личные имена каталогов.
 # Строки с заполненным affects меняют ПЛОЩАДЬ пика или бюджет неопределённости — то есть сопоставимость наших чисел с
 #   аттестационными. Прочие — имя профиля, даты, плагины.
 key,snapshot,current,affects
-CalcPlugins/Special reports,True,False,
+Activity/EffFile,(путь изменён),(путь изменён),
+CalcPlugins/Special reports,False,True,
 CalibrationFiles/EnergyCalibration,(путь изменён),(путь изменён),
-Default/ActivityCalcMethod,3,8,метод расчёта активности
-Detector/UseDoubleEscape,1,0,пик двойного вылета
-Detector/UseSingleEscape,1,0,пик одиночного вылета
-Detector/XEscCorrection,1,0,поправка на вылет характеристического кванта
-Fitting/Minimize,FWHM; Position; Linear,Position; Linear,
+CalibrationFiles/FWHMCalibration,(путь изменён),(путь изменён),
+Default/ActivityCalcMethod,8,3,метод расчёта активности
+Detector/UseDoubleEscape,0,1,пик двойного вылета
+Detector/UseSingleEscape,0,1,пик одиночного вылета
+Detector/UseTrueSummation,0,1,
+Detector/XEscCorrection,0,1,поправка на вылет характеристического кванта
+FilePaths/Etalons,(путь изменён),(путь изменён),
+Fitting/Minimize,Position; Linear,FWHM; Position; Linear,
+Fitting/Pattern,(путь изменён),(путь изменён),
+General/Name,Гамма-1С_(номер прибора скрыт),Gamma-1S,
+Identification/Library,(путь изменён),(путь изменён),
 Other/AppealDateTime,(путь изменён),(путь изменён),
 Processing/Background,(путь изменён),(путь изменён),
-Processing/ChBegin,10,15,начало диапазона обработки (канал)
-Processing/ConsiderApparatusPeaks,1,0,учёт аппаратурных пиков
-Processing/ConsiderBackScattering,0,1,учёт обратного рассеяния
-Representation/Background MDA,1,0,
-Representation/ConsiderMeasTime,0,1,распад за время измерения
-Spectrometer/IntegralNonlinearity,0.3,0,интегральная нелинейность (бюджет)
-Spectrometer/TimeInstability,0.03,0,временная нестабильность (бюджет)
+Processing/ChBegin,15,10,начало диапазона обработки (канал)
+Processing/ConsiderApparatusPeaks,0,1,учёт аппаратурных пиков
+Processing/ConsiderBackScattering,1,0,учёт обратного рассеяния
+Representation/Background MDA,0,1,
+Representation/ConsiderMeasTime,1,0,распад за время измерения
+Spectrometer/IntegralNonlinearity,0,0.3,интегральная нелинейность (бюджет)
+Spectrometer/SummCorrection,0,1,поправка на суммирование
+Spectrometer/TimeInstability,0,0.03,временная нестабильность (бюджет)

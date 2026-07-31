@@ -82,8 +82,24 @@ def channels(E, bin_keV=1.0, win_keV=WIN_KEV, bg0_keV=BG0_KEV,
     return i0, i1, j0, j1
 
 
+def right_shelf(E, bin_keV=1.0, bg0_keV=BG0_KEV, bg1_keV=BG1_KEV):
+    """Границы ПРАВОЙ полки в индексах каналов, полуоткрыто.
+
+    Зеркало левой: левая КОНЧАЕТСЯ каналом, ближайшим к `E−bg1`
+    (включительно), правая НАЧИНАЕТСЯ каналом, ближайшим к `E+bg1`, и
+    тянется на те же `n_side` каналов вправо (то есть чуть дальше
+    `E+bg0−шаг`, а не «до канала, ближайшего к E+bg0»). Вылета K-рентгена
+    справа от пика нет (он всегда ниже `E`), поэтому у правой полки нет и
+    причины для отступа 25 — но окно берётся тем же числом каналов, чтобы
+    обе полки были одной ширины и однородной наблюдаемой.
+    """
+    n_side = int(round((bg0_keV - bg1_keV) / bin_keV))
+    k0 = _centre_index(E + bg1_keV, bin_keV)
+    return k0, k0 + n_side
+
+
 def area(hist, E, bin_keV=1.0, win_keV=WIN_KEV, bg0_keV=BG0_KEV,
-         bg1_keV=BG1_KEV, detail=None, n_chan=None):
+         bg1_keV=BG1_KEV, detail=None, n_chan=None, side="left"):
     """Чистая площадь пика в депозит-спектре: gross − плотность полки · n_пика.
 
     `hist` — {центр канала: отсчёты}, только НЕПУСТЫЕ каналы (так пишет модель),
@@ -93,6 +109,14 @@ def area(hist, E, bin_keV=1.0, win_keV=WIN_KEV, bg0_keV=BG0_KEV,
     `detail` — если передан dict, туда кладутся фактические границы и суммы:
     без этого «отказ, замаскированный под норму» (полка вне сетки, нулевой
     знаменатель) выглядел бы обычным числом.
+
+    `side` — "left" (штатно) или "both": плотность подложки как СРЕДНЯЯ по
+    левой и правой полкам. Симметричный режим нужен там, где подложка слева
+    и справа устроена по-разному и односторонняя полка смещает результат:
+    у Co-60 левая полка каждой линии стоит на структуре от соседней линии
+    (tcc_selfcheck), у сравнения shield/bare обратное рассеяние меняет
+    континуум именно слева (shield_role). Это ИНАЯ наблюдаемая — смешивать
+    режимы в одной таблице нельзя, объявление берётся из declare(side=...).
     """
     # Границы считаются ДВАЖДЫ одной и той же функцией: без обрезки и с ней.
     # Переписать формулу «сколько каналов было бы» рядом значило бы завести
@@ -113,22 +137,44 @@ def area(hist, E, bin_keV=1.0, win_keV=WIN_KEV, bg0_keV=BG0_KEV,
     gross = sum(c for e, c in hist.items()
                 if lo * bin_keV <= e - 0.5 * bin_keV < i1 * bin_keV)
     js = max(0, j0)
-    side = sum(c for e, c in hist.items()
-               if js * bin_keV <= e - 0.5 * bin_keV < j1 * bin_keV)
+    sideL = sum(c for e, c in hist.items()
+                if js * bin_keV <= e - 0.5 * bin_keV < j1 * bin_keV)
     n_peak, n_side = i1 - lo, j1 - js
     if detail is not None:
         detail.update(i0=lo, i1=i1, j0=js, j1=j1, n_peak=n_peak,
-                      n_side=n_side, gross=gross, side=side)
+                      n_side=n_side, gross=gross, side=sideL)
     if n_side <= 0:
         if detail is not None:
             detail.update(mode="no_shelf")
         return gross
+    if side == "both":
+        k0, k1 = right_shelf(E, bin_keV, bg0_keV, bg1_keV)
+        if n_chan is not None and k1 > n_chan:
+            # Обрезанная правая полка — уже другая наблюдаемая (короче левой,
+            # средняя плотность смещена). Отказ громкий, как у окна пика.
+            raise SystemExit(
+                "peakwin.area(side='both'): правая полка для E = %.3f кэВ"
+                " выходит за гистограмму (нужен канал %d при %d каналах)."
+                % (E, k1 - 1, n_chan))
+        sideR = sum(c for e, c in hist.items()
+                    if k0 * bin_keV <= e - 0.5 * bin_keV < k1 * bin_keV)
+        # Плотности считаются КАЖДАЯ по своему числу каналов: при E вблизи
+        # нуля левая полка обрезается снизу (js > j0) и её n_side короче
+        # правой — общая нормировка на левый n_side завышала бы плотность
+        # (найдено ревью задачи 151; на текущих энергиях >=45 кэВ случай
+        # недостижим, чинится способ ошибиться, а не проявившийся промах).
+        dens = 0.5 * (sideL / n_side + sideR / (k1 - k0))
+        if detail is not None:
+            detail.update(k0=k0, k1=k1, n_side_r=k1 - k0, side_r=sideR,
+                          mode="shelf_both")
+        return gross - dens * n_peak
     if detail is not None:
         detail.update(mode="shelf")
-    return gross - side / n_side * n_peak
+    return gross - sideL / n_side * n_peak
 
 
-def declare(bin_keV=1.0, win_keV=WIN_KEV, bg0_keV=BG0_KEV, bg1_keV=BG1_KEV):
+def declare(bin_keV=1.0, win_keV=WIN_KEV, bg0_keV=BG0_KEV, bg1_keV=BG1_KEV,
+            side="left"):
     """Строки объявления наблюдаемой, СОБРАННЫЕ ИЗ ТЕХ ЖЕ констант.
 
     Объявление, набранное руками рядом с кодом, рассинхронизируется с ним при
@@ -137,11 +183,19 @@ def declare(bin_keV=1.0, win_keV=WIN_KEV, bg0_keV=BG0_KEV, bg1_keV=BG1_KEV):
     заводился против лжи (найдено аудитом). Поэтому строки строятся здесь.
     """
     i0, i1, j0, j1 = channels(1000.0, bin_keV, win_keV, bg0_keV, bg1_keV)
+    if side == "both":
+        # без запятых: значения штампа идут в CSV одной строкой (stamp.lines)
+        shelf = ("симметричная [E-%.0f; E-%.0f] и [E+%.0f; E+%.0f] средней"
+                 " плотностью; %d каналов каждая; множитель вычитания %d/%d"
+                 % (bg0_keV, bg1_keV, bg1_keV, bg0_keV, j1 - j0,
+                    i1 - i0, j1 - j0))
+    else:
+        shelf = ("односторонняя [E-%.0f; E-%.0f] = %d каналов;"
+                 " множитель вычитания %d/%d"
+                 % (bg0_keV, bg1_keV, j1 - j0, i1 - i0, j1 - j0))
     return {
         "window": "+-%.1f кэВ = %d каналов (счёт в каналах; ширина не зависит"
                   " от дробной части E)" % (win_keV, i1 - i0),
-        "shelf": "односторонняя [E-%.0f; E-%.0f] = %d каналов;"
-                 " множитель вычитания %d/%d"
-                 % (bg0_keV, bg1_keV, j1 - j0, i1 - i0, j1 - j0),
+        "shelf": shelf,
         "blurred": "нет (депозит как есть; на ПШПВ не нормируется)",
     }

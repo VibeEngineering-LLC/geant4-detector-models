@@ -35,10 +35,12 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
+import csvio  # noqa: E402
 import paths  # noqa: E402
+import peakwin  # noqa: E402
+import stamp  # noqa: E402
 
 BUILD = str(paths.build("Gamma-1S"))
-WIN, BG0, BG1 = 6.0, 30.0, 10.0
 CASES = [(45.3, "E45.3"), (56.1, "E56.1"), (59.5, "E59.5"), (88.0, "E88.0"),
         (122.1, "E122.1"), (165.9, "E165.9"), (661.657, "E661.7"),
         (2614.511, "E2614.5")]
@@ -52,8 +54,8 @@ CASES = [(45.3, "E45.3"), (56.1, "E56.1"), (59.5, "E59.5"), (88.0, "E88.0"),
 
 def area(path, E, symmetric=True):
     """(N, net, d, tot). symmetric=True — подложка СРЕДНЕЙ плотностью с
-    ДВУХ полок (общий вид area_broadened в common/py/becqmoni.py); False —
-    прежнее ОДНОСТОРОННЕЕ окно слева (E-30..E-10), которое здесь стояло.
+    ДВУХ полок (`peakwin.area(side="both")`); False — одностороннее окно
+    слева, штатное `peakwin.area`.
 
     ОДНОСТОРОННЕЕ ОКНО СИСТЕМАТИЧНО ВРЁТ НА ПАДАЮЩЕМ КОНТИНУУМЕ (замечание
     аудитора): слева от пика континуум ВЫШЕ, чем справа (падает с ростом E),
@@ -61,6 +63,10 @@ def area(path, E, symmetric=True):
     сравнения shield/bare эта ошибка НЕ сокращается в отношении: защита
     меняет форму континуума именно СЛЕВА (обратное рассеяние встаёт туда,
     где рождается энергия ниже E), значит смещение разное в двух прогонах.
+
+    Прежде здесь жила СВОЯ копия правила (окно в кэВ, полка E-30..E-10 с
+    вылетом иода внутри) — тот самый дефект «одно правило в N местах»,
+    против которого заведён peakwin; мигрировано задачей 151.
     """
     N, hist = None, {}
     for ln in open(path, encoding="utf-8"):
@@ -72,22 +78,34 @@ def area(path, E, symmetric=True):
             continue
         e, c = ln.split(",")
         hist[float(e)] = int(c)
-    n = math.floor(E + WIN - 0.5) - math.ceil(E - WIN - 0.5) + 1
-    gross = sum(c for e, c in hist.items() if abs(e - E) <= WIN)
     tot = sum(hist.values())
+    det = {}
+    net = peakwin.area(hist, E, detail=det,
+                       side="both" if symmetric else "left")
+    # статистическая оценка: дисперсия gross плюс дисперсия вычтенной полки
     if symmetric:
-        ns = math.floor(E - BG1 - 0.5) - math.ceil(E - BG0 - 0.5) + 1
-        left = sum(c for e, c in hist.items() if E - BG0 <= e <= E - BG1)
-        right = sum(c for e, c in hist.items() if E + BG1 <= e <= E + BG0)
-        dens = 0.5 * (left / ns + right / ns)
-        bg = dens * n
+        var_bg = (0.5 * det["n_peak"]) ** 2 \
+            * (det["side"] / det["n_side"] ** 2
+               + det["side_r"] / det["n_side_r"] ** 2)
     else:
-        ns = math.floor(E - BG1 - 0.5) - math.ceil(E - BG0 - 0.5) + 1
-        side = sum(c for e, c in hist.items() if E - BG0 <= e <= E - BG1)
-        bg = side / ns * n
-    net = gross - bg
-    d = math.sqrt(max(gross + (n / ns) * bg, 1.0))
+        var_bg = (det["n_peak"] / det["n_side"]) ** 2 * det["side"]
+    d = math.sqrt(max(det["gross"] + var_bg, 1.0))
     return N, net, d, tot
+
+
+def _obs():
+    """Объявление наблюдаемой: отношение чистых площадей ППП shield/bare,
+    основная оценка — симметричная полка (peakwin.declare(side='both'))."""
+    return dict(
+        {
+            "quantity":
+                "отношение чистых площадей ППП с защитой и без (shield/bare);"
+                " точечный источник 5 см; полный 4π",
+            "area":
+                "чистая площадь пика; одно правило на обе стороны отношения"
+                " (common/py/peakwin.area)",
+        },
+        **peakwin.declare(side="both"))
 
 
 def main():
@@ -96,6 +114,7 @@ def main():
     print("%9s %10s %10s %9s %9s" %
           ("E, кэВ", "симметр.", "слева", "разница", "полный счёт"))
     bad = 0
+    rows, used = [], []
     for E, tag in CASES:
         ps = os.path.join(BUILD, "scat_p5_full_%s.csv" % tag)
         pb = os.path.join(BUILD, "scat_p5_bare_%s.csv" % tag)
@@ -103,6 +122,7 @@ def main():
             print("%9.1f  нет пары прогонов (%s)" % (E, tag))
             bad += 1
             continue
+        used += [ps, pb]
         # Симметричная подложка — основная оценка (замечание аудитора: левое
         # окно на падающем континууме смещает shield и bare РАЗНО, а не
         # сокращается в отношении). Одностороннее — рядом, чтобы видеть,
@@ -118,16 +138,44 @@ def main():
         r1 = ns1 / nb1 if nb1 else float("nan")
         print("%9.1f %10.4f %10.4f %+9.4f %9s"
               % (E, r, r1, r - r1, "%.4f/%.4f" % (ts / Ns, tb / Nb)))
+        rows.append(("%.1f" % E, "%.4f" % r, "%.4f" % dr, "%.4f" % r1,
+                     "%.5f" % (ts / Ns), "%.5f" % (tb / Nb)))
     if bad:
+        # Сводка пишется и при неполном наборе: мягкие пары (45-88 кэВ) не
+        # прогнаны ни разу, и ранний выход навсегда оставлял бы числа только
+        # в консоли (дыра задачи 148). Код возврата 1 сохраняется как сигнал.
         print("\nПрогоны: g1s.exe scat_test.mac shield и "
               "g1s.exe scat_bare.mac bare")
-        return 1
-    print("\n«симметр.» — подложка средней плотностью с полок E±(roi..roi+side);")
-    print("«слева» — прежнее окно E-30..E-10 (может врать на падающем "
-          "континууме).")
+    print("\n«симметр.» — %s;" % peakwin.declare(side="both")["shelf"])
+    print("«слева» — %s (может врать на падающем континууме)."
+          % peakwin.declare()["shelf"])
     print("Отношение больше единицы — защита ДОБАВЛЯЕТ в пик обратно\n"
           "рассеянные кванты; меньше — отнимает больше, чем добавляет.")
-    return 0
+    if rows:
+        op = os.path.abspath(os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", "results",
+            "shield_role.csv"))
+        csvio.write(
+            op,
+            ["E_keV", "ratio_sym", "d_ratio", "ratio_left",
+             "total_per_prim_shield", "total_per_prim_bare"],
+            rows,
+            comments=[
+                "Вклад защиты в ППП: отношение чистых площадей shield/bare;"
+                " точечный источник 5 см; полный 4pi.",
+                "ratio_sym - основная оценка (симметричная полка);"
+                " ratio_left - контроль чувствительности к способу.",
+                "Больше единицы - защита добавляет в пик обратнорассеянные"
+                " кванты.",
+            ],
+            stamp=stamp.lines(
+                "detectors/Gamma-1S/analysis/shield_role.py", _obs(),
+                inputs=used,
+                geometry_dir=str(paths.geometry("Gamma-1S")),
+                names=stamp.SRC_LISTS["Gamma-1S"],
+                repo_dir=str(paths.REPO)))
+        print("\nсводка: %s" % op)
+    return 1 if bad else 0
 
 
 if __name__ == "__main__":

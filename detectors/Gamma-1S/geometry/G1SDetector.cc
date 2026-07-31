@@ -371,7 +371,8 @@ void G1SDetector::BuildHead(G4LogicalVolume* w) {
   Ring("MgO_face", 0, rMgo, zCry, zMgoTop, Mat("MgO_powder"), w, cMgo);
 
   // Герметичная банка Al: обечайка и торцевая шайба; снизу банку закрывает
-  // стеклянный световод, состыкованный с ФЭУ.
+  // слой оптического геля, состыкованный с ФЭУ (прежнее допущение «стеклянный
+  // световод 5 мм» снято оператором 28.07.2026, коммит 1a29dee, — см. ниже).
   Ring("AlCan_side", rMgo, rCan, zWinBot, zMgoTop, Mat("G4_Al"), w, cAl);
   Ring("AlCan_face", 0, rCan, zMgoTop, zCanTop, Mat("G4_Al"), w, cAl);
   // Стык кристалл->ФЭУ: тонкий оптический гель (силикон; по составу и

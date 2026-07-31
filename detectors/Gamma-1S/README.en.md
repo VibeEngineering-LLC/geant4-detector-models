@@ -32,25 +32,33 @@ numbers coincide exactly, verified by the script
 
 ## Status
 
-The model has been built and validated against five geometries of the
-verification kit. **Two vessel-geometry defects have not been resolved** —
-see below.
+The table below was synchronized with `results/` on 2026-07-31, after all
+grids were recomputed on the corrected geometry; the previous revision of
+this table rested on retracted values (the entrance-face fix of 28.07 and
+the stale export, task 137).
 
-| check | result | reference value |
-|---|---|---|
-| shield metal masses | Pb 167.1 / Cu 1.60 / Cd 1.58 kg | passport ≥165 / 1.6 / 1.2 |
-| point-source FEP, 25 cm, 662 keV | 0.116 ± 0.008 % | passport ≥0.1 % |
-| resolution at the 662 keV peak | 7.5 % | passport ≤8 % |
-| **point source 5 cm, 24 lines** | **0.971** | detector confirmed correct |
-| **point source 25 cm, 20 lines** | **0.931** | confirmation, lid open |
-| Marinelli, 15 lines | 1.165 | calculation OVERESTIMATES |
-| "Denta", 13 lines | 0.886 | calculation UNDERESTIMATES |
-| Petri dish, 14 lines | 0.811 | calculation UNDERESTIMATES |
-| MDA (Currie) | Cs 1.55 / K 19.1 / Ra 2.84 / Th 3.88 Bq/kg | passport 1.5 / 25 / 3 / 3 |
+| check | result | reference value | source |
+|---|---|---|---|
+| shield metal masses | Pb 167.1 / Cu 1.60 / Cd 1.58 kg | passport ≥165 / 1.6 / 1.2 | `geometry/G1SDetector.cc`, ReportMasses |
+| point-source FEP, 25 cm, 662 keV | 0.121 ± 0.001 % | passport ≥0.1 % | `results/eff_p25cm.csv` |
+| resolution at the 662 keV peak | 7.5 % | passport ≤8 % | `analysis/detector_params.py` |
+| **point source 5 cm, calc/passport, 21 lines** | **1.0365 ± 0.0112** | χ²/ν = 1.79 | `results/kit_activity_point.csv` |
+| **point source 25 cm, calc/passport, 7 lines** | **1.0381 ± 0.0214** | χ²/ν = 2.10; lid open | `results/kit_activity_point.csv` |
+| Marinelli against `.efr`, 15 lines | 1.2526 ± 0.0120 | calculation overestimates | `results/compare_lsrm_summary.csv` |
+| "Denta" against `.efr`, 13 points | 1.011 | agreement | `analysis/compare_cups.py` |
+| Petri dish against `.efr`, 14 points | 0.941 | calculation underestimates | `analysis/compare_cups.py` |
 
-The "Marinelli / Denta / Petri" rows were obtained by comparison with the
-processed `.efr` curve. Independently of that, **the entire kit was
-recalculated against the source passports** — 53 lines, tables in
+Both point distances are now extracted with ONE peak-area convention (unified
+on 2026-07-31) and agree with each other; the certified curve itself
+reproduces the same passports with deviations of 3.9% at 5 cm and 4.4% at
+25 cm — this sets the scale against which the calculation is meaningfully
+compared. The jump of the discrepancy at the hard edge (2614.5 keV) belongs
+to the peak-area extraction convention, not to the physics of the model;
+after both sides are brought to one convention the residual is flat, about
+7% (a lower bound) — details in [docs/report.md](docs/report.md) §5.3.
+
+Independently of the `.efr`, **the entire kit was recalculated against the
+source passports** — tables in
 [results/kit_recalc_volume.csv](results/kit_recalc_volume.csv) and
 [results/kit_recalc_point.csv](results/kit_recalc_point.csv). Poorly
 separated lines are not fed into the activity calculation (`purity` column,
@@ -77,8 +85,8 @@ See [common/docs/validation.md](../../common/docs/validation.en.md).
 |---|---|
 | 1. Masses against passport | done: Pb 167.1 / Cu 1.60 / Cd 1.58 kg |
 | 2. Convergence of drawing dimensions | done: both sums, 78.3 and 74.5 mm |
-| 3. Passport efficiency point | done: 0.116 ± 0.008 % against the ≥0.1 % requirement |
-| 4. Point geometry as detector reference | done twice: 0.971 and 0.931 |
+| 3. Passport efficiency point | done: 0.121 ± 0.001 % against the ≥0.1 % requirement |
+| 4. Point geometry as detector reference | done twice: calc/passport 1.0365 ± 0.0112 and 1.0381 ± 0.0214 |
 | 5. Density sweep, d_eff | done: two densities for each vessel |
 | 6. Summing check on a nuclide without a cascade | done: Cs-137 0.983 ± 0.015, K-40 1.009 ± 0.025 |
 | 7. Line yields from the model's own calculation | done: `*_emit.csv` of the same run |
@@ -93,17 +101,27 @@ discrepancy, see below.
 
 ## What is known and what is open
 
-**The detector is confirmed correct.** Two point-source geometries in
-different shield configurations give 0.97 and 0.93. This separates the
-detector model from the vessel models.
+Status as of 2026-07-31, after the entrance-face fix, the recomputation of
+all seven grids, and the unification of peak-area conventions; details and
+caveats in [docs/report.md](docs/report.md).
 
-**The vessel models diverge, and in opposite directions** — the Marinelli
-beaker overestimates, the cuvettes underestimate. The decisive argument:
-K-40, a clean isolated line with no chains or blends, gives 1.22 / 0.82 /
-0.78 across the three vessels. The geometry does not know which nuclide is
-inside, so the cause lies in the vessels themselves. The culprits are the
-nodes where assumptions stand in for drawings: the depth of the Marinelli
-well and the width of the cuvettes. No drawings exist for the cuvettes.
+**The detector model agrees with the passports.** Both point distances,
+extracted with one convention, give calc/passport 1.0365 ± 0.0112 and
+1.0381 ± 0.0214 and agree with each other; the certified curve itself
+reproduces the same passports with deviations of 3.9% and 4.4%.
+
+**The jump of the discrepancy at the hard edge belongs to the peak-area
+extraction method.** The convention correction `B(E)`, measured on clean
+monoenergetic runs, absorbs the break at 2614.5 keV; what remains
+unexplained is a flat plateau of about 7% (a lower bound — the calculation
+uses a linear background against the second-degree polynomial of the
+processing software). Decomposing the plateau is tasks 109/111/122/142.
+
+**The response to a change of geometry was verified across seven grids**:
+the agreement with the certification improves the farther the sample
+geometry is from a point source (0.5σ on the Denta → Marinelli step, 4.1σ
+on Petri → Denta, 13.5σ on point → Petri); the sign of the trend is set by
+self-absorption in the sample (see the nuclide table above).
 
 **The LSRM reference curve has been checked and is correct.** Reconstructed
 from the raw spectrum of the calibration source and the passport activity:
@@ -115,23 +133,16 @@ of 10–20 %.
 
 ## Unfinished work
 
-- Two targeted runs are prepared but not yet executed: the depth of the
-  Marinelli well (74/65/55/45 mm) and the bulk density of the MgO reflector
-  (1.3/1.5/2.0). Driver `drivers/run_probe.py`, analysis
-  `analysis/probe_analyze.py`. The rejection criterion is specified in
-  advance: the soft edge must be corrected without breaking the middle or
-  the hard edge.
-- The soft edge of the curve is underestimated (0.78 at 59.5 keV against
-  ~0.95 in the middle). Three independent pieces of evidence point to
-  excess absorber in front of the crystal; the accepted MgO density of
-  2.0 g/cm³ is an assumption from the 1.5–2.4 range, and the Am-241 point
-  favors 1.3–1.5.
-- The activities of Ti-44 and Eu-152 in the mixed source were obtained by
-  decomposition, but **are not reported**: their lines lie in the affected
-  soft region, and until the reflector density is corrected, publishing
-  them would be incorrect.
-- Recalculation of the 25 point-source records of the kit has been written
-  but not fully executed.
+- Decomposition of the ~7% plateau into signed contributions and the
+  acceptance criterion as a closed balance (tasks 109, 111); the
+  peak-to-total ratio awaits the long Th-228 decay run (task 122); the
+  depression of the Th-228 nodes in the certification is not yet separated
+  between pile-up and cascade summing (task 142).
+- Two estimates of the FWHM at 662 keV differ by 10% (the caesium record
+  against the thorium session); the two values are deliberately kept
+  separate (task 138).
+- The alternative physics list (Livermore against option4) has not been
+  cross-checked — it costs a full grid recomputation (tasks 101/141).
 
 ## Composition of the mixed source
 

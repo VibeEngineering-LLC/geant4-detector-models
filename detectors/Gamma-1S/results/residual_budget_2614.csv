@@ -1,6 +1,6 @@
 #@ stamp.version = 1
 #@ src.script = detectors/Gamma-1S/analysis/residual_budget_2614.py
-#@ src.git = 3531ab3-dirty
+#@ src.git = e4451d5
 #@ src.tree_sha1 = bd17f9bea1e4
 #@ src.inputs_verdict = no_inputs
 #@ src.inputs_n = 0

@@ -13,7 +13,7 @@
   2. КАЛИБРОВКА. Найденная центроида против табличной энергии по каждой линии
      (bm.peak_find — первый момент по вычтенной подложке), измеренная ПШПВ
      против калиброванного закона ПШПВ² = a + b·E (deconv.fwhm). Показывается
-     ТОЛЬКО у чистых линий: у бленда «центроида» есть центр тяжести группы, а
+     ТОЛЬКО у чистых линий: у мультиплета «центроида» есть центр тяжести группы, а
      не калибровочный сдвиг, и путать эти две вещи нельзя — на этом уже один
      раз испортили результат (см. шапку kit_recalc).
 
@@ -113,7 +113,7 @@ SPECTRA_JS = r"""
 <script>
 (function(){
  var W=760,H=260,PL=62,PR=12,PT=12,PB=34;
- function fmt(v){return v>=100?v.toFixed(0):v>=1?v.toFixed(2):v.toExponential(1);}
+ function fmt(v){var t=v>=100?v.toFixed(0):v>=1?v.toFixed(2):v.toExponential(1);return t.replace('.',',');}
  function draw(box){
   var d=box._d,st=box._st,sv=box.querySelector('svg');
   var lo=st.lo,hi=st.hi,E=d.E;
@@ -152,7 +152,7 @@ SPECTRA_JS = r"""
    o.push('<line class="mark'+(m[2]?'':' dirty')+'" x1="'+X(m[0]).toFixed(1)+'" y1="'+PT+'" x2="'+X(m[0]).toFixed(1)+'" y2="'+(H-PB)+'"/>');
    o.push('<text class="mk" x="'+X(m[0]).toFixed(1)+'" y="'+(PT+9)+'" text-anchor="middle">'+m[1]+'</text>');}
   if(st.pk&&d.peaks)for(k=0;k<d.peaks.length;k++){var p=d.peaks[k]; if(p[0]<lo||p[0]>hi)continue;
-   o.push('<polygon class="fpk" points="'+X(p[0]).toFixed(1)+','+(PT+13)+' '+(X(p[0])-4).toFixed(1)+','+(PT+5)+' '+(X(p[0])+4).toFixed(1)+','+(PT+5)+'"><title>найден пик '+p[0]+' кэВ, значимость '+p[1]+'</title></polygon>');}
+   o.push('<polygon class="fpk" points="'+X(p[0]).toFixed(1)+','+(PT+13)+' '+(X(p[0])-4).toFixed(1)+','+(PT+5)+' '+(X(p[0])+4).toFixed(1)+','+(PT+5)+'"><title>найден пик '+String(p[0]).replace('.',',')+' кэВ, значимость '+String(p[1]).replace('.',',')+'</title></polygon>');}
   var cls={smp:'ssmp',bg:'sbg',net:'snet'};
   for(s=0;s<ser.length;s++){var arr=d[ser[s]],dd='',pen=false;
    for(k=i0;k<=i1;k++){var vv=arr[k];
@@ -309,7 +309,8 @@ def deconv_svg(res, E0, title):
                  % (DPAD_L, py(v), DW - DPAD_R, py(v)))
         s.append('<text class="ax" x="%d" y="%.1f" text-anchor="end">%s</text>'
                  % (DPAD_L - 5, py(v) + 4,
-                    ("%.0f" % v) if abs(v) >= 100 else ("%.3g" % v)))
+                    (("%.0f" % v) if abs(v) >= 100
+                     else ("%.3g" % v)).replace(".", ",")))
     s.append('<text class="axt" x="%.1f" y="%d" text-anchor="middle">энергия, '
              'кэВ</text>' % ((DPAD_L + DW - DPAD_R) / 2, DH - 3))
 
@@ -425,9 +426,10 @@ def record_block(geom, mask, nuc, aspec, dpct, d0, mass, vol, geom_title):
         sh = calib.get("shifts") or []
         h.append('<p class="cap">Калибровка фона (проверяется независимо от '
                  'пробы): %s.%s</p>'
-                 % (esc(calib["reason"]),
+                 % (esc(calib["reason"]).replace(".", ","),
                     "" if not sh else " Невязки якорей: " + ", ".join(
-                        "%s кэВ %+.2f ПШПВ" % (ru(E, 1), s) for E, s in sh)
+                        ("%s кэВ %+.2f ПШПВ" % (ru(E, 1), s)).replace(".", ",")
+                        for E, s in sh)
                     + "."))
     import json
     data = spectrum_data(sp, bg, marks, found)
@@ -452,7 +454,7 @@ def record_block(geom, mask, nuc, aspec, dpct, d0, mass, vol, geom_title):
              '</i>фон, приведённый к живому времени пробы</span>'
              '<span class="k"><i style="border-color:var(--corr)"></i>'
              'разность</span><span class="k"><i style="border-color:var(--ink);'
-             'opacity:.45;border-top-style:dotted"></i>линия в бленде</span>'
+             'opacity:.45;border-top-style:dotted"></i>линия в мультиплете</span>'
              '<span class="k">▲ найденный пик</span>'
              '<span class="k">колесо — масштаб, перетаскивание — сдвиг</span>'
              '</p>')
@@ -486,7 +488,7 @@ def record_block(geom, mask, nuc, aspec, dpct, d0, mass, vol, geom_title):
     h.append("</tbody></table></div>")
     bad = [r for r in rows if not r["clean"]]
     if bad:
-        h.append('<p class="cap">Строки серым — линии в бленде (чистота ниже '
+        h.append('<p class="cap">Строки серым — линии в мультиплете (чистота ниже '
                  '%s): их «центроида» есть центр тяжести группы, а не '
                  'калибровочный сдвиг. Оконным съёмом такая линия для '
                  'активности не годится, деконволюцией — годится, в этом и '

@@ -1,0 +1,84 @@
+/* Дополнение к page.css для страницы статьи: боковое оглавление вместо
+   липкой строки, панель сводных чисел, вкладки геометрий и записей.
+   Токены не переопределяются — только новые классы. Подключать после
+   page.css: <link rel="stylesheet" href="../assets/page.css">
+             <link rel="stylesheet" href="../assets/article.css"> */
+
+/* полоса: оглавление слева + текст */
+.shell{display:grid;grid-template-columns:216px minmax(0,1fr);
+max-width:1320px;margin:0 auto;align-items:start}
+.shell>main{padding:44px 40px 64px;max-width:1000px}
+
+.toc{position:sticky;top:0;height:100vh;overflow-y:auto;
+padding:34px 20px 28px 28px;display:flex;flex-direction:column;gap:2px;
+border-right:0.5px solid var(--border-tertiary);background:var(--bg-secondary)}
+.toc-kicker{font-family:var(--font-mono);font-size:10.5px;line-height:1;
+letter-spacing:.12em;text-transform:uppercase;color:var(--text-tertiary);
+margin-bottom:10px}
+.toc-title{font-size:13px;font-weight:500;margin-bottom:14px}
+.toc a{font-size:12.5px;line-height:1.5;padding:3px 0;
+color:var(--text-secondary);text-decoration:none}
+.toc a:hover{color:var(--accent)}
+.toc a[aria-current="true"]{color:var(--accent);font-weight:500;
+border-left:2px solid var(--accent);padding-left:8px;margin-left:-10px}
+.toc-foot{margin-top:auto;padding-top:16px;
+border-top:0.5px solid var(--border-tertiary);font-size:11px;line-height:1.55;
+color:var(--text-tertiary)}
+
+/* панель сводных чисел (шапка статьи и врезки геометрий) */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));
+gap:1px;background:var(--border-tertiary);
+border:0.5px solid var(--border-tertiary);border-radius:var(--radius-md);
+overflow:hidden;margin:.8rem 0}
+.stats>div{background:var(--bg-primary);padding:12px 14px}
+.stats .v{font-size:19px;font-weight:500;line-height:1;
+font-variant-numeric:tabular-nums}
+.stats .v.acc{color:var(--accent)}
+.stats .k{font-size:11px;line-height:1.4;color:var(--text-tertiary);
+margin-top:5px}
+.stats.sm .v{font-size:15px}
+
+/* вкладки: геометрии кривых, записи комплекта */
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 10px}
+.tabs button{font-family:inherit;font-size:11.5px;line-height:1;
+padding:6px 12px;border-radius:var(--radius-md);cursor:pointer;
+background:transparent;color:var(--text-secondary);
+border:0.5px solid var(--border-secondary)}
+.tabs button:hover{background:var(--bg-secondary)}
+.tabs button[aria-selected="true"]{background:var(--bg-secondary);
+color:var(--text-primary);border-color:var(--text-secondary);font-weight:500}
+
+/* панель с графиками и таблицей выбранной геометрии/записи */
+.panel{border:0.5px solid var(--border-tertiary);
+border-radius:var(--radius-md);padding:16px 18px 18px}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;
+gap:16px;flex-wrap:wrap;margin-bottom:10px}
+.panel-head .t{font-size:14px;font-weight:500;line-height:1.35}
+.panel-head .n{font-size:11.5px;line-height:1.4;color:var(--text-tertiary)}
+
+/* легенда с квадратными маркерами точек (в page.css только линии) */
+.leg .sq{display:inline-block;width:9px;height:9px;border:1.4px solid;
+flex-shrink:0}
+.leg .band{display:inline-block;width:12px;height:9px;
+background:rgba(31,30,29,.06);flex-shrink:0}
+
+/* три проверки, локализация расхождения — карточки в ряд */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(17rem,1fr));
+gap:12px;margin:14px 0}
+.cols .card{margin:0}
+.cols .card h4{margin:0 0 6px;font-size:13px;color:var(--text-primary)}
+
+/* строка линии в бленде (чистота ниже 0,95) */
+tr.blend td{color:var(--text-tertiary)}
+
+@media (max-width:900px){
+.shell{grid-template-columns:1fr}
+.toc{display:none}
+.shell>main{padding:24px 16px 40px}
+}
+@media print{
+.shell{grid-template-columns:1fr;max-width:none}
+.toc,.tabs{display:none}
+.shell>main{padding:0;max-width:none}
+.panel{border:0;padding:0}
+}

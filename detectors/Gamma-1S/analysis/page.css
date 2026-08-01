@@ -153,7 +153,9 @@ font-variant-numeric:tabular-nums;margin-top:2px}
 /* врезки деконволюции */
 .dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(19rem,1fr));
 gap:.3rem 1rem;margin:.7rem 0}
-.dgrid figure{margin:.2rem 0 .5rem}
+.dgrid figure{margin:.2rem 0 .5rem;max-width:30rem}
+/* одиночная панель (Cs-137) без предела растягивалась на всю полосу и
+   выпадала из масштаба сетки — ограничение выравнивает её с остальными */
 .dgrid figcaption{font-size:11.5px;line-height:1.5;color:var(--text-tertiary)}
 .dplot{width:100%;height:auto;display:block}
 .dplot .grid{stroke:var(--line);stroke-width:.5}

@@ -43,13 +43,11 @@
 html,body{margin:0;padding:0;background:var(--bg-primary);
 color:var(--text-primary);font-family:var(--font-sans);font-size:16px;
 line-height:1.5;-webkit-font-smoothing:antialiased}
-.page{max-width:820px;margin:0 auto;padding:32px 24px 48px}
-/* Колонка ТЕКСТА уже полосы: на 820 px строка выходит около 105 знаков, а
-   читается спокойно 60-75. Таблицы, графики и карточки остаются во всю
-   ширину — им она нужна. */
-p,ul,.cap{max-width:62ch;text-align:justify;text-justify:inter-word;
+.page{max-width:1400px;margin:0 auto;padding:32px 40px 48px}
+/* Полоса во всю ширину окна (до 1400 px) — текст, таблицы, графики и
+   карточки занимают одну и ту же ширину контейнера. */
+p,ul,.cap{text-align:justify;text-justify:inter-word;
 hyphens:auto;-webkit-hyphens:auto}
-.leg{max-width:62ch}
 /* Без переносов выключка по формату рвёт русскую строку пробелами: слова
    длинные, а колонка узкая. Переносы включаются только вместе с lang="ru"
    на контейнере — он проставлен в разметке. */

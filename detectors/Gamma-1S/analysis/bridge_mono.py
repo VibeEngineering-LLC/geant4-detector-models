@@ -408,6 +408,63 @@ def main():
     print("  здесь моно-спектр — континуум только собственный. Перенос"
           " B на сеанс Th-228 остаётся приближением.")
 
+    # Таблица остатка — ФАЙЛОМ, а не только в print. До 01.08.2026 она жила
+    # исключительно в консольном выводе, и документы (report.md §5.3, статья)
+    # цитировали её оттуда — то есть из отчёта, а не из производящей таблицы.
+    # Тот же класс дефекта, что задача 148 у compare_cups.py и задача 109 у
+    # perline-таблицы; найден внешним аудитом.
+    if res:
+        w = [1.0 / d ** 2 for _, _, d in res]
+        mean = sum(x * ww for (_, x, _), ww in zip(res, w)) / sum(w)
+        chi2 = (sum(ww * (x - mean) ** 2 for (_, x, _), ww in zip(res, w))
+                / (len(res) - 1)) if len(res) > 1 else float("nan")
+        table_by_E = {E: (n, a, B, dB, wr, h)
+                      for E, n, a, B, dB, wr, h in table}
+        out_rows = []
+        for E, rest, drest in res:
+            rv = attested_ratio(E)
+            near_E = min(table_by_E, key=lambda k: abs(k - E))
+            Bv, dBv = table_by_E[near_E][2], table_by_E[near_E][3]
+            out_rows.append(
+                ("%.3f" % E, "%+.2f" % (100 * (1 / rv[0] - 1)),
+                 "%.4f" % Bv, "%.4f" % dBv,
+                 "%+.2f" % (100 * rest), "%.2f" % (100 * drest),
+                 "1" if E >= 583.0 else "0"))
+        csvio.write(
+            os.path.join(OUT, "bridge_residual.csv"),
+            ["E_keV", "excess_model_pct", "bridge", "d_bridge",
+             "residual_after_bridge_pct", "d_residual_pct", "decisive"],
+            out_rows,
+            comments=[
+                "Остаток после приведения расчёта и аттестации к ОДНОЙ"
+                " конвенции съёма площади: (1 + превышение)*B - 1.",
+                "excess_model_pct — превышение расчёта над аттестацией"
+                " (bridge_attested_ratio.csv); bridge — поправка конвенции"
+                " (эта же программа; столбец bridge в bridge_mono.csv).",
+                "d_residual_pct — квадратура относительной погрешности"
+                " моста и СТРОГОЙ погрешности отношения кривых"
+                " (bridge_attested_ratio.csv; с учётом того; что она РАЗНАЯ"
+                " на разных линиях).",
+                "Согласие остатка с константой: хи2/ню = %.2f при среднем"
+                " %.2f %%. Больше ~2 означает; что конвенция снимает не весь"
+                " разрыв и остаётся энергетически зависимый вклад."
+                % (chi2, 100 * mean),
+                "Заведено 01.08.2026: до этого таблица существовала только в"
+                " консольном выводе; и документы цитировали её из отчёта; а"
+                " не из производящего файла.",
+            ],
+            stamp=stamp.lines(
+                "detectors/Gamma-1S/analysis/bridge_mono.py",
+                dict(OBS, quantity="остаток расхождения расчёт/аттестация"
+                                   " после приведения к одной конвенции съёма"
+                                   " площади; и хи2/ню его согласия с"
+                                   " константой"),
+                inputs=[p for _, p in rows],
+                geometry_dir=str(paths.geometry("Gamma-1S")),
+                names=stamp.SRC_LISTS["Gamma-1S"], repo_dir=str(paths.REPO)))
+        print("\nтаблица остатка: %s"
+              % os.path.join(OUT, "bridge_residual.csv"))
+
     csvio.write(
         os.path.join(OUT, "bridge_mono.csv"),
         ["E_keV", "true_peak", "fit_area", "bridge", "d_bridge",

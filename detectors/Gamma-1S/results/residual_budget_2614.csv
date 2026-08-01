@@ -1,10 +1,10 @@
 #@ stamp.version = 1
 #@ src.script = detectors/Gamma-1S/analysis/residual_budget_2614.py
-#@ src.git = db0bd21-dirty
+#@ src.git = e3db348-dirty
 #@ src.tree_sha1 = bd17f9bea1e4
 #@ src.inputs_verdict = no_inputs
 #@ src.inputs_n = 0
-#@ obs.quantity = бюджет остатка на 2614;5 кэВ (модель минус штатная; п.п.) — свод уже измеренных вкладов; не новое измерение
+#@ obs.quantity = бюджет остатка на 2614;5 кэВ (модель против штатной; ОТНОСИТЕЛЬНЫЕ проценты; не процентные пункты) — свод уже измеренных вкладов; не новое измерение
 #@ obs.area = не применимо — таблица собирает готовые числа из других таблиц репозитория; площадей не снимает
 #@ obs.window = не применимо
 #@ obs.shelf = не применимо

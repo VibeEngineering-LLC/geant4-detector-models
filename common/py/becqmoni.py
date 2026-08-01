@@ -395,7 +395,7 @@ def recal_background(bg, anchors=BG_ANCHORS, fwhm_at_662=49.9, tol=0.30,
     diag["n_used"] = len(use)
     diag["worst_after"] = max(res)
     diag["reason"] = ("невязка %.2f ПШПВ > порога %.2f — пересчёт по %d "
-                      "якорям%s, стало %.2f"
+                      "якорным линиям%s, стало %.2f"
                       % (worst, tol, len(use),
                          "" if not diag["dropped"] else
                          " (отброшены: %s)" % ", ".join(

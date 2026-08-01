@@ -127,24 +127,41 @@ SPECTRA_JS = r"""
    for(k=i0;k<=i1;k++){var v=a[k]; if(v>ymax)ymax=v; if(v>0&&v<ymin)ymin=v;}}
   if(!isFinite(ymin)||ymin<=0)ymin=ymax*1e-5;
   if(st.log){ymin=Math.max(ymin,ymax*1e-6);}else{ymin=0;}
-  ymax*=1.15;
+  // запас сверху, чтобы пик и метки найденных пиков не упирались в верхнюю
+  // подпись оси (замечание оператора): на лог-шкале — почти декада, на
+  // линейной — четверть высоты
+  ymax*=st.log?3.2:1.35;
   function X(e){return PL+(e-lo)/(hi-lo)*(W-PL-PR);}
   function Y(v){
    if(!st.log)return H-PB-(v-ymin)/(ymax-ymin)*(H-PT-PB);
    v=Math.max(v,ymin);
    return H-PB-(Math.log(v)-Math.log(ymin))/(Math.log(ymax)-Math.log(ymin))*(H-PT-PB);}
+  // сетка по энергии — вдвое плотнее прежнего (замечание оператора: крупная):
+  // цель 8…16 крупных делений с подписями + мелкие штрихи между ними
   var o=[],step=Math.pow(10,Math.floor(Math.log10(hi-lo)))/2;
-  if((hi-lo)/step>12)step*=2; if((hi-lo)/step<4)step/=2;
+  if((hi-lo)/step>16)step*=2; if((hi-lo)/step<8)step/=2;
+  var minor=step/5;  // мелкие деления между подписанными
+  for(var em=Math.ceil(lo/minor)*minor;em<=hi;em+=minor){
+   var xm=X(em);
+   o.push('<line class="tick" x1="'+xm.toFixed(1)+'" y1="'+(H-PB)+'" x2="'+xm.toFixed(1)+'" y2="'+(H-PB+4)+'"/>');}
   for(var e=Math.ceil(lo/step)*step;e<=hi;e+=step){
    o.push('<line class="grid" x1="'+X(e).toFixed(1)+'" y1="'+PT+'" x2="'+X(e).toFixed(1)+'" y2="'+(H-PB)+'"/>');
-   o.push('<text class="ax" x="'+X(e).toFixed(1)+'" y="'+(H-PB+15)+'" text-anchor="middle">'+Math.round(e)+'</text>');}
+   o.push('<line class="tick" x1="'+X(e).toFixed(1)+'" y1="'+(H-PB)+'" x2="'+X(e).toFixed(1)+'" y2="'+(H-PB+6)+'"/>');
+   o.push('<text class="ax" x="'+X(e).toFixed(1)+'" y="'+(H-PB+16)+'" text-anchor="middle">'+Math.round(e)+'</text>');}
   if(st.log){for(var dec=Math.floor(Math.log10(ymin));dec<=Math.ceil(Math.log10(ymax));dec++){
-    var v=Math.pow(10,dec); if(v<ymin||v>ymax)continue; var yy=Y(v);
-    o.push('<line class="grid" x1="'+PL+'" y1="'+yy.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+yy.toFixed(1)+'"/>');
-    o.push('<text class="ax" x="'+(PL-6)+'" y="'+(yy+4).toFixed(1)+'" text-anchor="end">10<tspan dy="-4" font-size="7">'+dec+'</tspan></text>');}}
-  else{for(var q=0;q<=4;q++){var v2=ymin+(ymax-ymin)*q/4,y2=Y(v2);
-    o.push('<line class="grid" x1="'+PL+'" y1="'+y2.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+y2.toFixed(1)+'"/>');
-    o.push('<text class="ax" x="'+(PL-6)+'" y="'+(y2+4).toFixed(1)+'" text-anchor="end">'+fmt(v2)+'</text>');}}
+    var v=Math.pow(10,dec); if(v>=ymin&&v<=ymax){var yy=Y(v);
+     o.push('<line class="grid" x1="'+PL+'" y1="'+yy.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+yy.toFixed(1)+'"/>');
+     o.push('<line class="tick" x1="'+(PL-6)+'" y1="'+yy.toFixed(1)+'" x2="'+PL+'" y2="'+yy.toFixed(1)+'"/>');
+     o.push('<text class="ax" x="'+(PL-9)+'" y="'+(yy+4).toFixed(1)+'" text-anchor="end">10<tspan dy="-4" font-size="7">'+dec+'</tspan></text>');}
+    for(var mm=2;mm<=9;mm++){var vv2=mm*Math.pow(10,dec); if(vv2<ymin||vv2>ymax)continue; var y3=Y(vv2);
+     o.push('<line class="tick" x1="'+(PL-3)+'" y1="'+y3.toFixed(1)+'" x2="'+PL+'" y2="'+y3.toFixed(1)+'"/>');}}}
+  else{for(var q=0;q<=8;q++){var v2=ymin+(ymax-ymin)*q/8,y2=Y(v2);
+    if(q%2===0){o.push('<line class="grid" x1="'+PL+'" y1="'+y2.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+y2.toFixed(1)+'"/>');
+     o.push('<text class="ax" x="'+(PL-9)+'" y="'+(y2+4).toFixed(1)+'" text-anchor="end">'+fmt(v2)+'</text>');}
+    o.push('<line class="tick" x1="'+(PL-(q%2?3:6))+'" y1="'+y2.toFixed(1)+'" x2="'+PL+'" y2="'+y2.toFixed(1)+'"/>');}}
+  // сами оси — сплошными линиями, темнее сетки
+  o.push('<line class="axis" x1="'+PL+'" y1="'+(H-PB)+'" x2="'+(W-PR)+'" y2="'+(H-PB)+'"/>');
+  o.push('<line class="axis" x1="'+PL+'" y1="'+PT+'" x2="'+PL+'" y2="'+(H-PB)+'"/>');
   o.push('<text class="axt" x="'+((PL+W-PR)/2)+'" y="'+(H-4)+'" text-anchor="middle">энергия, кэВ</text>');
   o.push('<text class="axt" transform="translate(12,'+((PT+H-PB)/2)+') rotate(-90)" text-anchor="middle">имп/с на канал</text>');
   // аналитические линии и найденные пики
@@ -427,7 +444,9 @@ def record_block(geom, mask, nuc, aspec, dpct, d0, mass, vol, geom_title):
         h.append('<p class="cap">Калибровка фона (проверяется независимо от '
                  'пробы): %s.%s</p>'
                  % (esc(calib["reason"]).replace(".", ","),
-                    "" if not sh else " Невязки якорей: " + ", ".join(
+                    "" if not sh else
+                    " Невязки якорных линий (ярких одиночных пиков фона, по "
+                    "которым проверяется калибровка): " + ", ".join(
                         ("%s кэВ %+.2f ПШПВ" % (ru(E, 1), s)).replace(".", ",")
                         for E, s in sh)
                     + "."))
@@ -498,8 +517,9 @@ def record_block(geom, mask, nuc, aspec, dpct, d0, mass, vol, geom_title):
         h.append('<p class="cap">Поиск пиков (фильтр Марискотти, порог '
                  '%.0f&sigma;): найдено <b>%d</b>, опознано по спектру '
                  'испускания прогона <b>%d</b>; <b>%d</b> линий слито с '
-                 'соседями — это предел разрешения, и разбирает его '
-                 'деконволюция; <b>%d</b> не видно вовсе в рабочем диапазоне '
+                 'соседями из-за конечного разрешения детектора — такие '
+                 'группы разделяются деконволюцией; <b>%d</b> не видно вовсе '
+                 'в рабочем диапазоне '
                  '%.0f…%.0f кэВ. Худшая невязка калибровки %s ПШПВ — %s.</p>'
                  % (ps.SIGMA_THR, len(psr["found"]), len(psr["pairs"]),
                     len(psr["merged"]), len(psr["unseen"]),

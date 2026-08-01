@@ -35,6 +35,10 @@ P_2 первой зоны (x = 2,5920) совпадает со средневз�
 """
 import math
 
+# Перевод «разы <-> десятичный логарифм». Множитель 230 = 100*ln10 в формуле
+# погрешности ЛСРМ (см. fit_zone) — это он же, вместе с процентами.
+LN10 = math.log(10.0)
+
 
 def horner(cs, x):
     """Полином, коэффициенты по убывающим степеням."""
@@ -90,7 +94,22 @@ def fit_zone(zone, basis_rows, nodes, eps_of):
     nodes — [(E, eps, d_eps_%)]; веса берутся из d_eps штатного файла:
     они задают, насколько узел затягивает фит, и должны остаться теми же,
     иначе изменится и базис.
-    Возвращает (коэффициенты, СКО в разах, макс. отклонение в разах).
+
+    ШКАЛА ВЕСА И РАЗБРОСА — ДЕСЯТИЧНЫЙ ЛОГАРИФМ (исправлено 01.08.2026 по
+    внешнему аудиту). Отклик фита есть y = lg(eps), поэтому и вес узла, и
+    разброс обязаны быть в той же шкале: заявленная погрешность узла d %
+    переводится в lg как d/100/ln10. Прежняя реализация брала вес
+    1/(d/100)^2 и разброс curve/eps-1 — то есть относительную шкалу при
+    логарифмическом отклике. На коэффициенты это не влияло (общий
+    множитель ln10^2 в весах сокращается), но 4-е поле Zone_k, куда
+    записывается разброс, конвенцией ЛСРМ определено в единицах lg: по
+    формуле производителя погрешность кривой есть 230*D*||Q(X)||, где
+    множитель 230 = 100*ln10 переводит D из lg в проценты. Запись
+    линейного разброса в это поле завышала объявленную погрешность в
+    ln10 ~ 2,3 раза.
+
+    Возвращает (коэффициенты, СКО в единицах lg, макс. отклонение в
+    единицах lg, число узлов).
     """
     deg, xmin, xmax = int(zone[0]), zone[1], zone[2]
     inz = [(E, d) for E, _e, d in nodes
@@ -100,7 +119,7 @@ def fit_zone(zone, basis_rows, nodes, eps_of):
     b = [0.0] * n
     for E, d in inz:
         x = math.log10(E)
-        w = 1.0 / (d / 100.0) ** 2
+        w = 1.0 / (d / 100.0 / LN10) ** 2
         ph = [horner(basis_rows[j], x) for j in range(n)]
         y = math.log10(eps_of(E))
         for i in range(n):
@@ -113,7 +132,7 @@ def fit_zone(zone, basis_rows, nodes, eps_of):
         x = math.log10(E)
         return 10.0 ** sum(c[j] * horner(basis_rows[j], x) for j in range(n))
 
-    dev = [curve(E) / eps_of(E) - 1.0 for E, _d in inz]
+    dev = [math.log10(curve(E) / eps_of(E)) for E, _d in inz]
     rms = math.sqrt(sum(v * v for v in dev) / len(dev))
     return c, rms, max(abs(v) for v in dev), len(inz)
 
@@ -131,16 +150,21 @@ def rewrite_block(lines, eps_of):
     """Блок .efa со своими eps в точках И пересчитанным полиномом зон.
 
     Возвращает (строки, отчёт по зонам) — отчёт печатается вызывающим,
-    чтобы качество фита не проходило молча.
+    чтобы качество фита не проходило молча. В отчёте разброс приведён к
+    ПРОЦЕНТАМ (умножением на 100*ln10, конвенция ЛСРМ), а в поле Zone_k
+    записывается исходное значение в единицах lg — см. fit_zone.
     """
     nodes, zones, basis, _coef = parse_block(lines)
     report = []
     new_coef = {}
+    rms_lg = {}
     for z, zf in sorted(zones.items()):
         rows = [basis[(z, j + 1)] for j in range(int(zf[0]) + 1)]
         c, rms, dmax, k = fit_zone(zf, rows, nodes, eps_of)
         new_coef[z] = c
-        report.append((z, 10 ** zf[1], 10 ** zf[2], k, 100 * rms, 100 * dmax))
+        rms_lg[z] = rms
+        report.append((z, 10 ** zf[1], 10 ** zf[2], k,
+                       100 * LN10 * rms, 100 * LN10 * dmax))
 
     out = []
     for ln in lines:
@@ -158,7 +182,10 @@ def rewrite_block(lines, eps_of):
                 z = int(k[5:])
                 if z in new_coef:
                     f = ln.split("=", 1)[1].split(",")
-                    f[3] = "%.11f" % (report[z - 1][4] / 100.0)
+                    # 4-е поле Zone_k — параметр D конвенции ЛСРМ, в
+                    # единицах lg (не в разах и не в процентах): по формуле
+                    # производителя погрешность есть 230*D*||Q(X)|| %.
+                    f[3] = "%.11f" % rms_lg[z]
                     ln = k + "=" + ",".join(f)
         out.append(ln)
     return out, report

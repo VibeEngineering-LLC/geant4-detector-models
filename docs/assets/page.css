@@ -33,9 +33,15 @@
 --mc:#9D97E5;--exp:#F0A579;--corr:#F07AB5;--med:#9FE1CB}}
 
 *{box-sizing:border-box;-webkit-text-size-adjust:100%}
+html{color-scheme:light dark}
 html,body{margin:0;padding:0;background:var(--bg-primary);
 color:var(--text-primary);font-family:var(--font-sans);font-size:16px;
-line-height:1.5;-webkit-font-smoothing:antialiased}
+line-height:1.5;-webkit-font-smoothing:antialiased;
+-webkit-tap-highlight-color:color-mix(in srgb,var(--accent) 25%,transparent)}
+/* видимый фокус — гайдлайн web-design-guidelines: свой outline вместо
+   молчаливого дефолта браузера, только для клавиатурной навигации */
+a:focus-visible,button:focus-visible,summary:focus-visible{
+outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
 .page{max-width:1080px;margin:0 auto;padding:32px 32px 48px}
 /* Средняя полоса (1080 px): текст, таблицы, графики и карточки занимают одну
    ширину контейнера — подобрано оператором 02.08.2026 (820 узко, 1400 широко). */
@@ -60,10 +66,14 @@ border-radius:var(--radius-md);padding:8px 14px}
 details summary{cursor:pointer;font-size:13.5px;font-weight:500;
 color:var(--text-secondary)}
 details[open] summary{margin-bottom:.5rem}
-h1{font-size:22px;font-weight:500;margin:0 0 4px;line-height:1.25}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;line-height:1.25;
+text-wrap:balance}
 h2{font-size:17px;font-weight:500;margin:2.2rem 0 .5rem;
-border-top:0.5px solid var(--border-secondary);padding-top:1rem}
-h3{font-size:14px;font-weight:500;margin:1.4rem 0 .3rem}
+border-top:0.5px solid var(--border-secondary);padding-top:1rem;
+scroll-margin-top:3.5rem}
+/* липкая навигация перекрывает якорь при переходе по ссылке — без отступа
+   заголовок раздела уезжает под неё (найдено guideline-аудитом) */
+h3{font-size:14px;font-weight:500;margin:1.4rem 0 .3rem;scroll-margin-top:3.5rem}
 h4{font-size:13px;font-weight:500;margin:1.6rem 0 .2rem;
 color:var(--text-secondary)}
 p{margin:.55rem 0;font-size:14.5px;line-height:1.6}

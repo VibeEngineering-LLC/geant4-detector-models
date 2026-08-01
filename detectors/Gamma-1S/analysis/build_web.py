@@ -689,6 +689,8 @@ TMPL = """<meta charset="utf-8">
 (калибровка, поиск пиков, съём площади, деконволюция блендов, усреднение
 активности) и их проверка по поверенному комплекту спектрометра ГАММА-1С;
 эффективность считается в Geant4.">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)">
 <link rel="stylesheet" href="%(css_href)s">
 
 <nav class="topnav"><div class="topnav-in">

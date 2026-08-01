@@ -614,6 +614,13 @@ def ru(x, nd=3):
     return ("%.*f" % (nd, x)).replace(".", ",")
 
 
+def nusl(n):
+    """Склонение «узел» по числу: 1 узел, 2-4 узла, 5+ узлов (11-14 узлов)."""
+    if 11 <= n % 100 <= 14:
+        return "узлов"
+    return {1: "узел", 2: "узла", 3: "узла", 4: "узла"}.get(n % 10, "узлов")
+
+
 # Стиль лежит отдельным файлом docs/assets/page.css и подключается ссылкой,
 # а не инлайном. Отдельный файл, а не строка здесь, — по прозаической причине:
 # проверка перед публикацией ищет номера источников, записанные после знака
@@ -862,9 +869,9 @@ Pb-212 239 кэВ из ряда тория</td></tr>
 <td class="n">45–769 и 273–3552</td><td>то же</td></tr>
 </tbody></table></div>
 
-<p>Расчётная сетка одна на все геометрии: <b>%(gridspan)s</b>, %(gridn)s узлов
-на линиях комплекта и краях аттестованных зон — общая сетка обеспечивает
-сравнимость кривых между геометриями.</p>
+<p>Расчётная сетка одна на все геометрии: <b>%(gridspan)s</b>, %(gridn)s
+%(gridnusl)s на линиях комплекта и краях аттестованных зон — общая сетка
+обеспечивает сравнимость кривых между геометриями.</p>
 
 <p>В маринелли и «Денте» область ниже 239 кэВ экспериментальному контролю
 недоступна — объёмного источника с мягкой линией в комплекте нет, — и именно
@@ -1097,7 +1104,7 @@ def spectra_section():
     import kit_recalc as krec
     titles = {"Marinelli_1L": "Маринелли 1 л", "Denta_120mL": "«Дента» 120 мл",
               "Petri_60mL": "Петри 60 мл"}
-    blocks, srows, skipped = [], [], []
+    blocks, srows, skipped, records = [], [], [], []
     for rec in krec.VOLUME_RECORDS:
         geom = rec[0]
         got = sf.record_block(*rec, geom_title=titles.get(geom, geom))
@@ -1110,6 +1117,7 @@ def spectra_section():
             continue
         html, rows = got
         blocks.append(html)
+        records.append((titles.get(geom, geom), rec[2], html))
         for r in rows:
             srows.append(
                 "<tr%s><td>%s</td><td>%s</td><td class='n'>%s</td>"
@@ -1134,7 +1142,7 @@ def spectra_section():
     # Скрипт интерактивных графиков — ОДИН на страницу и в самом конце, когда
     # все контейнеры уже в разметке.
     blocks.append(sf.SPECTRA_JS)
-    return "\n".join(blocks), "".join(srows), sf.DECONV_LEGEND
+    return "\n".join(blocks), "".join(srows), sf.DECONV_LEGEND, records
 
 
 def grid_span():
@@ -1144,7 +1152,13 @@ def grid_span():
     return ("%s–%s кэВ" % (ru(min(LINES), 1), ru(max(LINES), 1)), len(LINES))
 
 
-def build():
+def geometry_data():
+    """Блоки по геометриям (title, slug, note, html) + сводка по ним.
+
+    Вынесено из build(), чтобы одни и те же расчёты можно было уложить
+    и в плоскую страницу отчёта (build_web.py), и во вкладки статьи
+    (build_article.py) — без второй реализации математики.
+    """
     global EFF_DIR
     EFF_DIR = find_eff_dir()
     if EFF_DIR is None:
@@ -1185,7 +1199,7 @@ def build():
                    "%.4g" % (r * ev * 100), ru(r),
                    (ru(c[0]) + " → " + ru(rc)) if c else "—",
                    "узел" if is_node else "интерп."))
-        blocks.append("""
+        block_html = """
 <h3>%s</h3>
 <p>%s</p>
 <figure>%s
@@ -1211,7 +1225,8 @@ def build():
             zonenote(zones, mspan, soft, comp), esc(src), esc(cfile),
             ratio_chart(pairs, med, zones, mcf, mcrange, mspan),
             ru(k), len(pairs), ru(100 * rms, 1), ru(med), mcdeg,
-            ru(100 * mcloo, 1), "".join(rows)))
+            ru(100 * mcloo, 1), "".join(rows))
+        blocks.append((title, block_html))
         kr = kit.get(kitkey)
         summary.append((title, len(pairs), k, kg, rms,
                         kr[2] if kr else 0, kr if kr else None))
@@ -1224,14 +1239,19 @@ def build():
            nk if nk else "—",
            kit_cell(km))
         for t, n, k, kg, rms, nk, km in summary)
+    return blocks, summary, srows
 
-    spec_blocks, spec_rows, spec_legend = spectra_section()
+
+def build():
+    blocks, summary, srows = geometry_data()
+    spec_blocks, spec_rows, spec_legend, _spec_records = spectra_section()
     gspan, gn = grid_span()
-    html = TMPL % dict(css_href=CSS_HREF, summary=srows, blocks="".join(blocks),
+    html = TMPL % dict(css_href=CSS_HREF, summary=srows,
+                       blocks="".join(html for _, html in blocks),
                        legend=legend(True), spectra=spec_blocks,
                        deconv=spec_rows, deconv_legend=spec_legend,
                        balance=balance_table(), continuum=continuum_table(),
-                       gridspan=gspan, gridn=gn)
+                       gridspan=gspan, gridn=gn, gridnusl=nusl(gn))
     os.makedirs(OUT_DIR, exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as fh:
         fh.write(html)

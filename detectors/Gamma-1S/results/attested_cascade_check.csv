@@ -1,6 +1,6 @@
 #@ stamp.version = 1
 #@ src.script = detectors/Gamma-1S/analysis/attested_cascade_check.py
-#@ src.git = 959dff3-dirty
+#@ src.git = 0ecf649-dirty
 #@ src.tree_sha1 = bd17f9bea1e4
 #@ src.inputs_verdict = no_inputs
 #@ src.inputs_n = 0

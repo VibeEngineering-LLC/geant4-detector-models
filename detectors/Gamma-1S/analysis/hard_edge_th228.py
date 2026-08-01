@@ -217,6 +217,31 @@ if __name__ == "__main__":
     print("  ПЛАТО + РАЗРЫВ, не монотонный ход: два слагаемых, 7,8 % и"
           " 27,5 %")
 
+    # Отдельная построчная таблица (задача 109, 01.08.2026): числа выше были
+    # только в print/комментарии CSV — не годится как источник для другого
+    # скрипта (тот же класс дефекта, что task 148 у compare_cups.py).
+    per_line_rows = [(E, OURS["Base"][E][1] / LSRM["Base"][E][1],
+                       "плато" if E in PLATEAU else
+                       ("край" if E == 2614.511 else "вне_плато"))
+                      for E in sorted(LSRM["Base"])]
+    csvio.write(
+        os.path.join(RESULTS, "hard_edge_th228_perline.csv"),
+        ["E_keV", "ratio_ours_over_lsrm", "excess_model_pct", "role"],
+        [("%.3f" % E, "%.4f" % r, "%+.2f" % (100 * (1 / r - 1)), role)
+         for E, r, role in per_line_rows],
+        comments=[
+            "Отношение наша/штатная (метод Base) и превышение eps модели"
+            " над штатной кривой, ПОЛИНОМ ЗА ПОЛИНОМ (при одной площади"
+            " съёма отношение есть тождество eps_штатн/eps_наша).",
+            "role: плато (583-861 кэВ, чистые линии) / край (2614,5,"
+            " жёсткий) / вне_плато (238,6 дублет, 300,1 триплет —"
+            " неразделимы, не использовать как опору).",
+            "Источник для задачи 109 (бюджет остатка): читать эту таблицу,"
+            " не константы внутри hard_edge_th228.py.",
+        ],
+        stamp=_stamp())
+    print("\nтаблица: %s" % os.path.join(RESULTS, "hard_edge_th228_perline.csv"))
+
     csvio.write(
         os.path.join(RESULTS, "hard_edge_th228.csv"),
         ["method", "A_lsrm_Bq", "ratio_lsrm", "chi2_lsrm",

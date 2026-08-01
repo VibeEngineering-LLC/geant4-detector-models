@@ -95,15 +95,32 @@ FIT_ZONE_FWHM = 2.5
 # слепке); прежняя линейная подложка была вторым отступлением от конвенции.
 BG_DEGREE = 2
 
-# Отношение штатная/наша по линиям Th-228 — из шапки results/hard_edge_th228.csv
-# (метод Base, сеанс СпектраЛайн на точечной 5 см). Величина ИЗМЕРЕННАЯ, к
-# расчётным сеткам отношения не имеет и пересчётом сеток не затрагивается.
-# Ключ — та же энергия, что в имени моно-прогона, иначе строка не найдётся.
-ATTESTED_RATIO = {583.187: 0.933, 727.330: 0.932, 860.557: 0.919,
-                  2614.511: 0.784}
+# Отношение штатная/наша по линиям Th-228 — из results/bridge_attested_ratio.csv
+# (задача 151, хвост P1-4): посчитано АНАЛИТИЧЕСКИ по полиномам зон .efa
+# (efa_zones), не снято программой и не привязано к дате сеанса СпектраЛайн —
+# обновляется автоматически при каждом пересчёте нашей кривой. Раньше здесь
+# был словарь трёх значащих цифр, переписанный руками из консоли
+# hard_edge_th228.py; см. docstring bridge_attested_ratio.py про замену.
+_ATTESTED_PATH = os.path.join(OUT, "bridge_attested_ratio.csv")
+
+
+def _load_attested():
+    if not os.path.exists(_ATTESTED_PATH):
+        raise SystemExit(
+            "Нет %s — прогоните analysis/bridge_attested_ratio.py"
+            " (нужен G1S_LSRM_MASTER_EFA)." % _ATTESTED_PATH)
+    out = {}
+    for r in csvio.read(_ATTESTED_PATH):
+        out[float(r["E_keV"])] = (float(r["ratio_attested_over_ours"]),
+                                  float(r["d_ratio_pct"]))
+    return out
+
+
+ATTESTED_RATIO = _load_attested()
+
 
 def attested_ratio(E, tol=0.05):
-    """Измеренное отношение штатная/наша для линии E; None, если её нет.
+    """(отношение штатная/наша; погрешность, %) для линии E; None, если её нет.
 
     Поиск по БЛИЗОСТИ, а не по точному ключу. Энергия в шапке прогона приходит
     напечатанной с четырьмя знаками (2614,5100), а в таблице аттестации стоит
@@ -337,19 +354,21 @@ def main():
 
     print("\nОСТАТОК ПОСЛЕ ПРИВЕДЕНИЯ К ОДНОЙ КОНВЕНЦИИ:"
           " (1 + превышение)·B − 1.")
-    # Отношение штатная/наша переписано из округлённого вывода программы
-    # (2-3 значащих цифры) — по оценке hard_edge_th228.py это ~1 % на линию.
-    D_RATIO_REL = 0.01
+    # Отношение штатная/наша — точное, из bridge_attested_ratio.csv (полином
+    # зон .efa, задача 151 P1-4); погрешность d_ratio_rel — своя на линию
+    # (квадратура СКО фита обеих зон), не зашитая константа.
     print("%10s %12s %8s %18s" % ("E, кэВ", "превышение", "B", "остаток"))
     res = []
     matched = set()
     for E, _, _, B, dB, _, _ in table:
-        r = attested_ratio(E)
-        if r is None:
+        rv = attested_ratio(E)
+        if rv is None:
             continue
+        r, d_ratio_pct = rv
+        d_ratio_rel = d_ratio_pct / 100.0
         matched.add(round(E, 1))
         rest = B / r - 1.0
-        drest = (B / r) * math.hypot(dB / B, D_RATIO_REL)
+        drest = (B / r) * math.hypot(dB / B, d_ratio_rel)
         res.append((E, rest, drest))
         print("%10.1f %11.1f %% %8.4f %11.1f +- %.1f %%"
               % (E, 100 * (1 / r - 1), B, 100 * rest, 100 * drest))

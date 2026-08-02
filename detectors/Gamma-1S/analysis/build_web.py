@@ -1382,7 +1382,8 @@ Opus&nbsp;5) под проверкой оператора; числа получ
 
 
 def zonenote(zones, mspan, soft, comp):
-    """Зоны подгонки и — главное — чем ограничен диапазон паспортной кривой."""
+    """Зоны подгонки и чем ограничен диапазон паспортной кривой — вплавлено в
+    подпись Рисунка 4 (build), не отдельный блок под таблицей."""
     out = []
     if zones:
         parts = ["зона %d: степень %d, %.0f–%.0f кэВ, разброс точек %s %%"
@@ -1396,12 +1397,10 @@ def zonenote(zones, mspan, soft, comp):
     out.append("Эталонные линии: %s–%s кэВ. Снизу диапазон ограничен тем, "
                "что источников с линией мягче <b>%s кэВ (%s)</b> в этой "
                "геометрии нет. Расчётная сетка одна на все геометрии, "
-               "%s–%s кэВ: от наличия источника она не зависит. Затенённые "
-               "полосы — области, где сверка с аттестованной кривой "
-               "недоступна."
+               "%s–%s кэВ: от наличия источника она не зависит."
                % (ru(mspan[0], 1), ru(mspan[1], 1), ru(soft[0], 1),
                   esc(soft[3]), ru(comp[0][0], 1), ru(comp[-1][0], 0)))
-    return '<p class="leg">%s</p>' % "<br>".join(out)
+    return " ".join(out)
 
 
 def legend(with_corr):
@@ -1535,7 +1534,7 @@ def geometry_data():
 геометрии.</b> Синяя линия — расчёт, оранжевые квадраты — измеренные точки
 аттестованной кривой, серые полосы — области без эталонных линий, где сверка
 недоступна; усы измерения — паспортная погрешность, усы расчёта — статистика
-прогона. Наведите курсор на точку, чтобы увидеть числа.</figcaption>
+прогона. Наведите курсор на точку, чтобы увидеть числа. %s</figcaption>
 </figure>
 <figure>%s
 <figcaption class="cap"><b>Рисунок 5 — отношение расчётной и измеренной
@@ -1558,13 +1557,12 @@ def geometry_data():
 <th class="n">МК/эксп</th><th class="n">C → с поправкой</th>
 <th>расчёт взят</th></tr></thead>
 <tbody>%s</tbody></table></div>
-<p class="leg">%s</p>
 """ % (esc(title), esc(note),
             chart(meas, comp, lo, hi, zones, mcf),
+            zonenote(zones, mspan, soft, comp),
             ratio_chart(pairs, med, zones, mcf, mcrange, mspan),
             ru(k), len(pairs), ru(100 * rms, 1), ru(med), mcdeg,
-            ru(100 * mcloo, 1), "".join(rows),
-            zonenote(zones, mspan, soft, comp))
+            ru(100 * mcloo, 1), "".join(rows))
         blocks.append((title, block_html))
         kr = kit.get(kitkey)
         summary.append((title, len(pairs), k, kg, rms,

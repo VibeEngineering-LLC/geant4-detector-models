@@ -468,16 +468,21 @@ def record_block(geom, mask, nuc, aspec, dpct, d0, mass, vol, geom_title):
         '<div class="si-read">наведите курсор на график</div>'
         '<script type="application/json">%s</script></div>'
         % (uid, json.dumps(data, ensure_ascii=False)))
-    h.append('<p class="leg"><span class="k"><i style="border-color:var(--mc)">'
-             '</i>проба</span><span class="k"><i style="border-color:var(--exp)">'
-             '</i>фон, приведённый к живому времени пробы</span>'
-             '<span class="k"><i style="border-color:var(--corr)"></i>'
-             'разность</span><span class="k"><i style="border-color:var(--ink);'
-             'opacity:.45;border-top-style:dotted"></i>линия в мультиплете</span>'
-             '<span class="k">▲ найденный пик</span>'
-             '<span class="k">колесо — масштаб, перетаскивание — сдвиг</span>'
-             '</p>')
+    h.append('<p class="cap"><b>Рисунок 2 — спектр поверочной записи: проба, '
+             'фон и их разность (для выбранной записи).</b> Синяя линия — проба, '
+             'оранжевая — фон, приведённый к живому времени пробы, розовая — '
+             'разность; штриховые вертикали — линии в мультиплете, треугольники — '
+             'найденные пики. Оси: энергия (кэВ) и скорость счёта на канал '
+             '(имп/с). Управление: колесо — масштаб, перетаскивание — сдвиг.</p>')
 
+    h.append('<p class="cap"><b>Таблица 1 — разметка линий записи: чистота, '
+             'центроида, ПШПВ и активность (для выбранной записи).</b> «чистота» — '
+             'доля выхода окна, приходящаяся на саму линию (порог годности для '
+             'оконного съёма 0,95); «центроида» — найденный центр линии; «сдвиг» — '
+             'центроида минус табличная энергия; «ПШПВ изм./&radic;E/калибр.» — '
+             'полуширина измеренная, теоретическая (&prop;&radic;E) и по калибровке '
+             'прибора; «A/пасп деконв./окном» — активность к паспорту двумя '
+             'способами съёма площади.</p>')
     h.append('<div class="tw"><table><thead><tr>'
              '<th class="n">линия, кэВ</th><th class="n">чистота</th>'
              '<th class="n">центроида</th><th class="n">сдвиг, кэВ</th>'
@@ -543,10 +548,15 @@ def record_block(geom, mask, nuc, aspec, dpct, d0, mass, vol, geom_title):
     if panels:
         h.append('<div class="dgrid">')
         for E, res in panels:
-            h.append('<figure>%s<figcaption>%s кэВ: %d линий в группе, '
-                     'сдвиг %s кэВ, χ²/dof %s</figcaption></figure>'
+            nlg = res["n_lines"]
+            wl = ("линия" if nlg % 10 == 1 and nlg % 100 != 11
+                  else "линии" if 2 <= nlg % 10 <= 4 and not 12 <= nlg % 100 <= 14
+                  else "линий")
+            h.append('<figure>%s<figcaption class="cap"><b>Рисунок 3 — '
+                     'деконволюция мультиплета %s кэВ (для выбранной записи).</b> '
+                     '%d %s в группе, сдвиг %s кэВ, χ²/dof %s.</figcaption></figure>'
                      % (deconv_svg(res, E, "%s %s" % (nuc, ru(E, 0))),
-                        ru(E, 1), res["n_lines"],
+                        ru(E, 1), nlg, wl,
                         ("%+.1f" % res["shift"]).replace(".", ","),
                         ru(res["chi2"], 2)))
         h.append("</div>")

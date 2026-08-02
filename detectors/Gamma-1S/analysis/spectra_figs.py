@@ -553,11 +553,12 @@ def record_block(geom, mask, nuc, aspec, dpct, d0, mass, vol, geom_title):
             wl = ("линия" if nlg % 10 == 1 and nlg % 100 != 11
                   else "линии" if 2 <= nlg % 10 <= 4 and not 12 <= nlg % 100 <= 14
                   else "линий")
+            kind = ("мультиплета" if nlg > 1 else "одиночной линии")
             h.append('<figure>%s<figcaption class="cap"><b>Рисунок 3 — '
-                     'деконволюция мультиплета %s кэВ (для выбранной записи).</b> '
+                     'деконволюция %s %s кэВ (для выбранной записи).</b> '
                      '%d %s в группе, сдвиг %s кэВ, χ²/dof %s.</figcaption></figure>'
                      % (deconv_svg(res, E, "%s %s" % (nuc, ru(E, 0))),
-                        ru(E, 1), nlg, wl,
+                        kind, ru(E, 1), nlg, wl,
                         ("%+.1f" % res["shift"]).replace(".", ","),
                         ru(res["chi2"], 2)))
         h.append("</div>")

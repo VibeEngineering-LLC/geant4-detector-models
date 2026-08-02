@@ -481,15 +481,16 @@ def record_block(geom, mask, nuc, aspec, dpct, d0, mass, vol, geom_title):
              'оконного съёма 0,95); «центроида» — найденный центр линии; «сдвиг» — '
              'центроида минус табличная энергия; «ПШПВ изм./&radic;E/калибр.» — '
              'полуширина измеренная, теоретическая (&prop;&radic;E) и по калибровке '
-             'прибора; «A/пасп деконв./окном» — активность к паспорту двумя '
-             'способами съёма площади.</p>')
+             'прибора; «A/пасп подгонкой/окном» — активность к паспорту двумя '
+             'способами съёма площади (подгонка пика или деконволюция '
+             'мультиплета — и оконный съём).</p>')
     h.append('<div class="tw"><table><thead><tr>'
              '<th class="n">линия, кэВ</th><th class="n">чистота</th>'
              '<th class="n">центроида</th><th class="n">сдвиг, кэВ</th>'
              '<th class="n">ПШПВ изм.</th><th class="n">ПШПВ √E</th>'
              '<th class="n">ПШПВ калибр.</th>'
              '<th class="n">линий<br>в группе</th><th class="n">χ²/dof</th>'
-             '<th class="n">A/пасп<br>деконв.</th>'
+             '<th class="n">A/пасп<br>подгонкой</th>'
              '<th class="n">A/пасп<br>окном</th></tr></thead><tbody>')
     for r in rows:
         cl = "" if r["clean"] else ' class="dim"'
@@ -553,12 +554,13 @@ def record_block(geom, mask, nuc, aspec, dpct, d0, mass, vol, geom_title):
             wl = ("линия" if nlg % 10 == 1 and nlg % 100 != 11
                   else "линии" if 2 <= nlg % 10 <= 4 and not 12 <= nlg % 100 <= 14
                   else "линий")
-            kind = ("мультиплета" if nlg > 1 else "одиночной линии")
-            h.append('<figure>%s<figcaption class="cap"><b>Рисунок 3 — '
-                     'деконволюция %s %s кэВ (для выбранной записи).</b> '
+            title = ('деконволюция и подгонка пиков мультиплета %s кэВ' % ru(E, 1)
+                     if nlg > 1 else 'подгонка пика %s кэВ' % ru(E, 1))
+            h.append('<figure>%s<figcaption class="cap"><b>Рисунок 3 — %s '
+                     '(для выбранной записи).</b> '
                      '%d %s в группе, сдвиг %s кэВ, χ²/dof %s.</figcaption></figure>'
                      % (deconv_svg(res, E, "%s %s" % (nuc, ru(E, 0))),
-                        kind, ru(E, 1), nlg, wl,
+                        title, nlg, wl,
                         ("%+.1f" % res["shift"]).replace(".", ","),
                         ru(res["chi2"], 2)))
         h.append("</div>")

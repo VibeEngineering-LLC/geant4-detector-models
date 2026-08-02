@@ -50,7 +50,9 @@ color:var(--text-primary);border-color:var(--text-secondary);font-weight:500}
 
 /* панель с графиками и таблицей выбранной геометрии/записи */
 .panel{border:0.5px solid var(--border-tertiary);
-border-radius:var(--radius-md);padding:16px 18px 18px}
+border-radius:var(--radius-md);padding:14px 18px 18px}
+.panel>:first-child{margin-top:0}
+.panel h3,.panel h4{margin-top:0}
 .panel-head{display:flex;justify-content:space-between;align-items:baseline;
 gap:16px;flex-wrap:wrap;margin-bottom:10px}
 .panel-head .t{font-size:14px;font-weight:500;line-height:1.35}

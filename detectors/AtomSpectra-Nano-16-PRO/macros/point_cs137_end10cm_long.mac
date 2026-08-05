@@ -1,0 +1,15 @@
+# То же, что point_cs137_end10cm.mac, но 2e7 первичных — рабочая статистика.
+# ВНИМАНИЕ: макрос должен быть в UTF-8 БЕЗ BOM. PowerShell `Set-Content
+# -Encoding utf8` в 5.1 ставит BOM, Geant4 не распознаёт первую команду и
+# обрывает макрос — прогон завершается с кодом 0 и без единого файла.
+/run/initialize
+/control/verbose 0
+/run/verbose 0
+/gps/particle gamma
+/gps/pos/type Point
+/gps/pos/centre 0 0 131.6 mm
+/gps/ang/type iso
+/gps/ang/maxtheta 35 deg
+/gps/energy 661.657 keV
+/asn16/outFile cs137_end10cm.csv
+/run/beamOn 20000000

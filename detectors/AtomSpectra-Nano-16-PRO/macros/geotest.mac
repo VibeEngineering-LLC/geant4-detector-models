@@ -1,0 +1,8 @@
+# Проверка перекрытий и «дыр» в построенной геометрии.
+# Запуск:  asn16 geotest.mac
+# Ожидаемый результат — ни одной строки «Overlap is detected».
+/control/verbose 1
+/geometry/test/tolerance 0.001 mm
+/geometry/test/resolution 10000
+/geometry/test/recursion_start 0
+/geometry/test/run

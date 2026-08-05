@@ -35,23 +35,30 @@ DIST = 100.00        # ОПЕРАТОР: 10 см от торца
 THETA_DEG = 35.0
 
 # --- производные границы (та же арифметика, что в ASN16Detector.cc) ----------
+# Порядок слоёв: ПТФЭ НА КРИСТАЛЛЕ, фольга НА ПТФЭ (уточнение оператора
+# 05.08.2026). Зеркало обязано повторять ASN16Detector.cc:117-119, а не
+# наоборот: до 06.08.2026 здесь стоял до-разворотный порядок по ВСЕМ ТРЁМ
+# осям, и отслеживаемая «согласованная схема» рисовала обёртку перевёрнутой
+# (найдено аудитом кода). Габариты и все печатаемые числа от порядка не
+# зависят — сумма толщин та же, — поэтому расхождение не проявлялось нигде,
+# кроме самого рисунка слоёв.
 yCryT, yCryB = +CRY_Y / 2, -CRY_Y / 2
-yFoilT, yFoilB = yCryT + ALFOIL, yCryB - ALFOIL
-yPtfeT, yPtfeB = yFoilT + PTFE, yFoilB - PTFE
-yBodyT = yPtfeT + W_FRONT
+yPtfeT, yPtfeB = yCryT + PTFE, yCryB - PTFE
+yFoilT, yFoilB = yPtfeT + ALFOIL, yPtfeB - ALFOIL
+yBodyT = yFoilT + W_FRONT
 yBodyB = yBodyT - BODY_Y
 yCavB = yBodyB + W_BOT
-yPcbT, yPcbB = yPtfeB, yPtfeB - PCB_T
+yPcbT, yPcbB = yFoilB, yFoilB - PCB_T
 
 xCry = CRY_X / 2
-xFoil, xPtfe = xCry + ALFOIL, xCry + ALFOIL + PTFE
+xPtfe, xFoil = xCry + PTFE, xCry + PTFE + ALFOIL
 xBody = BODY_X / 2
 xCav = xBody - W_SIDE
 
 zCryF, zCryB = +CRY_Z / 2, -CRY_Z / 2
-zFoilF = zCryF + ALFOIL
-zPtfeF = zFoilF + PTFE
-zCapFi = zPtfeF
+zPtfeF = zCryF + PTFE
+zFoilF = zPtfeF + ALFOIL
+zCapFi = zFoilF
 zBodyF = zCapFi + W_CAP           # наружный торец корпуса, +31,60
 zBodyB = zBodyF - BODY_Z
 zCapBi = zBodyB + W_CAP

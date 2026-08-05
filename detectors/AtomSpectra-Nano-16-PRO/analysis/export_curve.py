@@ -9,11 +9,14 @@
 Площадь пика выводится ДВУМЯ способами, и обе величины пишутся в файл, потому
 что они отвечают на разные вопросы:
 
-  eps_peak     — СТРОГАЯ: в нерасплывшемся модельном спектре все события с
-                 полным поглощением попадают ровно в канал E0, поэтому счёт
-                 берётся из него напрямую. Конвенции нет вовсе: ни окна, ни
-                 полок, ни исключений. Для модели это точное число, для
-                 измерения такое невозможно;
+  eps_peak     — СТРОГАЯ: в нерасплывшемся модельном спектре события с полным
+                 поглощением попадают в канал E0 (при целой E0 расщепляются на
+                 два соседних из-за плавающей точки), поэтому счёт берётся
+                 окном в три канала с вычетом континуума по каналам ниже окна.
+                 Полок и исключений вылета здесь нет, окно не подбирается —
+                 но окно есть, и континуум под линией не пренебрежим: на
+                 мягком крае он даёт до 3,8 % при статистике 0,25 %. Величина
+                 вычтенного пишется отдельным столбцом;
   eps_peak_win — ОКОННАЯ: спектр размывается приборной ПШПВ и площадь берётся
                  `becqmoni.area_broadened` с полками, то есть той же
                  конвенцией, какой площадь снимается с ИЗМЕРЕННОГО спектра.
@@ -56,6 +59,44 @@ FWHM_662 = 41.60           # собственная запись Cs-137, под�
 ESCAPES = (28.6, 30.97)    # K-вылет иода и цезия, кэВ (becqmoni.area_broadened)
 
 
+def win_area(wide, e0, fwhm, roi=1.25):
+    """Оконная площадь по размытому МОДЕЛЬНОМУ спектру. -> (площадь, режим).
+
+    Полка берётся ТОЛЬКО СЛЕВА. Причина не в удобстве: в моноэнергетическом
+    расчётном спектре депозитов выше E0 не бывает по построению (проверено —
+    верхний непустой канал ровно floor(E0)), поэтому справа от пика лежит не
+    континуум, а хвост САМОЙ гауссианы размытия. Усреднение двух полок, как в
+    `becqmoni.area_broadened`, делит подложку пополам независимо от того, есть
+    ли справа континуум, и результат уезжает на +9…+10 % там, где обе полки
+    уцелели, и на +6…−1 % там, где левой не осталось. Тот же код на ИЗМЕРЕННОМ
+    спектре, где континуум справа есть, — это уже другая конвенция, а
+    сравнивать модель с измеренной кривой полагалось именно этой величиной.
+
+    Каналы пиков вылета характеристического рентгеновского излучения кристалла
+    из полки исключаются: иначе на мягком крае полка садится на собственную
+    особенность спектра.
+    """
+    w = roi * fwhm
+    lo, hi = int(round(e0 - w)), int(round(e0 + w))
+    lo, hi = max(0, lo), min(len(wide), hi)
+    if hi <= lo:
+        return 0.0, "empty"
+    g = float(wide[lo:hi].sum())
+    sl0, sl1 = int(round(e0 - 2.5 * fwhm)), lo
+    sl0 = max(0, sl0)
+    keep = []
+    for i in range(sl0, sl1):
+        if any(abs(i - (e0 - esc)) <= 0.5 * fwhm for esc in ESCAPES):
+            continue
+        keep.append(wide[i])
+    if not keep:
+        return g, "no_shelf"
+    dens = sum(keep) / len(keep)
+    n_full = sl1 - sl0
+    mode = "left" if len(keep) >= 0.25 * n_full else "left_thin"
+    return g - dens * (hi - lo), mode
+
+
 def read_model(path):
     head, dic = {}, {}
     with open(path, encoding="utf-8") as f:
@@ -78,9 +119,6 @@ def main():
               "он кладёт спектры в подкаталог spectra/ каталога сборки.")
         return 2
     src = sys.argv[1]
-    out = sys.argv[2] if len(sys.argv) > 2 else os.path.join(
-        _HERE, "..", "results", "eff_point_end10cm.csv")
-    out = os.path.normpath(out)
     files = sorted(glob.glob(os.path.join(src, "*.csv")))
     files = [f for f in files if not f.endswith("_emit.csv")]
     if not files:
@@ -88,12 +126,22 @@ def main():
         return 2
 
     rows, stamps = [], set()
+    # Постановка прогона собирается ИЗ САМИХ СПЕКТРОВ, а не пишется в код.
+    # Прежде и шапка выходного файла, и имя по умолчанию были захардкожены
+    # под торцевую геометрию: кривая «на грань» подписывалась торцевой, а
+    # запуск без второго аргумента молча клал её поверх торцевой. Обе ошибки
+    # найдены независимым аудитом 05.08.2026, обе относятся к тому же классу,
+    # что и «наблюдаемая без указания грани не определена».
+    setup = {}
     for f in files:
         dic, head = read_model(f)
         e0 = float(head["E_prim_keV"])
         n = int(head["N_primaries"])
         frac = float(head["solid_angle_frac"])
         stamps.add(head.get("src_sha1", "?"))
+        for k in ("run_args", "solid_angle_frac", "front_face_z_mm",
+                  "work_face_y_mm"):
+            setup.setdefault(k, set()).add(head.get(k, "?"))
         total = sum(dic.values())
         fwhm = FWHM_662 * math.sqrt(e0 / 661.657)
         # СТРОГАЯ площадь: канал полного поглощения нерасплывшегося спектра.
@@ -111,57 +159,122 @@ def main():
         # пренебрежимо мал (рассеяние на малые углы), поэтому окно в три
         # канала конвенцией не является.
         kc = math.floor(e0) + 0.5
-        fep = sum(c for e, c in dic.items() if abs(e - kc) <= 1.5)
+        fep_raw = sum(c for e, c in dic.items() if abs(e - kc) <= 1.5)
+        # Континуум под линией. Без вычета строгая величина смещена
+        # ОДНОСТОРОННЕ вверх: два независимых аудита намерили 3–4 % на мягком
+        # краю при заявленной статистике 0,25 %, то есть смещение больше своей
+        # же погрешности более чем на порядок.
+        #
+        # Вычитается НЕ по всем трём каналам окна, а по той их части, которая
+        # физически может содержать континуум: депозита ВЫШЕ E0 не бывает,
+        # поэтому канал kc+1 пуст всегда (проверено по всем 50 спектрам), в
+        # канале kc континууму доступна лишь доля [floor(E0), E0), а полностью
+        # континуум занимает только канал kc−1. Отсюда ширина вычета
+        # 1 + дробная часть E0 канала.
+        #
+        # Плотность берётся по трём каналам, примыкающим к окну снизу
+        # (kc−4 .. kc−2): континуум под линией РАСТЁТ к ней, и оценка по
+        # далёкой полке (kc−8 .. kc−3) занижала бы плотность у самой линии, а
+        # умножение её на три канала — завышало бы вычет. На узле 40 кэВ
+        # разница между двумя способами 1,2 % от площади.
+        # Плотность берётся ЛИНЕЙНОЙ экстраполяцией по каналам kc−4 .. kc−2, а
+        # не средним по ним: континуум под линией — круто растущий хвост, и
+        # плоская оценка систематически занижает его у самой линии. Разница
+        # двух способов доходит до 1,2 % на 40 кэВ и МЕНЯЕТ ЗНАК по диапазону,
+        # то есть искажает не уровень, а форму кривой — а форма и есть продукт.
+        # Отсутствующие каналы считаются нулевыми: main.cc пишет только
+        # непустые, и деление на len(shelf) вместо числа каналов давало третье
+        # необъявленное поведение (на 2614,5 полка из одного канала завышала
+        # вычет втрое, на 3000 полки не было вовсе).
+        xs = [-4.0, -3.0, -2.0]
+        ys = [dic.get(kc + x, 0.0) for x in xs]
+        mx = sum(xs) / 3.0
+        my = sum(ys) / 3.0
+        sxx = sum((x - mx) ** 2 for x in xs)
+        slope = (sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sxx
+                 if sxx else 0.0)
+        frac_lo = e0 - math.floor(e0)      # доля канала линии ниже E0
+        # Вычитаемая область: канал kc−1 целиком плюс доля frac_lo канала kc.
+        dens_m1 = max(my + slope * (-1.0 - mx), 0.0)
+        dens_0 = max(my + slope * (0.0 - mx), 0.0)
+        fep_bg = dens_m1 + dens_0 * frac_lo
+        fep = fep_raw - fep_bg
         if fep <= 0:
-            print("  ! %s: канал полного поглощения пуст при E0 = %.1f, "
+            print("  ! %s: строгая площадь не положительна при E0 = %.1f, "
                   "узел пропущен" % (os.path.basename(f), e0))
             continue
         wide = bm.broaden(dic, fwhm_at_662=FWHM_662)
-        detail = {}
-        area, _bgd = bm.area_broadened(wide, e0, fwhm, escapes=ESCAPES,
-                                       detail=detail)
-        rows.append(dict(E=e0, fep=fep, area=max(area, 0.0), n=n, frac=frac,
-                         total=total, fwhm=fwhm,
-                         shelf=detail.get("mode", "?")))
+        area, shelf_mode = win_area(wide, e0, fwhm)
+        rows.append(dict(E=e0, fep=fep, fep_raw=fep_raw, fep_bg=fep_bg,
+                         area=area, clipped=(area < 0), n=n, frac=frac,
+                         total=total, fwhm=fwhm, shelf=shelf_mode))
 
     if len(stamps) > 1:
         print("! В каталоге спектры от РАЗНЫХ сборок: %s\n"
               "  Кривая по смешанным прогонам недействительна." %
               ", ".join(sorted(stamps)))
         return 1
+    for k, v in setup.items():
+        if len(v) > 1:
+            print("! В каталоге спектры с РАЗНОЙ постановкой: %s = %s\n"
+                  "  Одной кривой они не образуют." % (k, ", ".join(sorted(v))))
+            return 1
+
+    mac = setup["run_args"].pop()
+    tag = os.path.splitext(mac)[0].replace("curve_point_", "")
+    out = sys.argv[2] if len(sys.argv) > 2 else os.path.join(
+        _HERE, "..", "results", "eff_point_%s.csv" % tag)
+    out = os.path.normpath(out)
 
     os.makedirs(os.path.dirname(out), exist_ok=True)
     with open(out, "w", encoding="utf-8", newline="") as g:
-        g.write("# AtomSpectra Nano 16 PRO, точечный источник на оси кристалла,"
-                " 10 см от наружной поверхности передней крышки (торец 18x15)\n")
+        g.write("# AtomSpectra Nano 16 PRO, точечный источник на оси кристалла\n")
+        g.write("# постановка взята из шапок спектров, а не вписана здесь:\n")
+        g.write("#   run_args = %s\n" % mac)
+        g.write("#   solid_angle_frac = %s\n" % setup["solid_angle_frac"].pop())
+        g.write("#   front_face_z_mm = %s, work_face_y_mm = %s\n"
+                % (setup["front_face_z_mm"].pop(),
+                   setup["work_face_y_mm"].pop()))
         g.write("# наблюдаемая: абсолютная эффективность по ППП на 4pi\n")
         g.write("# src_sha1 = %s\n" % stamps.pop())
         g.write("# fwhm_662_keV = %.2f  (собственная запись Cs-137)\n"
                 % FWHM_662)
         g.write("# escapes_keV = %s\n" % ", ".join("%.2f" % e for e in ESCAPES))
+        g.write("# оконная величина: ROI +-1,25 ПШПВ по размытому спектру,\n")
+        g.write("#   подложка ТОЛЬКО по левой полке [E-2,5 ПШПВ; E-1,25 ПШПВ]\n")
+        g.write("#   с исключением каналов вылета +-0,5 ПШПВ. Правая полка не\n")
+        g.write("#   используется: в моноэнергетическом расчёте справа от пика\n")
+        g.write("#   континуума нет, там хвост самой гауссианы размытия\n")
         g.write("# eps_peak — строгая (канал полного поглощения), основная\n")
         g.write("# eps_peak_win — оконная, конвенция измеренного спектра;"
                 " при shelf=right завышена\n")
         g.write("E_keV,eps_peak,d_eps_peak,eps_peak_win,eps_total,fep_counts,"
-                "area_counts,N_primaries,solid_angle_frac,fwhm_keV,shelf\n")
+                "fep_raw_counts,fep_bg_counts,area_counts,N_primaries,"
+                "solid_angle_frac,fwhm_keV,shelf,win_clipped\n")
         for r in rows:
             eps = r["fep"] / r["n"] * r["frac"]
-            d = eps / math.sqrt(max(r["fep"], 1.0))
-            epsw = r["area"] / r["n"] * r["frac"]
+            # Погрешность — по СЫРОМУ счёту в окне плюс дисперсия вычтенной
+            # подложки: вычет её не уменьшает.
+            d = eps * math.sqrt(max(r["fep_raw"], 1.0)) / max(r["fep"], 1.0)
+            epsw = max(r["area"], 0.0) / r["n"] * r["frac"]
             epst = r["total"] / r["n"] * r["frac"]
-            g.write("%.3f,%.6e,%.3e,%.6e,%.6e,%.0f,%.0f,%d,%.8f,%.2f,%s\n"
-                    % (r["E"], eps, d, epsw, epst, r["fep"], r["area"],
-                       r["n"], r["frac"], r["fwhm"], r["shelf"]))
-    print("записано: %s  (%d узлов)" % (out, len(rows)))
-    print("%9s %12s %8s %12s %12s %7s %7s"
-          % ("E, кэВ", "eps ППП", "стат,%", "eps окном", "eps полная",
-             "пик/пол", "полка"))
+            g.write("%.3f,%.6e,%.3e,%.6e,%.6e,%.1f,%.0f,%.1f,%.0f,%d,"
+                    "%.8f,%.2f,%s,%d\n"
+                    % (r["E"], eps, d, epsw, epst, r["fep"], r["fep_raw"],
+                       r["fep_bg"], max(r["area"], 0.0), r["n"], r["frac"],
+                       r["fwhm"], r["shelf"], int(r["clipped"])))
+    print("записано: %s  (%d узлов, постановка %s)" % (out, len(rows), mac))
+    print("%9s %12s %8s %7s %12s %12s %7s %7s"
+          % ("E, кэВ", "eps ППП", "стат,%", "подл,%", "eps окном",
+             "eps полная", "пик/пол", "полка"))
     for r in rows:
         eps = r["fep"] / r["n"] * r["frac"]
-        epsw = r["area"] / r["n"] * r["frac"]
+        epsw = max(r["area"], 0.0) / r["n"] * r["frac"]
         epst = r["total"] / r["n"] * r["frac"]
-        print("%9.1f %12.4e %7.2f %12.4e %12.4e %7.3f %7s"
-              % (r["E"], eps, 100.0 / math.sqrt(max(r["fep"], 1.0)),
+        print("%9.1f %12.4e %7.2f %7.2f %12.4e %12.4e %7.3f %7s"
+              % (r["E"], eps,
+                 100.0 * math.sqrt(max(r["fep_raw"], 1.0)) / max(r["fep"], 1.0),
+                 100.0 * r["fep_bg"] / max(r["fep_raw"], 1.0),
                  epsw, epst, eps / epst, r["shelf"]))
     return 0
 

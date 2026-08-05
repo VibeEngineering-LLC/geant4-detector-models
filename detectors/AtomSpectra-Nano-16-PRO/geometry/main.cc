@@ -50,9 +50,12 @@
 #include "globals.hh"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <string>
+#include <system_error>
 #include <vector>
 
 class PhysList : public G4VModularPhysicsList {
@@ -140,9 +143,23 @@ public:
     const long N = run->GetNumberOfEvent();
     if (N == 0) return;
     if (fPrimary) fSolidAngleFrac = fPrimary->SolidAngleFrac();
+    // Каталог вывода создаётся здесь, а не считается существующим: макросы
+    // пишут в подкаталоги (spectra/, spectra_face/), и без этого прогон на
+    // 25 узлов отрабатывал ЦЕЛИКОМ, возвращал ноль и не оставлял ни одного
+    // файла — тихий отказ, найденный независимым аудитом 05.08.2026.
+    {
+      const std::size_t s = fOut.find_last_of("/\\");
+      if (s != G4String::npos) {
+        std::error_code ec;
+        std::filesystem::create_directories(fOut.substr(0, s), ec);
+      }
+    }
     FILE* f = std::fopen(fOut.c_str(), "w");
     if (!f) {
-      G4cerr << "!! не открыть " << fOut << G4endl;
+      // Не предупреждение, а аварийный останов: прежде здесь стоял return, и
+      // прогон завершался с кодом 0 без единого файла.
+      G4Exception("RunAct::EndOfRunAction", "ASN16_OUT", FatalException,
+                  ("не открыть файл вывода " + fOut).c_str());
       return;
     }
     std::fprintf(f, "# ATOMSPECTRA NANO 16 PRO, CsI(Tl) 18x15x57 mm\n");

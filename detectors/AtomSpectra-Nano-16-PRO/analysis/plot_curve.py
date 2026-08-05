@@ -24,8 +24,14 @@ DEF = os.path.normpath(os.path.join(_HERE, "..", "results",
                                     "eff_point_end10cm.csv"))
 
 
-def ru(x, nd=2):
-    return ("%.*f" % (nd, x)).replace(".", ",")
+# Подпись и имя выходного файла берутся ИЗ ШАПКИ кривой, а не из кода. Прежде
+# и то и другое было захардкожено под торцевую геометрию: построение кривой
+# «на грань» молча перезаписывало торцевой рисунок торцевой же подписью.
+# Найдено независимым аудитом 05.08.2026.
+FACE = {
+    "end10cm": ("торец 18 × 15 мм", "торцу"),
+    "face10cm": ("рабочая грань 18 × 57 мм", "рабочей грани"),
+}
 
 
 def main():
@@ -47,6 +53,17 @@ def main():
             rows.append({k: float(v) if k != "shelf" else v
                          for k, v in r.items()})
     rows.sort(key=lambda r: r["E_keV"])
+    mac = ""
+    for h in head:
+        if h.startswith("run_args"):
+            mac = h.split("=", 1)[1].strip()
+    tag = os.path.splitext(mac)[0].replace("curve_point_", "")
+    if tag not in FACE:
+        print("В шапке %s нет узнаваемого run_args (найдено %r).\n"
+              "Подпись и имя рисунка выводятся из него — без него рисунок "
+              "может оказаться подписан не той гранью." % (path, mac))
+        return 2
+    grain, dative = FACE[tag]
     e = [r["E_keV"] for r in rows]
     ep = [r["eps_peak"] for r in rows]
     de = [r["d_eps_peak"] for r in rows]
@@ -66,8 +83,9 @@ def main():
     ax.grid(True, which="both", lw=0.4, alpha=0.5)
     ax.legend(fontsize=9, frameon=False)
     ax.set_title("AtomSpectra Nano 16 PRO: точечный источник на оси кристалла,"
-                 " 10 см от торца\n(грань 18 × 15 мм; расчёт Geant4, "
-                 "измерением не подтверждён)", fontsize=10.5)
+                 " 10 см от корпуса\nисточник обращён к %s (%s); расчёт "
+                 "Geant4, измерением не подтверждён" % (dative, grain),
+                 fontsize=10.5)
 
     ax2.plot(e, pt, marker="o", ms=4, lw=1.3, color="#2f7a4a")
     ax2.set_xscale("log")
@@ -79,7 +97,7 @@ def main():
     note = [h for h in head if h.startswith(("src_sha1", "fwhm_662"))]
     fig.text(0.012, 0.012, "  |  ".join(note), fontsize=7.5, color="#666666")
     out = os.path.join(os.path.dirname(path), "..", "drawings",
-                       "nano16pro_eff_point_end10cm.png")
+                       "nano16pro_eff_point_%s.png" % tag)
     out = os.path.normpath(out)
     os.makedirs(os.path.dirname(out), exist_ok=True)
     fig.savefig(out, dpi=160, bbox_inches="tight")

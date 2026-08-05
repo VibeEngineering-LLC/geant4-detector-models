@@ -17,9 +17,13 @@
   - торцевые крышки — ПЛАСТИК типа ABS, не алюминий. Для мягкого края это
     существенно: опорный замер Cs-137 снят через переднюю крышку.
 
-Оси (совпадают с будущей геометрией Geant4), начало — центр кристалла:
-  Z — вдоль корпуса (86 мм); −Z к переднему торцу (грань 18 × 15 мм),
-      +Z к грани с SiPM;
+Оси (совпадают с геометрией Geant4), начало — центр кристалла:
+  Z — вдоль корпуса (86 мм); +Z к переднему торцу (грань 18 × 15 мм) и к
+      источнику, −Z к грани с SiPM. До 05.08.2026 этот чертёж был зеркален
+      модели по Z — рисовался до того, как ось развернули; расхождение нашёл
+      независимый аудит. Второй чертёж каталога (`draw_setup.py`) с самого
+      начала строился по модели, и два чертежа одного прибора смотрели в
+      разные стороны;
   X — по ширине корпуса (42 мм);
   Y — по высоте (25 мм); +Y к грани 18 × 57 мм под тонкой стенкой 1,20 мм.
 
@@ -52,31 +56,33 @@ W_CAP = 2.00                # (*) толщина торцевой крышки; 
 # --- производные границы -----------------------------------------------------
 # Y: кристалл упёрт в переднюю стенку — воздушного зазора в лицевом стеке нет
 yCryT, yCryB = +CRY_Y / 2, -CRY_Y / 2
-yFoilT, yFoilB = yCryT + ALFOIL, yCryB - ALFOIL
-yPtfeT, yPtfeB = yFoilT + PTFE, yFoilB - PTFE
-yBodyT = yPtfeT + W_FRONT
+# ПТФЭ лежит НА КРИСТАЛЛЕ, фольга — НА ПТФЭ (оператор, 05.08.2026).
+yPtfeT, yPtfeB = yCryT + PTFE, yCryB - PTFE
+yFoilT, yFoilB = yPtfeT + ALFOIL, yPtfeB - ALFOIL
+yBodyT = yFoilT + W_FRONT
 yBodyB = yBodyT - BODY_Y
 yBodyInB = yBodyB + W_BOT
-yPcbT, yPcbB = yPtfeB, yPtfeB - PCB_T     # кристалл опирается на плату (фото)
+yPcbT, yPcbB = yFoilB, yFoilB - PCB_T     # кристалл опирается на плату (фото)
 AIR_UNDER = yPcbB - yBodyInB              # воздух под платой
 
 # X: кристалл по фото стоит примерно по центру полости; точно не задан (*)
 xCry = CRY_X / 2
-xFoil, xPtfe = xCry + ALFOIL, xCry + ALFOIL + PTFE
+xPtfe, xFoil = xCry + PTFE, xCry + PTFE + ALFOIL
 xBody = BODY_X / 2
 xBodyIn = xBody - W_SIDE
 AIR_SIDE = xBodyIn - xPtfe                # воздух сбоку, с каждой стороны
 
 # Z: обёртка кристалла упёрта в переднюю крышку, сзади SiPM без обёртки
-zCryF, zCryB = -CRY_Z / 2, +CRY_Z / 2
-zFoilF = zCryF - ALFOIL
-zPtfeF = zFoilF - PTFE
-zCapFin = zPtfeF                          # внутренняя грань передней крышки
-zBodyF = zCapFin - W_CAP
-zBodyB = zBodyF + BODY_Z
-zCapBin = zBodyB - W_CAP                  # внутренняя грань задней крышки
-zSipmB = zCryB + SIPM_T
-AIR_BEHIND = zCapBin - zSipmB             # воздух за SiPM
+# +Z к переднему торцу — как в ASN16Detector.cc, а не наоборот.
+zCryF, zCryB = +CRY_Z / 2, -CRY_Z / 2
+zPtfeF = zCryF + PTFE
+zFoilF = zPtfeF + ALFOIL
+zCapFin = zFoilF                          # внутренняя грань передней крышки
+zBodyF = zCapFin + W_CAP
+zBodyB = zBodyF - BODY_Z
+zCapBin = zBodyB + W_CAP                  # внутренняя грань задней крышки
+zSipmB = zCryB - SIPM_T
+AIR_BEHIND = abs(zSipmB - zCapBin)        # воздух за SiPM (модуль: −Z вглубь)
 
 # --- цвета -------------------------------------------------------------------
 C_AL = "#9aa5ad"
@@ -137,16 +143,16 @@ frame(ax, "Продольный разрез (плоскость X = 0): Z — �
           "к тонкой стенке")
 
 rect(ax, zBodyF, zBodyB, yBodyB, yBodyT, C_AL, label="корпус Al (сплав — *)")
-rect(ax, zBodyF, zCapBin + W_CAP, yBodyInB, yPtfeT, C_AIR,
+rect(ax, zBodyF, zCapBin + W_CAP, yBodyInB, yFoilT, C_AIR,
      label="воздух полости", ec=EC_AIR, lw=0.5, z=2.1)
-rect(ax, zBodyF, zCapFin, yBodyInB, yPtfeT, C_ABS,
+rect(ax, zBodyF, zCapFin, yBodyInB, yFoilT, C_ABS,
      label="крышки ABS (толщина — *)", z=2.6)
-rect(ax, zCapBin, zBodyB, yBodyInB, yPtfeT, C_ABS, z=2.6)
+rect(ax, zCapBin, zBodyB, yBodyInB, yFoilT, C_ABS, z=2.6)
 rect(ax, zCapFin, zCapBin, yPcbB, yPcbT, C_PCB, label="плата FR4 (толщина — *)",
      z=2.8)
 # обёртка доведена до задней грани кристалла и перекрыта им — сзади её нет
-rect(ax, zPtfeF, zCryB, yPtfeB, yPtfeT, C_PTFE, label="ПТФЭ 1,00 мм", z=3)
-rect(ax, zFoilF, zCryB, yFoilB, yFoilT, C_FOIL, label="Al-фольга 0,10 мм", z=4)
+rect(ax, zFoilF, zCryB, yFoilB, yFoilT, C_FOIL, label="Al-фольга 0,10 мм", z=3)
+rect(ax, zPtfeF, zCryB, yPtfeB, yPtfeT, C_PTFE, label="ПТФЭ 1,00 мм", z=4)
 rect(ax, zCryF, zCryB, yCryB, yCryT, C_CSI, label="CsI(Tl) 18 × 15 × 57 мм",
      z=5)
 rect(ax, zCryB, zSipmB, yCryB, yCryT, C_SIPM, label="SiPM (толщина — *)", z=5)
@@ -161,25 +167,27 @@ dim(ax, zCryF, zCryB, "57,00", off=yCryT + 0.6)
 dim(ax, yBodyB, yBodyT, "25,00", vertical=True, off=zBodyB + 2.4)
 dim(ax, yCryB, yCryT, "15,00", vertical=True, off=zSipmB + 3.6)
 ax.annotate("стенка 1,20 мм\n(рабочая грань 18 × 57 мм = 10,3 см²)",
-            xy=(-14, 0.5 * (yPtfeT + yBodyT)), xytext=(-30, yBodyT + 6.5),
-            fontsize=7.5, color="#1f4e79",
+            xy=(10, 0.5 * (yFoilT + yBodyT)), xytext=(4, yBodyT + 7),
+            fontsize=7.5, color="#1f4e79", ha="left",
             arrowprops=dict(arrowstyle="->", color="#1f4e79", lw=0.8))
 ax.annotate("передний торец 18 × 15 мм = 2,7 см²;\nопорный замер Cs-137, "
             "10 см — через крышку ABS",
-            xy=(zBodyF + 1, -2), xytext=(zBodyF - 25, yBodyB - 11.5),
+            xy=(zBodyF, -3), xytext=(zCryF - 20, yBodyB - 12),
             fontsize=7.5, color="#7a2020", ha="left",
             arrowprops=dict(arrowstyle="->", color="#7a2020", lw=0.8))
 ax.annotate("SiPM на задней грани, оптический\nконтакт (оператор): обёртки нет",
-            xy=(0.5 * (zCryB + zSipmB), yCryT - 3), xytext=(zCryB + 3,
-                                                            yBodyT + 6.5),
+            xy=(zSipmB + 0.5, 0), xytext=(zBodyB + 1, yBodyT + 7),
             fontsize=7.5, color="#24406e", ha="left",
             arrowprops=dict(arrowstyle="->", color="#24406e", lw=0.8))
-ax.annotate("плата по дну полости во всю длину,\nкристалл опирается на неё "
+ax.annotate("плата под обёрткой во всю длину,\nкристалл опирается на неё "
             "(фото торца)",
-            xy=(20, 0.5 * (yPcbT + yPcbB)), xytext=(zCryB - 8, yBodyB - 11.5),
+            xy=(-8, 0.5 * (yPcbT + yPcbB)), xytext=(zBodyB + 1, yBodyB - 12),
             fontsize=7.5, color="#1c5c33", ha="left",
             arrowprops=dict(arrowstyle="->", color="#1c5c33", lw=0.8))
-ax.set_xlim(zBodyF - 28, zBodyB + 10)
+# Ось по возрастанию: +Z (передний торец, источник) — СПРАВА. Без явного
+# порядка matplotlib инвертировал бы ось (zBodyF > zBodyB) и подписи легли бы
+# зеркально, наезжая друг на друга.
+ax.set_xlim(zBodyB - 10, zBodyF + 28)
 ax.set_ylim(yBodyB - 16, yBodyT + 13)
 
 # ============================ 2. вид сверху (план) ===========================
@@ -193,8 +201,8 @@ rect(ax2, zBodyF, zCapFin, -xBodyIn, xBodyIn, C_ABS, z=2.6)
 rect(ax2, zCapBin, zBodyB, -xBodyIn, xBodyIn, C_ABS, z=2.6)
 rect(ax2, zCapFin, zCapBin, -xBodyIn, xBodyIn, C_PCB_PALE, ec="#4f9a6a",
      lw=0.6, z=2.8)
-rect(ax2, zPtfeF, zCryB, -xPtfe, xPtfe, C_PTFE, z=3)
-rect(ax2, zFoilF, zCryB, -xFoil, xFoil, C_FOIL, z=4)
+rect(ax2, zFoilF, zCryB, -xFoil, xFoil, C_FOIL, z=3)
+rect(ax2, zPtfeF, zCryB, -xPtfe, xPtfe, C_PTFE, z=4)
 rect(ax2, zCryF, zCryB, -xCry, xCry, C_CSI, z=5)
 rect(ax2, zCryB, zSipmB, -xCry, xCry, C_SIPM, z=5)
 
@@ -211,7 +219,7 @@ ax2.annotate("боковой зазор полости %s мм — воздух;
              xy=(-10, 0.5 * (xPtfe + xBodyIn)), xytext=(zBodyF - 25, xBody + 8),
              fontsize=7.5, color="#b03030", ha="left",
              arrowprops=dict(arrowstyle="->", color="#b03030", lw=0.8))
-ax2.set_xlim(zBodyF - 26, zBodyB + 10)
+ax2.set_xlim(zBodyB - 10, zBodyF + 26)
 ax2.set_ylim(-xBody - 8, xBody + 22)
 
 # ============================ 3. поперечный разрез ===========================
@@ -219,10 +227,10 @@ ax3 = fig.add_subplot(gs[1, 1])
 frame(ax3, "Поперечный разрез через кристалл (плоскость Z = 0)")
 
 rect(ax3, -xBody, xBody, yBodyB, yBodyT, C_AL)
-rect(ax3, -xBodyIn, xBodyIn, yBodyInB, yPtfeT, C_AIR, ec=EC_AIR, lw=0.5, z=2.1)
+rect(ax3, -xBodyIn, xBodyIn, yBodyInB, yFoilT, C_AIR, ec=EC_AIR, lw=0.5, z=2.1)
 rect(ax3, -xBodyIn, xBodyIn, yPcbB, yPcbT, C_PCB, z=2.8)
-rect(ax3, -xPtfe, xPtfe, yPtfeB, yPtfeT, C_PTFE, z=3)
-rect(ax3, -xFoil, xFoil, yFoilB, yFoilT, C_FOIL, z=4)
+rect(ax3, -xFoil, xFoil, yFoilB, yFoilT, C_FOIL, z=3)
+rect(ax3, -xPtfe, xPtfe, yPtfeB, yPtfeT, C_PTFE, z=4)
 rect(ax3, -xCry, xCry, yCryB, yCryT, C_CSI, z=5)
 
 ax3.text(0, 0, "CsI(Tl)\n18 × 15", fontsize=8, ha="center", va="center",
@@ -235,12 +243,36 @@ ax3.annotate("плата %s мм (*), под ней воздух %s мм"
              xy=(-4, 0.5 * (yPcbT + yPcbB)), xytext=(-xBody - 4, yBodyB - 6),
              fontsize=7.5, color="#1c5c33", ha="left",
              arrowprops=dict(arrowstyle="->", color="#1c5c33", lw=0.8))
-ax3.annotate("боковая стенка\n%s мм (*)" % ru(W_SIDE),
-             xy=(xBodyIn + 0.5 * W_SIDE, 4), xytext=(xBody + 3.5, yBodyT + 5),
+ax3.annotate("боковая стенка %s мм (*)" % ru(W_SIDE),
+             xy=(-xBodyIn - 0.5 * W_SIDE, 4), xytext=(-xBody - 4, yBodyB - 10),
              fontsize=7.5, color="#b03030", ha="left",
              arrowprops=dict(arrowstyle="->", color="#b03030", lw=0.8))
-ax3.set_xlim(-xBody - 17, xBody + 26)
-ax3.set_ylim(yBodyB - 11, yBodyT + 13)
+
+# ВЫНОСКА СЛОЁВ лицевого стека, снаружи внутрь. Порядок обёртки задан
+# оператором: ПТФЭ прилегает к кристаллу, фольга лежит на ПТФЭ.
+stack_layers = [
+    ("стенка корпуса Al", W_FRONT, C_AL),
+    ("Al-фольга", ALFOIL, C_FOIL),
+    ("ПТФЭ (на кристалле)", PTFE, C_PTFE),
+    ("CsI(Tl)", None, C_CSI),
+]
+lx0, lx1 = xBody + 6.0, xBody + 10.0    # столбик-выноска справа
+ly = yCryB                              # снизу вверх, вровень с кристаллом
+ax3.annotate("", xy=(xFoil, yCryT * 0.6), xytext=(lx0, ly + 4 * 2.4),
+             arrowprops=dict(arrowstyle="->", color="#555555", lw=0.8))
+ax3.text(lx0, ly + 4 * 2.4 + 1.2, "порядок слоёв рабочей грани,\nснаружи "
+         "внутрь:", fontsize=7.0, ha="left", va="bottom", color="#3a3f44")
+yc = ly
+for name, t, col in reversed(stack_layers):   # снизу — кристалл, вверх наружу
+    h = 2.2
+    rect(ax3, lx0, lx1, yc, yc + h, col, ec=EC, lw=0.6, z=7)
+    lab = name if t is None else "%s %s мм" % (name, ru(t))
+    ax3.text(lx1 + 0.8, yc + 0.5 * h, lab, fontsize=7.0, ha="left",
+             va="center", color="#3a3f44", zorder=7)
+    yc += h + 0.2
+
+ax3.set_xlim(-xBody - 20, xBody + 40)
+ax3.set_ylim(yBodyB - 13, yBodyT + 15)
 
 # ============================ 4. легенда и допущения =========================
 ax4 = fig.add_subplot(gs[0, 1])

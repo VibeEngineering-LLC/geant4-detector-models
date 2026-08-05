@@ -24,9 +24,18 @@ file(GLOB G4_IMPORT_LIBS "${G4ROOT}/lib/*.lib")
 
 # Штамп провенанса: отпечаток исходников запекается в бинарник и попадает в
 # шапку КАЖДОГО выходного спектра (см. common/cmake/provenance.cmake).
+# В отпечаток входят И МАКРОСЫ. Результат зависит не только от исходников:
+# положение источника, угол конуса, сетка энергий и число первичных заданы в
+# .mac. Пока их не было в списке, правка макроса не меняла src_sha1, а в шапке
+# спектра лежало только ИМЯ макроса, не его содержимое — два прогона с разной
+# постановкой источника выглядели одинаково прослеженными. Найдено независимым
+# аудитом 05.08.2026.
+file(GLOB ASN16_PROV_MAC "${CMAKE_CURRENT_SOURCE_DIR}/../macros/*.mac")
 set(ASN16_PROV_SRC "${CMAKE_CURRENT_SOURCE_DIR}/main.cc"
                    "${CMAKE_CURRENT_SOURCE_DIR}/ASN16Detector.cc"
-                   "${CMAKE_CURRENT_SOURCE_DIR}/ASN16Detector.hh")
+                   "${CMAKE_CURRENT_SOURCE_DIR}/ASN16Detector.hh"
+                   "${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt"
+                   ${ASN16_PROV_MAC})
 set(ASN16_PROV_HH "${CMAKE_BINARY_DIR}/asn16_provenance.hh")
 add_custom_target(asn16_provenance ALL
   COMMAND "${CMAKE_COMMAND}"
@@ -49,7 +58,14 @@ if (MSVC)
                          /wd4005 /wd4267 /wd4244)
 endif()
 
-file(GLOB ASN16_MACROS "${CMAKE_SOURCE_DIR}/*.mac")
+# Макросы лежат в СОСЕДНЕМ каталоге ../macros, а CMAKE_SOURCE_DIR указывает на
+# geometry/ — прежний глоб по CMAKE_SOURCE_DIR был пуст, и шаг копирования
+# молча не делал ничего: рецепт из README с чистого клона не работал. Найдено
+# независимым аудитом 05.08.2026.
+file(GLOB ASN16_MACROS "${CMAKE_CURRENT_SOURCE_DIR}/../macros/*.mac")
+if(NOT ASN16_MACROS)
+  message(WARNING "Макросы не найдены в ../macros — asn16 нечем запускать.")
+endif()
 foreach(m ${ASN16_MACROS})
   get_filename_component(n ${m} NAME)
   configure_file(${m} ${CMAKE_BINARY_DIR}/${n} COPYONLY)

@@ -107,17 +107,23 @@ G4VPhysicalVolume* ASN16Detector::Construct() {
   const Nano16Geom& g = fGeom;
 
   // --- границы по Y: снизу вверх, от дна корпуса к рабочей стенке ----------
+  // ПОРЯДОК СЛОЁВ ОБЁРТКИ (ОПЕРАТОР, 05.08.2026): ПТФЭ лежит НА КРИСТАЛЛЕ,
+  // алюминиевая фольга — НА ПТФЭ. До этой правки вложенность была обратной
+  // (фольга на кристалле, ПТФЭ снаружи); суммарная поверхностная плотность
+  // стека от порядка не зависит, поэтому пропускание было верным, но
+  // рассеяние и флуоресценция фольги считались не с того места. Ошибку нашёл
+  // независимый аудит, разрешил оператор.
   const double yCryT = +0.5 * g.cryY,            yCryB = -0.5 * g.cryY;
-  const double yFoilT = yCryT + g.alFoil,        yFoilB = yCryB - g.alFoil;
-  const double yPtfeT = yFoilT + g.ptfe,         yPtfeB = yFoilB - g.ptfe;
-  const double yBodyT = yPtfeT + g.wFront;       // наружная рабочая поверхность
+  const double yPtfeT = yCryT + g.ptfe,          yPtfeB = yCryB - g.ptfe;
+  const double yFoilT = yPtfeT + g.alFoil,       yFoilB = yPtfeB - g.alFoil;
+  const double yBodyT = yFoilT + g.wFront;       // наружная рабочая поверхность
   const double yBodyB = yBodyT - g.bodyY;
   const double yCavB  = yBodyB + g.wBot;         // внутренняя поверхность дна
-  const double yPcbT  = yPtfeB, yPcbB = yPtfeB - g.pcbT;   // плата под обёрткой
+  const double yPcbT  = yFoilB, yPcbB = yFoilB - g.pcbT;   // плата под обёрткой
 
   // --- границы по X --------------------------------------------------------
   const double xCry = 0.5 * g.cryX;
-  const double xFoil = xCry + g.alFoil, xPtfe = xFoil + g.ptfe;
+  const double xPtfe = xCry + g.ptfe, xFoil = xPtfe + g.alFoil;
   const double xBody = 0.5 * g.bodyX, xCav = xBody - g.wSide;
 
   // --- границы по Z --------------------------------------------------------
@@ -126,9 +132,9 @@ G4VPhysicalVolume* ASN16Detector::Construct() {
   // поэтому источник обязан стоять на +Z, иначе конус светит в пустоту, а
   // прогон при этом честно отработает и запишет почти пустой спектр.
   const double zCryF = +0.5 * g.cryZ, zCryB = -0.5 * g.cryZ;
-  const double zFoilF = zCryF + g.alFoil;
-  const double zPtfeF = zFoilF + g.ptfe;
-  const double zCapFi = zPtfeF;                  // внутренняя грань крышки
+  const double zPtfeF = zCryF + g.ptfe;
+  const double zFoilF = zPtfeF + g.alFoil;
+  const double zCapFi = zFoilF;                  // внутренняя грань крышки
   const double zBodyF = zCapFi + g.wCap;         // наружный торец корпуса
   const double zBodyB = zBodyF - g.bodyZ;
   const double zCapBi = zBodyB + g.wCap;
@@ -153,16 +159,16 @@ G4VPhysicalVolume* ASN16Detector::Construct() {
                             0.5 * (zBodyF + zBodyB) * mm);
 
   // Полость по всей длине экструзии; закрывают её крышки, а не сам профиль.
-  auto* cavLV = BoxAt("Cavity", -xCav, xCav, yCavB, yPtfeT, zBodyF, zBodyB,
+  auto* cavLV = BoxAt("Cavity", -xCav, xCav, yCavB, yFoilT, zBodyF, zBodyB,
                       Mat("G4_AIR"), bodyLV, bodyC,
                       G4Colour(0.85, 0.90, 0.95), false);
-  const G4ThreeVector cavC(0, 0.5 * (yCavB + yPtfeT) * mm,
+  const G4ThreeVector cavC(0, 0.5 * (yCavB + yFoilT) * mm,
                            0.5 * (zBodyF + zBodyB) * mm);
 
   // --- торцевые крышки (пластик) -------------------------------------------
-  BoxAt("CapFront", -xCav, xCav, yCavB, yPtfeT, zBodyF, zCapFi,
+  BoxAt("CapFront", -xCav, xCav, yCavB, yFoilT, zBodyF, zCapFi,
         Mat(g.matCap), cavLV, cavC, G4Colour(0.30, 0.32, 0.34));
-  BoxAt("CapBack", -xCav, xCav, yCavB, yPtfeT, zCapBi, zBodyB,
+  BoxAt("CapBack", -xCav, xCav, yCavB, yFoilT, zCapBi, zBodyB,
         Mat(g.matCap), cavLV, cavC, G4Colour(0.30, 0.32, 0.34));
 
   // --- плата: по дну полости во всю длину между крышками -------------------
@@ -170,22 +176,23 @@ G4VPhysicalVolume* ASN16Detector::Construct() {
         Mat(g.matPcb), cavLV, cavC, G4Colour(0.18, 0.48, 0.29));
 
   // --- обёртка и кристалл ---------------------------------------------------
-  // Вложение ПТФЭ -> фольга -> кристалл. Задняя грань всех трёх лежит в одной
-  // плоскости z = zCryB, поэтому сзади обёртки нет — там SiPM.
-  auto* ptfeLV = BoxAt("PTFE", -xPtfe, xPtfe, yPtfeB, yPtfeT, zPtfeF, zCryB,
-                       Mat("G4_TEFLON"), cavLV, cavC,
-                       G4Colour(0.95, 0.95, 0.93), false);
-  const G4ThreeVector ptfeC(0, 0.5 * (yPtfeB + yPtfeT) * mm,
-                            0.5 * (zPtfeF + zCryB) * mm);
-
+  // Вложение фольга -> ПТФЭ -> кристалл: ПТФЭ прилегает к кристаллу, фольга
+  // лежит на ПТФЭ (ОПЕРАТОР). Задняя грань всех трёх в одной плоскости
+  // z = zCryB, поэтому сзади обёртки нет — там SiPM.
   auto* foilLV = BoxAt("AlFoil", -xFoil, xFoil, yFoilB, yFoilT, zFoilF, zCryB,
-                       Mat(g.matBody), ptfeLV, ptfeC,
+                       Mat(g.matBody), cavLV, cavC,
                        G4Colour(0.78, 0.80, 0.82), false);
   const G4ThreeVector foilC(0, 0.5 * (yFoilB + yFoilT) * mm,
                             0.5 * (zFoilF + zCryB) * mm);
 
+  auto* ptfeLV = BoxAt("PTFE", -xPtfe, xPtfe, yPtfeB, yPtfeT, zPtfeF, zCryB,
+                       Mat("G4_TEFLON"), foilLV, foilC,
+                       G4Colour(0.95, 0.95, 0.93), false);
+  const G4ThreeVector ptfeC(0, 0.5 * (yPtfeB + yPtfeT) * mm,
+                            0.5 * (zPtfeF + zCryB) * mm);
+
   fCrystalLV = BoxAt("Crystal", -xCry, xCry, yCryB, yCryT, zCryF, zCryB,
-                     Mat("G4_CESIUM_IODIDE"), foilLV, foilC,
+                     Mat("G4_CESIUM_IODIDE"), ptfeLV, ptfeC,
                      G4Colour(0.85, 0.68, 0.24));
 
   // --- SiPM на задней грани кристалла --------------------------------------

@@ -1,0 +1,91 @@
+# -*- coding: utf-8 -*-
+"""Рисунок кривой эффективности из results/eff_point_end10cm.csv.
+
+Показываются ДВЕ величины, потому что их путают чаще всего:
+  eps по ППП   — доля испущенных квантов, дающих отсчёт в пике полного
+                 поглощения; именно она входит в расчёт активности;
+  eps полная   — доля квантов, давших любой отсчёт (пик плюс континуум).
+Отношение первой ко второй — «пик/полная», отдельная кривая внизу: она
+показывает, какая доля отклика приходится на пик, и на мягком крае идёт к
+единице, а на жёстком падает (утечка из 15 мм толщины бруска).
+
+    python analysis/plot_curve.py [<кривая.csv>]
+"""
+import os
+import sys
+import csv
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
+DEF = os.path.normpath(os.path.join(_HERE, "..", "results",
+                                    "eff_point_end10cm.csv"))
+
+
+def ru(x, nd=2):
+    return ("%.*f" % (nd, x)).replace(".", ",")
+
+
+def main():
+    path = sys.argv[1] if len(sys.argv) > 1 else DEF
+    if not os.path.exists(path):
+        print("Нет файла кривой: %s\nСначала: python analysis/export_curve.py "
+              "<каталог спектров>" % path)
+        return 2
+    head, rows = [], []
+    with open(path, encoding="utf-8") as f:
+        for ln in f:
+            if ln.startswith("#"):
+                head.append(ln[1:].strip())
+            else:
+                break
+    with open(path, encoding="utf-8") as f:
+        rd = csv.DictReader(l for l in f if not l.startswith("#"))
+        for r in rd:
+            rows.append({k: float(v) if k != "shelf" else v
+                         for k, v in r.items()})
+    rows.sort(key=lambda r: r["E_keV"])
+    e = [r["E_keV"] for r in rows]
+    ep = [r["eps_peak"] for r in rows]
+    de = [r["d_eps_peak"] for r in rows]
+    et = [r["eps_total"] for r in rows]
+    pt = [a / b for a, b in zip(ep, et)]
+
+    fig, (ax, ax2) = plt.subplots(2, 1, figsize=(9.6, 8.4), sharex=True,
+                                  gridspec_kw=dict(height_ratios=[2.4, 1],
+                                                   hspace=0.08))
+    ax.errorbar(e, ep, yerr=de, marker="o", ms=4.5, lw=1.4, capsize=2.5,
+                color="#1f4e79", label="по ППП (пик полного поглощения)")
+    ax.plot(e, et, marker="s", ms=4, lw=1.2, ls="--", color="#b0691f",
+            label="полная (любой отсчёт)")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_ylabel("Эффективность на 4π")
+    ax.grid(True, which="both", lw=0.4, alpha=0.5)
+    ax.legend(fontsize=9, frameon=False)
+    ax.set_title("AtomSpectra Nano 16 PRO: точечный источник на оси кристалла,"
+                 " 10 см от торца\n(грань 18 × 15 мм; расчёт Geant4, "
+                 "измерением не подтверждён)", fontsize=10.5)
+
+    ax2.plot(e, pt, marker="o", ms=4, lw=1.3, color="#2f7a4a")
+    ax2.set_xscale("log")
+    ax2.set_ylim(0, 1.05)
+    ax2.set_xlabel("Энергия, кэВ")
+    ax2.set_ylabel("пик / полная")
+    ax2.grid(True, which="both", lw=0.4, alpha=0.5)
+
+    note = [h for h in head if h.startswith(("src_sha1", "fwhm_662"))]
+    fig.text(0.012, 0.012, "  |  ".join(note), fontsize=7.5, color="#666666")
+    out = os.path.join(os.path.dirname(path), "..", "drawings",
+                       "nano16pro_eff_point_end10cm.png")
+    out = os.path.normpath(out)
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    fig.savefig(out, dpi=160, bbox_inches="tight")
+    print("записано: %s  (%d узлов)" % (out, len(rows)))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

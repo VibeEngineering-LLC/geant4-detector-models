@@ -1,0 +1,110 @@
+# Кривая эффективности, ВТОРАЯ ОРИЕНТАЦИЯ: точечный источник над РАБОЧЕЙ
+# ГРАНЬЮ 18 x 57 мм (площадь 10,26 см² против 2,70 см² у торца), 10 см от
+# наружной поверхности стенки 1,20 мм. Диапазон 40-3000 кэВ.
+#
+# Зачем обе. Брусок сильно анизотропен, отношение площадей граней 3,80, и без
+# указания грани значение эффективности не определено. Какой гранью снята
+# библиотечная кривая — неизвестно, поэтому фиксируются ОБА предсказания, и
+# их отношение само по себе проверяемое число.
+#
+# ГЕОМЕТРИЯ ИСТОЧНИКА: наружная поверхность рабочей стенки y = +9,80 мм,
+# источник y = 9,80 + 100 = 109,80 мм, x = z = 0 (центр кристалла по длине).
+#
+# ОСЬ КОНУСА. По умолчанию /gps/ang/maxtheta разыгрывает конус вокруг −Z.
+# Здесь конус нужен вокруг −Y, поэтому система координат углового
+# распределения поворачивается: rot1 = x' = (1,0,0), rot2 задаёт y' = (0,0,−1),
+# тогда z' = x' x y' = (0,1,0) = +Y, и розыгрыш вокруг −z' идёт вниз, на
+# прибор. Проверяется прогоном: при неверном повороте конус светит в пустоту,
+# счёт падает на порядки, а программа отрабатывает молча.
+#
+# Конус 45°, а не 35°: от источника над гранью самый дальний угол корпуса
+# отстоит от оси на 58,3 мм при плече 100 мм (30,2°). При 45° конус даёт
+# радиус 100 мм — корпус целиком внутри. Доля (1−cos 45°)/2 = 0,146447.
+#
+# ВАЖНО: файл в UTF-8 БЕЗ BOM.
+/run/initialize
+/control/verbose 0
+/run/verbose 0
+/gps/particle gamma
+/gps/pos/type Point
+/gps/pos/centre 0 109.8 0 mm
+/gps/ang/type iso
+/gps/ang/rot1 1 0 0
+/gps/ang/rot2 0 0 -1
+/gps/ang/maxtheta 45 deg
+
+/gps/energy 40 keV
+/asn16/outFile spectra_face/face10cm_E0040.0.csv
+/run/beamOn 10000000
+/gps/energy 50 keV
+/asn16/outFile spectra_face/face10cm_E0050.0.csv
+/run/beamOn 10000000
+/gps/energy 59.541 keV
+/asn16/outFile spectra_face/face10cm_E0059.5.csv
+/run/beamOn 10000000
+/gps/energy 80 keV
+/asn16/outFile spectra_face/face10cm_E0080.0.csv
+/run/beamOn 10000000
+/gps/energy 100 keV
+/asn16/outFile spectra_face/face10cm_E0100.0.csv
+/run/beamOn 10000000
+/gps/energy 122.061 keV
+/asn16/outFile spectra_face/face10cm_E0122.1.csv
+/run/beamOn 10000000
+/gps/energy 150 keV
+/asn16/outFile spectra_face/face10cm_E0150.0.csv
+/run/beamOn 10000000
+/gps/energy 200 keV
+/asn16/outFile spectra_face/face10cm_E0200.0.csv
+/run/beamOn 10000000
+/gps/energy 250 keV
+/asn16/outFile spectra_face/face10cm_E0250.0.csv
+/run/beamOn 10000000
+/gps/energy 300 keV
+/asn16/outFile spectra_face/face10cm_E0300.0.csv
+/run/beamOn 10000000
+/gps/energy 400 keV
+/asn16/outFile spectra_face/face10cm_E0400.0.csv
+/run/beamOn 10000000
+/gps/energy 500 keV
+/asn16/outFile spectra_face/face10cm_E0500.0.csv
+/run/beamOn 10000000
+/gps/energy 600 keV
+/asn16/outFile spectra_face/face10cm_E0600.0.csv
+/run/beamOn 10000000
+/gps/energy 661.657 keV
+/asn16/outFile spectra_face/face10cm_E0661.7.csv
+/run/beamOn 10000000
+/gps/energy 800 keV
+/asn16/outFile spectra_face/face10cm_E0800.0.csv
+/run/beamOn 10000000
+/gps/energy 1000 keV
+/asn16/outFile spectra_face/face10cm_E1000.0.csv
+/run/beamOn 10000000
+/gps/energy 1173.228 keV
+/asn16/outFile spectra_face/face10cm_E1173.2.csv
+/run/beamOn 10000000
+/gps/energy 1332.492 keV
+/asn16/outFile spectra_face/face10cm_E1332.5.csv
+/run/beamOn 10000000
+/gps/energy 1500 keV
+/asn16/outFile spectra_face/face10cm_E1500.0.csv
+/run/beamOn 10000000
+/gps/energy 1800 keV
+/asn16/outFile spectra_face/face10cm_E1800.0.csv
+/run/beamOn 10000000
+/gps/energy 2100 keV
+/asn16/outFile spectra_face/face10cm_E2100.0.csv
+/run/beamOn 10000000
+/gps/energy 2400 keV
+/asn16/outFile spectra_face/face10cm_E2400.0.csv
+/run/beamOn 10000000
+/gps/energy 2614.511 keV
+/asn16/outFile spectra_face/face10cm_E2614.5.csv
+/run/beamOn 10000000
+/gps/energy 2800 keV
+/asn16/outFile spectra_face/face10cm_E2800.0.csv
+/run/beamOn 10000000
+/gps/energy 3000 keV
+/asn16/outFile spectra_face/face10cm_E3000.0.csv
+/run/beamOn 10000000

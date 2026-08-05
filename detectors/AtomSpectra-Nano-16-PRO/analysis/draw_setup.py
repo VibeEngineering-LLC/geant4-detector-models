@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 """Схема замера: точечный источник по оси кристалла, 10 см от торца.
 
-Рисунок к согласованию ПЕРЕД прогонами. Размеры зеркалят
-`geometry/ASN16Detector.hh` (Nano16Geom); при правке .hh сверять здесь —
-скрипт своей связи с моделью не имеет, это отдельный источник тех же чисел.
+Рисунок к согласованию ПЕРЕД прогонами. Размеры ЧИТАЮТСЯ из
+`geometry/ASN16Detector.hh` (Nano16Geom), а не дублируются здесь константами:
+зеркало уже дало ошибку (до 06.08.2026 порядок слоёв обёртки здесь был
+до-разворотный), и второй раз тот же класс дефекта заводить нельзя. Числа
+модели и рисунка расходиться больше не могут — расходиться может только
+арифметика границ, и она повторяет `ASN16Detector.cc:117-140` построчно.
 
 Оси как в модели: начало — центр кристалла, +Z к переднему торцу и к
 источнику, +Y к рабочей грани 18 x 57 под стенкой 1,20 мм.
@@ -11,6 +14,7 @@
     python analysis/draw_setup.py
 """
 import os
+import re
 import math
 
 import matplotlib
@@ -18,12 +22,33 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
-# --- зеркало Nano16Geom (мм) -------------------------------------------------
-CRY_X, CRY_Y, CRY_Z = 18.00, 15.00, 57.00
-PTFE, ALFOIL = 1.00, 0.10
-BODY_X, BODY_Y, BODY_Z = 42.00, 25.00, 86.00
-W_FRONT, W_BOT, W_SIDE, W_CAP = 1.20, 2.05, 1.95, 2.00
-PCB_T, SIPM_T = 1.60, 1.50
+_HERE = os.path.dirname(os.path.abspath(__file__))
+HH = os.path.normpath(os.path.join(_HERE, "..", "geometry", "ASN16Detector.hh"))
+
+
+def geom_from_header(path):
+    """Толщины и габариты из Nano16Geom. -> dict имя->мм."""
+    src = open(path, encoding="utf-8").read()
+    out = {}
+    for m in re.finditer(r"^\s*double\s+(\w+)\s*=\s*([0-9.]+)\s*;", src,
+                         re.MULTILINE):
+        out[m.group(1)] = float(m.group(2))
+    need = ("cryX", "cryY", "cryZ", "ptfe", "alFoil", "bodyX", "bodyY",
+            "bodyZ", "wFront", "wBot", "wSide", "wCap", "pcbT", "sipmT")
+    miss = [k for k in need if k not in out]
+    if miss:
+        raise SystemExit("в %s не найдены поля: %s" % (path, ", ".join(miss)))
+    return out
+
+
+# --- размеры из Nano16Geom (мм), НЕ константы этого файла ---------------------
+_G = geom_from_header(HH)
+CRY_X, CRY_Y, CRY_Z = _G["cryX"], _G["cryY"], _G["cryZ"]
+PTFE, ALFOIL = _G["ptfe"], _G["alFoil"]
+BODY_X, BODY_Y, BODY_Z = _G["bodyX"], _G["bodyY"], _G["bodyZ"]
+W_FRONT, W_BOT, W_SIDE, W_CAP = (_G["wFront"], _G["wBot"], _G["wSide"],
+                                 _G["wCap"])
+PCB_T, SIPM_T = _G["pcbT"], _G["sipmT"]
 
 # --- параметры замера --------------------------------------------------------
 DIST = 100.00        # ОПЕРАТОР: 10 см от торца
@@ -103,16 +128,23 @@ def dim(ax, p0, p1, text, off, fs=7.5, color="#1f4e79"):
 
 def draw_body(ax, half_lo, half_hi, side):
     """Прибор в разрезе. side='y' — вид сбоку (Y–Z), side='x' — план (X–Z)."""
+    # ПОРЯДОК ОТРИСОВКИ. Прямоугольник фольги строго СОДЕРЖИТ прямоугольник
+    # ПТФЭ (обёртка нарисована сплошными телами, а не контурами), поэтому
+    # верхним обязан идти ПТФЭ: при обратном zorder фольга кроет ПТФЭ целиком,
+    # и рисунок показывает ровно ту до-разворотную картину «фольга на
+    # кристалле», ради исправления которой правились константы (аудит кода
+    # 06.08.2026 — константы были развёрнуты, zorder нет).
     if side == "y":
         rect(ax, zBodyB, zBodyF, yBodyB, yBodyT, C_AL, label="корпус Al")
-        rect(ax, zBodyB, zBodyF, yCavB, yPtfeT, C_AIR, label="воздух полости",
+        rect(ax, zBodyB, zBodyF, yCavB, yFoilT, C_AIR, label="воздух полости",
              ec=EC_AIR, lw=0.5, z=2.1)
-        rect(ax, zBodyF, zCapFi, yCavB, yPtfeT, C_ABS, label="крышки ABS", z=2.6)
-        rect(ax, zCapBi, zBodyB, yCavB, yPtfeT, C_ABS, z=2.6)
+        rect(ax, zBodyF, zCapFi, yCavB, yFoilT, C_ABS,
+             label="крышки (полистирол*)", z=2.6)
+        rect(ax, zCapBi, zBodyB, yCavB, yFoilT, C_ABS, z=2.6)
         rect(ax, zCapFi, zCapBi, yPcbB, yPcbT, C_PCB, label="плата", z=2.8)
-        rect(ax, zPtfeF, zCryB, yPtfeB, yPtfeT, C_PTFE, label="ПТФЭ 1,00", z=3)
         rect(ax, zFoilF, zCryB, yFoilB, yFoilT, C_FOIL, label="Al-фольга 0,10",
-             z=4)
+             z=3)
+        rect(ax, zPtfeF, zCryB, yPtfeB, yPtfeT, C_PTFE, label="ПТФЭ 1,00", z=4)
         rect(ax, zCryF, zCryB, yCryB, yCryT, C_CSI, label="CsI(Tl)", z=5)
         rect(ax, zCryB, zSipmB, yCryB, yCryT, C_SIPM, label="SiPM", z=5)
     else:
@@ -120,8 +152,8 @@ def draw_body(ax, half_lo, half_hi, side):
         rect(ax, zBodyB, zBodyF, -xCav, xCav, C_AIR, ec=EC_AIR, lw=0.5, z=2.1)
         rect(ax, zBodyF, zCapFi, -xCav, xCav, C_ABS, z=2.6)
         rect(ax, zCapBi, zBodyB, -xCav, xCav, C_ABS, z=2.6)
-        rect(ax, zPtfeF, zCryB, -xPtfe, xPtfe, C_PTFE, z=3)
-        rect(ax, zFoilF, zCryB, -xFoil, xFoil, C_FOIL, z=4)
+        rect(ax, zFoilF, zCryB, -xFoil, xFoil, C_FOIL, z=3)
+        rect(ax, zPtfeF, zCryB, -xPtfe, xPtfe, C_PTFE, z=4)
         rect(ax, zCryF, zCryB, -xCry, xCry, C_CSI, z=5)
         rect(ax, zCryB, zSipmB, -xCry, xCry, C_SIPM, z=5)
 
@@ -164,7 +196,8 @@ dim(ax, zBodyF, zSrc, "%s (10 см от НАРУЖНОЙ поверхности 
     off=yBodyT + 6)
 dim(ax, zCryF, zSrc, "%s до передней грани кристалла" % ru(zSrc - zCryF),
     off=yBodyT + 15)
-ax.annotate("крышка ABS %s + обёртка %s = %s мм\nмежду опорной плоскостью и "
+ax.annotate("крышка %s (ABS по прибору, в модели полистирол)\n+ обёртка %s = "
+            "%s мм между опорной плоскостью и "
             "кристаллом" % (ru(W_CAP), ru(PTFE + ALFOIL), ru(zBodyF - zCryF)),
             xy=(0.5 * (zCryF + zBodyF), yCryB - 1), xytext=(zBodyF + 16,
                                                            yBodyB - 13),

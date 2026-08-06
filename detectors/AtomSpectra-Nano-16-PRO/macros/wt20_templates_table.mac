@@ -1,4 +1,4 @@
-# ТО ЖЕ, ЧТО wt20_templates.mac, НО СО СТОЛЕШНИЦЕЙ ПОД ПЕНАЛОМ.
+﻿# ТО ЖЕ, ЧТО wt20_templates.mac, НО СО СТОЛЕШНИЦЕЙ ПОД ПЕНАЛОМ.
 #
 # Второе плечо сравнения. Проверяемая гипотеза: измеренный спектр мягче
 # модельного (избыток ниже 400 кэВ при недостатке в жёстком континууме), и
@@ -23,7 +23,7 @@
 /gps/energy 0 keV
 /gps/pos/type Volume
 /gps/pos/shape Para
-/gps/pos/halfx 38.05 mm
+/gps/pos/halfx 23.43 mm
 /gps/pos/halfy 1.60 mm
 /gps/pos/halfz 87.5 mm
 /gps/pos/centre 0 -22.00 -10.40 mm

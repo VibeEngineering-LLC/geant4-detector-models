@@ -247,8 +247,9 @@ h2, lab2 = ax2.get_legend_handles_labels()
 ax2.legend(h2, lab2, loc="upper right", fontsize=7.4, frameon=False, ncol=2,
            handlelength=1.4)
 
-fig.suptitle("AtomSpectra Nano 16 PRO на пачке электродов WT-20 — постановка "
-             "к согласованию (размеры в мм)", fontsize=11.5, y=0.985)
+fig.suptitle("AtomSpectra Nano 16 PRO на пачке электродов WT-20 — принятая "
+             "геометрия замера 01.06.2024 (размеры в мм)",
+             fontsize=11.5, y=0.985)
 fig.text(0.045, 0.955,
          "ЭТИКЕТКА ПАЧКИ: «Tungsten Electrodes 3.2 mm × 175 mm, 10 Pieces, "
          "2%%Thoriated(WT20), ANSI/AWS A5.12M-98, ISO 6848».\n"

@@ -166,7 +166,7 @@ G4VPhysicalVolume* ASN16Detector::Construct() {
   const G4ThreeVector cavC(0, 0.5 * (yCavB + yFoilT) * mm,
                            0.5 * (zBodyF + zBodyB) * mm);
 
-  // --- торцевые крышки (ПЛАСТИК: подтверждён автором прибора 06.08.2026) ---
+  // --- торцевые крышки (АЛЮМИНИЙ 1,50 мм, ОПЕРАТОР 06.08.2026) ------------
   auto* capFrontLV = BoxAt("CapFront", -xCav, xCav, yCavB, yFoilT,
                            zBodyF, zCapFi, Mat(g.matCap), cavLV, cavC,
                            G4Colour(0.55, 0.60, 0.64));

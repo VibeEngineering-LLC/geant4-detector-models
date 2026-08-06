@@ -1,0 +1,64 @@
+# Публикация каталога docs/ на GitHub Pages.
+#
+# ЗАЧЕМ ЯВНЫЙ WORKFLOW, а не штатная сборка «из ветки».
+# Источником Pages была ветка main, каталог /docs, сборщик — legacy Jekyll
+# (pages-build-deployment). У него два дефекта, оба измерены по истории
+# репозитория 28.07–06.08.2026:
+#   1) он запускается на КАЖДЫЙ push, даже если docs/ не тронут, — а таких
+#      здесь подавляющее большинство (результаты прогонов, макросы, геометрия);
+#   2) он ненадёжен: 15 отказов на 100 сборок, причём отказ приходит без
+#      сообщения («Page build failed.», duration 0), а сам прогон висит
+#      8–35 минут и заканчивается failure-письмом.
+# Содержимое docs/ — статический HTML без единой конструкции Jekyll ({{ }},
+# {% %}, front matter, _layouts), поэтому сборщик не давал ничего, кроме
+# отказов. Здесь артефакт кладётся как есть.
+#
+# ФИЛЬТР paths — вторая половина решения: пуш, не затрагивающий docs/,
+# не порождает прогона вовсе.
+name: Deploy docs to Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Пуши подряд не отменяют уже идущий деплой: последний доводится до конца,
+# промежуточные снимаются.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Забирается только docs/ — остальное дерево (реперные спектры, .frf/.efr
+      # ЛСРМ, 737 путей с кириллицей) публикации не касается.
+      - name: Checkout docs only
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: docs
+          sparse-checkout-cone-mode: true
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload docs as artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

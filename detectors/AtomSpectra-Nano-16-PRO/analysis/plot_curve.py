@@ -23,6 +23,7 @@ import csv
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FixedLocator, NullFormatter, ScalarFormatter
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 DEF = os.path.normpath(os.path.join(_HERE, "..", "results",
@@ -98,6 +99,19 @@ def main():
     ax2.set_xlabel("Энергия, кэВ")
     ax2.set_ylabel("пик / полная")
     ax2.grid(True, which="both", lw=0.4, alpha=0.5)
+
+    # Подписи оси энергий — по УЗЛАМ, а не по декадам. На логарифмической шкале
+    # matplotlib по умолчанию подписывает только 100 и 1000, и снять с рисунка
+    # положение мягкого края нельзя: как раз там узлы стоят гуще всего.
+    ticks = [t for t in (20, 25, 30, 40, 50, 60, 80, 100, 150, 200, 300, 500, 700, 1000, 1500, 2000, 3000) if min(e) * 0.98 <= t <= max(e) * 1.02]
+    for a_ in (ax, ax2):
+        a_.xaxis.set_major_locator(FixedLocator(ticks))
+        a_.xaxis.set_major_formatter(ScalarFormatter())
+        a_.xaxis.set_minor_formatter(NullFormatter())
+    for lab in ax2.get_xticklabels():
+        lab.set_rotation(45)
+        lab.set_ha("right")
+        lab.set_fontsize(8)
 
     note = [h for h in head if h.startswith(("src_sha1", "fwhm_662"))]
     fig.text(0.012, 0.012, "  |  ".join(note), fontsize=7.5, color="#666666")

@@ -1,6 +1,6 @@
 #@ stamp.version = 1
 #@ src.script = detectors/AtomSpectra-Nano-16-PRO/analysis/export_curve.py
-#@ src.spectra_sha1 = a9c2fa3c205f
+#@ src.spectra_sha1 = 9e77aa916928
 #@ src.inputs_n = 61
 #@ src.inputs_verdict = stamped
 #@ obs.quantity = абсолютная эффективность по пику полного поглощения, отнесённая к 4pi
@@ -15,7 +15,7 @@
 #   solid_angle_frac = 0.09042391
 #   front_face_z_mm = 32.600  (наружная поверхность крышки), work_face_y_mm = 10.100  (наружная поверхность стенки)
 # наблюдаемая: абсолютная эффективность по ППП на 4pi
-# src_sha1 = a9c2fa3c205f
+# src_sha1 = 9e77aa916928
 # fwhm_662_keV = 41.60  (собственная запись Cs-137)
 # escapes_keV = 28.60, 30.97
 # подложка под линией: содержимое НАБЛЮДАЕМОГО канала (kc-1

@@ -5,7 +5,8 @@
 // Опубликованного чертежа прибора НЕТ. Размеры собраны из трёх источников,
 // разобранных в reference/geometry-source.md:
 //   1) слова оператора (29.07.2026, уточнения 05.08.2026) и его записка
-//      «размеры.txt»: кристалл 18 x 15 x 57, корпус 86 x 42 x 25, обёртка
+//      «размеры.txt»: кристалл 18 x 15 x 60 (до 06.08.2026 стояло 57 —
+//      размер соседней модели Nano 15), корпус 86 x 42 x 25, обёртка
 //      ПТФЭ 1,0 + Al 0,1, кристалл упёрт в переднюю стенку;
 //   2) чертёж профиля экструзии линейки Nano (Nano 5 PRO): рабочая стенка
 //      1,20, дно 2,05, боковая (39,50 − 35,60)/2 = 1,95;
@@ -165,7 +166,7 @@ G4VPhysicalVolume* ASN16Detector::Construct() {
   const G4ThreeVector cavC(0, 0.5 * (yCavB + yFoilT) * mm,
                            0.5 * (zBodyF + zBodyB) * mm);
 
-  // --- торцевые крышки (пластик) -------------------------------------------
+  // --- торцевые крышки (ПЛАСТИК: подтверждён автором прибора 06.08.2026) ---
   BoxAt("CapFront", -xCav, xCav, yCavB, yFoilT, zBodyF, zCapFi,
         Mat(g.matCap), cavLV, cavC, G4Colour(0.30, 0.32, 0.34));
   BoxAt("CapBack", -xCav, xCav, yCavB, yFoilT, zCapBi, zBodyB,
@@ -232,9 +233,18 @@ void ASN16Detector::ReportMasses() const {
   const double stack = gm.wFront / 10.0 * rho(gm.matBody)
                      + gm.ptfe / 10.0 * rho("G4_TEFLON")
                      + gm.alFoil / 10.0 * rho(gm.matBody);
-  std::printf("  лицевой стек рабочей грани  %.3f г/см²\n", stack);
+  std::printf("  лицевой стек рабочей грани  %.6f г/см²\n", stack);
+  // Торцевой стек печатается наравне с лицевым: в настоящей постановке в ПУЧКЕ
+  // стоит именно он, а до 06.08.2026 не печатался нигде. Порядок слоёв тот же
+  // (ПТФЭ на кристалле, фольга на ПТФЭ), но снаружи вместо стенки 1,20 стоит
+  // торцевая крышка.
+  const double stackEnd = gm.ptfe / 10.0 * rho("G4_TEFLON")
+                        + gm.alFoil / 10.0 * rho(gm.matBody)
+                        + gm.wCap / 10.0 * rho(gm.matCap);
+  std::printf("  ТОРЦЕВОЙ стек (в пучке)     %.6f г/см²\n", stackEnd);
   std::printf("--- ВЕЩЕСТВА-ЗАМЕНИТЕЛИ (не подтверждены источником) ---\n");
-  std::printf("  крышки: %s вместо ABS\n", gm.matCap.c_str());
+  std::printf("  крышки: %s (металл; сплав не назван, оператор 06.08.2026)\n",
+              gm.matCap.c_str());
   std::printf("  плата:  %s вместо FR4 (масса платы ЗАНИЖЕНА)\n",
               gm.matPcb.c_str());
   std::printf("  SiPM:   %s, голый кремний вместо сборки\n", gm.matSipm.c_str());

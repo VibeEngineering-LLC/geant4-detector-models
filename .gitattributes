@@ -14,6 +14,8 @@
 *.css  text eol=lf
 *.txt  text eol=lf
 *.cmake text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
 CMakeLists.txt text eol=lf
 
 # ПРИБОРНЫЕ ФОРМАТЫ И ЭТАЛОННЫЕ ДАННЫЕ — БАЙТ В БАЙТ, никакой нормализации.

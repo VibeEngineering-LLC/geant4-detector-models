@@ -62,8 +62,13 @@ def main():
     step = float(sys.argv[2]) if len(sys.argv) > 2 else 10.0
     nch = int(E_MAX / step)
 
+    # Спутники прогона (`_emit.csv`, `_chan.csv`) имеют ту же шапку и другой
+    # состав колонок: при чтении как спектра они ломаются на первой же строке
+    # данных, то есть уже после того, как выглядели годными.
     files = sorted(f for f in os.listdir(src)
-                   if f.endswith(".csv") and not f.endswith("_emit.csv"))
+                   if f.endswith(".csv")
+                   and not f.endswith("_emit.csv")
+                   and not f.endswith("_chan.csv"))
     if not files:
         raise SystemExit("в %s нет спектров" % src)
 

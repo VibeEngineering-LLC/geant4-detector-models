@@ -1,6 +1,6 @@
 #@ stamp.version = 1
 #@ src.script = detectors/AtomSpectra-Nano-16-PRO/analysis/response_matrix.py
-#@ src.spectra_sha1 = a9c2fa3c205f
+#@ src.spectra_sha1 = 9e77aa916928
 #@ src.inputs_n = 61
 #@ src.inputs_verdict = stamped
 #@ obs.quantity = функция отклика без размытия, вероятность на квант в 4pi

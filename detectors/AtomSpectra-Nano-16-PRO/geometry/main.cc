@@ -599,6 +599,7 @@ class OutMessenger : public G4UImessenger {
   G4UIcmdWithAString* fWinCmd;
   G4UIcmdWithAString* fPackCmd;
   G4UIcmdWithAString* fTabCmd;
+  G4UIcmdWithAString* fCryYCmd;
 public:
   OutMessenger(RunAct* r, ASN16Detector* d) : fRun(r), fDet(d) {
     fDir = new G4UIdirectory("/asn16/");
@@ -632,12 +633,40 @@ public:
     fTabCmd->SetGuidance("on|off — столешница под пеналом (рассеиватель)");
     fTabCmd->SetCandidates("on off");
     fTabCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+    // ТОЛЩИНА КРИСТАЛЛА ПО ПУЧКУ — только для ДИАГНОСТИКИ. В постановке с
+    // пачкой излучение входит через грань 18 x 60 и проходит cryY, тогда как
+    // опорный замер Cs-137 просвечивал кристалл вдоль оси Z на 60 мм. Значит
+    // размер 15 мм этой сверкой НИКОГДА не проверялся, а именно он задаёт, как
+    // быстро падает эффективность с энергией. Команда позволяет измерить эту
+    // чувствительность, а не рассуждать о ней. Публикуемые числа считаются
+    // ТОЛЬКО при паспортных 15,00 мм.
+    fCryYCmd = new G4UIcmdWithAString("/asn16/cryY", this);
+    fCryYCmd->SetGuidance("толщина кристалла по Y, мм (диагностика!)");
+    fCryYCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
   }
   ~OutMessenger() override {
-    delete fTabCmd; delete fPackCmd; delete fWinCmd; delete fCmd; delete fDir;
+    delete fCryYCmd; delete fTabCmd; delete fPackCmd; delete fWinCmd;
+    delete fCmd; delete fDir;
   }
   void SetNewValue(G4UIcommand* c, G4String v) override {
     if (c == fCmd) { fRun->fOut = v; return; }
+    if (c == fCryYCmd && fDet) {
+      const double want = std::atof(v.c_str());
+      if (want <= 0.0 || want > 24.0) {
+        std::fprintf(stderr, "ОТКАЗ: /asn16/cryY %g вне разумного (0…24 мм)\n",
+                     want);
+        return;
+      }
+      if (want == fDet->fGeom.cryY) return;
+      fDet->fGeom.cryY = want;
+      if (auto* rm = G4RunManager::GetRunManager()) {
+        rm->ReinitializeGeometry(true);
+        rm->GeometryHasBeenModified();
+        std::printf("[cryY] толщина кристалла по пучку %.2f мм, геометрия "
+                    "перестроена — ЭТО ДИАГНОСТИКА, не паспорт\n", want);
+      }
+      return;
+    }
     if (c == fTabCmd && fDet) {
       const bool want = (v == "on");
       if (want == fDet->fGeom.table) return;

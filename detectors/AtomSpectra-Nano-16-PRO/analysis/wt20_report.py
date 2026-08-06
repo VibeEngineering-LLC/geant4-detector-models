@@ -57,6 +57,20 @@ def ru(x, nd=1):
     return ("%.*f" % (nd, x)).replace(".", ",")
 
 
+def data_uri(path):
+    """Картинка -> data:URI. Страница обязана быть самодостаточной: внешние
+    адреса на ней не грузятся, а file:// не переживёт передачи."""
+    import base64
+    if not os.path.exists(path):
+        return ""
+    ext = os.path.splitext(path)[1].lower()
+    mime = {".png": "image/png", ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg"}.get(ext, "application/octet-stream")
+    with open(path, "rb") as f:
+        return "data:%s;base64,%s" % (mime,
+                                      base64.b64encode(f.read()).decode())
+
+
 def main():
     if len(sys.argv) < 3:
         raise SystemExit(__doc__)
@@ -69,8 +83,14 @@ def main():
     cal = read_csv(os.path.join(d, "calibration_check.csv"))
     head = read_head(os.path.join(tdir, "Tl208.csv"))
 
+    ref = os.path.normpath(os.path.join(_HERE, "..", "reference"))
+    draw = os.path.normpath(os.path.join(_HERE, "..", "drawings"))
     payload = dict(names=names, spec=spec, acts=acts, lines=lines, cal=cal,
-                   head=head)
+                   head=head,
+                   img_scan=data_uri(os.path.join(ref,
+                                                  "wt20-pitch-scanline.jpg")),
+                   img_setup=data_uri(os.path.join(draw,
+                                                   "nano16pro_wt20_setup.png")))
     tpl = io.open(os.path.join(_HERE, "wt20_report_template.html"),
                   encoding="utf-8").read()
     html = tpl.replace("/*__DATA__*/", json.dumps(payload, ensure_ascii=False))

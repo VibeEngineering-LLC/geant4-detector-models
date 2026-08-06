@@ -130,7 +130,14 @@ def main():
         return 2
     src = sys.argv[1]
     files = sorted(glob.glob(os.path.join(src, "*.csv")))
-    files = [f for f in files if not f.endswith("_emit.csv")]
+    # Рядом со спектром прогон кладёт файлы-спутники другого формата:
+    # `_emit.csv` (выходы линий) и `_chan.csv` (разложение по каналам).
+    # Список расширяется по мере появления новых — перечислять их здесь
+    # надёжнее, чем угадывать формат при чтении: `_chan.csv` имеет ту же
+    # шапку и ломается только на строке данных, то есть уже после того,
+    # как выглядел годным.
+    files = [f for f in files
+             if not (f.endswith("_emit.csv") or f.endswith("_chan.csv"))]
     if not files:
         print("В %s нет спектров." % src)
         return 2

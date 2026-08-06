@@ -91,6 +91,22 @@ def main():
     out = sys.argv[3] if len(sys.argv) > 3 else os.path.join(d, "wt20.html")
 
     names, spec = load_spectrum(os.path.join(d, "unfold_spectrum.csv"))
+    # Фон вычитается ЗДЕСЬ, до всякого показа: разложение считается по разности
+    # «измеренное минус фон», и страница должна показывать ту же величину, что
+    # раскладывается. Отдельной компонентой в стопке фон больше не стоит —
+    # иначе на рисунке видно одно, а подгоняется другое.
+    bg_sum = 0.0
+    if names and "фон" in names:
+        jb = names.index("фон")
+        bg_sum = sum(r[jb] for r in spec)
+        for r in spec:
+            r[1] -= r[jb]          # измеренное минус фон
+            r[2] -= r[jb]          # модель тоже без фона
+            del r[jb]
+        names = [n for n in names if n != "фон"]
+        names[1] = "измерено минус фон"
+        names[2] = "сумма компонент"
+    meas_sum = sum(r[1] for r in spec) + bg_sum
     acts = read_csv(os.path.join(d, "unfold_activities.csv"))
     lines = read_csv(os.path.join(d, "line_activities.csv"))
     cal = read_csv(os.path.join(d, "calibration_check.csv"))
@@ -104,8 +120,23 @@ def main():
         p = os.path.join(d, name)
         return read_csv(p) if os.path.exists(p) else []
 
+    # Шапка прямой задачи: удельная активность и масса лежат в строках с «#»,
+    # которые read_csv пропускает как комментарий. Выводятся отдельно —
+    # без них раздел показывает выходы линий, но не саму удельную активность.
+    src_head = {}
+    fp = os.path.join(d, "wt20_source_forward.csv")
+    if os.path.exists(fp):
+        for ln in io.open(fp, encoding="utf-8"):
+            if not ln.startswith("#") or ";" not in ln:
+                continue
+            k, v = ln.lstrip("# ").rsplit(";", 1)
+            src_head[k.strip()] = v.strip()
+
     payload = dict(names=names, spec=spec, acts=acts, lines=lines, cal=cal,
+                   src_head=src_head,
                    head=head,
+                   bg_sum=round(bg_sum, 1),
+                   bg_share=round(100.0 * bg_sum / meas_sum, 2) if meas_sum else 0,
                    src_fwd=opt("wt20_source_forward.csv"),
                    selfabs=opt("wt20_selfabsorption.csv"),
                    scatter=opt("wt20_source_scatter.csv"),

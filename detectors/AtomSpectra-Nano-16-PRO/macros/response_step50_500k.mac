@@ -1,0 +1,210 @@
+# ФУНКЦИЯ ПОЛНОГО ОТКЛИКА: та же сетка 30-3000 кэВ с шагом 50, 5e5 историй.
+#
+# Задание автора библиотеки BecqMoni: посчитать на этих же узлах функцию
+# полного отклика, ориентир по времени — около пяти минут.
+#
+# Отклик отдельным прогоном НЕ считается: спектр энерговыделения пишется на
+# каждом узле самим exe (гистограмма 3700 каналов по 1 кэВ), поэтому сетка
+# моноэнергетических прогонов И ЕСТЬ матрица отклика. Сборка матрицы —
+# analysis/response_matrix.py, доли секунды.
+#
+# Почему 5e5, а не 2e5, как в curve_step50_200k.mac. Для эффективности хватает
+# отсчётов в пике, для отклика нужны отсчёты В КАЖДОМ канале континуума. При
+# 2e5 на элемент разрешения приходилось 10-65 отсчётов, то есть 12-30 % шума
+# на элемент. Пятикратный запас берётся ровно под названный бюджет времени.
+#
+# Постановка узел в узел повторяет curve_point_end10cm.mac; отличается только
+# сетка и число первичных.
+#
+# ВАЖНО: файл в UTF-8 БЕЗ BOM.
+/run/initialize
+/control/verbose 0
+/run/verbose 0
+/gps/particle gamma
+/gps/pos/type Point
+/gps/pos/centre 0 0 132.6 mm
+/gps/ang/type iso
+/gps/ang/maxtheta 35 deg
+/gps/energy 30 keV
+/asn16/outFile spectra_resp50/end10cm_E0030.0.csv
+/run/beamOn 500000
+/gps/energy 80 keV
+/asn16/outFile spectra_resp50/end10cm_E0080.0.csv
+/run/beamOn 500000
+/gps/energy 130 keV
+/asn16/outFile spectra_resp50/end10cm_E0130.0.csv
+/run/beamOn 500000
+/gps/energy 180 keV
+/asn16/outFile spectra_resp50/end10cm_E0180.0.csv
+/run/beamOn 500000
+/gps/energy 230 keV
+/asn16/outFile spectra_resp50/end10cm_E0230.0.csv
+/run/beamOn 500000
+/gps/energy 280 keV
+/asn16/outFile spectra_resp50/end10cm_E0280.0.csv
+/run/beamOn 500000
+/gps/energy 330 keV
+/asn16/outFile spectra_resp50/end10cm_E0330.0.csv
+/run/beamOn 500000
+/gps/energy 380 keV
+/asn16/outFile spectra_resp50/end10cm_E0380.0.csv
+/run/beamOn 500000
+/gps/energy 430 keV
+/asn16/outFile spectra_resp50/end10cm_E0430.0.csv
+/run/beamOn 500000
+/gps/energy 480 keV
+/asn16/outFile spectra_resp50/end10cm_E0480.0.csv
+/run/beamOn 500000
+/gps/energy 530 keV
+/asn16/outFile spectra_resp50/end10cm_E0530.0.csv
+/run/beamOn 500000
+/gps/energy 580 keV
+/asn16/outFile spectra_resp50/end10cm_E0580.0.csv
+/run/beamOn 500000
+/gps/energy 630 keV
+/asn16/outFile spectra_resp50/end10cm_E0630.0.csv
+/run/beamOn 500000
+/gps/energy 680 keV
+/asn16/outFile spectra_resp50/end10cm_E0680.0.csv
+/run/beamOn 500000
+/gps/energy 730 keV
+/asn16/outFile spectra_resp50/end10cm_E0730.0.csv
+/run/beamOn 500000
+/gps/energy 780 keV
+/asn16/outFile spectra_resp50/end10cm_E0780.0.csv
+/run/beamOn 500000
+/gps/energy 830 keV
+/asn16/outFile spectra_resp50/end10cm_E0830.0.csv
+/run/beamOn 500000
+/gps/energy 880 keV
+/asn16/outFile spectra_resp50/end10cm_E0880.0.csv
+/run/beamOn 500000
+/gps/energy 930 keV
+/asn16/outFile spectra_resp50/end10cm_E0930.0.csv
+/run/beamOn 500000
+/gps/energy 980 keV
+/asn16/outFile spectra_resp50/end10cm_E0980.0.csv
+/run/beamOn 500000
+/gps/energy 1030 keV
+/asn16/outFile spectra_resp50/end10cm_E1030.0.csv
+/run/beamOn 500000
+/gps/energy 1080 keV
+/asn16/outFile spectra_resp50/end10cm_E1080.0.csv
+/run/beamOn 500000
+/gps/energy 1130 keV
+/asn16/outFile spectra_resp50/end10cm_E1130.0.csv
+/run/beamOn 500000
+/gps/energy 1180 keV
+/asn16/outFile spectra_resp50/end10cm_E1180.0.csv
+/run/beamOn 500000
+/gps/energy 1230 keV
+/asn16/outFile spectra_resp50/end10cm_E1230.0.csv
+/run/beamOn 500000
+/gps/energy 1280 keV
+/asn16/outFile spectra_resp50/end10cm_E1280.0.csv
+/run/beamOn 500000
+/gps/energy 1330 keV
+/asn16/outFile spectra_resp50/end10cm_E1330.0.csv
+/run/beamOn 500000
+/gps/energy 1380 keV
+/asn16/outFile spectra_resp50/end10cm_E1380.0.csv
+/run/beamOn 500000
+/gps/energy 1430 keV
+/asn16/outFile spectra_resp50/end10cm_E1430.0.csv
+/run/beamOn 500000
+/gps/energy 1480 keV
+/asn16/outFile spectra_resp50/end10cm_E1480.0.csv
+/run/beamOn 500000
+/gps/energy 1530 keV
+/asn16/outFile spectra_resp50/end10cm_E1530.0.csv
+/run/beamOn 500000
+/gps/energy 1580 keV
+/asn16/outFile spectra_resp50/end10cm_E1580.0.csv
+/run/beamOn 500000
+/gps/energy 1630 keV
+/asn16/outFile spectra_resp50/end10cm_E1630.0.csv
+/run/beamOn 500000
+/gps/energy 1680 keV
+/asn16/outFile spectra_resp50/end10cm_E1680.0.csv
+/run/beamOn 500000
+/gps/energy 1730 keV
+/asn16/outFile spectra_resp50/end10cm_E1730.0.csv
+/run/beamOn 500000
+/gps/energy 1780 keV
+/asn16/outFile spectra_resp50/end10cm_E1780.0.csv
+/run/beamOn 500000
+/gps/energy 1830 keV
+/asn16/outFile spectra_resp50/end10cm_E1830.0.csv
+/run/beamOn 500000
+/gps/energy 1880 keV
+/asn16/outFile spectra_resp50/end10cm_E1880.0.csv
+/run/beamOn 500000
+/gps/energy 1930 keV
+/asn16/outFile spectra_resp50/end10cm_E1930.0.csv
+/run/beamOn 500000
+/gps/energy 1980 keV
+/asn16/outFile spectra_resp50/end10cm_E1980.0.csv
+/run/beamOn 500000
+/gps/energy 2030 keV
+/asn16/outFile spectra_resp50/end10cm_E2030.0.csv
+/run/beamOn 500000
+/gps/energy 2080 keV
+/asn16/outFile spectra_resp50/end10cm_E2080.0.csv
+/run/beamOn 500000
+/gps/energy 2130 keV
+/asn16/outFile spectra_resp50/end10cm_E2130.0.csv
+/run/beamOn 500000
+/gps/energy 2180 keV
+/asn16/outFile spectra_resp50/end10cm_E2180.0.csv
+/run/beamOn 500000
+/gps/energy 2230 keV
+/asn16/outFile spectra_resp50/end10cm_E2230.0.csv
+/run/beamOn 500000
+/gps/energy 2280 keV
+/asn16/outFile spectra_resp50/end10cm_E2280.0.csv
+/run/beamOn 500000
+/gps/energy 2330 keV
+/asn16/outFile spectra_resp50/end10cm_E2330.0.csv
+/run/beamOn 500000
+/gps/energy 2380 keV
+/asn16/outFile spectra_resp50/end10cm_E2380.0.csv
+/run/beamOn 500000
+/gps/energy 2430 keV
+/asn16/outFile spectra_resp50/end10cm_E2430.0.csv
+/run/beamOn 500000
+/gps/energy 2480 keV
+/asn16/outFile spectra_resp50/end10cm_E2480.0.csv
+/run/beamOn 500000
+/gps/energy 2530 keV
+/asn16/outFile spectra_resp50/end10cm_E2530.0.csv
+/run/beamOn 500000
+/gps/energy 2580 keV
+/asn16/outFile spectra_resp50/end10cm_E2580.0.csv
+/run/beamOn 500000
+/gps/energy 2630 keV
+/asn16/outFile spectra_resp50/end10cm_E2630.0.csv
+/run/beamOn 500000
+/gps/energy 2680 keV
+/asn16/outFile spectra_resp50/end10cm_E2680.0.csv
+/run/beamOn 500000
+/gps/energy 2730 keV
+/asn16/outFile spectra_resp50/end10cm_E2730.0.csv
+/run/beamOn 500000
+/gps/energy 2780 keV
+/asn16/outFile spectra_resp50/end10cm_E2780.0.csv
+/run/beamOn 500000
+/gps/energy 2830 keV
+/asn16/outFile spectra_resp50/end10cm_E2830.0.csv
+/run/beamOn 500000
+/gps/energy 2880 keV
+/asn16/outFile spectra_resp50/end10cm_E2880.0.csv
+/run/beamOn 500000
+/gps/energy 2930 keV
+/asn16/outFile spectra_resp50/end10cm_E2930.0.csv
+/run/beamOn 500000
+/gps/energy 2980 keV
+/asn16/outFile spectra_resp50/end10cm_E2980.0.csv
+/run/beamOn 500000
+/gps/energy 3000 keV
+/asn16/outFile spectra_resp50/end10cm_E3000.0.csv
+/run/beamOn 500000

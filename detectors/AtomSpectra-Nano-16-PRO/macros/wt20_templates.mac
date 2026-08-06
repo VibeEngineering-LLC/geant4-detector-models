@@ -1,0 +1,82 @@
+# ШАБЛОНЫ ОТКЛИКА ПО НУКЛИДАМ РЯДА ТОРИЯ — постановка «прибор на пачке WT-20».
+#
+# Каждый прогон разыгрывает распады ОДНОГО нуклида, равномерно по объёму
+# стержней. Дочернее ядро в основном состоянии убивается (см. Stacking в
+# main.cc), поэтому спектр — отклик именно этого звена, а не всего ряда.
+# Возбуждённые ядра НЕ убиваются: их снятие и даёт гамма-каскад.
+#
+# Единица нормировки шаблона — ОДИН распад: спектр делится на N_primaries из
+# шапки файла. Дальше разложение измеренного спектра по шаблонам даёт
+# активности в беккерелях напрямую, без промежуточной «эффективности по линии».
+#
+# Порог «очень долгого распада» поднят: без него Th-232 (1,4·10^10 лет),
+# Ra-228 (5,75 года) и Th-228 (1,91 года) не распались бы вовсе, а прогон
+# отработал бы молча и записал пустой спектр.
+#
+# Область розыгрыша обязана накрывать стержни целиком: halfx = 4,5·шаг + радиус
+# = 4,5·6,15 + 1,60 = 29,28; ось стержней y = −22,00 (прибор стоит на ножках
+# 3,5 мм, поэтому пенал ниже, чем если бы он лежал дном); центр корпуса
+# z = −10,40. Числа печатает сама программа при построении пачки.
+#
+# ВАЖНО: файл в UTF-8 БЕЗ BOM.
+/asn16/wt20 on
+/run/initialize
+/control/verbose 0
+/run/verbose 0
+/process/had/rdm/thresholdForVeryLongDecayTime 1.0e+60 year
+/gps/particle ion
+/gps/energy 0 keV
+/gps/pos/type Volume
+/gps/pos/shape Para
+/gps/pos/halfx 29.28 mm
+/gps/pos/halfy 1.60 mm
+/gps/pos/halfz 87.5 mm
+/gps/pos/centre 0 -22.00 -10.40 mm
+/gps/pos/confine Rod
+/gps/ang/type iso
+
+# --- подряд Ra-228 -> Ac-228 -> Th-228 (верхняя часть ряда) ------------------
+/gps/ion 90 232
+/asn16/outFile wt20_templates/Th232.csv
+/run/beamOn 200000
+
+/gps/ion 88 228
+/asn16/outFile wt20_templates/Ra228.csv
+/run/beamOn 100000
+
+/gps/ion 89 228
+/asn16/outFile wt20_templates/Ac228.csv
+/run/beamOn 400000
+
+/gps/ion 90 228
+/asn16/outFile wt20_templates/Th228.csv
+/run/beamOn 200000
+
+# --- подряд Ra-224 -> Rn-220 -> Po-216 -> Pb-212 -> Bi-212 -> Tl-208 --------
+/gps/ion 88 224
+/asn16/outFile wt20_templates/Ra224.csv
+/run/beamOn 200000
+
+/gps/ion 86 220
+/asn16/outFile wt20_templates/Rn220.csv
+/run/beamOn 100000
+
+/gps/ion 84 216
+/asn16/outFile wt20_templates/Po216.csv
+/run/beamOn 50000
+
+/gps/ion 82 212
+/asn16/outFile wt20_templates/Pb212.csv
+/run/beamOn 400000
+
+/gps/ion 83 212
+/asn16/outFile wt20_templates/Bi212.csv
+/run/beamOn 400000
+
+/gps/ion 81 208
+/asn16/outFile wt20_templates/Tl208.csv
+/run/beamOn 400000
+
+/gps/ion 84 212
+/asn16/outFile wt20_templates/Po212.csv
+/run/beamOn 50000

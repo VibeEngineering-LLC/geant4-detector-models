@@ -1,0 +1,84 @@
+# -*- coding: utf-8 -*-
+"""Сборка интерактивного отчёта по замеру WT-20 в одну самодостаточную страницу.
+
+Страница НЕ содержит чисел, набранных руками: всё, что в ней показано, читается
+из файлов расчёта (`calibration_check.csv`, `unfold_activities.csv`,
+`line_activities.csv`, `unfold_spectrum.csv`) и шапок спектров Geant4. Правка
+результата — это перезапуск расчёта и пересборка страницы, а не правка текста.
+
+    python analysis/wt20_report.py <каталог расчёта> <каталог шаблонов> [выход.html]
+"""
+import csv
+import io
+import json
+import os
+import sys
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+def read_csv(path):
+    if not os.path.exists(path):
+        return []
+    with io.open(path, encoding="utf-8") as f:
+        return [r for r in csv.reader(f) if r and not r[0].startswith("#")]
+
+
+def read_head(path):
+    head = {}
+    if not os.path.exists(path):
+        return head
+    for ln in io.open(path, encoding="utf-8"):
+        if not ln.startswith("#"):
+            break
+        if "=" in ln:
+            k, v = ln.lstrip("# ").split("=", 1)
+            head[k.strip()] = v.strip()
+    return head
+
+
+def load_spectrum(path, step=6):
+    """Спектр разложения. Прореживается: странице хватает шага 12 кэВ."""
+    rows = read_csv(path)
+    if not rows:
+        return {}, []
+    names = rows[0]
+    data = [[float(v) for v in r] for r in rows[1:]]
+    out = []
+    for i in range(0, len(data) - step + 1, step):
+        block = data[i:i + step]
+        agg = [sum(r[j] for r in block) for j in range(len(names))]
+        agg[0] = sum(r[0] for r in block) / len(block)
+        out.append([round(v, 4) for v in agg])
+    return names, out
+
+
+def ru(x, nd=1):
+    return ("%.*f" % (nd, x)).replace(".", ",")
+
+
+def main():
+    if len(sys.argv) < 3:
+        raise SystemExit(__doc__)
+    d, tdir = sys.argv[1], sys.argv[2]
+    out = sys.argv[3] if len(sys.argv) > 3 else os.path.join(d, "wt20.html")
+
+    names, spec = load_spectrum(os.path.join(d, "unfold_spectrum.csv"))
+    acts = read_csv(os.path.join(d, "unfold_activities.csv"))
+    lines = read_csv(os.path.join(d, "line_activities.csv"))
+    cal = read_csv(os.path.join(d, "calibration_check.csv"))
+    head = read_head(os.path.join(tdir, "Tl208.csv"))
+
+    payload = dict(names=names, spec=spec, acts=acts, lines=lines, cal=cal,
+                   head=head)
+    tpl = io.open(os.path.join(_HERE, "wt20_report_template.html"),
+                  encoding="utf-8").read()
+    html = tpl.replace("/*__DATA__*/", json.dumps(payload, ensure_ascii=False))
+    os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
+    io.open(out, "w", encoding="utf-8").write(html)
+    print("записано: %s (%d КБ)" % (out, len(html) // 1024))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -32,6 +32,7 @@
 #include "ASN16Detector.hh"
 
 #include "G4Box.hh"
+#include "G4Tubs.hh"
 #include "G4LogicalVolume.hh"
 #include "G4Material.hh"
 #include "G4NistManager.hh"
@@ -92,6 +93,10 @@ void ASN16Detector::DefineMaterials() {
 // Начало координат — центр кристалла, поэтому все выводится от его габаритов.
 double ASN16Detector::CrystalFrontZ() const { return +0.5 * fGeom.cryZ; }
 double ASN16Detector::CrystalTopY() const { return +0.5 * fGeom.cryY; }
+
+double ASN16Detector::BottomFaceY() const {
+  return WorkFaceY() - fGeom.bodyY;
+}
 
 double ASN16Detector::FrontFaceZ() const {
   // обёртка (ПТФЭ + фольга) упёрта в крышку, крышка — в торец корпуса
@@ -221,8 +226,155 @@ G4VPhysicalVolume* ASN16Detector::Construct() {
   BoxAt("SiPM", -xCry, xCry, yCryB, yCryT, zCryB, zSipmB,
         Mat(g.matSipm), cavLV, cavC, G4Colour(0.29, 0.44, 0.65));
 
+  // --- ИСТОЧНИК: пачка электродов WT-20 под прибором -----------------------
+  // Строится только по команде /asn16/wt20 on. Прибор лежит на пенале ДНОМ
+  // (сторона платы), поэтому пачка стоит по −Y, а не по +Z, как точечный
+  // источник опорного замера. Ослабление на пути: стенка пенала, дно корпуса
+  // 1,50 мм Al, плата 1,60 мм — и только затем кристалл. Окна фрезеровки на
+  // этом пути НЕТ: оно в передней ТОРЦЕВОЙ крышке.
+  fPackW = 0.0;
+  if (g.wt20 && g.wt20N > 0) {
+    G4Material* wt20 = MakeWT20();
+    const double r = 0.5 * g.wt20D;
+    const double halfSpan = 0.5 * (g.wt20N - 1) * g.wt20Pitch;   // до центров
+    // Прибор стоит на ЧЕТЫРЁХ НОЖКАХ, а не лежит дном: между дном корпуса и
+    // крышкой пенала остаётся воздух высотой feetH (ОПЕРАТОР, 06.08.2026).
+    const double yTopFace = BottomFaceY() - g.feetH;
+    const double yInT = yTopFace - g.wt20Wall;      // внутренняя грань крышки
+    const double yRod = yInT - g.wt20Gap - r;       // ось стержней
+    const double yInB = yRod - r - g.wt20Gap;
+    const double yOutB = yInB - g.wt20Wall;
+    // Пачка центрирована под КОРПУСОМ («вдоль электродов, по центру»), а не
+    // под кристаллом: кристалл упёрт в передний торец, и центр корпуса от него
+    // смещён. Опорой служит то, на чём прибор лежит.
+    const double zMid = 0.5 * (zBodyF + zBodyB);
+    const double xHalfIn = halfSpan + r + g.wt20Gap;
+    const double zHalfIn = 0.5 * g.wt20L + g.wt20Gap;
+
+    auto* caseLV = BoxAt("Case", -(xHalfIn + g.wt20Wall), xHalfIn + g.wt20Wall,
+                         yOutB, yTopFace,
+                         zMid - (zHalfIn + g.wt20Wall),
+                         zMid + (zHalfIn + g.wt20Wall),
+                         Mat(g.matCase), worldLV, w0,
+                         G4Colour(0.35, 0.55, 0.85), false);
+    const G4ThreeVector caseC(0, 0.5 * (yOutB + yTopFace) * mm, zMid * mm);
+    auto* airLV = BoxAt("CaseAir", -xHalfIn, xHalfIn, yInB, yInT,
+                        zMid - zHalfIn, zMid + zHalfIn,
+                        Mat("G4_AIR"), caseLV, caseC,
+                        G4Colour(0.9, 0.9, 0.9), false);
+    const G4ThreeVector airC(0, 0.5 * (yInB + yInT) * mm, zMid * mm);
+
+    // Все стержни носят ОДНО имя «Rod»: розыгрыш источника задаётся командой
+    // /gps/pos/confine Rod, и она сравнивает ИМЯ объёма в точке — значит одна
+    // команда покрывает всю пачку. Разные имена потребовали бы десяти
+    // источников GPS с ручными весами.
+    auto* rodS = new G4Tubs("Rod", 0, r * mm, 0.5 * g.wt20L * mm, 0, 360 * deg);
+    auto* rodLV = new G4LogicalVolume(rodS, wt20, "Rod");
+    auto* rva = new G4VisAttributes(G4Colour(0.75, 0.20, 0.20));
+    rva->SetForceSolid(true);
+    rodLV->SetVisAttributes(rva);
+    for (int i = 0; i < g.wt20N; ++i) {
+      const double x = -halfSpan + i * g.wt20Pitch;
+      new G4PVPlacement(nullptr,
+                        G4ThreeVector(x * mm, yRod * mm, zMid * mm) - airC,
+                        rodLV, "Rod", airLV, false, i, true);
+    }
+    // Единица массы здесь пишется как `gram`, а не `g`: имя `g` в этой функции
+    // занято ссылкой на геометрию, и `g/cm3` молча означало бы не то.
+    const double vRod = 3.14159265358979 * r * r * g.wt20L / 1000.0;   // см³
+    const double rhoRod = wt20->GetDensity() / (gram / cm3);
+    fPackW = g.wt20N * vRod * rhoRod;
+    fPackYRod = yRod;
+    std::printf("--- ПАЧКА WT-20 ---\n");
+    std::printf("  %d стержней %.2f x %.1f мм, шаг %.2f мм\n",
+                g.wt20N, g.wt20D, g.wt20L, g.wt20Pitch);
+    std::printf("  сплав %.3f г/см3 (W + %.1f %% масс. ThO2), объём пачки "
+                "%.4f см3, масса %.2f г\n",
+                rhoRod, g.wt20ThO2, g.wt20N * vRod, fPackW);
+    std::printf("  ось стержней y = %+.2f мм, дно корпуса y = %+.2f мм, "
+                "просвет %.2f мм\n", yRod, yTopFace, yTopFace - yRod - r);
+    std::printf("  на пути от стержня до кристалла: пенал %.2f мм %s, дно "
+                "корпуса %.2f мм %s, плата %.2f мм %s\n",
+                g.wt20Wall, g.matCase.c_str(), g.wBot, g.matBody.c_str(),
+                g.pcbT, g.matPcb.c_str());
+
+    // --- ножки прибора ------------------------------------------------------
+    // Четыре пуговички по углам корпуса. На ослабление в пучке они не влияют
+    // (стоят по углам, кристалл над серединой), но ПОДНИМАЮТ прибор — а это
+    // прямо входит в телесный угол.
+    {
+      G4Material* rub = Mat(g.matFeet);
+      if (!rub) rub = Mat(g.matCase);          // если марки нет в базе NIST
+      const double fx = 0.5 * g.bodyX - g.feetInset - 0.5 * g.feetXY;
+      const double fz = zMid + 0.5 * g.bodyZ - g.feetInset - 0.5 * g.feetXY;
+      const double fz2 = zMid - 0.5 * g.bodyZ + g.feetInset + 0.5 * g.feetXY;
+      for (int sx = -1; sx <= 1; sx += 2)
+        for (int iz = 0; iz < 2; ++iz) {
+          const double zc = iz ? fz : fz2;
+          BoxAt("Foot", sx * fx - 0.5 * g.feetXY, sx * fx + 0.5 * g.feetXY,
+                yTopFace, yTopFace + g.feetH,
+                zc - 0.5 * g.feetXY, zc + 0.5 * g.feetXY,
+                rub, worldLV, w0, G4Colour(0.25, 0.25, 0.28));
+        }
+      std::printf("  НОЖКИ: 4 x %.1f x %.1f мм, высота %.2f мм (%s) — прибор "
+                  "поднят над пеналом\n", g.feetXY, g.feetXY, g.feetH,
+                  rub ? rub->GetName().c_str() : "?");
+    }
+
+    // --- столешница под пеналом ------------------------------------------
+    if (g.table) {
+      G4Material* wood = G4Material::GetMaterial("Table", false);
+      if (!wood)
+        wood = G4NistManager::Instance()->BuildMaterialWithNewDensity(
+            "Table", "G4_CELLULOSE_BUTYRATE", g.tableRho * gram / cm3);
+      const double yT = yOutB - g.tableGap;
+      BoxAt("Table", -0.5 * g.tableXY, 0.5 * g.tableXY, yT - g.tableT, yT,
+            zMid - 0.5 * g.tableXY, zMid + 0.5 * g.tableXY,
+            wood, worldLV, w0, G4Colour(0.55, 0.40, 0.25), false);
+      std::printf("  СТОЛ: %.0f мм %s, плита %.0f x %.0f мм, верх y = %+.2f\n",
+                  g.tableT, "целлюлоза (замена дерева)", g.tableXY, g.tableXY,
+                  yT);
+    }
+  }
+
   return world;
 }
+
+// ---------------------------------------------------------------------------
+// Сплав электрода WT-20: вольфрам с 2 % масс. диоксида тория. Плотность НЕ
+// взята из таблицы, а посчитана по правилу смеси из плотностей компонентов
+// базы NIST: 1/rho = w1/rho1 + w2/rho2. Реальный спечённый пруток может быть
+// плотнее или рыхлее — это допущение, и оно печатается при каждом запуске.
+G4Material* ASN16Detector::MakeWT20() {
+  if (auto* have = G4Material::GetMaterial("WT20", false)) return have;
+  auto* nist = G4NistManager::Instance();
+  G4Material* w = nist->FindOrBuildMaterial("G4_W");
+  if (!w) {
+    G4Exception("ASN16Detector::MakeWT20", "ASN16_MAT", FatalException,
+                "в базе NIST нет G4_W");
+    return nullptr;
+  }
+  // Диоксид тория собирается ИЗ ЭЛЕМЕНТОВ: в базе NIST его нет (есть оксид
+  // урана и диоксид плутония, тория — нет). Стехиометрия ThO2 задана числом
+  // атомов, а не долями массы: доли пришлось бы считать самому, и ошибка в
+  // них выглядела бы как верный материал.
+  G4Material* tho2 = G4Material::GetMaterial("ThO2", false);
+  if (!tho2) {
+    tho2 = new G4Material("ThO2", fGeom.rhoThO2 * gram / cm3, 2);
+    tho2->AddElement(nist->FindOrBuildElement("Th"), 1);
+    tho2->AddElement(nist->FindOrBuildElement("O"), 2);
+  }
+  const double f = fGeom.wt20ThO2 / 100.0;
+  const double rw = w->GetDensity() / (gram / cm3);
+  const double rt = tho2->GetDensity() / (gram / cm3);
+  const double rho = 1.0 / ((1.0 - f) / rw + f / rt);
+  auto* m = new G4Material("WT20", rho * gram / cm3, 2);
+  m->AddMaterial(w, 1.0 - f);
+  m->AddMaterial(tho2, f);
+  return m;
+}
+
+double ASN16Detector::PackMassG() const { return fPackW; }
 
 // ---------------------------------------------------------------------------
 void ASN16Detector::ReportPlanes() const {

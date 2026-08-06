@@ -1,0 +1,47 @@
+# ТО ЖЕ, ЧТО wt20_templates.mac, НО СО СТОЛЕШНИЦЕЙ ПОД ПЕНАЛОМ.
+#
+# Второе плечо сравнения. Проверяемая гипотеза: измеренный спектр мягче
+# модельного (избыток ниже 400 кэВ при недостатке в жёстком континууме), и
+# первый кандидат — обратное рассеяние от того, на чём лежит пачка. В модели
+# без окружения такого канала нет вовсе.
+#
+# Оба плеча обязаны идти от ОДНОЙ ревизии исходников: иначе разность двух
+# наборов шаблонов нельзя приписать одной только столешнице.
+#
+# Считаются только четыре звена, дающие сигнал (Ac-228, Pb-212, Bi-212,
+# Tl-208): у остальных в первом плече вышло от нуля до сотни событий на
+# 200 тыс. розыгрышей, и в разности они не видны.
+#
+# ВАЖНО: файл в UTF-8 БЕЗ BOM.
+/asn16/wt20 on
+/asn16/table on
+/run/initialize
+/control/verbose 0
+/run/verbose 0
+/process/had/rdm/thresholdForVeryLongDecayTime 1.0e+60 year
+/gps/particle ion
+/gps/energy 0 keV
+/gps/pos/type Volume
+/gps/pos/shape Para
+/gps/pos/halfx 29.28 mm
+/gps/pos/halfy 1.60 mm
+/gps/pos/halfz 87.5 mm
+/gps/pos/centre 0 -22.00 -10.40 mm
+/gps/pos/confine Rod
+/gps/ang/type iso
+
+/gps/ion 89 228
+/asn16/outFile wt20_templates_table/Ac228.csv
+/run/beamOn 400000
+
+/gps/ion 82 212
+/asn16/outFile wt20_templates_table/Pb212.csv
+/run/beamOn 400000
+
+/gps/ion 83 212
+/asn16/outFile wt20_templates_table/Bi212.csv
+/run/beamOn 400000
+
+/gps/ion 81 208
+/asn16/outFile wt20_templates_table/Tl208.csv
+/run/beamOn 400000

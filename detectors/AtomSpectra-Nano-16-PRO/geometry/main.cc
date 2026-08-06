@@ -24,6 +24,8 @@
 
 #include "G4Event.hh"
 #include "G4Gamma.hh"
+#include "G4Ions.hh"
+#include "G4UserStackingAction.hh"
 #include "G4GeneralParticleSource.hh"
 #include "G4EmStandardPhysics_option4.hh"
 #include "G4DecayPhysics.hh"
@@ -139,14 +141,26 @@ static const char* const kChanName[kNChan] = {
 
 class RunAct : public G4UserRunAction {
 public:
-  // 1 кэВ на канал, потолок 3700 — как у Гамма-1С, чтобы верхние узлы сетки и
-  // сумм-пики не уезжали в канал переполнения. Шкала линейная и без уширения:
-  // приборное разрешение навешивается в постобработке.
-  static constexpr int kBins = 3700;
+  // 1 кэВ на канал. Потолок поднят 3700 -> 4200 (06.08.2026): при розыгрыше
+  // РАСПАДА в каскаде Tl-208 складываются 2614,5 + 583,2 + 510,8 + 277,4 =
+  // 3985,9 кэВ, и при потолке 3700 весь этот хвост уезжал бы в канал
+  // переполнения — то есть сумм-пики, ради которых каскад и считается,
+  // пропадали бы из спектра. Шкала линейная и без уширения: приборное
+  // разрешение навешивается в постобработке.
+  static constexpr int kBins = 4200;
   static constexpr double kBinKeV = 1.0;
 
   std::vector<long> fHist;
   std::vector<long> fEmit;   // гамма, ИСПУЩЕННЫЕ при распаде: выход линии
+  // ВКЛАД БЕТЫ. Отдельная гистограмма событий, в которых в кристалл ВОШЛА
+  // заряженная частица извне (электрон или позитрон, рождённый не в
+  // кристалле). Ответ «доходит ли бета до кристалла» даёт прогон, а не
+  // рассуждение о пробеге: путь от стержня до кристалла складывается из акрила
+  // пенала, дна корпуса и платы, и считать его на бумаге значит повторить
+  // модель. Гистограмма ведётся отдельно от каналов, чтобы не менять правило
+  // приоритета, по которому уже посчитано разложение отклика.
+  std::vector<long> fBeta;
+  long fBetaEvents = 0;
   // Разложение отклика по каналам. Канал ставится В МОМЕНТ СОБЫТИЯ по истории
   // процессов: из готового спектра его восстановить нельзя, форма к тому
   // времени уже сложена. Каналы взаимоисключающие и в сумме дают fHist —
@@ -161,12 +175,14 @@ public:
   ASN16Detector* fDet = nullptr;
   G4String fOut = "spectrum.csv";
 
-  RunAct() : fHist(kBins + 1, 0), fEmit(kBins + 1, 0),
+  RunAct() : fHist(kBins + 1, 0), fEmit(kBins + 1, 0), fBeta(kBins + 1, 0),
              fChan(kNChan, std::vector<long>(kBins + 1, 0)) {}
 
   void BeginOfRunAction(const G4Run*) override {
     std::fill(fHist.begin(), fHist.end(), 0L);
     std::fill(fEmit.begin(), fEmit.end(), 0L);
+    std::fill(fBeta.begin(), fBeta.end(), 0L);
+    fBetaEvents = 0;
     for (auto& c : fChan) std::fill(c.begin(), c.end(), 0L);
     fWithSignal = 0;
     fSumEprim = 0;
@@ -182,13 +198,14 @@ public:
 
   void FillPrimary(double eprim) { fSumEprim += eprim; }
 
-  void Fill(double edepKeV, int chan = -1) {
+  void Fill(double edepKeV, int chan = -1, bool betaIn = false) {
     if (edepKeV <= 0) return;
     ++fWithSignal;
     int b = static_cast<int>(edepKeV / kBinKeV);
     if (b > kBins) b = kBins;
     ++fHist[b];
     if (chan >= 0 && chan < kNChan) ++fChan[chan][b];
+    if (betaIn) { ++fBetaEvents; ++fBeta[b]; }
   }
 
   void EndOfRunAction(const G4Run* run) override {
@@ -247,12 +264,27 @@ public:
       std::fprintf(f, "# cap_in_beam_mm = %.2f  (алюминий крышки в пучке)\n",
                    fDet->fGeom.capWindow ? fDet->fGeom.wCapWin
                                          : fDet->fGeom.wCap);
+      // Источник — в шапку наравне с детектором: шаблон нуклида без геометрии
+      // источника величины не задаёт, а имя каталога переживает любую путаницу
+      // с копированием.
+      std::fprintf(f, "# wt20_pack = %s\n", fDet->fGeom.wt20 ? "on" : "off");
+      if (fDet->fGeom.wt20) {
+        const Nano16Geom& gp = fDet->fGeom;
+        std::fprintf(f, "# wt20_rods = %d x %.2f x %.1f mm, pitch %.2f mm\n",
+                     gp.wt20N, gp.wt20D, gp.wt20L, gp.wt20Pitch);
+        std::fprintf(f, "# wt20_mass_g = %.2f  (вольфрамовый сплав, %.1f %% ThO2)\n",
+                     fDet->PackMassG(), gp.wt20ThO2);
+        std::fprintf(f, "# bottom_face_y_mm = %.3f  (дно корпуса — прибор лежит "
+                        "на пенале)\n", fDet->BottomFaceY());
+      }
     }
     std::fprintf(f, "# solid_angle_frac = %.8f\n", fSolidAngleFrac);
     std::fprintf(f, "# particle = %s\n", fPart.c_str());
     std::fprintf(f, "# E_prim_keV = %.4f\n", fSumEprim / N);
     std::fprintf(f, "# N_primaries = %ld\n", N);
     std::fprintf(f, "# N_with_signal = %ld\n", fWithSignal);
+    std::fprintf(f, "# N_charged_entered = %ld  (событий, где в кристалл вошла "
+                    "заряженная частица извне)\n", fBetaEvents);
     std::fprintf(f, "# resolving_time_ns = %.0f\n", kResolvingTimeNs);
     std::fprintf(f, "# bin_keV = %.3f  (последний канал = переполнение)\n",
                  kBinKeV);
@@ -307,6 +339,33 @@ public:
                << " — правило приоритета неполно" << G4endl;
     }
 
+    // --- вклад беты, отдельным файлом ---------------------------------------
+    if (fBetaEvents > 0) {
+      G4String bn = fOut;
+      const size_t dot = bn.rfind('.');
+      bn = (dot == G4String::npos ? bn : bn.substr(0, dot)) + "_beta.csv";
+      FILE* g = std::fopen(bn.c_str(), "w");
+      if (g) {
+        std::fprintf(g, "# события, в которых в кристалл вошла заряженная "
+                        "частица извне (бета и вторичные электроны)\n");
+        std::fprintf(g, "# src_sha1 = %s\n", ASN16_SRC_SHA1);
+        std::fprintf(g, "# N_primaries = %ld\n", N);
+        std::fprintf(g, "# N_with_signal = %ld\n", fWithSignal);
+        std::fprintf(g, "# N_charged_entered = %ld\n", fBetaEvents);
+        std::fprintf(g, "# bin_keV = %.3f\n", kBinKeV);
+        std::fprintf(g, "E_keV,counts_total,counts_charged_in\n");
+        for (int i = 0; i <= kBins; ++i)
+          if (fHist[i] || fBeta[i])
+            std::fprintf(g, "%.1f,%ld,%ld\n", (i + 0.5) * kBinKeV, fHist[i],
+                         fBeta[i]);
+        std::fclose(g);
+      }
+      G4cout << "БЕТА: заряженная частица вошла в кристалл в " << fBetaEvents
+             << " событиях из " << fWithSignal << " со сигналом ("
+             << 100.0 * fBetaEvents / std::max(1L, fWithSignal) << " %)"
+             << G4endl;
+    }
+
     long emitted = 0;
     for (long c : fEmit) emitted += c;
     if (emitted > 0) {
@@ -353,12 +412,14 @@ public:
   double fEBremEsc = 0;    // энергия вылетевшего тормозного, кэВ
   double fEXrayEsc = 0;    // энергия вылетевших прочих вторичных гамма, кэВ
   bool fPrimEsc = false;   // сам первичный квант вышел из кристалла
+  bool fChargedIn = false; // в кристалл ВОШЛА заряженная частица извне
 
   explicit EventAct(RunAct* r) : fRun(r) {}
   void BeginOfEventAction(const G4Event*) override {
     fDep.clear();
     fFirst = 0; fHadRayl = false; fNCompt = 0; fHadConv = false;
     fNAnnihEsc = 0; fEBremEsc = 0; fEXrayEsc = 0; fPrimEsc = false;
+    fChargedIn = false;
   }
 
   // Канал по правилу приоритета (см. enum Chan). Возвращает индекс канала.
@@ -396,13 +457,16 @@ public:
     double sum = fDep[0].second, t0 = fDep[0].first;
     for (size_t i = 1; i < fDep.size(); ++i) {
       if (fDep[i].first - t0 > kResolvingTimeNs) {
-        fRun->Fill(sum, ch);
+        fRun->Fill(sum, ch, fChargedIn);
         sum = 0;
       }
       t0 = fDep[i].first;
       sum += fDep[i].second;
     }
-    fRun->Fill(sum, ch);
+    // Признак «вошла заряженная» — на СОБЫТИЕ, а не на срабатывание: если
+    // событие распалось на несколько срабатываний, помечаются все. Огрубление
+    // объявлено; при розыгрыше одиночного распада таких событий единицы.
+    fRun->Fill(sum, ch, fChargedIn);
   }
 };
 
@@ -423,6 +487,20 @@ public:
     const bool inCry = h && fDet &&
                        h->GetLogicalVolume() == fDet->fCrystalLV;
     if (!inCry) return;
+
+    // --- ВХОД ЗАРЯЖЕННОЙ ЧАСТИЦЫ ИЗВНЕ --------------------------------------
+    // Признак ставится по вершине трека: частица рождена НЕ в кристалле и
+    // пересекла его границу. Так отделяется бета из источника (и вторичный
+    // электрон, выбитый ею в корпусе) от электронов, рождённых гамма-квантом
+    // уже внутри кристалла, — иначе «вклад беты» получился бы равным почти
+    // всему спектру, потому что энергию в CsI в любом случае несёт электрон.
+    {
+      const G4Track* t0 = s->GetTrack();
+      const double q = t0->GetDefinition()->GetPDGCharge();
+      if (q != 0.0 && pre->GetStepStatus() == fGeomBoundary &&
+          t0->GetLogicalVolumeAtVertex() != fDet->fCrystalLV)
+        fEvt->fChargedIn = true;
+    }
 
     // --- пометка канала: что произошло с квантом ВНУТРИ кристалла ---
     const G4Track* trk = s->GetTrack();
@@ -489,12 +567,38 @@ public:
   }
 };
 
+// ОДНО ЗВЕНО РЯДА НА ПРОГОН. Шаблон отклика строится ОТДЕЛЬНО для каждого
+// нуклида цепочки, поэтому розыгрыш обязан остановиться на первом распаде:
+// иначе прогон «Pb-212» дал бы заодно спектр Bi-212 и Tl-208, и разложение
+// измеренного спектра по нуклидам потеряло бы смысл.
+//
+// Убивается ДОЧЕРНЕЕ ЯДРО В ОСНОВНОМ СОСТОЯНИИ. Ядро в ВОЗБУЖДЁННОМ состоянии
+// не трогается: именно его снятие даёт гамма-каскад распада, ради которого всё
+// и считается. Убить всё подряд по признаку «ион» значило бы получить пустой
+// спектр при исправном на вид прогоне — отказ того же класса, что уже ловили
+// в этом дереве дважды.
+//
+// Проверка встроена: файл <спектр>_emit.csv считает ИСПУЩЕННЫЕ кванты на
+// распад, и их выходы сверяются с библиотечными интенсивностями линий.
+class Stacking : public G4UserStackingAction {
+public:
+  long fKilled = 0;
+  G4ClassificationOfNewTrack ClassifyNewTrack(const G4Track* t) override {
+    if (t->GetParentID() == 0) return fUrgent;
+    const auto* ion = dynamic_cast<const G4Ions*>(t->GetDefinition());
+    if (ion && ion->GetExcitationEnergy() <= 0.0) { ++fKilled; return fKill; }
+    return fUrgent;
+  }
+};
+
 class OutMessenger : public G4UImessenger {
   RunAct* fRun;
   ASN16Detector* fDet;
   G4UIdirectory* fDir;
   G4UIcmdWithAString* fCmd;
   G4UIcmdWithAString* fWinCmd;
+  G4UIcmdWithAString* fPackCmd;
+  G4UIcmdWithAString* fTabCmd;
 public:
   OutMessenger(RunAct* r, ASN16Detector* d) : fRun(r), fDet(d) {
     fDir = new G4UIdirectory("/asn16/");
@@ -514,12 +618,50 @@ public:
     // (rm->Initialize() стоит в main до ApplyCommand), поэтому команда сама
     // просит перестроить её — см. SetNewValue.
     fWinCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+    // ПАЧКА WT-20 ПОД ПРИБОРОМ. Тем же приёмом, что фрезеровка: геометрия
+    // источника — параметр одной ревизии, а не вторая сборка. Иначе спектр «с
+    // пачкой» и опорная кривая «без пачки» шли бы от разных штампов и разность
+    // нельзя было бы приписать одному только источнику.
+    fPackCmd = new G4UIcmdWithAString("/asn16/wt20", this);
+    fPackCmd->SetGuidance("on|off — пачка электродов WT-20 под дном прибора");
+    fPackCmd->SetCandidates("on off");
+    fPackCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+    // Столешница под пачкой — отдельным переключателем: разность двух прогонов
+    // одной ревизии показывает вклад рассеяния от подложки и ничего больше.
+    fTabCmd = new G4UIcmdWithAString("/asn16/table", this);
+    fTabCmd->SetGuidance("on|off — столешница под пеналом (рассеиватель)");
+    fTabCmd->SetCandidates("on off");
+    fTabCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
   }
   ~OutMessenger() override {
-    delete fWinCmd; delete fCmd; delete fDir;
+    delete fTabCmd; delete fPackCmd; delete fWinCmd; delete fCmd; delete fDir;
   }
   void SetNewValue(G4UIcommand* c, G4String v) override {
     if (c == fCmd) { fRun->fOut = v; return; }
+    if (c == fTabCmd && fDet) {
+      const bool want = (v == "on");
+      if (want == fDet->fGeom.table) return;
+      fDet->fGeom.table = want;
+      if (auto* rm = G4RunManager::GetRunManager()) {
+        rm->ReinitializeGeometry(true);
+        rm->GeometryHasBeenModified();
+        std::printf("[table] столешница %s, геометрия перестроена\n",
+                    want ? "ПОСТРОЕНА" : "УБРАНА");
+      }
+      return;
+    }
+    if (c == fPackCmd && fDet) {
+      const bool want = (v == "on");
+      if (want == fDet->fGeom.wt20) return;
+      fDet->fGeom.wt20 = want;
+      if (auto* rm = G4RunManager::GetRunManager()) {
+        rm->ReinitializeGeometry(true);
+        rm->GeometryHasBeenModified();
+        std::printf("[wt20] пачка %s, геометрия перестроена\n",
+                    want ? "ПОСТРОЕНА" : "УБРАНА");
+      }
+      return;
+    }
     if (c != fWinCmd || !fDet) return;
     const bool want = (v == "on");
     if (want == fDet->fGeom.capWindow) return;
@@ -572,6 +714,7 @@ int main(int argc, char** argv) {
   det->ReportMasses();
   rm->SetUserAction(new Stepping(evtAct, det));
   rm->SetUserAction(new Tracking(runAct));
+  rm->SetUserAction(new Stacking());
 
   auto* ui = G4UImanager::GetUIpointer();
   int rc = 0;

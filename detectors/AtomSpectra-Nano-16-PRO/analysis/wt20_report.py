@@ -85,8 +85,19 @@ def main():
 
     ref = os.path.normpath(os.path.join(_HERE, "..", "reference"))
     draw = os.path.normpath(os.path.join(_HERE, "..", "drawings"))
+    # Прямая задача: источник по составу. Файлы не обязательны — страница
+    # собирается и без них, просто без соответствующего раздела.
+    def opt(name):
+        p = os.path.join(d, name)
+        return read_csv(p) if os.path.exists(p) else []
+
     payload = dict(names=names, spec=spec, acts=acts, lines=lines, cal=cal,
                    head=head,
+                   src_fwd=opt("wt20_source_forward.csv"),
+                   selfabs=opt("wt20_selfabsorption.csv"),
+                   scatter=opt("wt20_source_scatter.csv"),
+                   surflim=opt("wt20_surface_limit.csv"),
+                   winscan=opt("wt20_window_scan.csv"),
                    img_scan=data_uri(os.path.join(ref,
                                                   "wt20-pitch-scanline.jpg")),
                    img_setup=data_uri(os.path.join(draw,

@@ -187,6 +187,14 @@ public:
       std::fprintf(f, "# work_face_y_mm = %.3f  (наружная поверхность стенки)\n",
                    fDet->WorkFaceY());
       std::fprintf(f, "# crystal_top_y_mm = %.3f\n", fDet->CrystalTopY());
+      // Состояние фрезеровки — В ШАПКУ. Две кривые одной ревизии различаются
+      // только этим, а опираться на имя каталога нельзя: оно задаётся в
+      // макросе и переживает любую путаницу с копированием.
+      std::fprintf(f, "# cap_window = %s\n",
+                   fDet->fGeom.capWindow ? "on" : "off");
+      std::fprintf(f, "# cap_in_beam_mm = %.2f  (алюминий крышки в пучке)\n",
+                   fDet->fGeom.capWindow ? fDet->fGeom.wCapWin
+                                         : fDet->fGeom.wCap);
     }
     std::fprintf(f, "# solid_angle_frac = %.8f\n", fSolidAngleFrac);
     std::fprintf(f, "# particle = %s\n", fPart.c_str());
@@ -266,14 +274,19 @@ public:
 
 class Stepping : public G4UserSteppingAction {
   EventAct* fEvt;
-  const G4LogicalVolume* fCry;
+  const ASN16Detector* fDet;
 public:
-  Stepping(EventAct* ev, const G4LogicalVolume* c) : fEvt(ev), fCry(c) {}
+  // Держит ДЕТЕКТОР, а не указатель на его логический объём. Кэшированный
+  // указатель переживает перестройку геометрии (/asn16/capWindow), но после
+  // неё указывает на удалённый объём: сравнение не совпадает никогда, счёт
+  // выходит НУЛЕВЫМ, а прогон завершается успешно и пишет пустые спектры.
+  // Поймано прямым прогоном 06.08.2026: 0 событий против 504 на том же узле.
+  Stepping(EventAct* ev, const ASN16Detector* d) : fEvt(ev), fDet(d) {}
   void UserSteppingAction(const G4Step* s) override {
     const double e = s->GetTotalEnergyDeposit();
     if (e <= 0) return;
     auto* h = s->GetPreStepPoint()->GetTouchableHandle()->GetVolume();
-    if (h && h->GetLogicalVolume() == fCry)
+    if (h && fDet && h->GetLogicalVolume() == fDet->fCrystalLV)
       fEvt->fDep.emplace_back(s->GetPreStepPoint()->GetGlobalTime() / ns,
                               e / keV);
   }
@@ -295,18 +308,51 @@ public:
 
 class OutMessenger : public G4UImessenger {
   RunAct* fRun;
+  ASN16Detector* fDet;
   G4UIdirectory* fDir;
   G4UIcmdWithAString* fCmd;
+  G4UIcmdWithAString* fWinCmd;
 public:
-  explicit OutMessenger(RunAct* r) : fRun(r) {
+  OutMessenger(RunAct* r, ASN16Detector* d) : fRun(r), fDet(d) {
     fDir = new G4UIdirectory("/asn16/");
     fDir->SetGuidance("AtomSpectra Nano 16 PRO: управление выводом");
     fCmd = new G4UIcmdWithAString("/asn16/outFile", this);
     fCmd->SetGuidance("Файл CSV для спектра следующего прогона");
     fCmd->AvailableForStates(G4State_Idle, G4State_PreInit);
+    // ФРЕЗЕРОВКА КАК ПАРАМЕТР. Заведена командой, а не второй сборкой, чтобы
+    // кривая «с окном» и кривая «без окна» шли от ОДНОЙ ревизии исходников:
+    // иначе у них разные src_sha1 и разность двух кривых нельзя приписать
+    // одному только окну. Команда обязана стоять ДО /run/initialize.
+    fWinCmd = new G4UIcmdWithAString("/asn16/capWindow", this);
+    fWinCmd->SetGuidance("on|off — фрезеровка передней крышки напротив "
+                         "кристалла (off: сплошная крышка wCap)");
+    fWinCmd->SetCandidates("on off");
+    // Доступна и в Idle: геометрия к моменту чтения макроса уже построена
+    // (rm->Initialize() стоит в main до ApplyCommand), поэтому команда сама
+    // просит перестроить её — см. SetNewValue.
+    fWinCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
   }
-  ~OutMessenger() override { delete fCmd; delete fDir; }
-  void SetNewValue(G4UIcommand*, G4String v) override { fRun->fOut = v; }
+  ~OutMessenger() override {
+    delete fWinCmd; delete fCmd; delete fDir;
+  }
+  void SetNewValue(G4UIcommand* c, G4String v) override {
+    if (c == fCmd) { fRun->fOut = v; return; }
+    if (c != fWinCmd || !fDet) return;
+    const bool want = (v == "on");
+    if (want == fDet->fGeom.capWindow) return;
+    fDet->fGeom.capWindow = want;
+    // ГЕОМЕТРИЮ НАДО ПЕРЕСТРОИТЬ ЯВНО. Флага мало: Construct() к этому моменту
+    // уже отработал, и без ReinitializeGeometry прогон пошёл бы со СТАРОЙ
+    // геометрией, честно напечатав новое значение флага в шапку. Это ровно тот
+    // класс отказа, который здесь ловили дважды: число в шапке верное, а
+    // считано другое.
+    if (auto* rm = G4RunManager::GetRunManager()) {
+      rm->ReinitializeGeometry(true);
+      rm->GeometryHasBeenModified();
+      std::printf("[capWindow] фрезеровка %s, геометрия перестроена\n",
+                  want ? "ВКЛЮЧЕНА" : "ОТКЛЮЧЕНА");
+    }
+  }
 };
 
 int main(int argc, char** argv) {
@@ -336,12 +382,12 @@ int main(int argc, char** argv) {
   rm->SetUserAction(runAct);
   auto* evtAct = new EventAct(runAct);
   rm->SetUserAction(evtAct);
-  auto* mess = new OutMessenger(runAct);
+  auto* mess = new OutMessenger(runAct, det);
 
   rm->Initialize();
   det->ReportPlanes();
   det->ReportMasses();
-  rm->SetUserAction(new Stepping(evtAct, det->fCrystalLV));
+  rm->SetUserAction(new Stepping(evtAct, det));
   rm->SetUserAction(new Tracking(runAct));
 
   auto* ui = G4UImanager::GetUIpointer();

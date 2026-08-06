@@ -167,8 +167,29 @@ G4VPhysicalVolume* ASN16Detector::Construct() {
                            0.5 * (zBodyF + zBodyB) * mm);
 
   // --- торцевые крышки (ПЛАСТИК: подтверждён автором прибора 06.08.2026) ---
-  BoxAt("CapFront", -xCav, xCav, yCavB, yFoilT, zBodyF, zCapFi,
-        Mat(g.matCap), cavLV, cavC, G4Colour(0.30, 0.32, 0.34));
+  auto* capFrontLV = BoxAt("CapFront", -xCav, xCav, yCavB, yFoilT,
+                           zBodyF, zCapFi, Mat(g.matCap), cavLV, cavC,
+                           G4Colour(0.55, 0.60, 0.64));
+  // ВХОДНОЕ ОКНО: фрезеровка передней крышки до 0,60 мм напротив кристалла
+  // (ОПЕРАТОР, 06.08.2026). Сделана не булевой операцией, а вставкой
+  // ВОЗДУШНОГО КАРМАНА в тело крышки: результат тот же — в пучке остаётся
+  // g.wCapWin алюминия, — а тесселированных и булевых тел этот контур
+  // избегает намеренно.
+  // Карман примыкает к ВНУТРЕННЕЙ грани крышки; окно шире кристалла на
+  // g.capWinPad с каждой стороны и УЖЕ обёртки (20,00 x 17,00 против
+  // 20,20 x 17,20), поэтому обёртка упирается в ободок, а не проваливается
+  // в выборку.
+  if (g.capWindow) {
+  const double xWin = 0.5 * g.cryX + g.capWinPad;
+  const double yWinT = +0.5 * g.cryY + g.capWinPad;
+  const double yWinB = -0.5 * g.cryY - g.capWinPad;
+  const G4ThreeVector capFrontC(0, 0.5 * (yCavB + yFoilT) * mm,
+                                0.5 * (zBodyF + zCapFi) * mm);
+  BoxAt("CapWindow", -xWin, xWin, yWinB, yWinT,
+        zCapFi, zCapFi + (g.wCap - g.wCapWin),
+        Mat("G4_AIR"), capFrontLV, capFrontC, G4Colour(0.90, 0.95, 1.00),
+        false);
+  }
   BoxAt("CapBack", -xCav, xCav, yCavB, yFoilT, zCapBi, zBodyB,
         Mat(g.matCap), cavLV, cavC, G4Colour(0.30, 0.32, 0.34));
 
@@ -238,13 +259,25 @@ void ASN16Detector::ReportMasses() const {
   // стоит именно он, а до 06.08.2026 не печатался нигде. Порядок слоёв тот же
   // (ПТФЭ на кристалле, фольга на ПТФЭ), но снаружи вместо стенки 1,20 стоит
   // торцевая крышка.
-  const double stackEnd = gm.ptfe / 10.0 * rho("G4_TEFLON")
-                        + gm.alFoil / 10.0 * rho(gm.matBody)
-                        + gm.wCap / 10.0 * rho(gm.matCap);
-  std::printf("  ТОРЦЕВОЙ стек (в пучке)     %.6f г/см²\n", stackEnd);
+  const double stackWrap = gm.ptfe / 10.0 * rho("G4_TEFLON")
+                         + gm.alFoil / 10.0 * rho(gm.matBody);
+  const double stackWin = stackWrap + gm.wCapWin / 10.0 * rho(gm.matCap);
+  const double stackRim = stackWrap + gm.wCap / 10.0 * rho(gm.matCap);
+  if (gm.capWindow) {
+    std::printf("  ТОРЦЕВОЙ стек В ОКНЕ        %.6f г/см²  <- В ПУЧКЕ\n",
+                stackWin);
+    std::printf("  ТОРЦЕВОЙ стек вне окна      %.6f г/см²\n", stackRim);
+    std::printf("  окно фрезеровки  %.2f x %.2f мм, остаток крышки %.2f мм\n",
+                gm.cryX + 2 * gm.capWinPad, gm.cryY + 2 * gm.capWinPad,
+                gm.wCapWin);
+  } else {
+    std::printf("  ТОРЦЕВОЙ стек, крышка СПЛОШНАЯ  %.6f г/см²  <- В ПУЧКЕ\n",
+                stackRim);
+    std::printf("  ФРЕЗЕРОВКА ОТКЛЮЧЕНА (/asn16/capWindow off)\n");
+  }
   std::printf("--- ВЕЩЕСТВА-ЗАМЕНИТЕЛИ (не подтверждены источником) ---\n");
-  std::printf("  крышки: %s (металл; сплав не назван, оператор 06.08.2026)\n",
-              gm.matCap.c_str());
+  std::printf("  крышки: %s, фрезеровка до %.2f мм напротив кристалла\n",
+              gm.matCap.c_str(), gm.wCapWin);
   std::printf("  плата:  %s вместо FR4 (масса платы ЗАНИЖЕНА)\n",
               gm.matPcb.c_str());
   std::printf("  SiPM:   %s, голый кремний вместо сборки\n", gm.matSipm.c_str());

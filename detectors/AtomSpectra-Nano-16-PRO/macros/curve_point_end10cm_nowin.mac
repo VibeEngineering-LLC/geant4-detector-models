@@ -1,3 +1,8 @@
+# КОНТРОЛЬНАЯ кривая БЕЗ ФРЕЗЕРОВКИ: та же геометрия, но крышка сплошная
+# 1,50 мм (стек в пучке 0,6518 г/см² вместо 0,4089). Считается ТОЙ ЖЕ сборкой и
+# от ТОГО ЖЕ штампа исходников, что рабочая: иначе разность двух кривых нельзя
+# приписать одному только окну.
+#
 # Кривая эффективности: точечный источник на оси кристалла, 10 см от НАРУЖНОЙ
 # поверхности передней крышки (торец 18 x 15 мм). Диапазон 20-3000 кэВ —
 # задание оператора 06.08.2026: сначала «считаем от 30 кэв», затем узлы 20 и 25
@@ -25,6 +30,9 @@
 #
 # ВАЖНО: файл в UTF-8 БЕЗ BOM, иначе Geant4 не распознаёт первую команду и
 # обрывает макрос, завершаясь с кодом 0 и без единого файла.
+# ФРЕЗЕРОВКА ОТКЛЮЧЕНА: крышка сплошная 1,50 мм. Команда обязана стоять ДО
+# /run/initialize — геометрия строится в нём.
+/asn16/capWindow off
 /run/initialize
 /control/verbose 0
 /run/verbose 0
@@ -35,89 +43,89 @@
 /gps/ang/maxtheta 35 deg
 
 /gps/energy 20 keV
-/asn16/outFile spectra/end10cm_E0020.0.csv
+/asn16/outFile spectra_nowin/end10cm_E0020.0.csv
 /run/beamOn 10000000
 /gps/energy 25 keV
-/asn16/outFile spectra/end10cm_E0025.0.csv
+/asn16/outFile spectra_nowin/end10cm_E0025.0.csv
 /run/beamOn 10000000
 /gps/energy 30 keV
-/asn16/outFile spectra/end10cm_E0030.0.csv
+/asn16/outFile spectra_nowin/end10cm_E0030.0.csv
 /run/beamOn 10000000
 /gps/energy 35 keV
-/asn16/outFile spectra/end10cm_E0035.0.csv
+/asn16/outFile spectra_nowin/end10cm_E0035.0.csv
 /run/beamOn 10000000
 /gps/energy 40 keV
-/asn16/outFile spectra/end10cm_E0040.0.csv
+/asn16/outFile spectra_nowin/end10cm_E0040.0.csv
 /run/beamOn 10000000
 /gps/energy 50 keV
-/asn16/outFile spectra/end10cm_E0050.0.csv
+/asn16/outFile spectra_nowin/end10cm_E0050.0.csv
 /run/beamOn 10000000
 /gps/energy 59.541 keV
-/asn16/outFile spectra/end10cm_E0059.5.csv
+/asn16/outFile spectra_nowin/end10cm_E0059.5.csv
 /run/beamOn 10000000
 /gps/energy 80 keV
-/asn16/outFile spectra/end10cm_E0080.0.csv
+/asn16/outFile spectra_nowin/end10cm_E0080.0.csv
 /run/beamOn 10000000
 /gps/energy 100 keV
-/asn16/outFile spectra/end10cm_E0100.0.csv
+/asn16/outFile spectra_nowin/end10cm_E0100.0.csv
 /run/beamOn 10000000
 /gps/energy 122.061 keV
-/asn16/outFile spectra/end10cm_E0122.1.csv
+/asn16/outFile spectra_nowin/end10cm_E0122.1.csv
 /run/beamOn 10000000
 /gps/energy 150 keV
-/asn16/outFile spectra/end10cm_E0150.0.csv
+/asn16/outFile spectra_nowin/end10cm_E0150.0.csv
 /run/beamOn 10000000
 /gps/energy 200 keV
-/asn16/outFile spectra/end10cm_E0200.0.csv
+/asn16/outFile spectra_nowin/end10cm_E0200.0.csv
 /run/beamOn 10000000
 /gps/energy 250 keV
-/asn16/outFile spectra/end10cm_E0250.0.csv
+/asn16/outFile spectra_nowin/end10cm_E0250.0.csv
 /run/beamOn 10000000
 /gps/energy 300 keV
-/asn16/outFile spectra/end10cm_E0300.0.csv
+/asn16/outFile spectra_nowin/end10cm_E0300.0.csv
 /run/beamOn 10000000
 /gps/energy 400 keV
-/asn16/outFile spectra/end10cm_E0400.0.csv
+/asn16/outFile spectra_nowin/end10cm_E0400.0.csv
 /run/beamOn 10000000
 /gps/energy 500 keV
-/asn16/outFile spectra/end10cm_E0500.0.csv
+/asn16/outFile spectra_nowin/end10cm_E0500.0.csv
 /run/beamOn 10000000
 /gps/energy 600 keV
-/asn16/outFile spectra/end10cm_E0600.0.csv
+/asn16/outFile spectra_nowin/end10cm_E0600.0.csv
 /run/beamOn 10000000
 /gps/energy 661.657 keV
-/asn16/outFile spectra/end10cm_E0661.7.csv
+/asn16/outFile spectra_nowin/end10cm_E0661.7.csv
 /run/beamOn 10000000
 /gps/energy 800 keV
-/asn16/outFile spectra/end10cm_E0800.0.csv
+/asn16/outFile spectra_nowin/end10cm_E0800.0.csv
 /run/beamOn 10000000
 /gps/energy 1000 keV
-/asn16/outFile spectra/end10cm_E1000.0.csv
+/asn16/outFile spectra_nowin/end10cm_E1000.0.csv
 /run/beamOn 10000000
 /gps/energy 1173.228 keV
-/asn16/outFile spectra/end10cm_E1173.2.csv
+/asn16/outFile spectra_nowin/end10cm_E1173.2.csv
 /run/beamOn 10000000
 /gps/energy 1332.492 keV
-/asn16/outFile spectra/end10cm_E1332.5.csv
+/asn16/outFile spectra_nowin/end10cm_E1332.5.csv
 /run/beamOn 10000000
 /gps/energy 1500 keV
-/asn16/outFile spectra/end10cm_E1500.0.csv
+/asn16/outFile spectra_nowin/end10cm_E1500.0.csv
 /run/beamOn 10000000
 /gps/energy 1800 keV
-/asn16/outFile spectra/end10cm_E1800.0.csv
+/asn16/outFile spectra_nowin/end10cm_E1800.0.csv
 /run/beamOn 10000000
 /gps/energy 2100 keV
-/asn16/outFile spectra/end10cm_E2100.0.csv
+/asn16/outFile spectra_nowin/end10cm_E2100.0.csv
 /run/beamOn 10000000
 /gps/energy 2400 keV
-/asn16/outFile spectra/end10cm_E2400.0.csv
+/asn16/outFile spectra_nowin/end10cm_E2400.0.csv
 /run/beamOn 10000000
 /gps/energy 2614.511 keV
-/asn16/outFile spectra/end10cm_E2614.5.csv
+/asn16/outFile spectra_nowin/end10cm_E2614.5.csv
 /run/beamOn 10000000
 /gps/energy 2800 keV
-/asn16/outFile spectra/end10cm_E2800.0.csv
+/asn16/outFile spectra_nowin/end10cm_E2800.0.csv
 /run/beamOn 10000000
 /gps/energy 3000 keV
-/asn16/outFile spectra/end10cm_E3000.0.csv
+/asn16/outFile spectra_nowin/end10cm_E3000.0.csv
 /run/beamOn 10000000

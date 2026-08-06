@@ -15,7 +15,9 @@
   - SiPM подключён с торца, на границе кристалла и воздушной зоны, то есть на
     задней грани 18 × 15 мм; обёртки на этой грани нет (оптический контакт);
   - торцевые крышки — ПЛАСТИК типа ABS, не алюминий. Для мягкого края это
-    существенно: опорный замер Cs-137 снят через переднюю крышку.
+    существенно: опорный замер Cs-137 снят через переднюю крышку. Материал
+    подтверждён автором прибора 06.08.2026, толщина уточнена тогда же до
+    1,50 мм; длина кристалла тогда же исправлена 57 -> 60 мм.
 
 Оси (совпадают с геометрией Geant4), начало — центр кристалла:
   Z — вдоль корпуса (86 мм); +Z к переднему торцу (грань 18 × 15 мм) и к
@@ -25,33 +27,58 @@
       начала строился по модели, и два чертежа одного прибора смотрели в
       разные стороны;
   X — по ширине корпуса (42 мм);
-  Y — по высоте (25 мм); +Y к грани 18 × 57 мм под тонкой стенкой 1,20 мм.
+  Y — по высоте (25 мм); +Y к рабочей грани (18 мм на длину кристалла) под
+      тонкой стенкой 1,20 мм. Размеры читаются из ASN16Detector.hh.
 
     python analysis/draw_nano16.py
 """
 import os
+import re
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
-# --- параметры геометрии (мм) ------------------------------------------------
-# кристалл CsI(Tl): брусок, не цилиндр
-CRY_X, CRY_Y, CRY_Z = 18.00, 15.00, 57.00
+_HERE = os.path.dirname(os.path.abspath(__file__))
+HH = os.path.normpath(os.path.join(_HERE, "..", "geometry", "ASN16Detector.hh"))
+
+
+def geom_from_header(path):
+    """Размеры из Nano16Geom. -> dict имя->мм."""
+    src = open(path, encoding="utf-8").read()
+    out = {}
+    for m in re.finditer(r"^\s*double\s+(\w+)\s*=\s*([0-9.]+)\s*;", src,
+                         re.MULTILINE):
+        out[m.group(1)] = float(m.group(2))
+    need = ("cryX", "cryY", "cryZ", "ptfe", "alFoil", "bodyX", "bodyY",
+            "bodyZ", "wFront", "wBot", "wSide", "wCap", "pcbT", "sipmT")
+    miss = [k for k in need if k not in out]
+    if miss:
+        raise SystemExit("в %s не найдены поля: %s" % (path, ", ".join(miss)))
+    return out
+
+
+# --- параметры геометрии (мм), ЧИТАЮТСЯ из Nano16Geom ------------------------
+# Своих констант этот файл больше не держит: до 06.08.2026 он был ЧЕТВЁРТЫМ
+# зеркалом размеров, и правка cryZ 57 -> 60 разъехалась бы с ним молча —
+# ровно тот класс дефекта, который тут уже дважды ловили.
+_G = geom_from_header(HH)
+CRY_X, CRY_Y, CRY_Z = _G["cryX"], _G["cryY"], _G["cryZ"]
 RHO_CSI = 4.51
 # обёртка кристалла — на пяти гранях, кроме задней (там SiPM)
-PTFE, RHO_PTFE = 1.00, 2.20
-ALFOIL = 0.10
-RHO_AL = 2.70               # (*) сплав корпуса не назван
-SIPM_T = 1.50               # (*) толщина сборки SiPM данными не задана
-PCB_T = 1.60                # (*) толщина платы не измерена, типовая FR4
+PTFE, RHO_PTFE = _G["ptfe"], 2.20
+ALFOIL = _G["alFoil"]
+RHO_AL = 2.699              # (*) сплав корпуса не назван; ρ по базе NIST
+SIPM_T = _G["sipmT"]        # (*) толщина сборки SiPM данными не задана
+PCB_T = _G["pcbT"]          # (*) толщина платы не измерена, типовая FR4
 # корпус (экструзия линейки Nano, габарит Nano 16 PRO)
-BODY_X, BODY_Y, BODY_Z = 42.00, 25.00, 86.00
-W_FRONT = 1.20              # рабочая стенка над кристаллом (из чертежа профиля)
-W_SIDE = 1.95               # (*) перенос с Nano 5 PRO: (39,50 − 35,60) / 2
-W_BOT = 2.05                # (*) из выносок профиля
-W_CAP = 2.00                # (*) толщина торцевой крышки; материал — ABS
+BODY_X, BODY_Y, BODY_Z = _G["bodyX"], _G["bodyY"], _G["bodyZ"]
+W_FRONT = _G["wFront"]      # рабочая стенка над кристаллом (из чертежа профиля)
+W_SIDE = _G["wSide"]        # (*) перенос с Nano 5 PRO: (39,50 − 35,60) / 2
+W_BOT = _G["wBot"]          # (*) из выносок профиля
+W_CAP = _G["wCap"]          # толщина торцевой крышки, ОПЕРАТОР 06.08.2026;
+                            # материал — пластик (подтверждён автором прибора)
 
 # --- производные границы -----------------------------------------------------
 # Y: кристалл упёрт в переднюю стенку — воздушного зазора в лицевом стеке нет
@@ -157,7 +184,8 @@ rect(ax, zCapFin, zCapBin, yPcbB, yPcbT, C_PCB, label="плата FR4 (толщ�
 # обёртка доведена до задней грани кристалла и перекрыта им — сзади её нет
 rect(ax, zFoilF, zCryB, yFoilB, yFoilT, C_FOIL, label="Al-фольга 0,10 мм", z=3)
 rect(ax, zPtfeF, zCryB, yPtfeB, yPtfeT, C_PTFE, label="ПТФЭ 1,00 мм", z=4)
-rect(ax, zCryF, zCryB, yCryB, yCryT, C_CSI, label="CsI(Tl) 18 × 15 × 57 мм",
+rect(ax, zCryF, zCryB, yCryB, yCryT, C_CSI,
+     label="CsI(Tl) %s × %s × %s мм" % (ru(CRY_X), ru(CRY_Y), ru(CRY_Z)),
      z=5)
 rect(ax, zCryB, zSipmB, yCryB, yCryT, C_SIPM, label="SiPM (толщина — *)", z=5)
 
@@ -167,10 +195,11 @@ ax.text(0.5 * (zSipmB + zCapBin), 2, "воздух", fontsize=7.5, ha="center",
         va="center", color="#4a5a68", zorder=6)
 
 dim(ax, zBodyF, zBodyB, "86,00", off=yBodyT + 2.2)
-dim(ax, zCryF, zCryB, "57,00", off=yCryT + 0.6)
-dim(ax, yBodyB, yBodyT, "25,00", vertical=True, off=zBodyB + 2.4)
-dim(ax, yCryB, yCryT, "15,00", vertical=True, off=zSipmB + 3.6)
-ax.annotate("стенка 1,20 мм\n(рабочая грань 18 × 57 мм = 10,3 см²)",
+dim(ax, zCryF, zCryB, ru(CRY_Z), off=yCryT + 0.6)
+dim(ax, yBodyB, yBodyT, ru(BODY_Y), vertical=True, off=zBodyB + 2.4)
+dim(ax, yCryB, yCryT, ru(CRY_Y), vertical=True, off=zSipmB + 3.6)
+ax.annotate("стенка %s мм\n(рабочая грань %s × %s мм = %s см²)"
+            % (ru(W_FRONT), ru(CRY_X), ru(CRY_Z), ru(CRY_X * CRY_Z / 100.0)),
             xy=(10, 0.5 * (yFoilT + yBodyT)), xytext=(4, yBodyT + 7),
             fontsize=7.5, color="#1f4e79", ha="left",
             arrowprops=dict(arrowstyle="->", color="#1f4e79", lw=0.8))
@@ -197,7 +226,8 @@ ax.set_ylim(yBodyB - 16, yBodyT + 13)
 # ============================ 2. вид сверху (план) ===========================
 ax2 = fig.add_subplot(gs[1, 0])
 frame(ax2, "План со стороны рабочей грани (плоскость X–Z): видна грань "
-           "18 × 57 мм под стенкой 1,20 мм")
+           "%s × %s мм под стенкой %s мм"
+           % (ru(CRY_X), ru(CRY_Z), ru(W_FRONT)))
 
 rect(ax2, zBodyF, zBodyB, -xBody, xBody, C_AL)
 rect(ax2, zBodyF, zBodyB, -xBodyIn, xBodyIn, C_AIR, ec=EC_AIR, lw=0.5, z=2.1)
@@ -210,8 +240,8 @@ rect(ax2, zPtfeF, zCryB, -xPtfe, xPtfe, C_PTFE, z=4)
 rect(ax2, zCryF, zCryB, -xCry, xCry, C_CSI, z=5)
 rect(ax2, zCryB, zSipmB, -xCry, xCry, C_SIPM, z=5)
 
-ax2.text(0, 0, "рабочая грань\n18 × 57 мм", fontsize=8, ha="center",
-         va="center", color="#4a3405", zorder=6)
+ax2.text(0, 0, "рабочая грань\n%s × %s мм" % (ru(CRY_X), ru(CRY_Z)),
+         fontsize=8, ha="center", va="center", color="#4a3405", zorder=6)
 ax2.text(0.5 * (zSipmB + zCapBin), -6, "плата\n(лежит ниже)",
          fontsize=7.5, ha="center", va="center", color="#1c5c33", zorder=6)
 
@@ -316,10 +346,13 @@ fig.savefig(out, dpi=160)
 print("записано: %s" % out)
 
 # --- служебная сверка --------------------------------------------------------
-print("лицевой стек            %s г/см²  (в справке 0,571)" % ru(stack, 3))
-print("масса кристалла         %s г       (в справке ~69)" % ru(mass, 1))
-print("площадь грани 18 × 57   %s см²" % ru(CRY_X * CRY_Z / 100.0))
-print("площадь торца 18 × 15   %s см²" % ru(CRY_X * CRY_Y / 100.0))
+print("лицевой стек            %s г/см²  (программа печатает 0,570870)"
+      % ru(stack, 3))
+print("масса кристалла         %s г" % ru(mass, 1))
+print("площадь рабочей грани   %s см² (%s × %s)"
+      % (ru(CRY_X * CRY_Z / 100.0), ru(CRY_X), ru(CRY_Z)))
+print("площадь торца           %s см² (%s × %s)"
+      % (ru(CRY_X * CRY_Y / 100.0), ru(CRY_X), ru(CRY_Y)))
 print("отношение площадей      %s" % ru(CRY_Z / CRY_Y))
 print("воздух под платой       %s мм" % ru(AIR_UNDER))
 print("воздух сбоку (каждая)   %s мм" % ru(AIR_SIDE))

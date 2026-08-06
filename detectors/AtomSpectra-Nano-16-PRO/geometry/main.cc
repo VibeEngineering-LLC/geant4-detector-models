@@ -162,7 +162,18 @@ public:
                   ("не открыть файл вывода " + fOut).c_str());
       return;
     }
-    std::fprintf(f, "# ATOMSPECTRA NANO 16 PRO, CsI(Tl) 18x15x57 mm\n");
+    // Габарит кристалла берётся ИЗ ГЕОМЕТРИИ, а не пишется строкой: зашитое
+    // «18x15x57» пережило правку cryZ 57 -> 60 и попало неверным в шапку всех
+    // 27 спектров прогона 93972a90d30c. Тот же класс дефекта, что уже ловили
+    // в рисовальных скриптах, — число, пережившее условия, при которых было
+    // верно (06.08.2026).
+    if (fDet) {
+      const Nano16Geom& gm = fDet->fGeom;
+      std::fprintf(f, "# ATOMSPECTRA NANO 16 PRO, CsI(Tl) %gx%gx%g mm\n",
+                   gm.cryX, gm.cryY, gm.cryZ);
+    } else {
+      std::fprintf(f, "# ATOMSPECTRA NANO 16 PRO, CsI(Tl) (геометрия не задана)\n");
+    }
     std::fprintf(f, "# src_sha1 = %s\n", ASN16_SRC_SHA1);
     std::fprintf(f, "# git_describe = %s\n", ASN16_GIT_DESCRIBE);
     std::fprintf(f, "# build = %s %s\n", __DATE__, __TIME__);
@@ -334,9 +345,26 @@ int main(int argc, char** argv) {
   rm->SetUserAction(new Tracking(runAct));
 
   auto* ui = G4UImanager::GetUIpointer();
-  if (argc > 1) ui->ApplyCommand(G4String("/control/execute ") + argv[1]);
+  int rc = 0;
+  if (argc > 1) {
+    // Результат ApplyCommand ПРОВЕРЯЕТСЯ. Без проверки прогон с несуществующим
+    // макросом или с макросом в UTF-8 с BOM печатал «Command aborted (400)» /
+    // «Batch is interrupted!!» и завершался с кодом 0, не создав ни одного
+    // файла: обёртка считала такой прогон успешным, а каталог спектров
+    // оставался от прошлой ревизии. Отказ был трижды описан в комментариях как
+    // известный и не чинился (Ж2 аудита кода 05.08.2026).
+    const G4int st = ui->ApplyCommand(G4String("/control/execute ") + argv[1]);
+    if (st != 0) {
+      std::fprintf(stderr,
+                   "ОТКАЗ: макрос «%s» не выполнен, код G4UImanager %d.\n"
+                   "Частые причины: файла нет; файл в UTF-8 С BOM (первая\n"
+                   "команда не распознаётся); опечатка в команде.\n",
+                   argv[1], st);
+      rc = 2;
+    }
+  }
 
   delete mess;
   delete rm;
-  return 0;
+  return rc;
 }

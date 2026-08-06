@@ -9,7 +9,7 @@
 арифметика границ, и она повторяет `ASN16Detector.cc:117-140` построчно.
 
 Оси как в модели: начало — центр кристалла, +Z к переднему торцу и к
-источнику, +Y к рабочей грани 18 x 57 под стенкой 1,20 мм.
+источнику, +Y к рабочей грани (18 мм на длину кристалла) под стенкой 1,20 мм.
 
     python analysis/draw_setup.py
 """
@@ -220,8 +220,11 @@ ax2.set_title("План (плоскость Y = 0): источник на оси
 draw_body(ax2, -xBody, xBody, "x")
 draw_source(ax2, 45)
 dim(ax2, zBodyF, zSrc, ru(DIST), off=xBody + 6)
-ax2.text(zBodyB - 4, xBody + 3, "торец 18 × 15 мм = 2,70 см²; рабочая грань "
-                                "18 × 57 мм = 10,26 см², отношение 3,80",
+ax2.text(zBodyB - 4, xBody + 3,
+         "торец %s × %s мм = %s см²; рабочая грань %s × %s мм = %s см², "
+         "отношение %s"
+         % (ru(CRY_X), ru(CRY_Y), ru(CRY_X * CRY_Y / 100.0), ru(CRY_X),
+            ru(CRY_Z), ru(CRY_X * CRY_Z / 100.0), ru(CRY_Z / CRY_Y)),
          fontsize=7.5, color="#4a3405", ha="left")
 ax2.set_xlim(zBodyB - 34, zSrc + 46)
 ax2.set_ylim(-46, 36)

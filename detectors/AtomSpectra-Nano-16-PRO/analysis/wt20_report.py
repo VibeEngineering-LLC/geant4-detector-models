@@ -18,10 +18,23 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def read_csv(path):
+    """Читает CSV, сам определяя разделитель.
+
+    В дереве уживаются два: скрипты разложения пишут запятой, скрипты прямой
+    задачи — точкой с запятой (в них десятичная запятая недопустима, поэтому
+    поля разделены иначе). Ошибка в разделителе не роняет чтение, а тихо
+    складывает всю строку в одну ячейку — таблица на странице выходила
+    одноколоночной. Поэтому разделитель определяется по первой значащей строке,
+    а не задаётся по умолчанию.
+    """
     if not os.path.exists(path):
         return []
     with io.open(path, encoding="utf-8") as f:
-        return [r for r in csv.reader(f) if r and not r[0].startswith("#")]
+        raw = [ln for ln in f if ln.strip() and not ln.startswith("#")]
+    if not raw:
+        return []
+    delim = ";" if raw[0].count(";") > raw[0].count(",") else ","
+    return [r for r in csv.reader(raw, delimiter=delim) if r]
 
 
 def read_head(path):

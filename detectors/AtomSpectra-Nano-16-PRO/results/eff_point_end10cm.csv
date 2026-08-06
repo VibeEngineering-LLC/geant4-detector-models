@@ -1,3 +1,14 @@
+#@ stamp.version = 1
+#@ src.script = detectors/AtomSpectra-Nano-16-PRO/analysis/export_curve.py
+#@ src.spectra_sha1 = 38e95a40befd
+#@ src.inputs_n = 27
+#@ src.inputs_verdict = stamped
+#@ obs.quantity = абсолютная эффективность по пику полного поглощения, отнесённая к 4pi
+#@ obs.area = строгая: окно в три канала вокруг floor(E0)+0,5 минус континуум по наблюдаемому каналу
+#@ obs.window = 3 канала по 1 кэВ; вычет шириной 1+дробная часть E0
+#@ obs.shelf = не применимо — полок нет, оконная величина снята с публикации
+#@ obs.blurred = нет — спектры не размывались
+#@ obs.reference_plane = наружная поверхность торцевой крышки корпуса
 # AtomSpectra Nano 16 PRO, точечный источник на оси кристалла
 # постановка взята из шапок спектров, а не вписана здесь:
 #   run_args = curve_point_end10cm.mac

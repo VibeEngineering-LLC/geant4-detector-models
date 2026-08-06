@@ -1,0 +1,14 @@
+# ВРЕМЕННЫЙ ПРОБНИК. Проверяет одно: доходит ли событие push до Actions в этом
+# репозитории. Ни фильтров, ни зависимостей — если и он не поднимется, дело не в
+# фильтре paths и не в YAML деплоя, а в настройке репозитория или организации.
+# Удалить сразу после ответа.
+name: probe push trigger
+
+on:
+  push:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "push event reached Actions"

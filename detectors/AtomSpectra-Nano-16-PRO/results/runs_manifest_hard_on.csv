@@ -1,0 +1,17 @@
+#@ stamp.version = 1
+#@ src.script = detectors/AtomSpectra-Nano-16-PRO/analysis/make_manifest.py
+#@ src.spectra_sha1 = cd44efccb488
+#@ src.inputs_n = 5
+#@ src.inputs_verdict = stamped
+#@ obs.quantity = отпечатки расчётных спектров сетки; величина НЕ числовая
+#@ obs.area = не применимо — площади здесь не снимаются
+#@ obs.window = не применимо
+#@ obs.shelf = не применимо
+#@ obs.blurred = нет — спектры не размывались
+#@ run.macro = curve_hard_brems.mac
+file,sha1_12,E_prim_keV,N_primaries,N_with_signal,solid_angle_frac
+end10cm_E0661.7.csv,b7613e57575b,661.6570,10000000,159752,0.09042391
+end10cm_E1500.0.csv,7be6b5c8ed84,1500.0000,10000000,126588,0.09042391
+end10cm_E2100.0.csv,510ac3b02169,2100.0000,10000000,118951,0.09042391
+end10cm_E2614.5.csv,4e1a75dbcb45,2614.5100,10000000,115001,0.09042391
+end10cm_E3000.0.csv,b1eb24f7e855,3000.0000,10000000,113593,0.09042391

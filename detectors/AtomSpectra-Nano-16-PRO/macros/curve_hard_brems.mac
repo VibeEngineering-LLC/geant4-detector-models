@@ -1,0 +1,66 @@
+# КОНТРОЛЬ ЖЁСТКОГО КРАЯ: вклад вылета тормозного излучения в дефицит ППП.
+#
+# Повод. Расхождение с библиотечной кривой растёт с энергией и достигает
+# -15,0 % на 3000 кэВ. Внешний довод (Am6er/BecqMoni, ветка pie,
+# tools/tccfcalc/README.md, §5.3): у эталонной программы ЛСРМ TCCFCALC нет
+# электронных данных вовсе, поэтому она не теряет энергию на вылет тормозного
+# и завышает эффективность на жёстких линиях; отключение тормозного в ЕГО
+# расчёте сажает кривую на ЛСРМ (2000 кэВ: 0,995 против 0,874). Это ЕГО
+# измерение на ЕГО коде. Здесь оно проверяется на нашем.
+#
+# Постановка повторяет curve_point_end10cm.mac узел в узел: тот же источник
+# (точка на оси, 132,6 мм от центра кристалла = 100 мм от наружной плоскости
+# крышки), тот же конус 35°, то же число первичных 1e7. Различие ОДНО —
+# /process/inactivate eBrem во второй половине.
+#
+# Оба плеча считаются ОДНИМ прогоном одного бинарника: их отношение есть мера
+# самого механизма, а не суммы расхождений между сборками. Узел 661,657 кэВ
+# взят контролем метода: там тормозное ничтожно, и плечи обязаны совпасть в
+# пределах статистики. Если разойдутся — врёт не физика, а постановка.
+#
+# ВАЖНО: файл в UTF-8 БЕЗ BOM.
+/run/initialize
+/control/verbose 0
+/run/verbose 0
+/gps/particle gamma
+/gps/pos/type Point
+/gps/pos/centre 0 0 132.6 mm
+/gps/ang/type iso
+/gps/ang/maxtheta 35 deg
+
+# --- плечо 1: тормозное включено (штатная физика) ---
+/gps/energy 661.657 keV
+/asn16/outFile spectra_hard_on/end10cm_E0661.7.csv
+/run/beamOn 10000000
+/gps/energy 1500 keV
+/asn16/outFile spectra_hard_on/end10cm_E1500.0.csv
+/run/beamOn 10000000
+/gps/energy 2100 keV
+/asn16/outFile spectra_hard_on/end10cm_E2100.0.csv
+/run/beamOn 10000000
+/gps/energy 2614.510 keV
+/asn16/outFile spectra_hard_on/end10cm_E2614.5.csv
+/run/beamOn 10000000
+/gps/energy 3000 keV
+/asn16/outFile spectra_hard_on/end10cm_E3000.0.csv
+/run/beamOn 10000000
+
+# --- плечо 2: тормозное отключено ---
+# Энергия, которая ушла бы в тормозной квант, остаётся у электрона и
+# осаждается на месте — это и есть допущение расчёта без переноса электрона.
+/process/inactivate eBrem
+/gps/energy 661.657 keV
+/asn16/outFile spectra_hard_off/end10cm_E0661.7.csv
+/run/beamOn 10000000
+/gps/energy 1500 keV
+/asn16/outFile spectra_hard_off/end10cm_E1500.0.csv
+/run/beamOn 10000000
+/gps/energy 2100 keV
+/asn16/outFile spectra_hard_off/end10cm_E2100.0.csv
+/run/beamOn 10000000
+/gps/energy 2614.510 keV
+/asn16/outFile spectra_hard_off/end10cm_E2614.5.csv
+/run/beamOn 10000000
+/gps/energy 3000 keV
+/asn16/outFile spectra_hard_off/end10cm_E3000.0.csv
+/run/beamOn 10000000

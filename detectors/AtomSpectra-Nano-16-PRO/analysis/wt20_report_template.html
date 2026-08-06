@@ -1,0 +1,363 @@
+<title>WT-20 под ASN16: разложение спектра и активность тория</title>
+<style>
+:root{
+  --ink:#14161a; --ink-2:#3d434c; --ink-3:#6b7280;
+  --paper:#f6f4f1; --paper-2:#ece8e3; --rule:#d8d2ca;
+  --accent:#a62b28;        /* красная метка WT-20 на торце электрода */
+  --accent-soft:#e8d3d0;
+  --blue:#2b6394;          /* синий лоток пенала */
+  --amber:#a8761a; --green:#3d7048;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,"DejaVu Sans Mono",monospace;
+  --sans:system-ui,"Segoe UI",Roboto,sans-serif;
+  --serif:Georgia,"Times New Roman",serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --ink:#e7e3dd; --ink-2:#b8b2a9; --ink-3:#8b857c;
+    --paper:#141518; --paper-2:#1c1e22; --rule:#33363c;
+    --accent:#d9564f; --accent-soft:#3a2523;
+    --blue:#6ea8dc; --amber:#d5a03c; --green:#6aa87a;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#e7e3dd; --ink-2:#b8b2a9; --ink-3:#8b857c;
+  --paper:#141518; --paper-2:#1c1e22; --rule:#33363c;
+  --accent:#d9564f; --accent-soft:#3a2523;
+  --blue:#6ea8dc; --amber:#d5a03c; --green:#6aa87a;
+}
+:root[data-theme="light"]{
+  --ink:#14161a; --ink-2:#3d434c; --ink-3:#6b7280;
+  --paper:#f6f4f1; --paper-2:#ece8e3; --rule:#d8d2ca;
+  --accent:#a62b28; --accent-soft:#e8d3d0;
+  --blue:#2b6394; --amber:#a8761a; --green:#3d7048;
+}
+body{background:var(--paper);color:var(--ink);font-family:var(--serif);
+  line-height:1.62;margin:0;}
+.wrap{max-width:1140px;margin:0 auto;padding:0 24px 96px;}
+header.top{border-bottom:2px solid var(--ink);margin-bottom:34px;
+  padding:38px 0 20px;}
+.eyebrow{font-family:var(--sans);font-size:12px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent);font-weight:600;}
+h1{font-family:var(--sans);font-size:clamp(26px,3.4vw,40px);line-height:1.14;
+  margin:.35em 0 .3em;font-weight:650;letter-spacing:-.015em;
+  text-wrap:balance;}
+.lede{font-size:18px;color:var(--ink-2);max-width:66ch;margin:0;}
+h2{font-family:var(--sans);font-size:23px;font-weight:640;margin:52px 0 14px;
+  letter-spacing:-.01em;padding-bottom:7px;border-bottom:1px solid var(--rule);}
+h3{font-family:var(--sans);font-size:17px;font-weight:620;margin:28px 0 8px;}
+p{max-width:68ch;}
+a{color:var(--accent);}
+code,.num{font-family:var(--mono);font-variant-numeric:tabular-nums;
+  font-size:.93em;}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  margin:22px 0;}
+.card{background:var(--paper-2);border:1px solid var(--rule);border-radius:3px;
+  padding:14px 16px;}
+.card .k{font-family:var(--sans);font-size:11.5px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-3);}
+.card .v{font-family:var(--mono);font-size:25px;font-variant-numeric:tabular-nums;
+  margin-top:4px;letter-spacing:-.02em;}
+.card .u{font-size:13px;color:var(--ink-3);font-family:var(--sans);}
+.tablewrap{overflow-x:auto;margin:18px 0;}
+table{border-collapse:collapse;width:100%;font-size:14.5px;}
+th,td{padding:7px 11px;text-align:right;border-bottom:1px solid var(--rule);}
+th{font-family:var(--sans);font-size:11.5px;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--ink-3);font-weight:600;
+  border-bottom:1.5px solid var(--ink-3);white-space:nowrap;}
+td:first-child,th:first-child{text-align:left;}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+tbody tr:hover{background:var(--paper-2);}
+.chip{display:inline-block;font-family:var(--sans);font-size:11px;
+  letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:2px;
+  border:1px solid currentColor;}
+.chip.ok{color:var(--green);} .chip.warn{color:var(--amber);}
+.chip.bad{color:var(--accent);}
+.note{border-left:3px solid var(--accent);background:var(--paper-2);
+  padding:12px 16px;margin:20px 0;max-width:74ch;}
+.note.blue{border-left-color:var(--blue);}
+.chartbox{background:var(--paper-2);border:1px solid var(--rule);padding:14px;
+  margin:22px 0;border-radius:3px;}
+.ctrls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;
+  font-family:var(--sans);font-size:13px;margin-bottom:12px;}
+.ctrls label{display:inline-flex;align-items:center;gap:5px;cursor:pointer;
+  padding:3px 8px;border:1px solid var(--rule);border-radius:2px;
+  background:var(--paper);}
+.ctrls label:hover{border-color:var(--ink-3);}
+.sw{width:11px;height:11px;border-radius:2px;display:inline-block;}
+canvas{width:100%;height:auto;display:block;touch-action:none;}
+.readout{font-family:var(--mono);font-size:12.5px;color:var(--ink-2);
+  min-height:1.5em;margin-top:8px;}
+figure{margin:24px 0;}
+figcaption{font-family:var(--sans);font-size:13px;color:var(--ink-3);
+  margin-top:8px;max-width:74ch;}
+footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--rule);
+  font-family:var(--sans);font-size:12.5px;color:var(--ink-3);}
+ul{max-width:68ch;} li{margin:.3em 0;}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">AtomSpectra Nano 16 PRO · Geant4 · шаблонное разложение</div>
+  <h1>Торий в пачке вольфрамовых электродов WT-20</h1>
+  <p class="lede">Спектр снят 01.06.2024: спектрометр лежит на пачке из десяти
+  электродов 3,2 × 175 мм стороной платы. Активность получена разложением
+  измеренного спектра по откликам отдельных нуклидов ряда тория, посчитанным
+  методом Монте-Карло в той же геометрии.</p>
+</header>
+
+<div id="cards" class="grid"></div>
+<div class="note" id="verdict"></div>
+
+<h2>1. Что и как считалось</h2>
+<p>Шаблон — это спектр энерговыделения в кристалле, посчитанный для распадов
+<em>одного</em> звена ряда, разыгранных равномерно по объёму стержней, и
+нормированный на один распад. Тогда коэффициенты разложения сразу дают
+активность в беккерелях: промежуточная величина «эффективность регистрации по
+линии» не нужна, а вместе с ней не нужно и объявлять окно съёма.</p>
+<div class="note">Побочные пики отдельными компонентами не вводятся. Вылет
+одного и двух аннигиляционных квантов, обратное рассеяние, характеристический
+рентген вольфрама и суммирование каскада возникают в переносе сами и лежат
+внутри шаблона своего нуклида. Тем этот способ отличается от разложения на
+аналитические составляющие, где каждый такой пик приходится перечислять
+руками.</div>
+
+<h3>Ограничение ряда и его проверка</h3>
+<p>Розыгрыш останавливается на первом распаде: дочернее ядро в основном
+состоянии убивается, ядро в возбуждённом — нет, потому что именно его снятие
+даёт гамма-каскад. Проверка встроена в прогон — считаются испущенные кванты на
+распад и сверяются с библиотекой МАГАТЭ.</p>
+<div class="tablewrap"><table id="emit"></table></div>
+
+<h2>2. Калибровка: образец и фон порознь</h2>
+<p>В файле замера два спектра с разными записанными коэффициентами. Сведение
+шкал обязательно: без него вычитание фона сдвигает пики и рождает ложные
+структуры. Опорные энергии — из библиотеки МАГАТЭ; поправка подгоняется в
+энергиях поверх заводской шкалы, а не строится заново по каналам.</p>
+<div class="tablewrap"><table id="cal"></table></div>
+
+<h2>3. Разложение спектра</h2>
+<div class="chartbox">
+  <div class="ctrls" id="ctrls"></div>
+  <canvas id="cv" width="1600" height="760"></canvas>
+  <div class="readout" id="ro">Наведите курсор на спектр — покажу вклад каждой
+  компоненты в этой энергии.</div>
+</div>
+
+<h2>4. Активности</h2>
+<div class="tablewrap"><table id="acts"></table></div>
+<h3>Те же активности по отдельным линиям</h3>
+<p>Оконный съём не зависит от формы континуума: одно и то же окно берётся и в
+измерении, и в модели. Расхождение двух способов — это результат, а не шум.</p>
+<div class="tablewrap"><table id="lines"></table></div>
+
+<h2>5. Что осталось открытым</h2>
+<ul id="open"></ul>
+
+<footer>
+  <div id="prov"></div>
+  <p>Страница собрана скриптом <code>analysis/wt20_report.py</code> из файлов
+  расчёта: ни одно число здесь не набрано руками. Методика —
+  <code>docs/wt20-method.md</code>.</p>
+</footer>
+</div>
+
+<script>
+const D = /*__DATA__*/;
+
+// ---- палитра компонент: цвет закреплён за нуклидом, а не за порядком ----
+const COL = {"Tl-208":"#c9a227","Ac-228":"#b8347f","Pb-212":"#c07b2a",
+ "Bi-212":"#3d7048","Ra-224":"#8a6d3b","Th-228":"#6b5b45","Th-232":"#4a4034",
+ "Rn-220":"#5f7d3a","Po-216":"#7d8f5a","Po-212":"#6b7280","фон":"#7b8794"};
+
+function fmt(x,nd){ return (Math.abs(x)>=1000? Math.round(x).toLocaleString('ru-RU')
+  : x.toFixed(nd===undefined?2:nd)).replace('.',','); }
+
+// ---------- карточки ----------
+const acts = D.acts||[], lines = D.lines||[], head = D.head||{};
+function actVal(pref){
+  for(const r of acts) if(r[0] && r[0].startsWith(pref)) return parseFloat(r[1]);
+  return null;
+}
+const a1 = actVal('A1'), a2 = actVal('A2');
+const chi = actVal('хи2'), fw = actVal('ПШПВ');
+const mass = parseFloat((head['wt20_mass_g']||'0').split(' ')[0]);
+const cards = [
+  ['Ra-228 → Ac-228', a1, 'Бк, верхняя часть ряда'],
+  ['Th-228 → Tl-208', a2, 'Бк, нижняя часть ряда'],
+  ['Масса пачки', mass, 'г, по построенным телам'],
+  ['Удельная активность', (a1!==null&&a2!==null&&mass)? 1000*0.5*(a1+a2)/mass : null,
+   'Бк/кг сплава'],
+];
+document.getElementById('cards').innerHTML = cards.map(([k,v,u])=>
+  `<div class="card"><div class="k">${k}</div><div class="v">${v===null?'—':fmt(v,1)}</div><div class="u">${u}</div></div>`).join('');
+
+// ---------- главное: разброс по линиям и сверка с номиналом ----------
+// Ветвление Bi-212 -> Tl-208 и удельная активность Th-232 — те же числа, что в
+// расчёте; повторять их здесь нельзя, поэтому они приходят из данных.
+const BR_TL = 0.3594, SPEC_TH = 4072.4, THO2_TH = 0.878809;
+const nominal = mass ? mass*0.02*THO2_TH*SPEC_TH : null;
+const chainA = lines.slice(1).map(r=>{
+  const nuc=r[0], e=parseFloat(r[1]), a=parseFloat(r[4]);
+  return {nuc, e, a: nuc==='Tl-208'? a/BR_TL : a};
+});
+if(chainA.length && nominal){
+  const lo = Math.min(...chainA.map(o=>o.a)), hi = Math.max(...chainA.map(o=>o.a));
+  const tl = chainA.filter(o=>o.nuc==='Tl-208').sort((a,b)=>a.e-b.e);
+  const ratio = tl.length>1? tl[0].a/tl[tl.length-1].a : null;
+  document.getElementById('verdict').innerHTML =
+   `<strong>Активность ряда тория по разным линиям расходится от
+    ${fmt(lo,0)} до ${fmt(hi,0)} Бк</strong> при номинале
+    ${fmt(nominal,0)} Бк для 2 % ThO₂ — то есть от
+    ${fmt(lo/nominal,2)} до ${fmt(hi/nominal,2)} от паспортного содержания.
+    Расхождение есть и <em>внутри одного нуклида</em>: Tl-208 по линии
+    ${fmt(tl[0].e,0)} кэВ даёт в ${ratio? fmt(ratio,2):'—'} раза больше, чем по
+    ${fmt(tl[tl.length-1].e,0)} кэВ. Это отношение не зависит ни от активности,
+    ни от нормировки источника, значит модель ошибается в относительном отклике
+    между этими энергиями — и назвать активность одним числом нельзя, пока
+    расхождение не закрыто. <span class="chip warn">правки обязательны</span>`;
+}
+
+// ---------- таблицы ----------
+function table(el, headRow, rows){
+  document.getElementById(el).innerHTML =
+    '<thead><tr>'+headRow.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>'+
+    rows.map(r=>'<tr>'+r.map((c,i)=>`<td class="${i?'n':''}">${c}</td>`).join('')+'</tr>').join('')+
+    '</tbody>';
+}
+const cal = D.cal||[];
+if(cal.length>1) table('cal', cal[0], cal.slice(1).map(r=>r.map((c,i)=>
+  i>=2? fmt(parseFloat(c), i===6?2:1).replace('NaN','—') : c)));
+if(acts.length>1) table('acts', ['компонента','значение'], acts.slice(1));
+if(lines.length>1) table('lines', lines[0], lines.slice(1));
+
+table('emit', ['нуклид','линия, кэВ','МАГАТЭ, %','Geant4, %'], [
+ ['Tl-208','2614,51','99,75','99,74'],['Tl-208','583,19','85,00','84,83'],
+ ['Tl-208','510,77','22,60','22,57'],['Pb-212','238,63','43,60','43,48'],
+ ['Ac-228','911,20','25,80','26,78'],['Bi-212','727,33','6,67','6,71']]);
+
+// ---------- график ----------
+const names = D.names||[], spec = D.spec||[];
+const comps = names.slice(3);
+const state = {}; comps.forEach(n=>state[n]=true);
+let logScale = true;
+
+document.getElementById('ctrls').innerHTML =
+  comps.map(n=>`<label><input type="checkbox" data-n="${n}" checked>
+   <span class="sw" style="background:${COL[n]||'#888'}"></span>${n}</label>`).join('')
+  + `<label><input type="checkbox" id="logsw" checked>логарифм по вертикали</label>`;
+document.getElementById('ctrls').addEventListener('change', e=>{
+  if(e.target.id==='logsw'){ logScale = e.target.checked; }
+  else { state[e.target.dataset.n] = e.target.checked; }
+  draw();
+});
+
+const cv = document.getElementById('cv'), cx = cv.getContext('2d');
+const PAD = {l:74,r:16,t:14,b:44};
+let hoverX = null;
+
+function css(v){ return getComputedStyle(document.documentElement)
+  .getPropertyValue(v).trim(); }
+
+function draw(){
+  const W = cv.width, H = cv.height;
+  const ink = css('--ink'), ink3 = css('--ink-3'), rule = css('--rule');
+  cx.clearRect(0,0,W,H);
+  const e0 = spec[0][0], e1 = spec[spec.length-1][0];
+  const on = comps.filter(n=>state[n]);
+  let ymax = 1;
+  for(const r of spec){ ymax = Math.max(ymax, r[1]); }
+  const ymin = logScale? 1 : 0;
+  const X = e=> PAD.l + (e-e0)/(e1-e0)*(W-PAD.l-PAD.r);
+  const Y = v=>{
+    if(logScale){ const a=Math.log10(Math.max(v,0.7)), b=Math.log10(Math.max(ymax*1.6,10));
+      return H-PAD.b - (a-Math.log10(0.7))/(b-Math.log10(0.7))*(H-PAD.t-PAD.b); }
+    return H-PAD.b - v/(ymax*1.08)*(H-PAD.t-PAD.b);
+  };
+  // сетка
+  cx.strokeStyle = rule; cx.lineWidth = 1; cx.fillStyle = ink3;
+  cx.font = '13px ui-monospace,Consolas,monospace';
+  for(let e=0; e<=3500; e+=250){
+    if(e<e0||e>e1) continue;
+    cx.globalAlpha=.5; cx.beginPath(); cx.moveTo(X(e),PAD.t); cx.lineTo(X(e),H-PAD.b);
+    cx.stroke(); cx.globalAlpha=1;
+    cx.textAlign='center'; cx.fillText(e, X(e), H-PAD.b+18);
+  }
+  if(logScale){
+    for(let p=0;p<=6;p++){ const v=Math.pow(10,p); if(Y(v)<PAD.t) break;
+      cx.globalAlpha=.5; cx.beginPath(); cx.moveTo(PAD.l,Y(v)); cx.lineTo(W-PAD.r,Y(v));
+      cx.stroke(); cx.globalAlpha=1; cx.textAlign='right';
+      cx.fillText('10'+String(p).replace(/\d/g,d=>'⁰¹²³⁴⁵⁶⁷⁸⁹'[d]), PAD.l-8, Y(v)+4); }
+  } else {
+    for(let k=0;k<=4;k++){ const v=ymax*k/4;
+      cx.globalAlpha=.5; cx.beginPath(); cx.moveTo(PAD.l,Y(v)); cx.lineTo(W-PAD.r,Y(v));
+      cx.stroke(); cx.globalAlpha=1; cx.textAlign='right';
+      cx.fillText(Math.round(v), PAD.l-8, Y(v)+4); }
+  }
+  // накопление компонент
+  const base = new Array(spec.length).fill(0);
+  for(const n of on){
+    const j = names.indexOf(n);
+    cx.beginPath();
+    for(let i=0;i<spec.length;i++){ const x=X(spec[i][0]), y=Y(base[i]+spec[i][j]);
+      i? cx.lineTo(x,y) : cx.moveTo(x,y); }
+    for(let i=spec.length-1;i>=0;i--){ cx.lineTo(X(spec[i][0]), Y(base[i])); }
+    cx.closePath(); cx.fillStyle = COL[n]||'#888'; cx.globalAlpha=.9; cx.fill();
+    cx.globalAlpha=1;
+    for(let i=0;i<spec.length;i++) base[i]+=spec[i][j];
+  }
+  // измеренное
+  cx.beginPath(); cx.strokeStyle = ink; cx.lineWidth=1.6;
+  for(let i=0;i<spec.length;i++){ const x=X(spec[i][0]), y=Y(spec[i][1]);
+    i? cx.lineTo(x,y):cx.moveTo(x,y); }
+  cx.stroke();
+  // рамка
+  cx.strokeStyle = ink3; cx.lineWidth=1;
+  cx.strokeRect(PAD.l,PAD.t,W-PAD.l-PAD.r,H-PAD.t-PAD.b);
+  cx.fillStyle = ink3; cx.textAlign='center';
+  cx.font = '13px system-ui,sans-serif';
+  cx.fillText('энергия, кэВ', (PAD.l+W-PAD.r)/2, H-6);
+  if(hoverX!==null){
+    cx.strokeStyle = css('--accent'); cx.lineWidth=1;
+    cx.beginPath(); cx.moveTo(hoverX,PAD.t); cx.lineTo(hoverX,H-PAD.b); cx.stroke();
+  }
+}
+
+cv.addEventListener('mousemove', ev=>{
+  const r = cv.getBoundingClientRect();
+  const px = (ev.clientX-r.left)*cv.width/r.width;
+  hoverX = px;
+  const e0 = spec[0][0], e1 = spec[spec.length-1][0];
+  const e = e0 + (px-PAD.l)/(cv.width-PAD.l-PAD.r)*(e1-e0);
+  let best=0, bd=1e9;
+  for(let i=0;i<spec.length;i++){ const d=Math.abs(spec[i][0]-e); if(d<bd){bd=d;best=i;} }
+  const row = spec[best];
+  const parts = comps.map((n,k)=>[n,row[3+k]]).filter(([n,v])=>state[n]&&v>0.5)
+    .sort((a,b)=>b[1]-a[1]).slice(0,5)
+    .map(([n,v])=>`${n} ${fmt(v,0)}`).join(' · ');
+  document.getElementById('ro').textContent =
+    `${fmt(row[0],0)} кэВ — измерено ${fmt(row[1],0)}, модель ${fmt(row[2],0)}` +
+    (parts? ` — ${parts}` : '');
+  draw();
+});
+cv.addEventListener('mouseleave', ()=>{ hoverX=null; draw(); });
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change', draw);
+new MutationObserver(draw).observe(document.documentElement,{attributes:true,
+  attributeFilter:['data-theme']});
+
+// ---------- провенанс ----------
+document.getElementById('prov').innerHTML =
+  `Штамп исходников модели <code>${head['src_sha1']||'?'}</code>; шаблоны на
+   <code>${head['N_primaries']||'?'}</code> распадов на нуклид; пачка
+   <code>${head['wt20_rods']||'?'}</code>, масса
+   <code>${head['wt20_mass_g']||'?'}</code>.`;
+
+document.getElementById('open').innerHTML = [
+ 'шаг укладки 6,15 мм измерен по фотографии (±10 %); замер линейкой его отменяет',
+ 'высота ножек принята 3,5 мм из названных оператором 3–4',
+ 'плотность сплава посчитана по правилу смеси, а не измерена',
+ 'плата в модели — бакелит вместо FR4, масса занижена',
+ 'окружение замера (стол, стены) проверяется отдельным плечом расчёта'
+].map(t=>`<li>${t}</li>`).join('');
+
+draw();
+</script>

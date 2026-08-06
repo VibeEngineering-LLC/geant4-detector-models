@@ -272,6 +272,27 @@ def main():
 
     os.makedirs(os.path.dirname(out), exist_ok=True)
     with open(out, "w", encoding="utf-8", newline="") as g:
+        # Ключи наблюдаемой в машинном виде — тот же набор, что у Гамма-1С
+        # (`results/runs_manifest.csv`). Без них `stamp.read_table_stamp` на
+        # публикуемой таблице возвращает пусто, то есть таблица объявляет
+        # наблюдаемую только прозой, а прозу сторож не читает.
+        g.write("#@ stamp.version = 1\n")
+        g.write("#@ src.script = detectors/AtomSpectra-Nano-16-PRO/analysis/"
+                "export_curve.py\n")
+        g.write("#@ src.spectra_sha1 = %s\n" % sorted(stamps)[0])
+        g.write("#@ src.inputs_n = %d\n" % len(rows))
+        g.write("#@ src.inputs_verdict = stamped\n")
+        g.write("#@ obs.quantity = абсолютная эффективность по пику полного "
+                "поглощения, отнесённая к 4pi\n")
+        g.write("#@ obs.area = строгая: окно в три канала вокруг floor(E0)+0,5 "
+                "минус континуум по наблюдаемому каналу\n")
+        g.write("#@ obs.window = 3 канала по 1 кэВ; вычет шириной "
+                "1+дробная часть E0\n")
+        g.write("#@ obs.shelf = не применимо — полок нет, оконная величина "
+                "снята с публикации\n")
+        g.write("#@ obs.blurred = нет — спектры не размывались\n")
+        g.write("#@ obs.reference_plane = наружная поверхность торцевой "
+                "крышки корпуса\n")
         g.write("# AtomSpectra Nano 16 PRO, точечный источник на оси кристалла\n")
         g.write("# постановка взята из шапок спектров, а не вписана здесь:\n")
         g.write("#   run_args = %s\n" % mac)

@@ -193,12 +193,25 @@ def export_tabs(src):
         # в кристалл: из кристалла ничего не вылетает, но энерговыделение
         # уже меньше полного. Поэтому обе величины считаются отдельно и
         # называются по-разному.
-        n_peak = sum(c for e, c in spec if abs(e - (e0 + 0.5)) <= PEAK_HALF)
+        in_peak = lambda e: abs(e - (e0 + 0.5)) <= PEAK_HALF
+        n_peak = sum(c for e, c in spec if in_peak(e))
         n_nofly = sum(v[names.index(k)] for _, v in rows
                       for k in ("photo", "compt_full", "pair_full")
                       if k in names)
-        need(n_peak <= n_nofly + 1e-9,
-             "узел %.0f: в пике больше, чем без вылета" % e0)
+        # Состав ОКНА ПИКА по каналам. Считать долю канала в пике как его
+        # долю среди событий без вылета нельзя: множества не вложены и
+        # различаются в полтора раза. В окне пика на 180 кэВ есть даже
+        # событие канала вылета рентгена — вылетевший квант унёс меньше
+        # ширины окна.
+        peak_ch = {}
+        for k in names:
+            j = names.index(k)
+            c = sum(v[j] for e, v in rows if in_peak(e))
+            if c:
+                peak_ch[k] = int(c)
+        need(abs(sum(peak_ch.values()) - n_peak) < 0.5,
+             "узел %.0f: состав окна пика %d не сходится со счётом %d"
+             % (e0, sum(peak_ch.values()), n_peak))
 
         # У маркера две подписи: короткая — на графике, полная — в
         # заголовке всплывающего пояснения. Полная не помещается вдоль линии
@@ -244,15 +257,21 @@ def export_tabs(src):
         e_x, n_x = argmax_of("xray_esc")
         if n_x >= 100:
             j = names.index("xray_esc")
-            peaks = sorted(((v[j], e) for e, v in rows if v[j] > 0),
-                           reverse=True)[:2]
+            # Ничья — в пользу меньшей энергии, тем же правилом, что и
+            # argmax_of: иначе «первый» и «второй» максимумы могли бы
+            # указывать на один и тот же бин, разрешённый по-разному.
+            peaks = sorted((p for p in ((e, v[j]) for e, v in rows) if p[1] > 0),
+                           key=lambda p: (-p[1], p[0]))[:2]
             markers.append({"e": e_x, "short": "вылет K-рентгена",
                             "kind": "escape", "id": "xray"})
             feat["e_xray"] = e_x
             feat["d_xray"] = g4(e0 + 0.5 - e_x)
-            if len(peaks) > 1 and abs(peaks[1][1] - e_x) > 1.0:
-                feat["e_xray2"] = peaks[1][1]
-                feat["d_xray2"] = g4(e0 + 0.5 - peaks[1][1])
+            need(not peaks or peaks[0][0] == e_x,
+                 "узел %.0f: два правила разрешения ничьи разошлись "
+                 "(%.1f и %.1f)" % (e0, peaks[0][0], e_x))
+            if len(peaks) > 1 and abs(peaks[1][0] - e_x) > 1.0:
+                feat["e_xray2"] = peaks[1][0]
+                feat["d_xray2"] = g4(e0 + 0.5 - peaks[1][0])
 
         # Обрыв континуума в числах: полосы одинаковой ширины под краем и
         # над ним. Ширина полосы (50 кэВ) назначена: она должна быть заметно
@@ -265,6 +284,35 @@ def export_tabs(src):
                                          if ec - band <= e < ec))
             feat["edge_above"] = int(sum(v[j1] for e, v in rows
                                          if ec <= e < ec + band))
+
+        # Зоны спектра — из формул, а не «на глаз». Комптоновский континуум
+        # от нуля до кинематического края; зазор между краем и пиком
+        # заполняется многократным комптоновским рассеянием; пик — окно
+        # ±0,5 ПШПВ вокруг E0; выше пика тянется хвост от свёртки с
+        # приборным разрешением и от каналов, где энерговыделение может
+        # превысить E0 (нет таких на моноисточнике, но окно шкалы шире).
+        xmax = min(E_MAX, e0 * 1.15)
+        fw = fwhm(e0)
+        e_ed = 2.0 * e0 * e0 / (MEC2 + 2.0 * e0)
+        peak_lo = max(e_ed, e0 - fw / 2.0)
+        peak_hi = min(xmax, e0 + fw / 2.0)
+        zones = [{"lo": 0.0, "hi": e_ed, "id": "cont",
+                  "label": "комптоновский континуум"}]
+        gap_lo, gap_hi = e_ed, peak_lo
+        if gap_hi - gap_lo > fw * 0.6:
+            zones.append({"lo": gap_lo, "hi": gap_hi, "id": "gap",
+                          "label": "зазор до пика"})
+        zones.append({"lo": peak_lo, "hi": peak_hi, "id": "peak",
+                      "label": "пик полного поглощения"})
+        if xmax - peak_hi > fw * 0.4:
+            zones.append({"lo": peak_hi, "hi": xmax, "id": "over",
+                          "label": "хвост выше пика"})
+        # Каждая зона обязана быть непустой и лежать внутри поля графика:
+        # рисуется в ту же координатную сетку и обязана с ней сходиться.
+        for z in zones:
+            need(0 <= z["lo"] < z["hi"] <= xmax,
+                 "узел %.0f: зона %s = [%.1f, %.1f] вне поля" %
+                 (e0, z["id"], z["lo"], z["hi"]))
 
         total = broaden([(e, sum(v)) for e, v in rows], w, nch, step)
         channels = []
@@ -288,10 +336,11 @@ def export_tabs(src):
             "n_signal": int(sum_chan),
             "n_peak": int(n_peak),
             "peak_pct": g4(100.0 * n_peak / sum_chan),
+            "peak_ch": peak_ch,
             "nofly_pct": g4(100.0 * n_nofly / sum_chan),
             "peak_half": PEAK_HALF,
             "solid_angle_frac": float(head["solid_angle_frac"]),
-            "feat": feat, "markers": markers,
+            "feat": feat, "markers": markers, "zones": zones, "xmax": xmax,
             "xs": cols, "total": [g4(v) for v in total],
             "channels": channels,
         })
@@ -313,13 +362,41 @@ def export_composition(src):
         tot = sum(sum(v) for _, v in rows)
         if tot == 0:
             continue
+        # Сторожа замыкания стоят на ВСЕХ узлах, а не на трёх показанных:
+        # полосу состава рисуют все 61, и населённый остаточный канал
+        # уехал бы в неё незамеченным.
+        need(sum(v[names.index("other")] for _, v in rows) == 0,
+             "узел %s: остаточный канал населён" % head["E_prim_keV"])
         es.append(float(head["E_prim_keV"]))
         rows_out.append([g4(sum(v[names.index(k)] for _, v in rows) / tot)
                          for k in keys])
     for e, r in zip(es, rows_out):
-        need(abs(sum(r) - 1.0) < 2e-3,
+        # Порог по разрядности округления выгрузки (4 значащие цифры на
+        # долю, одиннадцать каналов), а не «на глаз»: прежние 2e-3 были в
+        # двадцать раз слабее достижимого и пропустили бы реальный перекос.
+        need(abs(sum(r) - 1.0) < 1e-3,
              "узел %.0f: сумма долей %.6f" % (e, sum(r)))
-    return {"es": es, "keys": keys, "f": rows_out}
+
+    # Зоны состава: переход от преобладания фотоэффекта к комптоновскому
+    # рассеянию — на пороге 0,5, канал `photo`; порог рождения пар — 1022
+    # кэВ по физике (2·m_e·c²), а не подстройкой под данные.
+    jp = keys.index("photo")
+    soft_hi = es[0]
+    for e, r in zip(es, rows_out):
+        if r[jp] >= 0.5:
+            soft_hi = e
+    pair_lo = 2.0 * MEC2
+    zones = [{"lo": es[0], "hi": soft_hi, "id": "soft",
+              "label": "фотоэффектная полоса"},
+             {"lo": soft_hi, "hi": pair_lo, "id": "compton",
+              "label": "комптоновская полоса"},
+             {"lo": pair_lo, "hi": es[-1], "id": "pair",
+              "label": "полоса рождения пар"}]
+    for z in zones:
+        need(es[0] <= z["lo"] < z["hi"] <= es[-1] + 1e-6,
+             "зона состава %s = [%.1f, %.1f] вне сетки" %
+             (z["id"], z["lo"], z["hi"]))
+    return {"es": es, "keys": keys, "f": rows_out, "zones": zones}
 
 
 def read_matrix(path):

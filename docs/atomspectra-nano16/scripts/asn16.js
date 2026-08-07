@@ -706,15 +706,20 @@ cv.addEventListener('pointermove', function (ev) {
     return;
   }
   hideMark();
+  // Readout — доли каналов в %, а не абсолютные вероятности: сравнение
+  // «сколько чего в этой точке шкалы» читается прямее, чем sci. Абсолютный
+  // масштаб уходит в заголовок отдельным числом (вероятность полного
+  // отклика на квант в 4π).
   var rows = [];
-  if (mode === 'log' && st.total)
-    rows.push([css('--ink'), 'полный отклик', sci(t.total[i])]);
+  var tot = t.total[i];
   t.channels.forEach(function (c) {
     if (!st[c.key] || c.ys[i] === 0) return;
-    rows.push([chColor(c.key), c.label, mode === 'log' ? sci(c.ys[i])
-      : pctf(t.total[i] > 0 ? 100 * c.ys[i] / t.total[i] : 0)]);
+    var pct = tot > 0 ? 100 * c.ys[i] / tot : 0;
+    rows.push([chColor(c.key), c.label, pctf(pct)]);
   });
-  ro.innerHTML = '<b>' + keV(t.xs[i]) + ' кэВ</b>' + rows.map(function (p) {
+  ro.innerHTML = '<b>' + keV(t.xs[i]) + ' кэВ'
+    + (mode === 'log' && tot > 0 ? ' · ' + sci(tot) : '')
+    + '</b>' + rows.map(function (p) {
     return '<span><i style="--c:' + p[0] + '"></i>' + p[1]
       + '<span class="v">' + p[2] + '</span></span>';
   }).join('');

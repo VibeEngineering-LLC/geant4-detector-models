@@ -1,0 +1,255 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WT-20: калибровка — образец и фон</title>
+<style>
+:root{
+  --bg:#faf9f7; --panel:#f1efeb; --text:#1f2328; --muted:#6b7280;
+  --line:#d8d4cc; --smp:#1a1a1a; --bgc:#4a7fb5; --diff:#c0392b;
+  --anchor:#8a6d3b; --anchor-bg:#7a8a9a; --sel:rgba(74,127,181,.18);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#14161a; --panel:#1d2126; --text:#d8dce2; --muted:#8b95a3;
+    --line:#323841; --smp:#e8e8e8; --bgc:#6da3d8; --diff:#e06552;
+    --anchor:#c9a35e; --anchor-bg:#7f92a5; --sel:rgba(109,163,216,.22); }
+}
+:root[data-theme="dark"]{ --bg:#14161a; --panel:#1d2126; --text:#d8dce2;
+  --muted:#8b95a3; --line:#323841; --smp:#e8e8e8; --bgc:#6da3d8;
+  --diff:#e06552; --anchor:#c9a35e; --anchor-bg:#7f92a5;
+  --sel:rgba(109,163,216,.22); }
+:root[data-theme="light"]{ --bg:#faf9f7; --panel:#f1efeb; --text:#1f2328;
+  --muted:#6b7280; --line:#d8d4cc; --smp:#1a1a1a; --bgc:#4a7fb5;
+  --diff:#c0392b; --anchor:#8a6d3b; --anchor-bg:#7a8a9a;
+  --sel:rgba(74,127,181,.18); }
+html,body{background:var(--bg);color:var(--text)}
+body{font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  margin:0;padding:18px 20px 30px}
+main{max-width:1180px;margin:0 auto}
+h1{font-size:20px;margin:0 0 2px;text-wrap:balance}
+.sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+.controls{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center;
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:10px 14px;margin-bottom:10px;font-size:14px}
+.controls label{display:flex;gap:6px;align-items:center;cursor:pointer;
+  user-select:none}
+.controls .sw{display:inline-block;width:22px;height:0;border-top:3px solid;
+  border-radius:2px}
+.controls button{font:inherit;background:none;border:1px solid var(--line);
+  border-radius:6px;color:var(--text);padding:3px 12px;cursor:pointer}
+.controls button:hover{border-color:var(--muted)}
+.controls button:focus-visible,.controls input:focus-visible{outline:2px solid
+  var(--bgc);outline-offset:2px}
+#wrap{position:relative;border:1px solid var(--line);border-radius:8px;
+  overflow:hidden;background:var(--bg)}
+canvas{display:block;width:100%;height:520px;cursor:crosshair}
+#readout{font-size:13.5px;color:var(--muted);margin:8px 2px 18px;
+  font-variant-numeric:tabular-nums;min-height:1.4em}
+table{border-collapse:collapse;font-size:13.5px;margin:6px 0 4px;
+  font-variant-numeric:tabular-nums}
+th,td{border:1px solid var(--line);padding:4px 10px;text-align:right}
+th{background:var(--panel);font-weight:600}
+td:first-child,th:first-child{text-align:left}
+h2{font-size:16px;margin:22px 0 6px}
+p.note{font-size:13.5px;color:var(--muted);max-width:72ch}
+</style>
+<main>
+<h1>WT-20: откалиброванные спектры образца и фона</h1>
+<p class="sub" id="meta"></p>
+<div class="controls">
+  <label><span class="sw" style="border-color:var(--smp)"></span>
+    <input type="checkbox" id="cb-smp" checked> образец</label>
+  <label><span class="sw" style="border-color:var(--bgc)"></span>
+    <input type="checkbox" id="cb-bg" checked> фон (приведён к времени образца)</label>
+  <label><span class="sw" style="border-color:var(--diff)"></span>
+    <input type="checkbox" id="cb-diff"> образец &minus; фон</label>
+  <label><input type="checkbox" id="cb-log" checked> лог-шкала</label>
+  <label><input type="checkbox" id="cb-anch" checked> опорные линии</label>
+  <button id="reset">весь диапазон</button>
+</div>
+<div id="wrap"><canvas id="cv"></canvas></div>
+<div id="readout">перетащите мышью — зум по энергии; двойной щелчок — весь диапазон</div>
+
+<h2>Опорные линии и невязки калибровки</h2>
+<table id="anch-table"></table>
+<p class="note">Поправки в энергиях поверх заводской шкалы (E<sub>ист</sub> =
+a<sub>0</sub> + a<sub>1</sub>·E + a<sub>2</sub>·E²), снятые порознь для
+образца и фона (§3 методики); оба спектра приведены к общей сетке 1&nbsp;кэВ,
+фон отмасштабирован отношением времён набора. Пик ХРИ вольфрама (58–67 кэВ)
+в измеренном спектре не выделяется — на его месте склон горба ХРИ дочерних
+(W&nbsp;K&alpha; = 59,3 кэВ, вершина горба 78 кэВ — это K-серия Tl/Pb/Bi);
+мягкий якорь взят по всему комплексу ХРИ дочерних (окно 72,8–100,0 из
+каталога конструктора, опора — средневзвешенная 82,05 кэВ). Жёсткий край
+дополнительно держит бугор истинных совпадений каскада Tl-208 у 3180 кэВ
+(Σ 2614,5+583,2 = 3197,7 и Σ 2614,5+510,8 = 3125,3; опора — средневзвешенная
+по выходам 3182,5): его невязка до поправки (+11,8 кэВ, +0,13 ПШПВ) совпала
+с невязкой пика 2614,5 (+0,13 ПШПВ) — дрейф шкалы подтверждён двумя
+независимыми структурами. Последний канал шкалы (~3394 кэВ) копит
+переполнение и на графике не показан.</p>
+</main>
+<script>
+"use strict";
+const D = @DATA@;
+const N = D.smp.length, STEP = D.step;
+const cv = document.getElementById("cv"), wrap = document.getElementById("wrap");
+const ctx = cv.getContext("2d");
+const readout = document.getElementById("readout");
+const state = { lo: 0, hi: N*STEP, log: true,
+  smp: true, bg: true, diff: false, anch: true };
+
+const fmt = (x, d=1) => x.toLocaleString("ru-RU",
+  {minimumFractionDigits:d, maximumFractionDigits:d});
+const css = n => getComputedStyle(document.documentElement)
+  .getPropertyValue(n).trim();
+
+document.getElementById("meta").textContent =
+  "Замер 01.06.2024, AtomSpectra Nano 16 PRO на пачке WT-20. Образец " +
+  fmt(D.t_smp,0) + " с, " + D.n_smp.toLocaleString("ru-RU") +
+  " отсчётов; фон " + fmt(D.t_bg,0) + " с (масштаб ×" +
+  fmt(D.t_smp/D.t_bg,4) + ").";
+
+const diffA = D.smp.map((v,i)=>v-D.bg[i]);
+
+function draw(){
+  const dpr = devicePixelRatio||1;
+  const W = wrap.clientWidth, H = 520;
+  cv.width = W*dpr; cv.height = H*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const ml=64, mr=14, mt=14, mb=40;
+  const pw=W-ml-mr, ph=H-mt-mb;
+  ctx.clearRect(0,0,W,H);
+
+  const i0=Math.max(0,Math.floor(state.lo/STEP)),
+        i1=Math.min(N,Math.ceil(state.hi/STEP));
+  let vmax=1, vminPos=1e30;
+  const cons=[[D.smp,state.smp],[D.bg,state.bg],[diffA,state.diff]];
+  for(const [a,on] of cons){ if(!on) continue;
+    for(let i=i0;i<i1;i++){ const v=a[i];
+      if(v>vmax) vmax=v; if(v>0&&v<vminPos) vminPos=v; } }
+  vmax*=state.log?2:1.06;
+  const vmin=state.log?Math.max(0.3,vminPos*0.7):0;
+  const X=e=>ml+(e-state.lo)/(state.hi-state.lo)*pw;
+  const Y=v=>{ if(state.log){ const lv=Math.log10(Math.max(v,vmin));
+      return mt+ph-(lv-Math.log10(vmin))/(Math.log10(vmax)-Math.log10(vmin))*ph; }
+    return mt+ph-(v-vmin)/(vmax-vmin)*ph; };
+
+  // сетка и оси
+  ctx.strokeStyle=css("--line"); ctx.fillStyle=css("--muted");
+  ctx.lineWidth=1; ctx.font="12px system-ui"; ctx.textAlign="center";
+  const span=state.hi-state.lo;
+  const stepX=[1,2,5,10,20,50,100,200,250,500,1000][
+    [1,2,5,10,20,50,100,200,250,500,1000].findIndex(s=>span/s<=12)]||500;
+  for(let e=Math.ceil(state.lo/stepX)*stepX; e<=state.hi; e+=stepX){
+    const x=X(e); ctx.beginPath(); ctx.moveTo(x,mt); ctx.lineTo(x,mt+ph);
+    ctx.stroke(); ctx.fillText(fmt(e,0),x,mt+ph+16); }
+  ctx.textAlign="right";
+  if(state.log){
+    for(let d=Math.floor(Math.log10(vmin)); d<=Math.ceil(Math.log10(vmax)); d++){
+      const v=Math.pow(10,d); if(v<vmin||v>vmax) continue;
+      const y=Y(v); ctx.beginPath(); ctx.moveTo(ml,y); ctx.lineTo(ml+pw,y);
+      ctx.stroke(); ctx.fillText(d>=0&&d<=3?fmt(v,0):"10^"+d,ml-6,y+4); }
+  } else {
+    for(let k=0;k<=5;k++){ const v=vmin+(vmax-vmin)*k/5, y=Y(v);
+      ctx.beginPath(); ctx.moveTo(ml,y); ctx.lineTo(ml+pw,y); ctx.stroke();
+      ctx.fillText(fmt(v,0),ml-6,y+4); } }
+  ctx.textAlign="center";
+  ctx.fillText("энергия, кэВ", ml+pw/2, H-8);
+  ctx.save(); ctx.translate(14,mt+ph/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText("отсчётов в канале 1 кэВ за время образца",0,0); ctx.restore();
+
+  // опорные линии
+  if(state.anch){
+    if(D.xw_zone){   // зона K-серии W: локального максимума в ней нет
+      const a=Math.max(state.lo,D.xw_zone[0]), b=Math.min(state.hi,D.xw_zone[1]);
+      if(b>a){ ctx.fillStyle=css("--sel");
+        ctx.fillRect(X(a),mt,X(b)-X(a),ph);
+        ctx.fillStyle=css("--muted"); ctx.font="11px system-ui";
+        ctx.save(); ctx.translate(X(a)+11,mt+6); ctx.rotate(Math.PI/2);
+        ctx.textAlign="left";
+        ctx.fillText("зона ХРИ W "+fmt(D.xw_zone[0],0)+"–"+
+                     fmt(D.xw_zone[1],0)+": пик не выделяется",0,0);
+        ctx.restore(); } }
+    ctx.setLineDash([4,4]); ctx.textAlign="left"; ctx.font="11px system-ui";
+    for(const [key,col] of [["sample",css("--anchor")],
+                            ["background",css("--anchor-bg")]]){
+      ctx.strokeStyle=col; ctx.fillStyle=col;
+      for(const a of D.anchors[key]){
+        if(a.E<state.lo||a.E>state.hi) continue;
+        const x=X(a.E); ctx.beginPath(); ctx.moveTo(x,mt);
+        ctx.lineTo(x,mt+ph); ctx.stroke();
+        ctx.save(); ctx.translate(x-3,mt+4); ctx.rotate(Math.PI/2);
+        ctx.fillText(fmt(a.E,1)+" "+a.nuc,0,0); ctx.restore(); } }
+    ctx.setLineDash([2,5]); ctx.strokeStyle=css("--diff");
+    ctx.fillStyle=css("--diff");
+    for(const s of (D.sums||[])){
+      if(s.E<state.lo||s.E>state.hi) continue;
+      const x=X(s.E); ctx.beginPath(); ctx.moveTo(x,mt);
+      ctx.lineTo(x,mt+ph); ctx.stroke();
+      ctx.save(); ctx.translate(x+10,mt+4); ctx.rotate(Math.PI/2);
+      ctx.fillText(s.lab,0,0); ctx.restore(); }
+    ctx.setLineDash([]); }
+
+  // кривые (ступеньками; в лог-шкале неположительные точки рвут путь)
+  const plot=(a,col)=>{ ctx.strokeStyle=col; ctx.lineWidth=1.2;
+    ctx.beginPath(); let pen=false;
+    for(let i=i0;i<i1;i++){ const v=a[i];
+      if(state.log&&v<=0){ pen=false; continue; }
+      const x0=X(i*STEP), x1=X((i+1)*STEP), y=Y(v);
+      if(!pen){ ctx.moveTo(x0,y); pen=true; } else ctx.lineTo(x0,y);
+      ctx.lineTo(x1,y); }
+    ctx.stroke(); };
+  if(state.bg)   plot(D.bg,  css("--bgc"));
+  if(state.diff) plot(diffA, css("--diff"));
+  if(state.smp)  plot(D.smp, css("--smp"));
+
+  draw.X=X; draw.i0=i0; draw.i1=i1; draw.ml=ml; draw.pw=pw;
+}
+
+function pxToE(px){ return state.lo+(px-draw.ml)/draw.pw*(state.hi-state.lo); }
+
+let selA=null;
+cv.addEventListener("mousedown",e=>{ selA=e.offsetX; });
+cv.addEventListener("mousemove",e=>{
+  const eV=pxToE(e.offsetX), i=Math.floor(eV/STEP);
+  if(i>=0&&i<N){
+    let s="E = "+fmt(eV,1)+" кэВ";
+    if(state.smp) s+=" · образец "+fmt(D.smp[i]);
+    if(state.bg)  s+=" · фон "+fmt(D.bg[i]);
+    if(state.diff)s+=" · разность "+fmt(diffA[i]);
+    readout.textContent=s; }
+  if(selA!==null){ draw();
+    ctx.fillStyle=css("--sel");
+    ctx.fillRect(Math.min(selA,e.offsetX),14,Math.abs(e.offsetX-selA),520-54); }
+});
+addEventListener("mouseup",e=>{
+  if(selA===null) return;
+  const b=e.target===cv?e.offsetX:selA;
+  const lo=pxToE(Math.min(selA,b)), hi=pxToE(Math.max(selA,b));
+  selA=null;
+  if(hi-lo>2){ state.lo=Math.max(0,lo); state.hi=Math.min(N*STEP,hi); }
+  draw();
+});
+cv.addEventListener("dblclick",()=>{ state.lo=0; state.hi=N*STEP; draw(); });
+document.getElementById("reset").onclick=
+  ()=>{ state.lo=0; state.hi=N*STEP; draw(); };
+for(const [id,key] of [["cb-smp","smp"],["cb-bg","bg"],["cb-diff","diff"],
+                       ["cb-log","log"],["cb-anch","anch"]])
+  document.getElementById(id).onchange=e=>{ state[key]=e.target.checked; draw(); };
+addEventListener("resize",draw);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",draw);
+new MutationObserver(draw).observe(document.documentElement,
+  {attributes:true,attributeFilter:["data-theme"]});
+
+// таблица якорей
+const tb=document.getElementById("anch-table");
+const NUCNAME={XKD:"ХРИ дочерних K (Tl/Pb/Bi/Th), средневзв.",
+  SUM:"сумм-бугор Σ(2615+583; 2615+511), средневзв.",
+  "212pb":"Pb-212","208tl":"Tl-208","214pb":"Pb-214","214bi":"Bi-214",
+  "40k":"K-40"};
+tb.innerHTML="<tr><th>спектр</th><th>линия</th><th>E опоры, кэВ</th>"+
+  "<th>невязка, кэВ</th></tr>"+
+  [["sample","образец"],["background","фон"]].map(([k,nm])=>
+    D.anchors[k].map(a=>"<tr><td>"+nm+"</td><td>"+(NUCNAME[a.nuc]||a.nuc)+
+      "</td><td>"+fmt(a.E,2)+"</td><td>"+(a.dE>=0?"+":"")+fmt(a.dE,2)+
+      "</td></tr>").join("")).join("");
+
+draw();
+</script>

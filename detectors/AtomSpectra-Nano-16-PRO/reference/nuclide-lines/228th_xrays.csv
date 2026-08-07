@@ -1,0 +1,8 @@
+energy,unc_en,intensity,unc_i,type,shell,p_z,p_n,p_symbol,p_energy_shift,p_energy,unc_pe,jp,half_life,operator_hl,unc_hl,unit_hl,half_life_sec,unc_hls,decay,decay_%,unc_d,q,unc_q,d_z,d_n,d_symbol,ensdf_publication_cut-off,ensdf_authors,Extraction_date
+14.92,,8.423934393021918,,X,L,90,138,Th,,0,,0+,1.9116,,16,Y,60324219.69303007,50491.0815593472,A,100,,5520.15,22,88,136,Ra,08-Mar-2022,Balraj Singh and  Sukhjeet Singh,2026-08-07
+85.432,,0.01809457701011077,,X,KA2,90,138,Th,,0,,0+,1.9116,,16,Y,60324219.69303007,50491.0815593472,A,100,,5520.15,22,88,136,Ra,08-Mar-2022,Balraj Singh and  Sukhjeet Singh,2026-08-07
+88.471,,0.029556643270354087,,X,KA1,90,138,Th,,0,,0+,1.9116,,16,Y,60324219.69303007,50491.0815593472,A,100,,5520.15,22,88,136,Ra,08-Mar-2022,Balraj Singh and  Sukhjeet Singh,2026-08-07
+100.119,,0.01036988152187827,,X,KpB1,90,138,Th,,0,,0+,1.9116,,16,Y,60324219.69303007,50491.0815593472,A,100,,5520.15,22,88,136,Ra,08-Mar-2022,Balraj Singh and  Sukhjeet Singh,2026-08-07
+101.37,,0.013771202661054345,,X,KB,90,138,Th,,0,,0+,1.9116,,16,Y,60324219.69303007,50491.0815593472,A,100,,5520.15,22,88,136,Ra,08-Mar-2022,Balraj Singh and  Sukhjeet Singh,2026-08-07
+102.948,,0.0034013211391760727,,X,KpB2,90,138,Th,,0,,0+,1.9116,,16,Y,60324219.69303007,50491.0815593472,A,100,,5520.15,22,88,136,Ra,08-Mar-2022,Balraj Singh and  Sukhjeet Singh,2026-08-07
+

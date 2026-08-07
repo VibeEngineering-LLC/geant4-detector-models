@@ -1,0 +1,43 @@
+# ПОВЕРХНОСТНЫЕ ШАБЛОНЫ: осаждение дочерних торона на стержнях (задача №9).
+#
+# Гипотеза: горб ХРИ дочерних 75-95 кэВ, преобладающий в измеренном спектре,
+# создаётся не объёмом стержней (конверсионный рентген из металла давится
+# самопоглощением над K-краем W — доходит ~0,1 %), а активностью НА
+# ПОВЕРХНОСТИ: Rn-220 эманирует, его дочерние (Pb-212 -> Bi-212 -> Tl-208)
+# осаждаются на стержнях и излучают без экранирования металлом.
+#
+# Область розыгрыша — воздушная плёнка RodSkin 25 мкм поверх каждого стержня
+# (ASN16Detector.cc, ревизия 5ef50c12e3fe). Para чуть шире, чем у объёмных
+# прогонов: плёнка крайнего стержня выходит за старые полуразмеры на 0,03 мм,
+# и confine у самого края резал бы её (урок: область розыгрыша обязана
+# накрывать мишень целиком и ехать вместе с геометрией).
+#
+# Нормировка та же: один распад; ограничение ряда то же (Stacking).
+# ВАЖНО: файл в UTF-8 БЕЗ BOM.
+/asn16/wt20 on
+/run/initialize
+/control/verbose 0
+/run/verbose 0
+/process/had/rdm/thresholdForVeryLongDecayTime 1.0e+60 year
+/gps/particle ion
+/gps/energy 0 keV
+/gps/pos/type Volume
+/gps/pos/shape Para
+/gps/pos/halfx 23.50 mm
+/gps/pos/halfy 1.70 mm
+/gps/pos/halfz 87.60 mm
+/gps/pos/centre 0 -22.00 -10.40 mm
+/gps/pos/confine RodSkin
+/gps/ang/type iso
+
+/gps/ion 82 212
+/asn16/outFile wt20_templates/Pb212s.csv
+/run/beamOn 400000
+
+/gps/ion 83 212
+/asn16/outFile wt20_templates/Bi212s.csv
+/run/beamOn 400000
+
+/gps/ion 81 208
+/asn16/outFile wt20_templates/Tl208s.csv
+/run/beamOn 400000

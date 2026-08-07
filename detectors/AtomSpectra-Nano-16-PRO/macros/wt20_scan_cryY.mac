@@ -1,0 +1,63 @@
+# СКАН ТОЛЩИНЫ КРИСТАЛЛА ПО ПУЧКУ (задача №44). Ось стержней здесь
+# сдвигается от cryY: BottomFaceY = -cryY/2 - ptfe - foil - wBot;
+# yRod = BottomFaceY - feetH - wall - gap - r = BottomFaceY - 5,10 (r=1,6).
+# Первый скан этого рода был забракован именно из-за неучтённой связи —
+# область GPS оставалась на месте, а стержни ехали. Здесь центр GPS задан
+# явно для каждой толщины (см. wt20_depth_scan.mac).
+#
+# ВАЖНО: файл в UTF-8 БЕЗ BOM.
+/asn16/wt20 on
+/asn16/rodD 3.20
+/run/initialize
+/control/verbose 0
+/run/verbose 0
+/process/had/rdm/thresholdForVeryLongDecayTime 1.0e+60 year
+/gps/particle ion
+/gps/energy 0 keV
+/gps/pos/type Volume
+/gps/pos/shape Para
+/gps/pos/halfx 23.43 mm
+/gps/pos/halfy 1.65 mm
+/gps/pos/halfz 87.5 mm
+/gps/ang/type iso
+/gps/pos/confine Rod
+
+
+# --- cryY = 9.0 мм, yRod = -14.20 ---
+/asn16/cryY 9.00
+/gps/pos/centre 0 -14.200 -10.40 mm
+/gps/ion 82 212
+/asn16/outFile wt20_scanCry_cry09/Pb212.csv
+/run/beamOn 300000
+/gps/ion 89 228
+/asn16/outFile wt20_scanCry_cry09/Ac228.csv
+/run/beamOn 300000
+/gps/ion 81 208
+/asn16/outFile wt20_scanCry_cry09/Tl208.csv
+/run/beamOn 300000
+
+# --- cryY = 12.0 мм, yRod = -15.70 ---
+/asn16/cryY 12.00
+/gps/pos/centre 0 -15.700 -10.40 mm
+/gps/ion 82 212
+/asn16/outFile wt20_scanCry_cry12/Pb212.csv
+/run/beamOn 300000
+/gps/ion 89 228
+/asn16/outFile wt20_scanCry_cry12/Ac228.csv
+/run/beamOn 300000
+/gps/ion 81 208
+/asn16/outFile wt20_scanCry_cry12/Tl208.csv
+/run/beamOn 300000
+
+# --- cryY = 15.0 мм, yRod = -17.20 ---
+/asn16/cryY 15.00
+/gps/pos/centre 0 -17.200 -10.40 mm
+/gps/ion 82 212
+/asn16/outFile wt20_scanCry_cry15/Pb212.csv
+/run/beamOn 300000
+/gps/ion 89 228
+/asn16/outFile wt20_scanCry_cry15/Ac228.csv
+/run/beamOn 300000
+/gps/ion 81 208
+/asn16/outFile wt20_scanCry_cry15/Tl208.csv
+/run/beamOn 300000

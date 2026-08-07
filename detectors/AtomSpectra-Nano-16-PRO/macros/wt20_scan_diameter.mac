@@ -1,0 +1,68 @@
+# СКАН ДИАМЕТРА СТЕРЖНЯ (задача №44). Диаметр — единственная ручка модели,
+# которая двигает мягкий конец спектра, не трогая жёсткий: тоньше пруток —
+# меньше самопоглощение, выше пик 238,63 и выход K-серии дочерних.
+#
+# ВНИМАНИЕ: ось стержней зависит от диаметра (yRod = -18,90 - r), область
+# розыгрыша GPS считается индивидуально для каждой точки. При cryY = 15 мм
+# ось строится от нижней грани корпуса, которая от cryY не зависит.
+#
+# По три нуклида на точку: Pb-212 (238 кэВ, K-серия дочерних), Ac-228
+# (мультиплеты 300-1600), Tl-208 (весь диапазон, 2614 включительно).
+#
+# ВАЖНО: файл в UTF-8 БЕЗ BOM.
+/asn16/wt20 on
+/run/initialize
+/control/verbose 0
+/run/verbose 0
+/process/had/rdm/thresholdForVeryLongDecayTime 1.0e+60 year
+/gps/particle ion
+/gps/energy 0 keV
+/gps/pos/type Volume
+/gps/pos/shape Para
+/gps/pos/halfx 23.50 mm
+/gps/pos/halfz 87.5 mm
+/gps/ang/type iso
+/gps/pos/confine Rod
+
+
+# --- D = 2.40 мм ---
+/asn16/rodD 2.40
+/gps/pos/halfy 1.250 mm
+/gps/pos/centre 0 -20.100 -10.40 mm
+/gps/ion 82 212
+/asn16/outFile wt20_scanD_D24/Pb212.csv
+/run/beamOn 300000
+/gps/ion 89 228
+/asn16/outFile wt20_scanD_D24/Ac228.csv
+/run/beamOn 300000
+/gps/ion 81 208
+/asn16/outFile wt20_scanD_D24/Tl208.csv
+/run/beamOn 300000
+
+# --- D = 2.80 мм ---
+/asn16/rodD 2.80
+/gps/pos/halfy 1.450 mm
+/gps/pos/centre 0 -20.300 -10.40 mm
+/gps/ion 82 212
+/asn16/outFile wt20_scanD_D28/Pb212.csv
+/run/beamOn 300000
+/gps/ion 89 228
+/asn16/outFile wt20_scanD_D28/Ac228.csv
+/run/beamOn 300000
+/gps/ion 81 208
+/asn16/outFile wt20_scanD_D28/Tl208.csv
+/run/beamOn 300000
+
+# --- D = 3.20 мм ---
+/asn16/rodD 3.20
+/gps/pos/halfy 1.650 mm
+/gps/pos/centre 0 -20.500 -10.40 mm
+/gps/ion 82 212
+/asn16/outFile wt20_scanD_D32/Pb212.csv
+/run/beamOn 300000
+/gps/ion 89 228
+/asn16/outFile wt20_scanD_D32/Ac228.csv
+/run/beamOn 300000
+/gps/ion 81 208
+/asn16/outFile wt20_scanD_D32/Tl208.csv
+/run/beamOn 300000

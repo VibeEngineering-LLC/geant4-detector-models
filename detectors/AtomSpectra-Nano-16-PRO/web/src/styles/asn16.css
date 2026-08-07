@@ -1,24 +1,27 @@
 /* AtomSpectra Nano 16 PRO — функция отклика, интерактивная страница.
-   Оформление отделено от разметки и от кода: правки палитры и типографики
-   не задевают ни шаблон, ни отрисовку холста. */
+   Вариант «плакат».
+
+   Противоположность тонким вариантам: страница набрана как типографский
+   плакат. Линейки толстые (3px), заголовок тяжёлый и крупный, всё активное
+   отмечено маркерной жёлтой плашкой — единственным акцентом, не занятым
+   ни одним каналом. Кривые остаются самым тонким на странице — на фоне
+   жирной обвязки график читается как гравюра в тяжёлой раме.
+
+   Ни один селектор, класс или переменная не переименованы: разметка
+   (src/index.html) и отрисовка (src/scripts/asn16.js) не меняются. */
 
 :root{
   color-scheme: light dark;
 
-  /* Нейтраль с фиолетовым уклоном и акцент взяты из палитры magma — той
-     самой, которой в этом проекте рисуется карта отклика. */
-  --paper:#faf8fb; --panel:#ffffff; --sunk:#f4f1f7;
-  --ink:#171220; --dim:#544b60; --faint:#7d7489;
-  --rule:#ded7e5; --rule-soft:#eee9f2; --accent:#8c2981; --accent-soft:#f7eaf4;
-  --grid:#e6e0ec; --grid-soft:#f2eef6;
-  --shadow:0 1px 2px #17122012, 0 10px 34px #17122014;
+  /* Тёплая небелёная бумага; чернота вместо серых. Жёлтая плашка --accent-soft
+     работает подложкой активного состояния, --accent остаётся чернотой:
+     цветной текст на плакате не используется. */
+  --paper:#f5f2ea; --panel:#f5f2ea; --sunk:#ebe7dc;
+  --ink:#16140f; --dim:#4c493f; --faint:#807b6d;
+  --rule:#16140f; --rule-soft:#c9c4b4; --accent:#16140f; --accent-soft:#f6d31c;
+  --grid:#dcd7c8; --grid-soft:#e8e4d7;
+  --shadow:7px 7px 0 #16140f;
 
-  /* Цвета каналов — по физическим группам: синие «энергия осталась»,
-     янтарные «ушёл рассеянный первичный», зелёные «аннигиляционные»,
-     красные «вторичное излучение из кристалла», серый «пришло извне».
-     Светлая и тёмная тема держат РАЗНЫЕ значения: одна и та же заливка не
-     может дать 3:1 к фону и на белом, и на почти чёрном (WCAG 1.4.11 —
-     нетекстовый контраст; линии здесь несут основной смысл). */
   --ch-photo:#2d5fa8;
   --ch-compt_full:#3f7ab8;
   --ch-pair_full:#5a8cbe;
@@ -31,37 +34,31 @@
   --ch-external:#6a6674;
   --ch-other:#9b96a5;
 
-  --serif:Georgia,"Times New Roman",serif;
+  --serif:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --mono:ui-monospace,"Cascadia Mono",Consolas,"DejaVu Sans Mono",monospace;
 }
 
 @media (prefers-color-scheme: dark){
   :root{
-    --paper:#110e17; --panel:#191521; --sunk:#15111c;
-    --ink:#efeaf3; --dim:#ada3b9; --faint:#867d94;
-    --rule:#2f2740; --rule-soft:#241e31; --accent:#df8bc9; --accent-soft:#2b1c2e;
-    --grid:#282136; --grid-soft:#1e1929;
-    --shadow:0 1px 2px #00000055, 0 12px 34px #00000066;
-    --ch-photo:#6ea6e8;
-    --ch-compt_full:#8cc0f0;
-    --ch-pair_full:#b3d6f7;
-    --ch-compt_esc1:#e0952f;
-    --ch-compt_escN:#f0bd72;
-    --ch-pair_esc1:#4fbe84;
-    --ch-pair_esc2:#86dfae;
-    --ch-brems_esc:#e0736d;
-    --ch-xray_esc:#ef9d97;
-    --ch-external:#a49fae;
-    --ch-other:#7c7688;
+    --paper:#161511; --panel:#161511; --sunk:#1f1d17;
+    --ink:#f0ede3; --dim:#b5b0a1; --faint:#847f70;
+    --rule:#f0ede3; --rule-soft:#3a382e; --accent:#f0ede3; --accent-soft:#c8a80e;
+    --grid:#2c2a22; --grid-soft:#211f19;
+    --shadow:7px 7px 0 #000000;
+    --ch-photo:#6ea6e8; --ch-compt_full:#8cc0f0; --ch-pair_full:#b3d6f7;
+    --ch-compt_esc1:#e0952f; --ch-compt_escN:#f0bd72;
+    --ch-pair_esc1:#4fbe84; --ch-pair_esc2:#86dfae;
+    --ch-brems_esc:#e0736d; --ch-xray_esc:#ef9d97;
+    --ch-external:#a49fae; --ch-other:#7c7688;
   }
 }
 :root[data-theme="dark"]{
-  --paper:#110e17; --panel:#191521; --sunk:#15111c;
-  --ink:#efeaf3; --dim:#ada3b9; --faint:#867d94;
-  --rule:#2f2740; --rule-soft:#241e31; --accent:#df8bc9; --accent-soft:#2b1c2e;
-  --grid:#282136; --grid-soft:#1e1929;
-  --shadow:0 1px 2px #00000055, 0 12px 34px #00000066;
+  --paper:#161511; --panel:#161511; --sunk:#1f1d17;
+  --ink:#f0ede3; --dim:#b5b0a1; --faint:#847f70;
+  --rule:#f0ede3; --rule-soft:#3a382e; --accent:#f0ede3; --accent-soft:#c8a80e;
+  --grid:#2c2a22; --grid-soft:#211f19;
+  --shadow:7px 7px 0 #000000;
   --ch-photo:#6ea6e8; --ch-compt_full:#8cc0f0; --ch-pair_full:#b3d6f7;
   --ch-compt_esc1:#e0952f; --ch-compt_escN:#f0bd72;
   --ch-pair_esc1:#4fbe84; --ch-pair_esc2:#86dfae;
@@ -69,11 +66,11 @@
   --ch-external:#a49fae; --ch-other:#7c7688;
 }
 :root[data-theme="light"]{
-  --paper:#faf8fb; --panel:#ffffff; --sunk:#f4f1f7;
-  --ink:#171220; --dim:#544b60; --faint:#7d7489;
-  --rule:#ded7e5; --rule-soft:#eee9f2; --accent:#8c2981; --accent-soft:#f7eaf4;
-  --grid:#e6e0ec; --grid-soft:#f2eef6;
-  --shadow:0 1px 2px #17122012, 0 10px 34px #17122014;
+  --paper:#f5f2ea; --panel:#f5f2ea; --sunk:#ebe7dc;
+  --ink:#16140f; --dim:#4c493f; --faint:#807b6d;
+  --rule:#16140f; --rule-soft:#c9c4b4; --accent:#16140f; --accent-soft:#f6d31c;
+  --grid:#dcd7c8; --grid-soft:#e8e4d7;
+  --shadow:7px 7px 0 #16140f;
   --ch-photo:#2d5fa8; --ch-compt_full:#3f7ab8; --ch-pair_full:#5a8cbe;
   --ch-compt_esc1:#a9660f; --ch-compt_escN:#bd7f1c;
   --ch-pair_esc1:#1f7345; --ch-pair_esc2:#2d9462;
@@ -85,274 +82,285 @@
 html,body{height:100%}
 body{
   margin:0; background:var(--paper); color:var(--ink);
-  font:16px/1.55 var(--serif); -webkit-text-size-adjust:100%;
-  /* Убирает задержку двойного тапа и делает подсветку касания намеренной,
-     а не браузерной по умолчанию. */
-  touch-action:manipulation; -webkit-tap-highlight-color:rgba(140,41,129,.18);
+  font:15px/1.55 var(--sans); -webkit-text-size-adjust:100%;
+  touch-action:manipulation; -webkit-tap-highlight-color:rgba(246,211,28,.4);
 }
 p{margin:0 0 .9em}
 p:last-child{margin-bottom:0}
-a{color:var(--accent)}
+a{color:var(--ink); text-decoration-thickness:2px; text-underline-offset:2px}
+a:hover{background:var(--accent-soft)}
 h1,h2,h3{text-wrap:balance; font-weight:normal; margin:0}
 
-/* ── каркас: шапка, панель, подвал; страница помещается без прокрутки ── */
-/* Страница рассчитана на один экран: шапка и подвал занимают свою высоту,
-   панель забирает остаток, а холст растягивается под панель. Прокрутка
-   появляется только там, где содержимое действительно длиннее экрана, —
-   в списке каналов, в карте отклика и во всплывающих пояснениях. */
+/* ── каркас ── */
 .app{
-  max-width:88rem; margin:0 auto; padding:1.2rem 1.4rem .9rem;
-  display:flex; flex-direction:column; gap:.85rem; height:100%;
+  max-width:100rem; margin:0 auto; padding:1.1rem 1.3rem 1rem;
+  display:flex; flex-direction:column; gap:.9rem; height:100%;
 }
 @media (min-width:900px) and (min-height:620px){
   html,body{overflow:hidden}
 }
-.top{display:flex; align-items:flex-end; gap:1.6rem; flex-wrap:wrap}
-.title h1{font-size:2.1rem; line-height:1.06; letter-spacing:-.018em}
-.title .eyebrow{
-  font:600 11px/1.4 var(--sans); letter-spacing:.15em; text-transform:uppercase;
-  color:var(--faint); margin:0 0 .3em;
+
+/* Шапка-афиша: тяжёлый заголовок слева, полоса состава в раме справа,
+   толстая линейка снизу. */
+.top{display:flex; align-items:flex-end; gap:2.6rem; flex-wrap:wrap;
+  border-bottom:3px solid var(--rule); padding-bottom:.95rem}
+.title{flex:1 1 26rem; min-width:19rem}
+.title h1{
+  font-size:clamp(1.9rem, 3vw, 2.7rem); line-height:.98;
+  letter-spacing:-.032em; font-weight:800;
 }
-.title .stand{font-size:1rem; color:var(--dim); max-width:34rem; margin:.45rem 0 0}
+.title .eyebrow{
+  font:800 11px/1.4 var(--sans); letter-spacing:.13em; text-transform:uppercase;
+  color:var(--ink); margin:0 0 .7em;
+}
+.title .stand{
+  font-size:13.5px; line-height:1.5; color:var(--dim);
+  max-width:32rem; margin:.7rem 0 0; text-wrap:pretty; font-weight:500;
+}
 .top-actions{display:flex; gap:.5rem; flex-wrap:wrap; margin-left:auto}
 
-/* ── кнопки ── */
+.hero{position:relative; flex:1 1 26rem; min-width:18rem}
+.hero canvas{display:block; width:100%; max-width:100%; height:92px;
+  border:2px solid var(--rule); border-radius:0;
+  background:var(--sunk); touch-action:none; cursor:crosshair}
+.hero-cap{font:600 11px/1.45 var(--sans); color:var(--dim); margin-top:.45rem}
+
+/* ── кнопки: блоки с рамками, активное — на жёлтой плашке ── */
 button{font:inherit}
 .btn{
-  appearance:none; cursor:pointer; font:13.5px/1 var(--sans);
-  background:var(--panel); color:var(--dim);
-  border:1px solid var(--rule); border-radius:7px; padding:.55rem .8rem;
+  appearance:none; cursor:pointer; font:800 12px/1 var(--sans);
+  letter-spacing:.05em; text-transform:uppercase;
+  background:none; color:var(--ink);
+  border:2px solid transparent; border-radius:0; padding:.5rem .6rem;
   display:inline-flex; align-items:center; gap:.4rem;
 }
-.btn:hover{color:var(--ink); border-color:var(--faint)}
-.btn[aria-expanded="true"]{
-  color:var(--accent); border-color:var(--accent); background:var(--accent-soft)}
-:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.btn:hover{border-color:var(--rule)}
+.btn[aria-expanded="true"]{background:var(--accent-soft);
+  border-color:var(--rule); color:#16140f}
+:focus-visible{outline:3px solid var(--accent-soft); outline-offset:1px}
 
-.seg{display:inline-flex; border:1px solid var(--rule); border-radius:7px;
-  overflow:hidden; background:var(--panel)}
-.seg .btn{border:none; border-radius:0; background:none}
-.seg .btn+.btn{border-left:1px solid var(--rule)}
-.seg .btn[aria-pressed="true"]{
-  background:var(--accent-soft); color:var(--accent); font-weight:600}
+.seg{display:inline-flex; border:2px solid var(--rule); border-radius:0;
+  overflow:hidden}
+.seg .btn{border:none; border-radius:0}
+.seg .btn+.btn{border-left:2px solid var(--rule)}
+.seg .btn[aria-pressed="true"]{background:var(--accent-soft); color:#16140f}
 
-/* ── полоса состава: главный рисунок шапки ── */
-.hero{position:relative; flex:1 1 26rem; min-width:17rem}
-.hero canvas{display:block; width:100%; max-width:100%; border-radius:9px;
-  background:var(--sunk); touch-action:none; cursor:crosshair}
-.hero-cap{font:11.5px/1.45 var(--sans); color:var(--faint); margin-top:.4rem}
-
-/* ── приборная панель ── */
+/* ── приборная панель: рама 3px, график внутри ── */
 .panel{
-  background:var(--panel); border:1px solid var(--rule); border-radius:12px;
-  box-shadow:var(--shadow); overflow:hidden;
+  background:none; border:3px solid var(--rule); border-radius:0;
+  box-shadow:none; overflow:hidden;
   display:flex; flex-direction:column; flex:1 1 auto; min-height:0;
 }
 .toolbar{
-  display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;
-  padding:.6rem .75rem; border-bottom:1px solid var(--rule); background:var(--sunk);
+  display:flex; align-items:center; gap:.9rem; flex-wrap:wrap;
+  padding:.5rem .8rem; border-bottom:3px solid var(--rule); background:none;
 }
 .toolbar .sp{flex:1}
-.tabs{display:flex; gap:.15rem; flex-wrap:wrap}
-.tabs .btn{background:none; border-color:transparent}
-.tabs .btn[aria-selected="true"]{
-  background:var(--panel); border-color:var(--rule); color:var(--accent);
-  font-weight:600}
+/* Энергии узлов — блочные табы: активный залит жёлтым. */
+.tabs{display:flex; gap:.4rem; flex-wrap:wrap}
+.tabs .btn{
+  background:none; border:2px solid var(--rule); color:var(--ink);
+  font:800 13px/1 var(--mono); font-variant-numeric:tabular-nums;
+  letter-spacing:.02em; text-transform:none; padding:.55rem .7rem}
+.tabs .btn:hover{background:var(--sunk)}
+.tabs .btn[aria-selected="true"]{background:var(--accent-soft); color:#16140f}
 
-.stage{display:grid; grid-template-columns:1fr 23rem; min-height:0; flex:1 1 auto}
+.stage{display:grid; grid-template-columns:minmax(0,1fr) 21.5rem; gap:0;
+  min-height:0; flex:1 1 auto}
 .stage[hidden]{display:none}
-@media (max-width:1080px){ .stage{grid-template-columns:1fr} }
+@media (max-width:1080px){ .stage{grid-template-columns:minmax(0,1fr)} }
 
-.stage-map{flex:1 1 auto; min-height:0; overflow-y:auto}
+.stage-map{flex:1 1 auto; min-height:0; overflow-y:auto; padding:1rem .8rem}
 .stage-map[hidden]{display:none}
 
-/* Холст графика позиционирован абсолютно: иначе его высота участвовала бы
-   в высоте контейнера, из которой она же и вычисляется. */
-.plotwrap{position:relative; padding:.7rem .85rem .1rem; min-width:0;
-  min-height:12rem; overflow:hidden}
+.plotwrap{position:relative; padding:.7rem .8rem .3rem; min-width:0;
+  min-height:22rem; overflow:hidden}
 canvas{display:block; width:100%; max-width:100%; touch-action:none}
-/* Холст графика лежит в абсолютно спозиционированной рамке: у элемента с
-   собственным размером (canvas 300x150) width/height:auto при заданных
-   left/right разрешаются в СОБСТВЕННЫЙ размер, а не в размер рамки, —
-   поэтому растяжка задаётся процентами внутри неё. */
-.plotbox{position:absolute; inset:.7rem .85rem .1rem}
+.plotbox{position:absolute; inset:.7rem .8rem .3rem}
 .plotbox canvas{width:100%; height:100%}
 #cv{cursor:crosshair}
-/* ── зоны спектра ─────────────────────────────────────────────────────
-   Цветные полосы под графиком, шириной пропорционально энергетическому
-   охвату зоны. Слева-справа отступы отвечают полям поля графика на
-   холсте; JS выставляет width каждой зоны в пикселях, а не через flex —
-   так текст переносится при недостатке места, и полоса не сжимается
-   меньше своей энергетической доли. */
-.zones{display:flex; gap:2px; margin-top:.3rem;
-  font:11px/1.25 var(--sans); color:var(--dim); user-select:none}
-.zones .zone{
-  padding:.32rem .5rem; text-align:center; border-radius:4px;
-  background:var(--zc, var(--sunk));
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-  cursor:default;
-}
-.zones .zone[data-id="peak"]   {--zc:color-mix(in srgb, var(--accent) 24%, var(--sunk))}
-.zones .zone[data-id="cont"]   {--zc:color-mix(in srgb, var(--ch-compt_esc1) 16%, var(--sunk))}
-.zones .zone[data-id="gap"]    {--zc:color-mix(in srgb, var(--ch-compt_escN) 16%, var(--sunk))}
-.zones .zone[data-id="over"]   {--zc:var(--sunk); color:var(--faint)}
-.zones .zone[data-id="soft"]   {--zc:color-mix(in srgb, var(--ch-photo) 22%, var(--sunk))}
-.zones .zone[data-id="compton"]{--zc:color-mix(in srgb, var(--ch-compt_esc1) 22%, var(--sunk))}
-.zones .zone[data-id="pair"]   {--zc:color-mix(in srgb, var(--ch-pair_esc2) 24%, var(--sunk))}
-/* Старые движки без color-mix — не срываем: полоса просто в цвете фона. */
-@supports not (color: color-mix(in srgb, red, blue)){
-  .zones .zone{background:var(--sunk)}
-}
-
 .plot-foot{
-  display:flex; gap:.5rem .9rem; flex-wrap:wrap; align-items:center;
-  padding:.2rem .95rem .6rem; font:11.5px/1.5 var(--sans); color:var(--faint);
+  display:flex; gap:.4rem 1.3rem; flex-wrap:wrap; align-items:center;
+  padding:.5rem .8rem .55rem; font:600 11px/1.5 var(--sans); color:var(--dim);
+  border-top:2px solid var(--rule);
 }
 .plot-foot .sp{flex:1}
-/* Элементы спектра — настоящие кнопки, а не только щелчок по холсту:
-   иначе пояснения к ним недостижимы с клавиатуры. */
-.elems{display:flex; gap:.35rem; flex-wrap:wrap}
+.elems{display:flex; gap:.45rem; flex-wrap:wrap}
 .elems button{
-  appearance:none; cursor:pointer; font:11.5px/1 var(--sans);
-  background:var(--sunk); color:var(--dim); border:1px solid var(--rule);
-  border-radius:999px; padding:.32rem .6rem;
+  appearance:none; cursor:pointer; font:700 11px/1 var(--sans);
+  background:none; color:var(--ink); border:1.5px solid var(--rule);
+  border-radius:0; padding:.34rem .5rem;
 }
-.elems button:hover{color:var(--accent); border-color:var(--accent)}
+.elems button:hover{background:var(--accent-soft); color:#16140f}
 
-/* ── легенда каналов ── */
+/* ── легенда каналов ──
+   Колонка процента фиксирована, а не `auto`: иначе она разрешается раньше
+   гибкой и отнимает ширину у подписи, ломая её на три строки. */
 .side{
-  border-left:1px solid var(--rule); background:var(--panel);
-  display:flex; flex-direction:column; min-height:0;
+  border-left:3px solid var(--rule); background:none;
+  display:flex; flex-direction:column; min-height:0; padding:0 .8rem;
 }
-@media (max-width:1080px){ .side{border-left:none; border-top:1px solid var(--rule)} }
+@media (max-width:1080px){
+  .side{border-left:none; border-top:3px solid var(--rule)}
+}
 .side-head{
-  padding:.7rem .85rem .4rem; font:600 10.5px/1.3 var(--sans);
-  letter-spacing:.1em; text-transform:uppercase; color:var(--faint);
-  display:flex; align-items:center; gap:.5rem;
+  padding:.75rem 0 .5rem; font:800 11px/1.3 var(--sans);
+  letter-spacing:.13em; text-transform:uppercase; color:var(--ink);
+  display:flex; align-items:center; gap:.8rem;
+  border-bottom:2px solid var(--rule);
 }
 .side-head .sp{flex:1}
 .side-head button{
-  font:11px/1 var(--sans); background:none; border:1px solid var(--rule);
-  border-radius:5px; color:var(--faint); padding:.28rem .45rem; cursor:pointer}
-.side-head button:hover{color:var(--ink); border-color:var(--faint)}
-.legend{overflow-y:auto; padding:0 .5rem .6rem; flex:1 1 auto; min-height:0}
+  font:700 10.5px/1 var(--sans); background:none;
+  border:1.5px solid var(--rule); border-radius:0; color:var(--ink);
+  padding:.26rem .4rem; cursor:pointer; letter-spacing:.05em;
+  text-transform:uppercase}
+.side-head button:hover{background:var(--accent-soft); color:#16140f}
+.legend{overflow-y:auto; padding:.1rem 0 .7rem; flex:1 1 auto; min-height:0}
 
 .ch{
-  display:grid; grid-template-columns:auto auto 1fr auto auto;
-  align-items:center; gap:.5rem; padding:.4rem .35rem;
-  border-radius:6px; cursor:pointer; font:13.5px/1.28 var(--sans);
+  display:grid; grid-template-columns:auto auto minmax(0,1fr) 4.25rem auto;
+  align-items:center; gap:.55rem; padding:.44rem 0;
+  border-radius:0; cursor:pointer; font:600 12.5px/1.3 var(--sans);
+  border-bottom:1.5px solid var(--rule-soft);
 }
 .ch:hover{background:var(--sunk)}
-.ch input{margin:0; accent-color:var(--accent); cursor:pointer}
-.ch .sw{width:1.05rem; height:.68rem; border-radius:3px; background:var(--c)}
-.ch.off .nm,.ch.off .pc{opacity:.42}
-.ch.off .sw{opacity:.28}
-.ch .pc{font:12.5px/1 var(--mono); font-variant-numeric:tabular-nums;
-  color:var(--dim); text-align:right}
+.ch input{margin:0; accent-color:var(--ink); cursor:pointer;
+  width:.9rem; height:.9rem}
+.ch .sw{width:.95rem; height:.95rem; border-radius:0; background:var(--c)}
+.ch .nm{min-width:0}
+.ch.off .nm,.ch.off .pc{opacity:.35}
+.ch.off .sw{opacity:.2}
+.ch .pc{font:700 12px/1 var(--mono); font-variant-numeric:tabular-nums;
+  color:var(--ink); text-align:right; min-width:0}
 .ch .go{
-  appearance:none; background:none; border:1px solid var(--rule);
-  border-radius:50%; width:1.25rem; height:1.25rem; line-height:1;
-  color:var(--faint); font:11px/1 var(--sans); cursor:pointer; padding:0}
-.ch .go:hover{color:var(--accent); border-color:var(--accent)}
-.ch.total .sw{background:var(--ink); height:.26rem}
-.ch.total .nm{font-weight:600}
+  appearance:none; background:none; border:1.5px solid var(--rule);
+  border-radius:0; width:1.15rem; height:1.15rem; line-height:1;
+  color:var(--ink); font:700 10.5px/1 var(--sans); cursor:pointer; padding:0}
+.ch .go:hover{background:var(--accent-soft); color:#16140f}
+.ch.total{border-bottom:2px solid var(--rule)}
+.ch.total .sw{background:var(--ink)}
+.ch.total .nm{font-weight:800}
 
-/* ── всплывающая подсказка под курсором ── */
+/* ── всплывающая подсказка под курсором: жёсткая тень, без размытий ── */
 .readout{
   position:absolute; pointer-events:none; opacity:0; transition:opacity .1s;
-  background:var(--panel); border:1px solid var(--rule); border-radius:8px;
-  padding:.5rem .6rem; font:12px/1.5 var(--mono); font-variant-numeric:tabular-nums;
+  background:var(--paper); border:2px solid var(--rule); border-radius:0;
+  padding:.55rem .7rem; font:12px/1.6 var(--mono);
+  font-variant-numeric:tabular-nums;
   box-shadow:var(--shadow); max-width:24rem; z-index:6; color:var(--ink);
 }
-.readout b{display:block; font-weight:600; margin-bottom:.25em;
-  border-bottom:1px solid var(--rule-soft); padding-bottom:.25em}
-.readout i{display:inline-block; width:.6em; height:.6em; border-radius:2px;
-  background:var(--c); margin-right:.45em}
+.readout b{display:block; font-weight:800; margin-bottom:.35em;
+  border-bottom:2px solid var(--rule); padding-bottom:.35em}
+.readout i{display:inline-block; width:.7em; height:.7em; border-radius:0;
+  background:var(--c); margin-right:.5em}
 .readout span{display:block; white-space:nowrap}
-.readout .v{float:right; margin-left:1.2em; color:var(--dim)}
+.readout .v{float:right; margin-left:1.4em; color:var(--dim)}
 
 /* ── всплывающие пояснения ── */
 .pop{
-  position:fixed; z-index:40; overscroll-behavior:contain; width:min(30rem, calc(100vw - 2rem));
-  max-height:min(34rem, calc(100vh - 2rem)); overflow:auto;
-  background:var(--panel); border:1px solid var(--rule); border-radius:12px;
-  box-shadow:var(--shadow); padding:1.05rem 1.2rem 1.1rem;
-  font:15px/1.55 var(--serif);
+  position:fixed; z-index:40; overscroll-behavior:contain;
+  width:min(33rem, calc(100vw - 3rem));
+  max-height:min(36rem, calc(100vh - 3rem)); overflow:auto;
+  background:var(--paper); border:3px solid var(--rule); border-radius:0;
+  box-shadow:var(--shadow); padding:1.6rem 1.8rem 1.8rem;
+  font:14.5px/1.65 var(--sans);
 }
 .pop[hidden]{display:none}
-.pop.wide{width:min(52rem, calc(100vw - 2rem))}
-.pop h2{font-size:1.15rem; line-height:1.25; margin:0 0 .1em; padding-right:2rem}
-.pop .key{font:600 10.5px/1.4 var(--mono); letter-spacing:.06em;
-  color:var(--faint); display:block; margin-bottom:.7em}
+.pop.wide{width:min(58rem, calc(100vw - 3rem))}
+.pop h2{font:800 1.35rem/1.12 var(--sans); letter-spacing:-.022em;
+  margin:0 0 .7em; padding-right:2rem}
+.pop .key{font:700 10.5px/1.4 var(--mono); letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ink); display:block;
+  margin-bottom:.8em; background:var(--accent-soft); padding:.2em .45em;
+  width:fit-content}
 .pop .close{
-  position:absolute; top:.55rem; right:.6rem; width:1.7rem; height:1.7rem;
-  border-radius:6px; border:1px solid var(--rule); background:var(--panel);
-  color:var(--faint); cursor:pointer; font:15px/1 var(--sans)}
-.pop .close:hover{color:var(--ink); border-color:var(--faint)}
-.pop h3{font-size:1rem; margin:1.1em 0 .25em}
-.pop h3:first-of-type{margin-top:.6em}
-.pop ol{padding-left:1.3rem; margin:.2em 0 .9em}
-.pop ol li{margin-bottom:.3em}
-.scrim{position:fixed; inset:0; background:#0b0810; opacity:.34; z-index:30}
+  position:absolute; top:.7rem; right:.8rem; width:1.7rem; height:1.7rem;
+  border-radius:0; border:2px solid var(--rule); background:var(--paper);
+  color:var(--ink); cursor:pointer; font:700 13px/1 var(--sans)}
+.pop .close:hover{background:var(--accent-soft); color:#16140f}
+.pop h3{font:800 11px/1.4 var(--sans); letter-spacing:.13em;
+  text-transform:uppercase; color:var(--ink); margin:1.9em 0 .6em;
+  border-top:2px solid var(--rule); padding-top:.8em}
+.pop h3:first-of-type{margin-top:1.3em}
+.pop ol{padding-left:1.4rem; margin:.3em 0 1em}
+.pop ol li{margin-bottom:.42em}
+.scrim{position:fixed; inset:0; background:#16140f; opacity:.28; z-index:30}
 .scrim[hidden]{display:none}
 
-.mini{width:100%; border-collapse:collapse; margin:.2em 0 .9em;
-  font:12.5px/1 var(--mono); font-variant-numeric:tabular-nums}
-.mini th,.mini td{padding:.32rem .4rem; text-align:right;
-  border-bottom:1px solid var(--rule-soft)}
+.mini{width:100%; border-collapse:collapse; margin:.3em 0 1.1em;
+  font:12px/1 var(--mono); font-variant-numeric:tabular-nums}
+.mini th,.mini td{padding:.42rem .4rem; text-align:right;
+  border-bottom:1.5px solid var(--rule-soft)}
 .mini th:first-child,.mini td:first-child{text-align:left}
-.mini thead th{font:600 10px/1.3 var(--sans); letter-spacing:.07em;
-  text-transform:uppercase; color:var(--faint)}
+.mini thead th{font:800 10px/1.3 var(--sans); letter-spacing:.11em;
+  text-transform:uppercase; color:var(--ink)}
 .mini td.bar-cell{position:relative}
 .mini td.bar-cell::before{
-  content:""; position:absolute; left:0; bottom:1px; height:2px;
-  width:calc(var(--w) * 1%); background:var(--c); opacity:.75}
+  content:""; position:absolute; left:0; bottom:1px; height:3px;
+  width:calc(var(--w) * 1%); background:var(--c)}
 
-table.big{border-collapse:collapse; font:13px/1.35 var(--mono);
+table.big{border-collapse:collapse; font:12.5px/1.4 var(--mono);
   font-variant-numeric:tabular-nums; width:100%; min-width:32rem}
-table.big th,table.big td{padding:.42rem .6rem; text-align:right;
-  border-bottom:1px solid var(--rule-soft); white-space:nowrap}
+table.big th,table.big td{padding:.5rem .65rem; text-align:right;
+  border-bottom:1.5px solid var(--rule-soft); white-space:nowrap}
 table.big th:first-child,table.big td:first-child{text-align:left;
-  font:13px/1.35 var(--sans); font-weight:normal}
-table.big thead th{font:600 10px/1.3 var(--sans); letter-spacing:.08em;
-  text-transform:uppercase; color:var(--faint); border-bottom:1px solid var(--rule)}
+  font:600 12.5px/1.4 var(--sans); padding-left:0}
+table.big thead th{font:800 10px/1.3 var(--sans); letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ink);
+  border-bottom:2px solid var(--rule)}
 table.big tbody tr.sum th,table.big tbody tr.sum td{
-  border-top:1px solid var(--rule); font-weight:600}
-table.big .sw{display:inline-block; width:.8rem; height:.5rem; border-radius:2px;
-  margin-right:.5rem; vertical-align:.05em; background:var(--c)}
+  border-top:2px solid var(--rule); font-weight:800}
+table.big .sw{display:inline-block; width:.7rem; height:.7rem;
+  border-radius:0; margin-right:.5rem; vertical-align:-.05em;
+  background:var(--c)}
 table.big td.num{position:relative}
 table.big td.num::before{
-  content:""; position:absolute; left:.35rem; right:.35rem; bottom:2px;
-  height:2px; background:var(--c); opacity:.7;
+  content:""; position:absolute; left:.3rem; right:.65rem; bottom:2px;
+  height:3px; background:var(--c);
   transform:scaleX(calc(var(--w) / 100)); transform-origin:left}
 .scroll{overflow-x:auto}
 
 .specs{display:grid; grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));
-  gap:0; margin:.4rem 0 1rem; border-top:1px solid var(--rule)}
-.specs div{padding:.6rem .8rem .6rem 0; border-bottom:1px solid var(--rule-soft)}
-.specs dt{font:600 10px/1.4 var(--sans); letter-spacing:.1em;
-  text-transform:uppercase; color:var(--faint); margin:0 0 .25em}
-.specs dd{margin:0; font:13.5px/1.4 var(--mono); font-variant-numeric:tabular-nums}
+  gap:0; margin:.5rem 0 1.3rem; border-top:2px solid var(--rule)}
+.specs div{padding:.65rem .9rem .65rem 0;
+  border-bottom:1.5px solid var(--rule-soft)}
+.specs dt{font:800 10px/1.4 var(--sans); letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ink); margin:0 0 .35em}
+.specs dd{margin:0; font:600 12.5px/1.45 var(--mono);
+  font-variant-numeric:tabular-nums}
 
-.note{border-left:3px solid var(--accent); background:var(--accent-soft);
-  padding:.8rem 1rem; margin:1em 0 0; border-radius:0 7px 7px 0; font-size:14px}
-.formula{font:15px/1.6 var(--mono); background:var(--sunk); border-radius:7px;
-  padding:.6rem .8rem; margin:.6em 0 .9em; overflow-x:auto; white-space:nowrap}
-.formula em{font-style:normal; color:var(--faint); font-size:12.5px}
+.note{border:none; background:var(--accent-soft);
+  padding:.85rem 1rem; margin:1.5em 0 0; border-radius:0;
+  font-size:13.5px; color:#16140f}
+.note b{color:#16140f}
+.formula{font:700 14.5px/1.7 var(--mono); background:none;
+  border:2px solid var(--rule); border-radius:0;
+  padding:.8rem .9rem; margin:1em 0 1.1em; overflow-x:auto; white-space:nowrap}
+.formula em{font-style:normal; color:var(--dim); font-size:12px;
+  font-weight:400}
 
 footer.bot{
-  font:11.5px/1.55 var(--sans); color:var(--faint);
-  display:flex; gap:.4rem 1.6rem; flex-wrap:wrap; align-items:baseline;
+  font:600 11px/1.6 var(--sans); color:var(--dim);
+  display:flex; gap:.4rem 1.8rem; flex-wrap:wrap; align-items:baseline;
+  border-top:3px solid var(--rule); padding-top:.65rem;
 }
-footer.bot code{font:11px/1.4 var(--mono)}
+footer.bot code{font:700 11px/1.45 var(--mono); color:var(--ink)}
 footer.bot button{
   appearance:none; background:none; border:none; padding:0; cursor:pointer;
-  color:var(--accent); font:inherit; text-decoration:underline}
+  color:var(--ink); font:inherit; font-weight:700;
+  text-decoration:underline; text-decoration-thickness:2px;
+  text-underline-offset:2px}
+footer.bot button:hover{background:var(--accent-soft)}
 
 @media (max-width:640px){
-  .app{padding:1rem .9rem}
-  .title h1{font-size:1.6rem}
-  .plotwrap{padding:.6rem .45rem .2rem}
+  .app{padding:.9rem .8rem .8rem}
+  .title h1{font-size:1.65rem}
+  .plotwrap{padding:.5rem .5rem .2rem; min-height:17rem}
+  .plotbox{inset:.5rem .5rem .2rem}
+  .toolbar{padding:.45rem .5rem}
+  .side{padding:0 .5rem}
+  .pop{padding:1.2rem 1.1rem 1.3rem}
   .legend{max-height:15rem}
 }
 @media (prefers-reduced-motion:reduce){

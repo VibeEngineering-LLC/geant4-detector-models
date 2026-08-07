@@ -33,11 +33,28 @@ def read_csv(path):
     складывает всю строку в одну ячейку — таблица на странице выходила
     одноколоночной. Поэтому разделитель определяется по первой значащей строке,
     а не задаётся по умолчанию.
+
+    Комментарий вида `# текст; с разделителем внутри` `csv.writer` заключает
+    в кавычки целиком (иначе разделитель внутри поля сломал бы структуру), и
+    СЫРАЯ строка тогда начинается с `"`, а не с `#` — фильтр по первому символу
+    такую строку не ловил, она попадала в таблицу отдельной строкой-мусором
+    (найдено на живой странице: Таблица 3 «Активности звеньев ряда» схлопнулась
+    в один столбец, потому что первой строкой шёл однопольный комментарий).
+    Проверка снимает внешнюю кавычку перед тем, как решать, комментарий это.
     """
     if not os.path.exists(path):
         return []
     with io.open(path, encoding="utf-8") as f:
-        raw = [ln for ln in f if ln.strip() and not ln.startswith("#")]
+        raw = []
+        for ln in f:
+            if not ln.strip():
+                continue
+            probe = ln.lstrip()
+            if probe.startswith('"'):
+                probe = probe[1:]
+            if probe.startswith("#"):
+                continue
+            raw.append(ln)
     if not raw:
         return []
     delim = ";" if raw[0].count(";") > raw[0].count(",") else ","
@@ -275,6 +292,38 @@ def main():
                 if s1 > 0:
                     m2m1.append(["%d–%d кэВ, %s" % (lo, hi, lab),
                                  "%.4f" % (s2 / s1)])
+    # Возраст ряда. Файл `forward_age.csv` держит НЕСКОЛЬКО разнородных
+    # блоков в одном файле: таблицу пар (заголовок «E_числитель_кэВ»),
+    # чувствительность к ширине окна (заголовок «×ПШПВ» — на странице не
+    # показывается, диагностика Б2 уже свёрнута в честный диапазон), разбор
+    # состава окон (заголовок «E_кэВ») и итоговую строку («итог_точка_лет; …»).
+    # Общей ширины у блоков нет, поэтому раздел определяется по первой ячейке
+    # строки — простой автомат состояний. Каждый новый заголовок ОБЯЗАН явно
+    # переключить `section`, иначе следующий блок молча утечёт в предыдущий
+    # (найдено при добавлении блока ширины окна: без ветки «×ПШПВ» его строки
+    # дописывались в конец age_pairs и ломали таблицу на странице).
+    age_pairs, age_comp, age_head = [], [], {}
+    section = None
+    for r in opt("forward_age.csv"):
+        if not r:
+            continue
+        tag = r[0]
+        if tag == "E_числитель_кэВ":
+            section = "pairs"
+        elif tag == "×ПШПВ":
+            section = None            # диагностика Б2, на странице не нужна
+        elif tag == "E_кэВ":
+            section = "comp"
+        elif tag.startswith("итог_"):
+            for i in range(0, len(r) - 1, 2):
+                age_head[r[i]] = r[i + 1]
+            section = None
+            continue
+        if section == "pairs":
+            age_pairs.append(r)
+        elif section == "comp":
+            age_comp.append(r)
+
     payload = dict(names=names, spec=spec, acts=acts, lines=lines, cal=cal,
                    spectra=spectra,
                    names_m2=names_m2, spec_m2=spec_m2, acts_m2=acts_m2,
@@ -284,6 +333,7 @@ def main():
                    bg_sum=round(bg_sum, 1),
                    bg_share=round(100.0 * bg_sum / meas_sum, 2) if meas_sum else 0,
                    src_fwd=opt("wt20_source_forward.csv"),
+                   age_pairs=age_pairs, age_comp=age_comp, age_head=age_head,
                    peakchk=opt("peak_check.csv"),
                    widthfit=opt("width_fit.csv"),
                    selfabs=opt("wt20_selfabsorption.csv"),

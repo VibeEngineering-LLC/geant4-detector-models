@@ -62,6 +62,12 @@ GLOBAL_FIT = not STEPWISE
 # наличии их файлов в каталоге шаблонов; прежний полный набор включается
 # флагом WT20_XRAY=1. Матричное решение по гл. 12 откат не трогает.
 XRAY_ON = os.environ.get("WT20_XRAY") == "1"
+# Поверхностные шаблоны (осаждение дочерних торона на стержнях, задача №9)
+# грузятся по умолчанию: без них модель не описывает K-серию дочерних в
+# мягкой области 65–100 кэВ (0,23 от измеренного против 0,69 с осаждением;
+# самопоглощение в вольфраме над K-краем 69,5 кэВ). Отключение — флагом
+# WT20_NO_SURFACE=1 (сравнение с чисто объёмным источником).
+SURFACE_ON = os.environ.get("WT20_NO_SURFACE") != "1"
 
 # Границы окна переопределяются переменными окружения — так разброс по окну
 # считается прогоном одного и того же кода (analysis/wt20_window_scan.py).
@@ -96,6 +102,11 @@ ORDER = [
     ("Bi212", "Bi-212", "#2f6b34"),
     ("Tl208", "Tl-208", "#c8cf7a"),
     ("Po212", "Po-212", "#8fa0a8"),
+    # Осаждение дочерних торона НА ПОВЕРХНОСТИ стержней (задача №9): те же
+    # звенья, но розыгрыш в плёнке RodSkin — без самопоглощения в металле.
+    ("Pb212s", "Pb-212 (осаждение)", "#e0973f"),
+    ("Bi212s", "Bi-212 (осаждение)", "#5d9c62"),
+    ("Tl208s", "Tl-208 (осаждение)", "#b8b34e"),
     ("XI",    "X-I (флуоресценция иода в CsI)",   "#2E7D32"),
     ("XW",    "X-W (K-серия вольфрама электрода)", "#C03535"),
     ("XD1",   "X-K дочерних (ветвь A1)",           "#7b3fb3"),
@@ -502,6 +513,8 @@ def main():
     for key, label, colour in ORDER:
         if not XRAY_ON and key in ("XI", "XW", "XD1", "XD2"):
             continue
+        if not SURFACE_ON and key in ("Pb212s", "Bi212s", "Tl208s"):
+            continue
         p = os.path.join(tdir, "%s.csv" % key)
         if not os.path.exists(p):
             continue
@@ -519,6 +532,16 @@ def main():
         raise SystemExit("шаблоны разных ревизий: %s" % ", ".join(stamps))
     print("шаблонов %d, штамп %s" % (len(templates), stamps.pop() if stamps
                                      else "?"))
+
+    # С поверхностными шаблонами мягкий горб 60-150 кэВ описывается моделью —
+    # полоса возвращается вниз (директива «надо учесть, он преобладает»).
+    global E_FIT
+    tkeys = {t[0] for t in templates}
+    have_surface = bool(tkeys & {"Pb212s", "Bi212s", "Tl208s"})
+    if have_surface and not os.environ.get("WT20_FIT_LO") and not XRAY_ON:
+        E_FIT = (60.0, E_FIT[1])
+        print("полоса подгонки расширена вниз: %.0f-%.0f кэВ (есть "
+              "поверхностные шаблоны)" % E_FIT)
 
     m = (centres >= E_FIT[0]) & (centres <= E_FIT[1])
     yy = y[m]
@@ -551,6 +574,13 @@ def main():
                                   "Po216": 1.0, "Pb212": 1.0, "Bi212": 1.0,
                                   "Tl208": br_tl, "Po212": 1.0 - br_tl},
     }
+    # Поверхностная подцепочка (осаждение дочерних торона, задача №9):
+    # Pb-212 -> Bi-212 -> Tl-208 на поверхности стержней, равновесие внутри —
+    # часы. Коэффициент — активность осаждённого Pb-212, Бк; отношение
+    # A2s/A2 — доля вышедшей и осевшей активности.
+    if have_surface:
+        GROUP["A2s (осаждение Pb-212 -> Tl-208)"] = {
+            "Pb212s": 1.0, "Bi212s": 1.0, "Tl208s": br_tl}
     tmap = {k: (e, c) for k, _, _, e, c, _ in templates}
     nmap = {k: n for k, _, _, _, _, n in templates}
     XGROUPS = [("XI (флуоресценция иода в CsI)", "XI"),
@@ -871,10 +901,14 @@ def main():
         rows.append((gname, x[i], x_sigma[i]))
         a_by_gname[gname] = x[i]
     a1 = next((v for k, v in a_by_gname.items() if k.startswith("A1")), 0.0)
-    a2 = next((v for k, v in a_by_gname.items() if k.startswith("A2")), 0.0)
+    a2 = next((v for k, v in a_by_gname.items() if k.startswith("A2 ")), 0.0)
+    a2s = next((v for k, v in a_by_gname.items() if k.startswith("A2s")), None)
+    if a2s is not None and a2 > 0:
+        print("  осаждённая доля A2s/A2 = %.4f (активность на поверхности "
+              "к активности в объёме)" % (a2s / a2))
     if a2 > 0:
         s1 = next((s for (k, v, s) in rows if k.startswith("A1")), 0.0)
-        s2 = next((s for (k, v, s) in rows if k.startswith("A2")), 0.0)
+        s2 = next((s for (k, v, s) in rows if k.startswith("A2 ")), 0.0)
         ratio_v = a1 / a2
         # неопределённость отношения — по независимым σ; ковариация A1, A2
         # из D⁻¹ здесь не учитывается, что помечается явно

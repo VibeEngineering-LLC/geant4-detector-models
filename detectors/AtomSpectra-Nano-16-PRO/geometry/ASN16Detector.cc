@@ -149,7 +149,11 @@ G4VPhysicalVolume* ASN16Detector::Construct() {
   // --- мир -----------------------------------------------------------------
   // Запас должен вмещать точечный источник на 10 см от торца плюс воздух
   // вокруг него: рассеяние в воздухе перед прибором — часть измерения.
-  auto* worldS = new G4Box("World", 150 * mm, 150 * mm, 250 * mm);
+  // Мир расширяется только вместе с комнатой: пол на 700 мм ниже в коробку
+  // 300 x 300 x 500 не помещается, а держать большой мир постоянно незачем.
+  const double wHX = g.room ? g.roomHalf : 150.0;
+  const double wHZ = g.room ? g.roomHalf : 250.0;
+  auto* worldS = new G4Box("World", wHX * mm, wHX * mm, wHZ * mm);
   auto* worldLV = new G4LogicalVolume(worldS, Mat("G4_AIR"), "World");
   worldLV->SetVisAttributes(G4VisAttributes::GetInvisible());
   auto* world = new G4PVPlacement(nullptr, {}, worldLV, "World", nullptr,
@@ -158,8 +162,15 @@ G4VPhysicalVolume* ASN16Detector::Construct() {
 
   // --- корпус: сплошная коробка, внутрь неё вставлена воздушная полость ----
   // Рёбра и бобышки профиля не воспроизводятся: стенки гладкие.
+  // Корпус и крышки можно заменить вакуумом командой /asn16/caseOff on —
+  // ТОЛЬКО ДИАГНОСТИКА. Разность двух прогонов одной ревизии показывает
+  // полный вклад алюминиевого корпуса: и ослабление в пучке (дно 1,50 мм),
+  // и рассеяние с боковых стенок и крышек, лежащих вне пучка. Обёртка
+  // (AlFoil) при этом остаётся — она часть сборки кристалла, не корпуса.
+  const G4String matCaseNow = g.caseOff ? G4String("G4_Galactic") : g.matBody;
+  const G4String matCapNow = g.caseOff ? G4String("G4_Galactic") : g.matCap;
   auto* bodyLV = BoxAt("Body", -xBody, xBody, yBodyB, yBodyT, zBodyF, zBodyB,
-                       Mat(g.matBody), worldLV, w0,
+                       Mat(matCaseNow), worldLV, w0,
                        G4Colour(0.60, 0.65, 0.68), false);
   const G4ThreeVector bodyC(0, 0.5 * (yBodyB + yBodyT) * mm,
                             0.5 * (zBodyF + zBodyB) * mm);
@@ -173,7 +184,7 @@ G4VPhysicalVolume* ASN16Detector::Construct() {
 
   // --- торцевые крышки (АЛЮМИНИЙ 1,50 мм, ОПЕРАТОР 06.08.2026) ------------
   auto* capFrontLV = BoxAt("CapFront", -xCav, xCav, yCavB, yFoilT,
-                           zBodyF, zCapFi, Mat(g.matCap), cavLV, cavC,
+                           zBodyF, zCapFi, Mat(matCapNow), cavLV, cavC,
                            G4Colour(0.55, 0.60, 0.64));
   // ВХОДНОЕ ОКНО: фрезеровка передней крышки до 0,60 мм напротив кристалла
   // (ОПЕРАТОР, 06.08.2026). Сделана не булевой операцией, а вставкой
@@ -196,11 +207,38 @@ G4VPhysicalVolume* ASN16Detector::Construct() {
         false);
   }
   BoxAt("CapBack", -xCav, xCav, yCavB, yFoilT, zCapBi, zBodyB,
-        Mat(g.matCap), cavLV, cavC, G4Colour(0.30, 0.32, 0.34));
+        Mat(matCapNow), cavLV, cavC, G4Colour(0.30, 0.32, 0.34));
 
   // --- плата: по дну полости во всю длину между крышками -------------------
-  BoxAt("PCB", -xCav, xCav, yPcbB, yPcbT, zCapFi, zCapBi,
+  // Наполнение платы (медь дорожек, припой, корпуса компонентов) вводится
+  // ЭФФЕКТИВНЫМИ СПЛОШНЫМИ СЛОЯМИ поверх диэлектрика, со стороны кристалла:
+  // реальная разводка неизвестна, поэтому моделируется не рисунок, а
+  // эквивалент по массе. Порядок снизу вверх — диэлектрик, медь, припой,
+  // корпуса компонентов; последние ближе всего к кристаллу, как на плате.
+  // Стек ВСТРАИВАЕТСЯ В ТОЛЩИНУ платы, а не надстраивается над ней: иначе
+  // кристалл сдвинулся бы вверх, и вместе с ним поехала бы вся геометрия
+  // замера. Диэлектрику остаётся pcbT минус сумма трёх слоёв.
+  const double tCu = g.pcbCuT, tSol = g.pcbSnPbT, tCmp = g.pcbCompT;
+  const double tDie = g.pcbT - (tCu + tSol + tCmp);
+  if (tDie <= 0.0) {
+    G4Exception("ASN16Detector::Construct", "ASN16_PCB", FatalException,
+                "слои платы толще самой платы");
+  }
+  const double yDieT = yPcbB + tDie;
+  const double yCuT = yDieT + tCu, ySolT = yCuT + tSol;
+  BoxAt("PCB", -xCav, xCav, yPcbB, yDieT, zCapFi, zCapBi,
         Mat(g.matPcb), cavLV, cavC, G4Colour(0.18, 0.48, 0.29));
+  BoxAt("PcbCu", -xCav, xCav, yDieT, yCuT, zCapFi, zCapBi,
+        Mat("G4_Cu"), cavLV, cavC, G4Colour(0.72, 0.45, 0.20));
+  BoxAt("PcbSolder", -xCav, xCav, yCuT, ySolT, zCapFi, zCapBi,
+        MakeSolder(), cavLV, cavC, G4Colour(0.62, 0.64, 0.67));
+  BoxAt("PcbComp", -xCav, xCav, ySolT, yPcbT, zCapFi, zCapBi,
+        Mat("G4_ALUMINUM_OXIDE"), cavLV, cavC, G4Colour(0.85, 0.85, 0.80));
+  std::printf("  ПЛАТА: %.2f мм всего = диэлектрик %.3f %s + медь %.3f + "
+              "припой %.3f %s + корпуса %.3f Al2O3 (эффективные сплошные "
+              "слои, ДОПУЩЕНИЕ)\n",
+              g.pcbT, tDie, g.matPcb.c_str(), tCu, tSol,
+              g.pcbSolderPb ? "Sn63Pb37" : "SAC305", tCmp);
 
   // --- обёртка и кристалл ---------------------------------------------------
   // Вложение фольга -> ПТФЭ -> кристалл: ПТФЭ прилегает к кристаллу, фольга
@@ -279,6 +317,22 @@ G4VPhysicalVolume* ASN16Detector::Construct() {
                         G4ThreeVector(x * mm, yRod * mm, zMid * mm) - airC,
                         rodLV, "Rod", airLV, false, i, true);
     }
+    // Плёнка осаждения дочерних торона: воздушная оболочка 25 мкм поверх
+    // каждого стержня, имя RodSkin — под /gps/pos/confine RodSkin
+    // (поверхностный источник, задача №9: горб ХРИ дочерних 75-95 кэВ
+    // объёмным источником не воспроизводится — самопоглощение в вольфраме).
+    // Материал — тот же воздух полости: на перенос слой не влияет и
+    // существует только как область розыгрыша.
+    auto* skinS = new G4Tubs("RodSkin", r * mm, (r + 0.025) * mm,
+                             0.5 * g.wt20L * mm, 0, 360 * deg);
+    auto* skinLV = new G4LogicalVolume(skinS, Mat("G4_AIR"), "RodSkin");
+    skinLV->SetVisAttributes(G4VisAttributes::GetInvisible());
+    for (int i = 0; i < g.wt20N; ++i) {
+      const double x = -halfSpan + i * g.wt20Pitch;
+      new G4PVPlacement(nullptr,
+                        G4ThreeVector(x * mm, yRod * mm, zMid * mm) - airC,
+                        skinLV, "RodSkin", airLV, false, i, true);
+    }
     // Единица массы здесь пишется как `gram`, а не `g`: имя `g` в этой функции
     // занято ссылкой на геометрию, и `g/cm3` молча означало бы не то.
     const double vRod = 3.14159265358979 * r * r * g.wt20L / 1000.0;   // см³
@@ -342,7 +396,58 @@ G4VPhysicalVolume* ASN16Detector::Construct() {
     }
   }
 
+  // --- КОМНАТА: бетонный пол ------------------------------------------------
+  // Ставится независимо от пачки: рассеиватель нужен и в опорных постановках.
+  // Плита кроет мир по X и Z целиком — приближение бесконечной плоскости, у
+  // которой возвращающийся поток от расстояния почти не зависит. Стен и
+  // потолка НЕТ: пол — ближайшая и самая массивная поверхность, и вводить
+  // остальное имеет смысл только если его вклада не хватит.
+  if (g.room) {
+    const double yTop = -g.floorDrop;
+    if (yTop - g.floorT < -g.roomHalf) {
+      G4Exception("ASN16Detector::Construct", "ASN16_ROOM", FatalException,
+                  "пол не помещается в мир: увеличить roomHalf");
+    }
+    BoxAt("Floor", -0.98 * g.roomHalf, 0.98 * g.roomHalf,
+          yTop - g.floorT, yTop,
+          -0.98 * g.roomHalf, 0.98 * g.roomHalf,
+          Mat("G4_CONCRETE"), worldLV, w0,
+          G4Colour(0.45, 0.45, 0.45), false);
+    std::printf("  КОМНАТА: пол бетон %.0f мм, верх y = %+.0f мм под прибором, "
+                "мир расширен до +-%.0f мм (ДОПУЩЕНИЕ: высота стола не "
+                "измерена)\n", g.floorT, yTop, g.roomHalf);
+  }
+
   return world;
+}
+
+// ---------------------------------------------------------------------------
+// Припой платы. Состав по прибору НЕ установлен, поэтому даётся выбор из двух
+// типовых, и оба собираются из элементов по массовым долям:
+//   Sn63Pb37 — эвтектический оловянно-свинцовый, 8,40 г/см³. Свинец в нём и
+//              есть причина, по которой припой вообще попал в модель: Pb Kα1
+//              74,97 и Kβ 84,9 кэВ ложатся в измеренный горб 75-95 кэВ, а
+//              плата стоит вплотную к кристаллу;
+//   SAC305   — Sn96,5 Ag3,0 Cu0,5, 7,38 г/см³, бессвинцовый: у него в этой
+//              области линий нет (Sn Kα 25,3), и разница двух прогонов прямо
+//              меряет вклад свинца припоя.
+// Плотности — паспортные значения припоев, не выведены из правила смеси.
+G4Material* ASN16Detector::MakeSolder() {
+  const G4String name = fGeom.pcbSolderPb ? "SolderSnPb" : "SolderSAC";
+  if (auto* have = G4Material::GetMaterial(name, false)) return have;
+  auto* nist = G4NistManager::Instance();
+  G4Material* m;
+  if (fGeom.pcbSolderPb) {
+    m = new G4Material(name, 8.40 * gram / cm3, 2);
+    m->AddElement(nist->FindOrBuildElement("Sn"), 0.63);
+    m->AddElement(nist->FindOrBuildElement("Pb"), 0.37);
+  } else {
+    m = new G4Material(name, 7.38 * gram / cm3, 3);
+    m->AddElement(nist->FindOrBuildElement("Sn"), 0.965);
+    m->AddElement(nist->FindOrBuildElement("Ag"), 0.030);
+    m->AddElement(nist->FindOrBuildElement("Cu"), 0.005);
+  }
+  return m;
 }
 
 // ---------------------------------------------------------------------------

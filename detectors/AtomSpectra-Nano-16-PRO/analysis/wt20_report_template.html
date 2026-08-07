@@ -114,19 +114,17 @@ ul{max-width:none;} li{margin:.3em 0;}
   <p class="lede">Спектр снят 01.06.2024: спектрометр лежит на пачке из десяти
   электродов 3,2 × 175 мм стороной платы. Активность получена разложением
   измеренного спектра по откликам отдельных нуклидов ряда тория, посчитанным
-  методом Монте-Карло в той же геометрии. Каталог линий и границы окон взяты
-  из веб-конструктора <a href="https://vibeengineering-llc.github.io/becqmoni-roi-wizard/"
-  target="_blank" rel="noopener">Becqmoni ROI wizard</a>
-  (<code>reference/roi/wizard_lines_iaea.xml</code>): 41 линия ряда Th-232
-  плюс характеристический рентген иода (кристалл CsI) и вольфрама
-  (материал источника).</p>
+  методом Монте-Карло в той же геометрии. Данные о линиях
+  (энергии, выходы, ветвления) — библиотека МАГАТЭ (ENSDF), выкачка в
+  <code>reference/nuclide-lines/</code>: гамма и K/L-рентген атомной
+  релаксации для всех звеньев ряда Th-232.</p>
 </header>
 
 <div class="note" id="verdict"></div>
 
 <h2>1. Геометрия замера</h2>
 <figure id="figsetup"></figure>
-<h3>Шаг укладки: два замера по фотографии, один отменён</h3>
+<h3>Шаг укладки: измерение по фотографии</h3>
 <p>Шаг укладки не указан ни на этикетке, ни в каталоге производителя, а в
 результат он входит дважды: определяет долю активности, находящуюся под
 кристаллом, и экранирование соседними стержнями. Масштаб задаёт сам пруток,
@@ -148,19 +146,20 @@ ul{max-width:none;} li{margin:.3em 0;}
 конвенции границы эталона, и эту конвенцию требуется объявлять явно.
 Полированный металл для привязки непригоден.</p>
 
-<h2>2. Что и как считалось</h2>
-<p>Шаблон представляет собой спектр энерговыделения в кристалле, рассчитанный
-для распадов <em>одного</em> звена ряда, разыгранных равномерно по объёму
-стержней, и нормированный на один распад. При такой нормировке коэффициенты
-разложения непосредственно выражают активность в беккерелях: промежуточная
-величина «эффективность регистрации по линии» не требуется, а вместе с ней не
-требуется объявлять и окно съёма.</p>
+<h2>2. Метод расчёта отклика</h2>
+<p>Шаблон компоненты — рассчитанный методом Монте-Карло спектр
+энерговыделения в кристалле для распадов <em>одного</em> звена ряда,
+разыгранных равномерно по объёму стержней, и нормированный на один распад.
+При такой нормировке коэффициенты разложения непосредственно выражают
+активность в беккерелях: промежуточная величина «эффективность регистрации
+по линии» из процедуры исчезает, а вместе с ней исчезает и требование
+объявлять окно съёма.</p>
 <div class="note">Побочные пики отдельными компонентами не вводятся. Вылет
 одного и двух аннигиляционных квантов, обратное рассеяние, характеристический
 рентген вольфрама и суммирование каскада возникают в переносе сами и лежат
-внутри шаблона своего нуклида. Тем этот способ отличается от разложения на
-аналитические составляющие, где каждый такой пик приходится перечислять
-явно.</div>
+внутри шаблона своего нуклида. Этим шаблонный метод отличается от разложения
+на аналитические составляющие, где каждый такой пик требует явного
+описания.</div>
 
 <h3>Ограничение ряда и его проверка</h3>
 <p>Прослеживание ряда ограничено одним звеном: дочернее ядро в основном
@@ -180,6 +179,35 @@ ul{max-width:none;} li{margin:.3em 0;}
 <div class="tabcap"><b>Таблица 2.</b> Сведение энергетических шкал образца и фона. Δ — отклонение найденного положения линии от библиотечного, кэВ; ПШПВ — полная ширина пика на половине высоты, кэВ; СКО — среднеквадратическое отклонение по опорным линиям, кэВ.</div>
 <div class="tablewrap"><table id="cal"></table></div>
 
+<h3>Проверочная страница: откалиброванные спектры образца и фона</h3>
+<p>Оба спектра приведены к общей энергетической сетке 1 кэВ каждый через СВОИ
+поправки; фон отмасштабирован отношением времён набора. Наложение и разность
+показывают, что калибровка сошлась и что вычитание фона не рождает ложных
+структур. Тяните мышью — зум по энергии; двойной щелчок — весь диапазон.</p>
+<div class="chartbox" id="specbox">
+  <div class="ctrls" id="spec-ctrls">
+    <label><span class="sw" style="background:var(--ink)"></span>
+      <input type="checkbox" id="sp-smp" checked> образец</label>
+    <label><span class="sw" style="background:var(--blue)"></span>
+      <input type="checkbox" id="sp-bg" checked> фон (приведён)</label>
+    <label><span class="sw" style="background:var(--accent)"></span>
+      <input type="checkbox" id="sp-diff"> образец − фон</label>
+    <label><input type="checkbox" id="sp-log" checked> лог-шкала</label>
+    <label><input type="checkbox" id="sp-anch" checked> опорные линии</label>
+    <button type="button" id="sp-reset"
+      style="font:inherit;background:var(--paper);border:1px solid var(--rule);
+      border-radius:2px;color:var(--ink);padding:3px 12px;cursor:pointer">
+      весь диапазон</button>
+  </div>
+  <canvas id="specCv" width="1600" height="520"></canvas>
+  <div class="readout" id="spec-ro">перетащите мышью — зум по энергии;
+    двойной щелчок — весь диапазон</div>
+</div>
+<figcaption><b>Рис. 2.</b> Откалиброванные спектры образца (7034 с) и
+встроенного фона (329 162 с, приведён к времени образца). Полоса — зона
+K-серии вольфрама 58–70 кэВ, где локального максимума нет; штрих —
+сумм-пики каскада Tl-208.</figcaption>
+
 <h2>4. Вычет фона</h2>
 <p>Фон снят тем же прибором в том же режиме, записан в файл замера отдельным
 спектром и приведён к времени набора образца. Вычитается он ДО подгонки, а не
@@ -194,19 +222,74 @@ ul{max-width:none;} li{margin:.3em 0;}
 кривая модели и раздельный показ фона будут добавлены отдельно.</p>
 
 <h2>5. Разложение спектра</h2>
+<h3>Два метода построения шаблонов</h3>
+<p>Отклик компоненты <i>r<sub>ik</sub></i> в разложении можно получить двумя
+разными способами. Оба считаются в одной геометрии, с одним физлистом (атомная
+релаксация и Оже-каскад включены), и дают шаблон, нормированный на один
+распад. Действующий в этой работе — методика 1; методика 2 применяется как
+независимая сверка.</p>
+<div class="tablewrap"><table>
+<tr><th>&nbsp;</th><th>Методика 1: понуклидный МК-шаблон</th>
+    <th>Методика 2: матрица отклика &times; выходы линий</th></tr>
+<tr><td>Что разыгрывается</td>
+    <td>распад целого звена ряда, равномерно по объёму стержней</td>
+    <td>моноэнергетические &gamma;-кванты в тех же стержнях, сетка сгущена
+        у K-краёв W и I</td></tr>
+<tr><td>Первичная частица</td><td>ион</td><td>квант</td></tr>
+<tr><td>Каскад и суммирование</td><td>входят В шаблон переносом</td>
+    <td>ТЕРЯЮТСЯ (линии независимы); добавляются отдельным членом</td></tr>
+<tr><td>ХРИ дочерних от конверсии</td><td>входят В шаблон</td>
+    <td>входят через библиотеку линий МАГАТЭ (<code>*_xrays.csv</code>)</td></tr>
+<tr><td>Обратное рассеяние, вылеты, флуоресценция окружения</td>
+    <td>в шаблоне</td><td>в матрице (одна на все нуклиды)</td></tr>
+<tr><td>Разложение отклика по каналам</td>
+    <td>не работает (первичная — ион)</td><td>работает</td></tr>
+<tr><td>Стоимость нового нуклида</td><td>отдельный прогон</td>
+    <td>ноль прогонов</td></tr>
+<tr><td>Стоимость правки геометрии</td>
+    <td>пересчёт всех нуклидов</td><td>пересчёт одной матрицы</td></tr>
+<tr><td>Статистика на слабых звеньях</td>
+    <td>почти пустой шаблон (Th-232, Ra-224)</td>
+    <td>не проблема, матрица не зависит от активности</td></tr>
+<tr><td>Опора на внешние данные</td>
+    <td>схема распада данных Geant4</td>
+    <td>библиотека линий (МАГАТЭ / LNHB)</td></tr>
+</table></div>
+<div class="tabcap"><b>Таблица 7.</b> Сравнение методик построения шаблона
+отклика.</div>
+<p>Совмещённое использование: <b>методика 2</b> даёт пики и одиночный отклик,
+<b>методика 1</b> — вклад суммирования каскада как разность
+&laquo;понуклидный шаблон минус свёртка матрицы с линиями&raquo;. Публикуемое
+разложение сохраняет прозрачность методики 2, а поправка на суммирование
+берётся из методики 1 и объявляется отдельным столбцом. Согласие двух методик
+вне сумм-областей служит независимой проверкой модели.</p>
+
 <h3>Ширина аппаратной линии</h3>
-<p>Ширина подгоняется, а не берётся готовой. В файле замера записана
-калибровка по ПШПВ (восемь опорных пиков), но снята она по другому спектру и в
-этом замере не воспроизводится: прямой промер даёт 68 кэВ на 2614,5 против 92
-по записанной кривой. Записанная кривая используется как опорный ход ширины по
-энергии, поверх которого подгоняются множитель и показатель наклона:
-ПШПВ(<i>E</i>) = <i>k</i> · ПШПВ<sub>файла</sub>(<i>E</i>) ·
-(<i>E</i>/662)<sup><i>p</i></sup>. Опорными взяты только одиночные линии:
-на 911,20 кэВ соседи 964,77 и 968,97 при этом разрешении сливаются в один
-бугор, и промер по полувысоте даёт ширину бугра, а не линии.</p>
-<div class="tabcap"><b>Таблица 8.</b> Подгонка ширины аппаратной линии.
-ПШПВ измерена по полувысоте над локальной подложкой; отклонение — разность
-подгонки и измерения, отнесённая к измерению.</div>
+<p>В Geant4 приборной ширины пика нет: код считает распределение
+энерговыделения в кристалле, и пик полного поглощения выходит в один
+энергетический бин, комптоновский край резкий. Реальный сцинтиллятор
+размывает энергию за счёт статистики фотонов сцинтилляции и электронной
+цепочки; этот шум накладывается на сырой шаблон свёрткой с формой
+аппаратной линии (функция <code>broaden</code> в
+<code>analysis/wt20_unfold.py</code>).</p>
+<p>Форма линии — ExpGaussExp: гауссиана, переходящая в экспоненты за
+|<i>E</i> − <i>E</i><sub>0</sub>| > <i>t</i>·σ. Параметры хвостов
+<i>t</i><sub>л</sub> = 1,10 и <i>t</i><sub>п</sub> = 1,70 взяты из файла
+замера прибора (узел <code>SimpleSqrtFwhmCalibration</code>, модель
+ExpGaussExp, χ²/ndf = 2,89 по восьми опорным пикам).</p>
+<p>Закон ширины — двучлен корневого вида
+ПШПВ²(<i>E</i>) = <i>f</i><sub>0</sub> + <i>f</i><sub>1</sub>·<i>E</i>;
+пара (<i>f</i><sub>0</sub>, <i>f</i><sub>1</sub>) перебирается по сетке
+ВМЕСТЕ с активностями, принимается та, при которой χ² единой подгонки
+минимален. Записанная в файле замера кривая ПШПВ (восемь опорных пиков)
+как самостоятельная не используется — она снята по другому спектру и в
+этом замере не воспроизводится: даёт 92,4 кэВ на 2614,5 против 68 кэВ
+по прямому промеру. Кривая печатается рядом с подогнанной как независимая
+справка.</p>
+<div class="tabcap"><b>Таблица 8.</b> Опорные пики: измеренная ПШПВ и
+её значение из подгонки. Опорными взяты только одиночные линии: на
+911,20 кэВ соседи 964,77 и 968,97 при этом разрешении сливаются с ней
+в один бугор, и промер по полувысоте даёт ширину бугра.</div>
 <div class="tablewrap"><table id="widthfit"></table></div>
 
 <h3>Решение матричных уравнений</h3>
@@ -240,10 +323,31 @@ D·A = b, которая решается как линейная. Веса то
   <div class="readout" id="ro">Наведение курсора на спектр показывает вклад
   каждой компоненты при данной энергии.</div>
 </div>
-<figcaption><b>Рис. 3.</b> Разложение спектра по нуклидам ряда тория и линиям
-характеристического рентгена (X-I, X-W). Показана разность «измеренное минус
-фон»: заливка — вклад отдельной компоненты, линия — измерение за вычетом фона,
-нижняя панель — невязка, нормированная на статистическую погрешность.</figcaption>
+<figcaption><b>Рис. 3.</b> Разложение спектра методом 1 (понуклидные
+Монте-Карло-шаблоны). Показана разность «измеренное минус фон»: заливка —
+вклад отдельной компоненты, линия — измерение за вычетом фона, нижняя
+панель — невязка, нормированная на статистическую погрешность.</figcaption>
+
+<h3>Разложение по матрице отклика (метод 2)</h3>
+<p>Тот же спектр разложен вторым способом: шаблоны нуклидов собраны
+свёрткой матрицы отклика (моноэнергетические γ, разыгранные в стержнях,
+47 узлов 30–3000 кэВ) с абсолютными выходами линий из библиотеки МАГАТЭ
+(гамма + K/L-рентген). Уширение — тем же законом ПШПВ², что в методе 1,
+для сравнения формы. Что метод 2 <b>не переносит</b>: истинное совпадающее
+суммирование каскада (сумм-пики выше 2614 кэВ, потери из ППП) и
+электронный канал источника (бета, тормозное, конверсионные электроны) —
+их вклад проявится расхождением с методом 1 в мягкой области и в
+сумм-пиках. См. <code>docs/wt20-methods-compare.md</code>.</p>
+<div class="chartbox" id="m2box">
+  <div class="ctrls" id="ctrls_m2"></div>
+  <canvas id="cv_m2" width="1600" height="760"></canvas>
+  <div class="readout" id="ro_m2">Наведение курсора показывает вклад
+    каждой компоненты при данной энергии.</div>
+</div>
+<figcaption><b>Рис. 4.</b> Разложение того же спектра методом 2 (матрица
+отклика × выходы линий). Сопоставление с рис. 3 — независимая проверка
+модели: согласие на одиночных пиках после согласования выходов, расхождение
+в сумм-области — мера истинного совпадающего суммирования.</figcaption>
 
 <h2>6. Источник по составу: прямая задача</h2>
 <p>Разложение спектра решает обратную задачу — от отсчётов к активности. Прямая
@@ -371,25 +475,19 @@ const nominal = mass ? mass*0.02*THO2_TH*SPEC_TH : null;
 // 8=пригодна, 9=причина. В вердикт идут ТОЛЬКО пригодные строки: остальные
 // либо ниже предела обнаружения, либо сидят в чужих линиях, либо лежат на
 // участке, где модель заведомо занижена.
-const chainA = lines.slice(1).filter(r=> (r[8]||'').trim()==='да').map(r=>{
-  const nuc=r[0], e=parseFloat(r[1]), a=parseFloat(r[6]);
-  return {nuc, e, a: nuc==='Tl208'? a/BR_TL : a};
-}).filter(o=> isFinite(o.a) && o.a>0);
-if(chainA.length && nominal){
-  const lo = Math.min(...chainA.map(o=>o.a)), hi = Math.max(...chainA.map(o=>o.a));
-  const tl = chainA.filter(o=>o.nuc==='Tl208').sort((a,b)=>a.e-b.e);
-  const ratio = tl.length>1? tl[0].a/tl[tl.length-1].a : null;
+// Вердикт по разложению: A1 и A2 порознь (равновесие между ветвями ряда
+// не устанавливается автоматически после химической очистки), плюс сверка
+// с номиналом. Числа берутся из unfold_activities.csv, не литералами.
+if(a1 && a2 && nominal){
+  const r = a1/a2;
   document.getElementById('verdict').innerHTML =
-   `<strong>Активность ряда тория по разным линиям расходится от
-    ${fmt(lo,0)} до ${fmt(hi,0)} Бк</strong> при номинале
-    ${fmt(nominal,0)} Бк для 2 % ThO₂ — то есть от
-    ${fmt(lo/nominal,2)} до ${fmt(hi/nominal,2)} от паспортного содержания.
-    ${tl.length>1? `Расхождение есть и <em>внутри одного нуклида</em>: Tl-208 по линии
-    ${fmt(tl[0].e,0)} кэВ даёт в ${fmt(ratio,2)} раза больше, чем по
-    ${fmt(tl[tl.length-1].e,0)} кэВ. Это отношение не зависит ни от активности,
-    ни от нормировки источника, значит модель ошибается в относительном отклике
-    между этими энергиями — и назвать активность одним числом нельзя, пока
-    расхождение не закрыто.`:''}
+   `<strong>Активность ряда тория порознь по двум ветвям:</strong>
+    A₁ = ${fmt(a1,0)} Бк (Ra-228 → Ac-228),
+    A₂ = ${fmt(a2,0)} Бк (Th-228 → Tl-208) — то есть
+    ${fmt(a1/nominal,2)} и ${fmt(a2/nominal,2)} от паспортного содержания
+    (${fmt(nominal,0)} Бк для 2 % ThO₂). Отношение A₁/A₂ = ${fmt(r,2)}
+    при вековом равновесии равнялось бы единице; после химической очистки
+    тория на заводе равновесие внутри ряда могло не восстановиться.
     <span class="chip warn">правки обязательны</span>`;
 }
 
@@ -504,30 +602,32 @@ figure('figscan', D.img_scan,
   + 'между центрами даёт шаг. Голый вольфрам для привязки непригоден: он '
   + 'полирован, и порог по яркости берёт зеркальный блик вместо тела прутка.');
 
-// ---------- график ----------
-const names = D.names||[], spec = D.spec||[];
-const comps = names.slice(3);
-const state = {}; comps.forEach(n=>state[n]=true);
-let logScale = true;
-
-document.getElementById('ctrls').innerHTML =
-  comps.map(n=>`<label><input type="checkbox" data-n="${n}" checked>
-   <span class="sw" style="background:${COL[n]||'#888'}"></span>${n}</label>`).join('')
-  + `<label><input type="checkbox" id="logsw" checked>логарифм по вертикали</label>`;
-document.getElementById('ctrls').addEventListener('change', e=>{
-  if(e.target.id==='logsw'){ logScale = e.target.checked; }
-  else { state[e.target.dataset.n] = e.target.checked; }
-  draw();
-});
-
-const cv = document.getElementById('cv'), cx = cv.getContext('2d');
-const PAD = {l:74,r:16,t:14,b:44};
-let hoverX = null;
-
+// ---------- графики разложения (методы 1 и 2 — одна фабрика) ----------
 function css(v){ return getComputedStyle(document.documentElement)
   .getPropertyValue(v).trim(); }
-
-function draw(){
+function makeUnfoldChart(names, spec, cvId, ctrlsId, roId, tag){
+  const box = document.getElementById(cvId);
+  if(!box || !spec || !spec.length) {
+    const b = document.getElementById(cvId==='cv'? '' : 'm2box');
+    if(b) b.style.display = 'none';
+    return;
+  }
+  const comps = names.slice(3);
+  const state = {}; comps.forEach(n=>state[n]=true);
+  let logScale = true;
+  document.getElementById(ctrlsId).innerHTML =
+    comps.map(n=>`<label><input type="checkbox" data-n="${n}" checked>
+     <span class="sw" style="background:${COL[n]||'#888'}"></span>${n}</label>`).join('')
+    + `<label><input type="checkbox" data-log="1" checked>логарифм по вертикали</label>`;
+  document.getElementById(ctrlsId).addEventListener('change', e=>{
+    if(e.target.dataset.log){ logScale = e.target.checked; }
+    else { state[e.target.dataset.n] = e.target.checked; }
+    draw();
+  });
+  const cv = box, cx = cv.getContext('2d');
+  const PAD = {l:74,r:16,t:14,b:44};
+  let hoverX = null;
+  function draw(){
   const W = cv.width, H = cv.height;
   const ink = css('--ink'), ink3 = css('--ink-3'), rule = css('--rule');
   cx.clearRect(0,0,W,H);
@@ -574,10 +674,15 @@ function draw(){
     cx.globalAlpha=1;
     for(let i=0;i<spec.length;i++) base[i]+=spec[i][j];
   }
-  // измеренное
-  cx.beginPath(); cx.strokeStyle = ink; cx.lineWidth=1.6;
-  for(let i=0;i<spec.length;i++){ const x=X(spec[i][0]), y=Y(spec[i][1]);
-    i? cx.lineTo(x,y):cx.moveTo(x,y); }
+  // измеренное — ступеньками по сетке разложения (обычно 2 кэВ), как
+  // на калибровочной странице; сглаживание убрано по указанию оператора.
+  cx.beginPath(); cx.strokeStyle = ink; cx.lineWidth=1.2;
+  const dxHalf = spec.length>1 ? (spec[1][0]-spec[0][0])/2 : 1;
+  for(let i=0;i<spec.length;i++){
+    const x0=X(spec[i][0]-dxHalf), x1=X(spec[i][0]+dxHalf), y=Y(spec[i][1]);
+    if(i===0) cx.moveTo(x0,y); else cx.lineTo(x0,y);
+    cx.lineTo(x1,y);
+  }
   cx.stroke();
   // рамка
   cx.strokeStyle = ink3; cx.lineWidth=1;
@@ -591,27 +696,38 @@ function draw(){
   }
 }
 
-cv.addEventListener('mousemove', ev=>{
-  const r = cv.getBoundingClientRect();
-  const px = (ev.clientX-r.left)*cv.width/r.width;
-  hoverX = px;
-  const e0 = spec[0][0], e1 = spec[spec.length-1][0];
-  const e = e0 + (px-PAD.l)/(cv.width-PAD.l-PAD.r)*(e1-e0);
-  let best=0, bd=1e9;
-  for(let i=0;i<spec.length;i++){ const d=Math.abs(spec[i][0]-e); if(d<bd){bd=d;best=i;} }
-  const row = spec[best];
-  const parts = comps.map((n,k)=>[n,row[3+k]]).filter(([n,v])=>state[n]&&v>0.5)
-    .sort((a,b)=>b[1]-a[1]).slice(0,5)
-    .map(([n,v])=>`${n} ${fmt(v,0)}`).join(' · ');
-  document.getElementById('ro').textContent =
-    `${fmt(row[0],0)} кэВ — измерено ${fmt(row[1],0)}, модель ${fmt(row[2],0)}` +
-    (parts? ` — ${parts}` : '');
+  cv.addEventListener('mousemove', ev=>{
+    const r = cv.getBoundingClientRect();
+    const px = (ev.clientX-r.left)*cv.width/r.width;
+    hoverX = px;
+    const e0 = spec[0][0], e1 = spec[spec.length-1][0];
+    const e = e0 + (px-PAD.l)/(cv.width-PAD.l-PAD.r)*(e1-e0);
+    let best=0, bd=1e9;
+    for(let i=0;i<spec.length;i++){ const d=Math.abs(spec[i][0]-e); if(d<bd){bd=d;best=i;} }
+    const row = spec[best];
+    const parts = comps.map((n,k)=>[n,row[3+k]]).filter(([n,v])=>state[n]&&v>0.5)
+      .sort((a,b)=>b[1]-a[1]).slice(0,5)
+      .map(([n,v])=>`${n} ${fmt(v,0)}`).join(' · ');
+    document.getElementById(roId).textContent =
+      `${tag}: ${fmt(row[0],0)} кэВ — измерено ${fmt(row[1],0)}, модель ${fmt(row[2],0)}` +
+      (parts? ` — ${parts}` : '');
+    draw();
+  });
+  cv.addEventListener('mouseleave', ()=>{ hoverX=null; draw(); });
   draw();
-});
-cv.addEventListener('mouseleave', ()=>{ hoverX=null; draw(); });
-matchMedia('(prefers-color-scheme:dark)').addEventListener('change', draw);
-new MutationObserver(draw).observe(document.documentElement,{attributes:true,
-  attributeFilter:['data-theme']});
+  return {redraw: draw};
+}
+makeUnfoldChart(D.names||[], D.spec||[], 'cv', 'ctrls', 'ro', 'метод 1');
+if(D.spec_m2 && D.spec_m2.length){
+  makeUnfoldChart(D.names_m2||[], D.spec_m2||[], 'cv_m2', 'ctrls_m2', 'ro_m2',
+    'метод 2');
+} else {
+  const b = document.getElementById('m2box'); if(b) b.style.display='none';
+}
+// Смена темы: канвасы разложения кэшируют CSS-переменные, перерисовывать
+// надо оба (метод 1 и метод 2), а также canvas калибровочных спектров.
+// Хендлеры на них навешаны внутри своих IIFE — здесь оставлен пустой
+// обработчик, чтобы не терять правило.
 
 // ---------- провенанс ----------
 document.getElementById('prov').innerHTML =
@@ -621,12 +737,160 @@ document.getElementById('prov').innerHTML =
    <code>${head['wt20_mass_g']||'?'}</code>.`;
 
 document.getElementById('open').innerHTML = [
- 'шаг укладки 6,15 мм измерен по фотографии (±10 %); замер линейкой его отменяет',
+ 'шаг укладки 4,85 мм измерен по фотографии (два независимых счёта по красной маркировке, ±0,09 мм); замер линейкой подтвердит или отменит',
  'высота ножек принята 3,5 мм из названных оператором 3–4',
  'плотность сплава посчитана по правилу смеси, а не измерена',
  'плата в модели — бакелит вместо FR4, масса занижена',
  'окружение замера (стол, стены) проверяется отдельным плечом расчёта'
 ].map(t=>`<li>${t}</li>`).join('');
 
-draw();
+// ---------- калиброванные спектры образца и фона (§3) --------------------
+(function specChart(){
+  if(!D.spectra){ document.getElementById("specbox").style.display="none";
+    return; }
+  const S = D.spectra, cv = document.getElementById("specCv");
+  if(!cv) return;
+  const ctx = cv.getContext("2d"), ro = document.getElementById("spec-ro");
+  const N = S.smp.length, STEP = S.step;
+  const st = { lo: 0, hi: N*STEP, log: true,
+    smp: true, bg: true, diff: false, anch: true };
+  const diffA = S.smp.map((v,i)=>v-S.bg[i]);
+  const css = n => getComputedStyle(document.documentElement)
+    .getPropertyValue(n).trim();
+  const fmt = (x, d=1) => x.toLocaleString("ru-RU",
+    {minimumFractionDigits:d, maximumFractionDigits:d});
+
+  function paint(){
+    const dpr = devicePixelRatio||1, W = cv.clientWidth||1600, H = 520;
+    cv.width = W*dpr; cv.height = H*dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+    const ml=64, mr=14, mt=14, mb=40, pw=W-ml-mr, ph=H-mt-mb;
+    const i0=Math.max(0,Math.floor(st.lo/STEP)),
+          i1=Math.min(N,Math.ceil(st.hi/STEP));
+    let vmax=1, vminPos=1e30;
+    for(const [a,on] of [[S.smp,st.smp],[S.bg,st.bg],[diffA,st.diff]]){
+      if(!on) continue;
+      for(let i=i0;i<i1;i++){ const v=a[i];
+        if(v>vmax) vmax=v; if(v>0&&v<vminPos) vminPos=v; } }
+    vmax*=st.log?2:1.06;
+    const vmin=st.log?Math.max(0.3,vminPos*0.7):0;
+    const X=e=>ml+(e-st.lo)/(st.hi-st.lo)*pw;
+    const Y=v=>{ if(st.log){ const lv=Math.log10(Math.max(v,vmin));
+        return mt+ph-(lv-Math.log10(vmin))/(Math.log10(vmax)-Math.log10(vmin))*ph; }
+      return mt+ph-(v-vmin)/(vmax-vmin)*ph; };
+    ctx.strokeStyle=css("--rule"); ctx.fillStyle=css("--ink-3");
+    ctx.lineWidth=1; ctx.font="12px system-ui"; ctx.textAlign="center";
+    const span=st.hi-st.lo;
+    const stepX=[1,2,5,10,20,50,100,200,250,500,1000].find(s=>span/s<=12)||500;
+    for(let e=Math.ceil(st.lo/stepX)*stepX; e<=st.hi; e+=stepX){
+      const x=X(e); ctx.beginPath(); ctx.moveTo(x,mt); ctx.lineTo(x,mt+ph);
+      ctx.stroke(); ctx.fillText(fmt(e,0),x,mt+ph+16); }
+    ctx.textAlign="right";
+    if(st.log){
+      for(let d=Math.floor(Math.log10(vmin)); d<=Math.ceil(Math.log10(vmax)); d++){
+        const v=Math.pow(10,d); if(v<vmin||v>vmax) continue;
+        const y=Y(v); ctx.beginPath(); ctx.moveTo(ml,y); ctx.lineTo(ml+pw,y);
+        ctx.stroke(); ctx.fillText(d>=0&&d<=3?fmt(v,0):"10^"+d,ml-6,y+4); }
+    } else {
+      for(let k=0;k<=5;k++){ const v=vmin+(vmax-vmin)*k/5, y=Y(v);
+        ctx.beginPath(); ctx.moveTo(ml,y); ctx.lineTo(ml+pw,y); ctx.stroke();
+        ctx.fillText(fmt(v,0),ml-6,y+4); } }
+    ctx.textAlign="center"; ctx.fillText("энергия, кэВ", ml+pw/2, H-8);
+    ctx.save(); ctx.translate(14,mt+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText("отсчётов в канале 1 кэВ за время образца",0,0); ctx.restore();
+    if(st.anch){
+      // Подписи ставятся В ДВА РЯДА по высоте (row 0 — сверху, row 1 —
+      // ниже), чтобы соседние близкие якоря не слипались, и со сдвигом
+      // ВПРАВО от линии, а не влево (было — накладывалось на саму линию).
+      if(S.xw_zone){
+        const a=Math.max(st.lo,S.xw_zone[0]), b=Math.min(st.hi,S.xw_zone[1]);
+        if(b>a){ ctx.fillStyle=css("--accent-soft");
+          ctx.fillRect(X(a),mt,X(b)-X(a),ph);
+          ctx.fillStyle=css("--ink-2"); ctx.font="12px system-ui";
+          ctx.save(); ctx.translate(X(a)+13,mt+ph-8); ctx.rotate(-Math.PI/2);
+          ctx.textAlign="left";
+          ctx.fillText("зона ХРИ W "+fmt(S.xw_zone[0],0)+"–"+
+                       fmt(S.xw_zone[1],0)+": пик не выделяется",0,0);
+          ctx.restore(); } }
+      ctx.setLineDash([4,4]); ctx.textAlign="left"; ctx.font="13px system-ui";
+      // Собираем все якоря в один список, сортируем по E, чередуем ряд по
+      // близости соседа (если ближе 40 px — меняем ряд).
+      const anch=[];
+      for(const [key,col] of [["sample",css("--amber")],
+                              ["background",css("--blue")]])
+        for(const a of (S.anchors[key]||[]))
+          if(a.E>=st.lo&&a.E<=st.hi) anch.push({E:a.E,nuc:a.nuc,col});
+      anch.sort((a,b)=>a.E-b.E);
+      let prevX=-1000, row=0;
+      for(const a of anch){
+        const x=X(a.E);
+        if(x-prevX<40) row=1-row; else row=0;
+        prevX=x;
+        ctx.strokeStyle=a.col; ctx.fillStyle=a.col;
+        ctx.beginPath(); ctx.moveTo(x,mt); ctx.lineTo(x,mt+ph); ctx.stroke();
+        ctx.save();
+        ctx.translate(x+4, mt+10+row*95);
+        ctx.rotate(-Math.PI/2);
+        ctx.textAlign="right";
+        ctx.fillText(fmt(a.E,1)+" "+a.nuc,0,0);
+        ctx.restore(); }
+      ctx.setLineDash([2,5]); ctx.strokeStyle=css("--accent");
+      ctx.fillStyle=css("--accent");
+      for(const s of (S.sums||[])){
+        if(s.E<st.lo||s.E>st.hi) continue;
+        const x=X(s.E); ctx.beginPath(); ctx.moveTo(x,mt);
+        ctx.lineTo(x,mt+ph); ctx.stroke();
+        ctx.save(); ctx.translate(x+4,mt+ph-8); ctx.rotate(-Math.PI/2);
+        ctx.textAlign="left";
+        ctx.fillText(s.lab,0,0); ctx.restore(); }
+      ctx.setLineDash([]); }
+    const plot=(a,col)=>{ ctx.strokeStyle=col; ctx.lineWidth=1.2;
+      ctx.beginPath(); let pen=false;
+      for(let i=i0;i<i1;i++){ const v=a[i];
+        if(st.log&&v<=0){ pen=false; continue; }
+        const x0=X(i*STEP), x1=X((i+1)*STEP), y=Y(v);
+        if(!pen){ ctx.moveTo(x0,y); pen=true; } else ctx.lineTo(x0,y);
+        ctx.lineTo(x1,y); }
+      ctx.stroke(); };
+    if(st.bg)   plot(S.bg,   css("--blue"));
+    if(st.diff) plot(diffA,  css("--accent"));
+    if(st.smp)  plot(S.smp,  css("--ink"));
+    paint.X=X; paint.ml=ml; paint.pw=pw;
+  }
+  function pxToE(px){ return st.lo+(px-paint.ml)/paint.pw*(st.hi-st.lo); }
+  let selA=null;
+  cv.addEventListener("mousedown",e=>{ selA=e.offsetX; });
+  cv.addEventListener("mousemove",e=>{
+    const eV=pxToE(e.offsetX), i=Math.floor(eV/STEP);
+    if(i>=0&&i<N){
+      let s="E = "+fmt(eV,1)+" кэВ";
+      if(st.smp) s+=" · образец "+fmt(S.smp[i]);
+      if(st.bg)  s+=" · фон "+fmt(S.bg[i]);
+      if(st.diff)s+=" · разность "+fmt(diffA[i]);
+      ro.textContent=s; }
+    if(selA!==null){ paint();
+      ctx.fillStyle=css("--accent-soft");
+      ctx.fillRect(Math.min(selA,e.offsetX),14,
+        Math.abs(e.offsetX-selA),520-54); }
+  });
+  addEventListener("mouseup",e=>{
+    if(selA===null) return;
+    const b=e.target===cv?e.offsetX:selA;
+    const lo=pxToE(Math.min(selA,b)), hi=pxToE(Math.max(selA,b));
+    selA=null;
+    if(hi-lo>2){ st.lo=Math.max(0,lo); st.hi=Math.min(N*STEP,hi); }
+    paint(); });
+  cv.addEventListener("dblclick",()=>{ st.lo=0; st.hi=N*STEP; paint(); });
+  document.getElementById("sp-reset").onclick=
+    ()=>{ st.lo=0; st.hi=N*STEP; paint(); };
+  for(const [id,key] of [["sp-smp","smp"],["sp-bg","bg"],["sp-diff","diff"],
+                         ["sp-log","log"],["sp-anch","anch"]]){
+    const el=document.getElementById(id);
+    if(el) el.onchange=e=>{ st[key]=e.target.checked; paint(); }; }
+  addEventListener("resize",paint);
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change",paint);
+  new MutationObserver(paint).observe(document.documentElement,
+    {attributes:true,attributeFilter:["data-theme"]});
+  paint();
+})();
 </script>

@@ -1,0 +1,42 @@
+# ДИАГНОСТИКА: та же геометрия, но корпус и крышки ВАКУУМОМ.
+#
+# Смысл — разность двух прогонов ОДНОЙ ревизии. Свинец припоя даёт
+# Pb Kα1 74,97 / Kα2 72,80 / Kβ 84,9-87,4 кэВ, то есть ровно в измеренный
+# горб 75-95 кэВ; олово SAC305 в этой области линий не имеет (Sn Kα 25,3).
+# Поэтому «с Pb минус без Pb» и есть вклад свинца припоя, посчитанный, а не
+# назначенный. Всё остальное — геометрия, медь, корпуса, источник —
+# совпадает по построению.
+#
+# Разыгрываются три звена, дающие мягкие кванты выше K-края свинца (88,0 кэВ)
+# и потому способные его возбудить: Pb-212 (238,6), Ac-228 (338,3 и далее),
+# Tl-208 (583,2 и 2614,5).
+#
+# ВАЖНО: файл в UTF-8 БЕЗ BOM.
+/asn16/wt20 on
+/asn16/caseOff on
+/run/initialize
+/control/verbose 0
+/run/verbose 0
+/process/had/rdm/thresholdForVeryLongDecayTime 1.0e+60 year
+/gps/particle ion
+/gps/energy 0 keV
+/gps/pos/type Volume
+/gps/pos/shape Para
+/gps/pos/halfx 23.43 mm
+/gps/pos/halfy 1.60 mm
+/gps/pos/halfz 87.5 mm
+/gps/pos/centre 0 -22.00 -10.40 mm
+/gps/pos/confine Rod
+/gps/ang/type iso
+
+/gps/ion 82 212
+/asn16/outFile wt20_templates_nocase/Pb212.csv
+/run/beamOn 400000
+
+/gps/ion 89 228
+/asn16/outFile wt20_templates_nocase/Ac228.csv
+/run/beamOn 400000
+
+/gps/ion 81 208
+/asn16/outFile wt20_templates_nocase/Tl208.csv
+/run/beamOn 400000

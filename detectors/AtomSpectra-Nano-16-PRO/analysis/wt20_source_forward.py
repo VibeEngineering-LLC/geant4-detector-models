@@ -37,6 +37,7 @@
 
     python analysis/wt20_source_forward.py [каталог вывода]
 """
+import csv
 import io
 import math
 import os
@@ -46,6 +47,7 @@ import numpy as np
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _DET = os.path.dirname(_HERE)
+LIB = os.path.join(_DET, "reference", "nuclide-lines")
 
 # --- ядерные данные, МАГАТЭ NDS (nds.iaea.org/relnsd/v1/data?fields=ground_states)
 TH232_T12_S = 4.41796963644288e17     # период полураспада, с (1,40e10 лет)
@@ -78,20 +80,50 @@ MU_RHO = {
     2614.51: 0.0416,
 }
 
-# --- линии, по которым ведётся сверка: нуклид, энергия, выход на распад (МАГАТЭ)
-LINES = [
-    ("Pb-212", 238.63, 0.4360),
-    ("Ra-224", 300.09, 0.0328),
-    ("Tl-208", 583.19, 0.8500),
-    ("Bi-212", 727.33, 0.0667),
-    ("Ac-228", 860.56, 0.1242),
-    ("Ac-228", 911.20, 0.2580),
-    ("Ac-228", 968.97, 0.1580),
-    ("Tl-208", 2614.51, 0.9975),
-]
+# --- линии, по которым ведётся сверка -----------------------------------------
+# Перечислены только ЭНЕРГИИ. Нуклид и выход на распад определяются из
+# библиотеки МАГАТЭ при запуске (reference/nuclide-lines): набранный от руки
+# список уже расходился с ней — линия 860,56 кэВ была приписана Ac-228, хотя
+# принадлежит Tl-208 (выход 12,5 %), а 300,09 приписана Ra-224 вместо Pb-212.
+# Ошибка стоила ×2,78 в строке CSV, поскольку для Tl-208 не применялось
+# ветвление Bi-212 (находка S9 внешнего аудита от 07.08.2026).
+LINE_ENERGIES = [238.63, 300.09, 583.19, 727.33, 860.56, 911.20, 968.97,
+                 2614.51]
 
 # доля распадов Bi-212, идущая по ветви на Tl-208 (МАГАТЭ)
 BR_BI212_TL208 = 0.3594
+
+# соответствие «нуклид -> файл библиотеки»; ключ — как нуклид назван в отчёте
+_LIB_FILES = {"Pb-212": "212pb", "Bi-212": "212bi", "Tl-208": "208tl",
+              "Ac-228": "228ac", "Ra-224": "224ra", "Rn-220": "220rn",
+              "Th-228": "228th", "Th-232": "232th", "Ra-228": "228ra"}
+
+
+def lookup_line(e_want, tol=0.6):
+    """Нуклид и выход линии — из библиотеки МАГАТЭ, поиском по ВСЕМ файлам.
+
+    Отдаётся самая сильная линия в окне ±tol. Доплеровски расщеплённые линии
+    здесь не встречаются (расщепление отдачей проявляется в модельном спектре,
+    а не в библиотеке), но соседи в пределах окна — да, поэтому берётся
+    сильнейшая, а не первая найденная.
+    """
+    best = None
+    for nuc, stem in _LIB_FILES.items():
+        p = os.path.join(LIB, "%s_gammas.csv" % stem)
+        if not os.path.exists(p):
+            continue
+        for r in csv.DictReader(io.open(p, encoding="utf-8")):
+            try:
+                e = float(r["energy"])
+                i = float(r["intensity"])
+            except (TypeError, ValueError, KeyError):
+                continue
+            if abs(e - e_want) <= tol and (best is None or i > best[2]):
+                best = (nuc, e, i)
+    if best is None:
+        raise SystemExit("линия %.2f кэВ не найдена в библиотеке %s"
+                         % (e_want, LIB))
+    return best[0], best[2] / 100.0
 
 RNG = np.random.default_rng(20260807)
 N_MC = 400000
@@ -122,8 +154,14 @@ def escape_single_rod(mu_cm, n=N_MC):
     b = x * ux + y * uy
     c = x ** 2 + y ** 2 - R ** 2
     disc = np.clip(b ** 2 - ur2 * c, 0, None)
-    t_plane = (-b + np.sqrt(disc)) / np.maximum(ur2, 1e-12)   # длина в плоскости
-    path = t_plane / np.maximum(sin_t, 1e-12)                 # полная длина луча
+    # Параметр t решения — УЖЕ трёхмерная длина, а не длина проекции.
+    # Уравнение записано в компонентах ux = sinθ·cosψ, uy = sinθ·sinψ полного
+    # единичного направления, поэтому смещение по лучу за параметр t равно t·|U|
+    # = t. Прежняя редакция делила t на sinθ ещё раз, завышая путь в металле в
+    # 1/sinθ и занижая выход на 7-19 % (находка S1 внешнего аудита от
+    # 07.08.2026, подтверждена прямым тестом: луч из оси цилиндра даёт
+    # t/эталон = 1,0000 при θ = 90/60/30/10°).
+    path = (-b + np.sqrt(disc)) / np.maximum(ur2, 1e-12)
     return float(np.mean(np.exp(-mu_cm * path)))
 
 
@@ -163,7 +201,7 @@ def escape_pack_upward(mu_cm, n=N_MC):
         t2 = np.clip(t2, 0, None)
         seg = np.where(ok, np.maximum(t2 - t1, 0.0), 0.0)
         path += seg
-    path = path / np.maximum(sin_t, 1e-12)
+    # без деления на sinθ: параметр t уже трёхмерная длина, см. escape_single_rod
     return float(np.mean(np.exp(-mu_cm * path)))
 
 
@@ -216,7 +254,8 @@ def main():
     print("=== ВЫХОД КВАНТОВ ПО ЛИНИЯМ при номинале 2 %% ThO2 ===")
     print("  нуклид      E, кэВ  выход/расп  испущено, 1/с  вышло из пачки вверх, 1/с")
     line_rows = []
-    for nuc, e, yld in LINES:
+    for e in LINE_ENERGIES:
+        nuc, yld = lookup_line(e)
         # активность звена в вековом равновесии равна активности Th-232,
         # кроме Tl-208: он образуется лишь в 35,94 % распадов Bi-212
         a_nuc = a_pack * (BR_BI212_TL208 if nuc == "Tl-208" else 1.0)

@@ -138,12 +138,19 @@ def main():
                    bg_sum=round(bg_sum, 1),
                    bg_share=round(100.0 * bg_sum / meas_sum, 2) if meas_sum else 0,
                    src_fwd=opt("wt20_source_forward.csv"),
+                   peakchk=opt("peak_check.csv"),
+                   widthfit=opt("width_fit.csv"),
                    selfabs=opt("wt20_selfabsorption.csv"),
                    scatter=opt("wt20_source_scatter.csv"),
                    surflim=opt("wt20_surface_limit.csv"),
                    winscan=opt("wt20_window_scan.csv"),
-                   img_scan=data_uri(os.path.join(ref,
-                                                  "wt20-pitch-scanline.jpg")),
+                   # Показывается ПРИНЯТЫЙ замер — по красной маркировке марки,
+                   # три независимые сканлинии с профилем красноты. Прежде на
+                   # странице стояла контрольная картинка отменённого замера по
+                   # яркости (одна сканлиния, 6,15 мм), из которой принятый
+                   # результат 4,85 мм не следует.
+                   img_scan=data_uri(os.path.join(
+                       draw, "wt20_tips_scanlines.png")),
                    img_setup=data_uri(os.path.join(draw,
                                                    "nano16pro_wt20_setup.png")))
     tpl = io.open(os.path.join(_HERE, "wt20_report_template.html"),

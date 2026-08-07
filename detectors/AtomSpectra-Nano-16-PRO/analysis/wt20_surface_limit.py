@@ -65,9 +65,7 @@ def trace_shell(E0_kev, depth_cm, n=150000):
         mu_c = S.mu_of(Ei, S.COH); mu_i = S.mu_of(Ei, S.INC); mu_p = S.mu_of(Ei, S.PE)
         mu_t = mu_c + mu_i + mu_p
         s = -np.log(S.RNG.random(idx.size)) / mu_t
-        st = np.sqrt(np.clip(1 - uz[idx] ** 2, 1e-12, None))
-        esc, t_hit = S.metal_path_to_interaction(x[idx], y[idx], ux[idx], uy[idx],
-                                                 st, s)
+        esc, t_hit = S.metal_path_to_interaction(x[idx], y[idx], ux[idx], uy[idx], s)
         gone = idx[esc]
         escaped[gone] = True
         out_E[gone] = E[gone]
@@ -77,10 +75,9 @@ def trace_shell(E0_kev, depth_cm, n=150000):
         if hit.size == 0:
             continue
         th = t_hit[~esc]
-        hyp = np.maximum(np.sqrt(ux[hit] ** 2 + uy[hit] ** 2), 1e-12)
-        stp = np.sqrt(np.clip(1 - uz[hit] ** 2, 1e-12, None))
-        x[hit] += ux[hit] * th * stp / hyp
-        y[hit] += uy[hit] * th * stp / hyp
+        # t — трёхмерная длина, смещение прямо на компоненты направления
+        x[hit] += ux[hit] * th
+        y[hit] += uy[hit] * th
         uu = S.RNG.random(hit.size)
         mc = S.mu_of(E[hit], S.COH); mi = S.mu_of(E[hit], S.INC); mp = S.mu_of(E[hit], S.PE)
         mt = mc + mi + mp

@@ -33,18 +33,30 @@ PEAK_HALF = 1.0           # полуширина окна пика полног�
 # Порядок и подписи — по физическому смыслу. Цвета сюда НЕ входят: они
 # заданы в таблице стилей отдельно для светлой и тёмной темы (контраст
 # заливки к фону не может быть одинаковым на белом и на почти чёрном).
+# Каждая подпись — пара (ru, en); переключается на странице кнопкой.
 ORDER = [
-    ("photo",      "фотоэффект, ничего не вылетело"),
-    ("compt_full", "комптон и поглощение, без вылета"),
-    ("pair_full",  "пары, оба 511 поглощены"),
-    ("compt_esc1", "однократный комптон, квант ушёл"),
-    ("compt_escN", "многократный комптон, квант ушёл"),
-    ("pair_esc1",  "пары, вылетел один 511"),
-    ("pair_esc2",  "пары, вылетели оба"),
-    ("brems_esc",  "вылет тормозного"),
-    ("xray_esc",   "вылет характеристического рентгена"),
-    ("external",   "вторичные из корпуса и обёртки"),
-    ("other",      "остаточный канал (сторож)"),
+    ("photo",      "фотоэффект, ничего не вылетело",
+                   "photoelectric, nothing escaped"),
+    ("compt_full", "комптон и поглощение, без вылета",
+                   "Compton + absorption, no escape"),
+    ("pair_full",  "пары, оба 511 поглощены",
+                   "pair, both 511 keV absorbed"),
+    ("compt_esc1", "однократный комптон, квант ушёл",
+                   "single Compton, γ escaped"),
+    ("compt_escN", "многократный комптон, квант ушёл",
+                   "multiple Compton, γ escaped"),
+    ("pair_esc1",  "пары, вылетел один 511",
+                   "pair, one 511 keV escaped"),
+    ("pair_esc2",  "пары, вылетели оба",
+                   "pair, both 511 keV escaped"),
+    ("brems_esc",  "вылет тормозного",
+                   "bremsstrahlung escape"),
+    ("xray_esc",   "вылет характеристического рентгена",
+                   "K X-ray escape"),
+    ("external",   "вторичные из корпуса и обёртки",
+                   "secondaries from housing and wrapping"),
+    ("other",      "остаточный канал (сторож)",
+                   "residual channel (guard)"),
 ]
 
 
@@ -216,9 +228,12 @@ def export_tabs(src):
         # У маркера две подписи: короткая — на графике, полная — в
         # заголовке всплывающего пояснения. Полная не помещается вдоль линии
         # и налезает на кривые.
-        markers = [{"e": e0, "short": "пик", "kind": "peak", "id": "peak"},
+        markers = [{"e": e0, "short": {"ru": "пик", "en": "peak"},
+                    "kind": "peak", "id": "peak"},
                    {"e": 2.0 * e0 * e0 / (MEC2 + 2.0 * e0),
-                    "short": "комптоновский край", "kind": "edge", "id": "edge"}]
+                    "short": {"ru": "комптоновский край",
+                              "en": "Compton edge"},
+                    "kind": "edge", "id": "edge"}]
         feat = {"e_compton": 2.0 * e0 * e0 / (MEC2 + 2.0 * e0)}
 
         def argmax_of(nm):
@@ -237,9 +252,9 @@ def export_tabs(src):
         # данные служат проверкой: argmax сырой гистограммы обязан лечь в тот
         # же килоэлектронвольт. Обратный порядок — «маркер туда, где повыше» —
         # при десятках отсчётов ставит маркер на шум.
-        for nm, dE, lab, mid in (
-                ("pair_esc1", 511.0, "вылет 511", "esc511"),
-                ("pair_esc2", 1022.0, "вылет 1022", "esc1022")):
+        for nm, dE, lab_ru, lab_en, mid in (
+                ("pair_esc1", 511.0, "вылет 511",  "511 keV escape",  "esc511"),
+                ("pair_esc2", 1022.0, "вылет 1022", "1022 keV escape", "esc1022")):
             e_th = e0 - dE
             if e_th <= 0:
                 continue
@@ -249,7 +264,9 @@ def export_tabs(src):
             need(abs(e_ms - e_th) <= 1.0,
                  "узел %.0f: пик %s по данным %.1f, по формуле %.1f"
                  % (e0, nm, e_ms, e_th))
-            markers.append({"e": e_th, "short": lab, "kind": "escape", "id": mid})
+            markers.append({"e": e_th,
+                            "short": {"ru": lab_ru, "en": lab_en},
+                            "kind": "escape", "id": mid})
             feat["e_" + mid] = e_th
 
         # Вылет K-рентгена формулы не имеет: уходит любая линия K-серии иода
@@ -262,7 +279,9 @@ def export_tabs(src):
             # указывать на один и тот же бин, разрешённый по-разному.
             peaks = sorted((p for p in ((e, v[j]) for e, v in rows) if p[1] > 0),
                            key=lambda p: (-p[1], p[0]))[:2]
-            markers.append({"e": e_x, "short": "вылет K-рентгена",
+            markers.append({"e": e_x,
+                            "short": {"ru": "вылет K-рентгена",
+                                      "en": "K X-ray escape"},
                             "kind": "escape", "id": "xray"})
             feat["e_xray"] = e_x
             feat["d_xray"] = g4(e0 + 0.5 - e_x)
@@ -297,16 +316,20 @@ def export_tabs(src):
         peak_lo = max(e_ed, e0 - fw / 2.0)
         peak_hi = min(xmax, e0 + fw / 2.0)
         zones = [{"lo": 0.0, "hi": e_ed, "id": "cont",
-                  "label": "комптоновский континуум"}]
+                  "label": {"ru": "комптоновский континуум",
+                            "en": "Compton continuum"}}]
         gap_lo, gap_hi = e_ed, peak_lo
         if gap_hi - gap_lo > fw * 0.6:
             zones.append({"lo": gap_lo, "hi": gap_hi, "id": "gap",
-                          "label": "между краем и пиком"})
+                          "label": {"ru": "между краем и пиком",
+                                    "en": "between edge and peak"}})
         zones.append({"lo": peak_lo, "hi": peak_hi, "id": "peak",
-                      "label": "пик полного поглощения"})
+                      "label": {"ru": "пик полного поглощения",
+                                "en": "full-energy peak"}})
         if xmax - peak_hi > fw * 0.4:
             zones.append({"lo": peak_hi, "hi": xmax, "id": "over",
-                          "label": "хвост выше пика"})
+                          "label": {"ru": "хвост выше пика",
+                                    "en": "tail above peak"}})
         # Каждая зона обязана быть непустой и лежать внутри поля графика:
         # рисуется в ту же координатную сетку и обязана с ней сходиться.
         for z in zones:
@@ -316,7 +339,7 @@ def export_tabs(src):
 
         total = broaden([(e, sum(v)) for e, v in rows], w, nch, step)
         channels = []
-        for name, label in ORDER:
+        for name, label_ru, label_en in ORDER:
             if name not in names:
                 continue
             j = names.index(name)
@@ -324,7 +347,7 @@ def export_tabs(src):
             if raw == 0:
                 continue
             channels.append({
-                "key": name, "label": label,
+                "key": name, "label": {"ru": label_ru, "en": label_en},
                 "pct": g4(100.0 * raw / sum_chan), "n": int(raw),
                 "ys": [g4(v) for v in broaden([(e, v[j]) for e, v in rows],
                                               w, nch, step)],
@@ -358,7 +381,7 @@ def export_composition(src):
     for fn in sorted(f for f in os.listdir(src) if f.endswith("_chan.csv")):
         head, names, rows = read_chan(os.path.join(src, fn))
         if keys is None:
-            keys = [k for k, _ in ORDER if k in names]
+            keys = [k for k, _, _ in ORDER if k in names]
         tot = sum(sum(v) for _, v in rows)
         if tot == 0:
             continue
@@ -387,11 +410,14 @@ def export_composition(src):
             soft_hi = e
     pair_lo = 2.0 * MEC2
     zones = [{"lo": es[0], "hi": soft_hi, "id": "soft",
-              "label": "фотоэффектная полоса"},
+              "label": {"ru": "фотоэффектная полоса",
+                        "en": "photoelectric-dominated"}},
              {"lo": soft_hi, "hi": pair_lo, "id": "compton",
-              "label": "комптоновская полоса"},
+              "label": {"ru": "комптоновская полоса",
+                        "en": "Compton-dominated"}},
              {"lo": pair_lo, "hi": es[-1], "id": "pair",
-              "label": "полоса рождения пар"}]
+              "label": {"ru": "полоса рождения пар",
+                        "en": "pair-production band"}}]
     for z in zones:
         need(es[0] <= z["lo"] < z["hi"] <= es[-1] + 1e-6,
              "зона состава %s = [%.1f, %.1f] вне сетки" %
@@ -435,8 +461,8 @@ def main():
     need(matrix["stamp"] == stamp, "штампы матрицы и каналов разошлись: %s / %s"
          % (matrix["stamp"], stamp))
     comp = export_composition(src)
-    labels = dict(ORDER)
-    order = [k for k, _ in ORDER
+    labels = {k: {"ru": ru, "en": en} for k, ru, en in ORDER}
+    order = [k for k, _, _ in ORDER
              if any(c["key"] == k for t in tabs for c in t["channels"])]
 
     es = matrix["es"]

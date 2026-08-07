@@ -9,15 +9,35 @@
 var DATA = window.ASN16;
 var $ = function (s) { return document.querySelector(s); };
 
+/* ── язык ────────────────────────────────────────────────────────────────
+   Русский — по умолчанию; переключается кнопкой в тулбаре. Хранится в
+   localStorage, поэтому язык переживает перезагрузку. */
+var lang = 'ru';
+try { var st = localStorage.getItem('asn16_lang'); if (st==='ru'||st==='en') lang = st; }
+catch (e) {}
+
+// pick — универсальный доступ к паре {ru,en} из data.js; строку возвращает
+// как есть (для меток, которые ещё не переведены).
+function pick(v) {
+  if (v == null) return '';
+  return typeof v === 'string' ? v : (v[lang] || v.ru || v.en || '');
+}
+function tr(ru, en) { return lang === 'en' ? en : ru; }
+
 /* ── формат чисел ────────────────────────────────────────────────────────
-   Десятичная запятая — ГОСТ 8.417. Группировка тысяч только у счёта
-   событий: на шкале энергии она ломает чтение («2 615» вместо 2614,5). */
-function num(x, d) { return x.toFixed(d === undefined ? 1 : d).replace('.', ','); }
-function cnt(x) { return x.toLocaleString('ru-RU'); }
+   ГОСТ 8.417: десятичная запятая в РУ, точка в EN. Группировка тысяч
+   только у счёта событий: на шкале энергии она ломает чтение
+   («2 615» вместо 2614,5). */
+function num(x, d) {
+  var s = x.toFixed(d === undefined ? 1 : d);
+  return lang === 'en' ? s : s.replace('.', ',');
+}
+function cnt(x) { return x.toLocaleString(lang === 'en' ? 'en-US' : 'ru-RU'); }
 // Доля канала: одного знака хватает почти везде, но самые редкие каналы при
 // одном знаке округляются в ноль — а это не «канала нет», а «канал редок».
 function pctf(x) { return num(x, x < 1 ? 2 : 1) + ' %'; }
-function keV(x) { return num(x, 1).replace(/,0$/, ''); }
+function keV(x) { return num(x, 1).replace(/[.,]0$/, ''); }
+function keVunit() { return tr('кэВ', 'keV'); }
 function plural(n, one, few, many) {
   var a = Math.abs(n) % 100, b = a % 10;
   return n + ' ' + ((a > 10 && a < 20) || b > 4 || b === 0 ? many
@@ -48,7 +68,7 @@ function rgba(col, a) {
   return 'rgba(' + parseInt(h.slice(0, 2), 16) + ',' + parseInt(h.slice(2, 4), 16)
     + ',' + parseInt(h.slice(4, 6), 16) + ',' + a + ')';
 }
-function labelOf(key) { return DATA.labels[key] || key; }
+function labelOf(key) { return pick(DATA.labels[key]) || key; }
 function tabAt(e0) {
   return DATA.tabs.filter(function (t) { return t.e0 === e0; })[0];
 }
@@ -133,7 +153,8 @@ function openPop(node, opener, wide) {
   pop.textContent = '';
   var close = document.createElement('button');
   close.type = 'button'; close.className = 'close';
-  close.setAttribute('aria-label', 'закрыть'); close.textContent = '✕';
+  close.setAttribute('aria-label', tr('закрыть', 'close'));
+  close.textContent = '✕';
   close.onclick = closePop;
   pop.appendChild(close);
   pop.appendChild(node);
@@ -143,11 +164,79 @@ function openPop(node, opener, wide) {
   pop.hidden = false; scrim.hidden = false;
   popOpener = opener || null;
   if (opener) opener.setAttribute('aria-expanded', 'true');
+  // Применить язык к содержимому popup'а — шаблоны клонированы «сырыми»,
+  // атрибуты data-en у них есть, но в isolatiion они ещё не отработали.
+  if (typeof applyLangTo === 'function') applyLangTo(pop);
   close.focus();
 }
 scrim.addEventListener('click', closePop);
 document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape' && !pop.hidden) closePop();
+});
+
+/* ── переключение языка ──────────────────────────────────────────────────
+   Каждый статичный текст в шаблоне размечен парой атрибутов
+   `data-ru`/`data-en` (для innerHTML), либо `data-i18n-ru`/`data-i18n-en`
+   (для textContent), либо `data-en-title`/`data-en-aria` (для атрибутов).
+   applyLangTo(root) прогоняет ВСЕ такие узлы в корне; вызывается на
+   документе и на каждом клонированном <template> перед показом. */
+function ruTextFor(el, key) {
+  var stored = el.getAttribute(key);
+  if (stored != null) return stored;
+  // Первый переход RU→EN — RU-версии ещё нет; берём текущее содержимое.
+  return null;
+}
+function applyLangTo(root) {
+  var docLang = lang;
+  root.querySelectorAll('[data-en]').forEach(function (el) {
+    if (!el.hasAttribute('data-ru')) el.setAttribute('data-ru', el.innerHTML);
+    el.innerHTML = docLang === 'en' ? el.getAttribute('data-en')
+                                    : el.getAttribute('data-ru');
+  });
+  root.querySelectorAll('[data-i18n-en]').forEach(function (el) {
+    if (!el.hasAttribute('data-i18n-ru')) el.setAttribute('data-i18n-ru', el.textContent);
+    el.textContent = docLang === 'en' ? el.getAttribute('data-i18n-en')
+                                      : el.getAttribute('data-i18n-ru');
+  });
+  root.querySelectorAll('[data-en-aria]').forEach(function (el) {
+    if (!el.hasAttribute('data-ru-aria'))
+      el.setAttribute('data-ru-aria', el.getAttribute('aria-label') || '');
+    el.setAttribute('aria-label',
+      docLang === 'en' ? el.getAttribute('data-en-aria')
+                       : el.getAttribute('data-ru-aria'));
+  });
+}
+function applyLang(newLang) {
+  lang = newLang;
+  try { localStorage.setItem('asn16_lang', lang); } catch (e) {}
+  document.documentElement.lang = lang;
+  applyLangTo(document);
+  var docTitle = document.querySelector('title');
+  if (docTitle && docTitle.hasAttribute('data-en')) {
+    if (!docTitle.hasAttribute('data-ru'))
+      docTitle.setAttribute('data-ru', docTitle.textContent);
+    docTitle.textContent = lang === 'en' ? docTitle.getAttribute('data-en')
+                                         : docTitle.getAttribute('data-ru');
+  }
+  var b = $('#btnLang');
+  if (b) {
+    b.textContent = lang === 'en' ? 'RU' : 'EN';
+    b.setAttribute('aria-label', lang === 'en' ? 'switch to Russian' : 'на русский');
+  }
+  // Легенда, hint и подписи элементов спектра лежат в DOM с прежней
+  // языковой версией — перестроим их вместе с холстами. Проверка на
+  // определённость нужна, потому что applyLang вызывается ещё до
+  // объявления buildLegend/redraw.
+  if (typeof buildLegend === 'function' && tabIdx < DATA.tabs.length) buildLegend();
+  if (typeof redraw === 'function') redraw();
+}
+document.addEventListener('DOMContentLoaded', function () {
+  var b = $('#btnLang');
+  if (b) b.addEventListener('click', function () {
+    applyLang(lang === 'en' ? 'ru' : 'en');
+  });
+  // Первичное применение — если из localStorage взят en, поставим его.
+  applyLang(lang);
 });
 function tplNode(sel) {
   var t = document.querySelector(sel);
@@ -176,27 +265,34 @@ function openChannel(key, opener) {
   var rows = '';
   DATA.tabs.forEach(function (t) {
     var f = chanAt(t.e0, key);
-    rows += '<tr><th scope="row">' + num(t.e0, 0) + ' кэВ</th>'
+    rows += '<tr><th scope="row">' + num(t.e0, 0) + ' ' + keVunit() + '</th>'
       + (f ? '<td class="bar-cell" style="--w:' + f.pct.toFixed(2) + '">'
            + pctf(f.pct) + '</td>' : '<td>—</td>')
       + '<td>' + (f ? cnt(f.n) : '—') + '</td></tr>';
   });
-  tb.innerHTML = '<thead><tr><th scope="col">узел</th><th scope="col">доля</th>'
-    + '<th scope="col">событий</th></tr></thead><tbody>' + rows + '</tbody>';
+  tb.innerHTML = '<thead><tr><th scope="col">' + tr('узел','node')
+    + '</th><th scope="col">' + tr('доля','fraction') + '</th>'
+    + '<th scope="col">' + tr('событий','events') + '</th></tr></thead>'
+    + '<tbody>' + rows + '</tbody>';
   head.appendChild(h2); head.appendChild(em); head.appendChild(tb);
   var frag = document.createDocumentFragment();
   frag.appendChild(head); frag.appendChild(node);
+  // Внутри клонированного шаблона — тоже применить перевод и подмену чисел.
+  if (typeof applyLangTo === 'function') applyLangTo(frag);
   openPop(frag, opener);
 }
 // Полное имя элемента спектра. На графике подпись короткая (иначе налезает
 // на кривые), а здесь — то, что читается в списке и в заголовке пояснения.
 var ELEM_NAME = {
-  peak: 'пик полного поглощения',
-  edge: 'комптоновский край',
-  esc511: 'вылет одного кванта 511 кэВ',
-  esc1022: 'вылет обоих квантов 511 кэВ',
-  xray: 'вылет K-рентгена'
+  peak:    {ru:'пик полного поглощения',       en:'full-energy peak'},
+  edge:    {ru:'комптоновский край',            en:'Compton edge'},
+  esc511:  {ru:'вылет одного кванта 511 кэВ',   en:'single 511 keV escape'},
+  esc1022: {ru:'вылет обоих квантов 511 кэВ',   en:'double 511 keV escape'},
+  xray:    {ru:'вылет K-рентгена',              en:'K X-ray escape'}
 };
+function elemName(id, fallback) {
+  return pick(ELEM_NAME[id]) || pick(fallback) || id;
+}
 function openElement(id) {
   var node = tplNode('[data-el="' + id + '"]');
   if (node) openPop(node, null);
@@ -212,7 +308,7 @@ function buildTable() {
   });
   var h = '<thead><tr><th scope="col">канал</th>'
     + DATA.tabs.map(function (t) {
-        return '<th scope="col">' + num(t.e0, 0) + ' кэВ</th>';
+        return '<th scope="col">' + num(t.e0, 0) + ' ' + keVunit() + '</th>';
       }).join('') + '</tr></thead><tbody>';
   DATA.order.forEach(function (key) {
     h += '<tr style="--c:' + chColor(key) + '"><th scope="row">'
@@ -224,13 +320,17 @@ function buildTable() {
     });
     h += '</tr>';
   });
-  h += '<tr class="sum"><th scope="row">событий с сигналом, шт</th>'
+  h += '<tr class="sum"><th scope="row">'
+    + tr('событий с сигналом, шт', 'events with signal') + '</th>'
     + DATA.tabs.map(function (t) { return '<td>' + cnt(t.n_signal) + '</td>'; })
       .join('') + '</tr>';
-  h += '<tr><th scope="row">ничего не вылетело из кристалла, %</th>'
+  h += '<tr><th scope="row">'
+    + tr('ничего не вылетело из кристалла, %',
+         'nothing escaped the crystal, %') + '</th>'
     + DATA.tabs.map(function (t) { return '<td>' + num(t.nofly_pct, 2) + '</td>'; })
       .join('') + '</tr>';
-  h += '<tr><th scope="row">в пике полного поглощения, %</th>'
+  h += '<tr><th scope="row">'
+    + tr('в пике полного поглощения, %', 'in the full-energy peak, %') + '</th>'
     + DATA.tabs.map(function (t) { return '<td>' + num(t.peak_pct, 2) + '</td>'; })
       .join('') + '</tr>';
   el.innerHTML = h + '</tbody>';
@@ -322,8 +422,10 @@ function drawZones(host, zones, W, L, R, px, xlo, xhi) {
     var a = Math.max(z.lo, xlo), b = Math.min(z.hi, xhi);
     var el = document.createElement('div');
     el.className = 'zone'; el.setAttribute('data-id', z.id);
-    el.innerHTML = '<b>' + z.label + '</b><i>' + keV(a) + '–' + keV(b) + ' кэВ</i>';
-    el.title = z.label + ': ' + keV(a) + '–' + keV(b) + ' кэВ';
+    var zl = pick(z.label);
+    el.innerHTML = '<b>' + zl + '</b><i>' + keV(a) + '–' + keV(b)
+      + ' ' + keVunit() + '</i>';
+    el.title = zl + ': ' + keV(a) + '–' + keV(b) + ' ' + keVunit();
     row.appendChild(el);
   });
   host.appendChild(row);
@@ -346,21 +448,20 @@ cvComp.addEventListener('pointermove', function (ev) {
   var rows = C.keys.map(function (k, j) { return [k, C.f[i][j]]; })
     .filter(function (p) { return p[1] >= 0.001; })
     .sort(function (a, b) { return b[1] - a[1]; });
-  roComp.innerHTML = '<b>' + keV(C.es[i]) + ' кэВ</b>' + rows.map(function (p) {
+  roComp.innerHTML = '<b>' + keV(C.es[i]) + ' ' + keVunit() + '</b>' + rows.map(function (p) {
     return '<span><i style="--c:' + chColor(p[0]) + '"></i>' + labelOf(p[0])
       + '<span class="v">' + pctf(p[1] * 100) + '</span></span>';
   }).join('');
   roComp.style.opacity = 1;
-  var bw = roComp.offsetWidth, bh = roComp.offsetHeight;
-  // Оверлей — рядом с курсором, не под ним: с зазором 14 px по горизонтали
-  // и вертикальным подъёмом. На правой половине холста уходит ВЛЕВО, чтобы
-  // не выпасть за край и не оказаться под указателем.
+  var bw = roComp.offsetWidth;
+  // Оверлей опускается ПОД всю шапку (canvas + плашки + подпись): раньше он
+  // всплывал над курсором и накрывал полосу состава и плашки зон под ней.
+  // Горизонталь — по курсору, с прижимом к краю канваса.
   var side = x + bw + 28 > compGeom.W ? -1 : 1;
   var lx = side > 0 ? x + 14 : x - bw - 14;
   roComp.style.left = Math.max(4, Math.min(lx, compGeom.W - bw - 4)) + 'px';
-  var ly = y - bh - 12;
-  if (ly < 4) ly = Math.min(compGeom.H - bh - 4, y + 20);
-  roComp.style.top = ly + 'px';
+  var hero = cvComp.parentElement;
+  roComp.style.top = (hero.offsetHeight + 6) + 'px';
 });
 cvComp.addEventListener('pointerleave', function () { roComp.style.opacity = 0; });
 
@@ -381,8 +482,11 @@ function addTab(label, i) {
   };
   tabsEl.appendChild(b);
 }
-DATA.tabs.forEach(function (t, i) { addTab(num(t.e0, 0) + ' кэВ', i); });
-addTab('карта ' + keV(DATA.run.e_lo) + '–' + keV(DATA.run.e_hi), DATA.tabs.length);
+DATA.tabs.forEach(function (t, i) {
+  addTab(num(t.e0, 0) + ' ' + keVunit(), i);
+});
+addTab(tr('карта ', 'map ') + keV(DATA.run.e_lo) + '–' + keV(DATA.run.e_hi),
+       DATA.tabs.length);
 
 $('#rowSel').max = DATA.matrix.es.length - 1;
 $('#rowSel').oninput = function () { drawMap(); drawSlice(); };
@@ -443,15 +547,20 @@ function buildLegend() {
     leg.appendChild(l);
   }
   if (mode === 'log')
-    row('total', 'полный отклик', css('--ink'), null, 'total');
+    row('total', tr('полный отклик','full response'), css('--ink'), null, 'total');
   DATA.order.forEach(function (key) {
     var c = chanAt(t.e0, key);
-    if (c) row(c.key, c.label, chColor(c.key), c.pct);
+    if (c) row(c.key, pick(c.label), chColor(c.key), c.pct);
   });
-  $('#sideTitle').textContent = mode === 'log' ? 'каналы' : 'каналы, доли';
-  $('#hint').textContent = 'событий с сигналом ' + cnt(t.n_signal) + ' из '
-    + cnt(t.n_primaries) + ' выпущенных · канал отображения '
-    + keV(t.step) + ' кэВ';
+  $('#sideTitle').textContent = mode === 'log'
+    ? tr('каналы','channels') : tr('каналы, доли','channels, fractions');
+  $('#hint').textContent = tr(
+    'событий с сигналом ' + cnt(t.n_signal) + ' из '
+      + cnt(t.n_primaries) + ' выпущенных · канал отображения '
+      + keV(t.step) + ' кэВ',
+    'events with signal ' + cnt(t.n_signal) + ' out of '
+      + cnt(t.n_primaries) + ' emitted · display bin '
+      + keV(t.step) + ' keV');
   buildElems();
 }
 
@@ -461,12 +570,13 @@ function buildElems() {
   if (tabIdx >= DATA.tabs.length) return;
   var t = DATA.tabs[tabIdx];
   var cap = document.createElement('span');
-  cap.textContent = 'элементы спектра:';
+  cap.textContent = tr('элементы спектра:', 'spectrum features:');
   el.appendChild(cap);
   t.markers.forEach(function (m) {
     var b = document.createElement('button');
     b.type = 'button';
-    b.textContent = (ELEM_NAME[m.id] || m.short) + ' · ' + keV(m.e) + ' кэВ';
+    b.textContent = elemName(m.id, m.short) + ' · ' + keV(m.e)
+      + ' ' + keVunit();
     b.onclick = function () { openElement(m.id); };
     el.appendChild(b);
   });
@@ -540,7 +650,8 @@ function draw() {
   var xTick = xmax > 2000 ? 500 : (xmax > 700 ? 250 : 50);
   for (var e2 = 0; e2 <= xmax; e2 += xTick) g.fillText(String(e2), px(e2), H - B + 16);
   g.font = '12px ' + css('--sans'); g.fillStyle = dim;
-  g.fillText('энерговыделение, кэВ', L + (W - L - R) / 2, H - 7);
+  g.fillText(tr('энерговыделение, кэВ','energy deposition, keV'),
+             L + (W - L - R) / 2, H - 7);
 
   var N = Math.max(4, Math.round(W - L - R));
   var xs = [];
@@ -571,7 +682,8 @@ function draw() {
     }
     g.save(); g.translate(15, T + (H - T - B) / 2); g.rotate(-Math.PI / 2);
     g.textAlign = 'center'; g.font = '12px ' + css('--sans'); g.fillStyle = dim;
-    g.fillText('вероятность на квант в 4π', 0, 0); g.restore();
+    g.fillText(tr('вероятность на квант в 4π','probability per γ in 4π'),
+               0, 0); g.restore();
 
     boxes = drawMarkers(g, t, px, xmax, T, H - B);
 
@@ -629,7 +741,8 @@ function draw() {
     }
     g.save(); g.translate(15, T + (H - T - B) / 2); g.rotate(-Math.PI / 2);
     g.textAlign = 'center'; g.font = '12px ' + css('--sans'); g.fillStyle = dim;
-    g.fillText('доля канала в этой точке шкалы', 0, 0); g.restore();
+    g.fillText(tr('доля канала в этой точке шкалы',
+                  'channel fraction at this energy'), 0, 0); g.restore();
 
     g.save(); g.beginPath(); g.rect(L, T, W - L - R, H - T - B); g.clip();
     var prev = xs.map(function () { return 0; });
@@ -690,9 +803,10 @@ cv.addEventListener('pointermove', function (ev) {
   cv.style.cursor = near ? 'pointer' : 'crosshair';
   if (near && mkTip) {
     ro.style.opacity = 0;
-    var name = ELEM_NAME[near.id] || near.short;
+    var name = elemName(near.id, near.short);
     mkTip.innerHTML = '<b>' + name + '</b><span>' + keV(near.e)
-      + ' кэВ · клик — пояснение</span>';
+      + ' ' + keVunit() + tr(' · клик — пояснение',
+                             ' · click for details') + '</span>';
     mkTip.hidden = false;
     var tw = mkTip.offsetWidth, th = mkTip.offsetHeight;
     // Тултип центрируется по маркеру, зажимается в поле графика.
@@ -717,7 +831,7 @@ cv.addEventListener('pointermove', function (ev) {
     var pct = tot > 0 ? 100 * c.ys[i] / tot : 0;
     rows.push([chColor(c.key), c.label, pctf(pct)]);
   });
-  ro.innerHTML = '<b>' + keV(t.xs[i]) + ' кэВ'
+  ro.innerHTML = '<b>' + keV(t.xs[i]) + ' ' + keVunit()
     + (mode === 'log' && tot > 0 ? ' · ' + sci(tot) : '')
     + '</b>' + rows.map(function (p) {
     return '<span><i style="--c:' + p[0] + '"></i>' + p[1]
@@ -862,9 +976,11 @@ function drawMap() {
   for (var e3 = 500; e3 <= es[es.length - 1]; e3 += 500)
     g.fillText(String(e3), L - 8, py(e3) + 3.5);
   g.font = '12px ' + css('--sans'); g.fillStyle = dim; g.textAlign = 'center';
-  g.fillText('энерговыделение, кэВ', L + (W - L - R) / 2, H - 7);
+  g.fillText(tr('энерговыделение, кэВ','energy deposition, keV'),
+             L + (W - L - R) / 2, H - 7);
   g.save(); g.translate(15, T + (H - T - B) / 2); g.rotate(-Math.PI / 2);
-  g.fillText('энергия падающего кванта, кэВ', 0, 0); g.restore();
+  g.fillText(tr('энергия падающего кванта, кэВ',
+                'incident γ energy, keV'), 0, 0); g.restore();
 
   var bx = W - R + 16, bw = 14, bh = H - T - B;
   for (var k = 0; k < bh; k++) {
@@ -933,10 +1049,11 @@ function drawSlice() {
   g.fillStyle = faint; g.textAlign = 'center'; g.font = '11px ' + css('--mono');
   for (var e4 = 0; e4 <= xhi; e4 += 500) g.fillText(String(e4), px(e4), H - B + 16);
   g.font = '12px ' + css('--sans'); g.fillStyle = dim;
-  g.fillText('энерговыделение, кэВ', L + (W - L - R) / 2, H - 7);
+  g.fillText(tr('энерговыделение, кэВ','energy deposition, keV'),
+             L + (W - L - R) / 2, H - 7);
   g.save(); g.translate(15, T + (H - T - B) / 2); g.rotate(-Math.PI / 2);
   g.fillText('вероятность на квант в 4π', 0, 0); g.restore();
-  $('#rowOut').textContent = keV(es[sel]) + ' кэВ';
+  $('#rowOut').textContent = keV(es[sel]) + ' ' + keVunit();
 }
 
 /* ── запуск и перерисовка ────────────────────────────────────────────── */

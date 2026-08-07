@@ -1,0 +1,585 @@
+<?xml version="1.0"?>
+<ROIConfigData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <FormatVersion>120920</FormatVersion>
+  <Guid>f1fee115-81e9-4b6c-abf0-6cf3816b82e0</Guid>
+  <Name>IAEA lines</Name>
+  <LastUpdated>2026-08-06T23:01:40.990Z</LastUpdated>
+  <ROIDefinitions>
+    <ROIDefinitionData>
+      <Name>Ac-228 (Th-232)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>409.462</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0007015742642026009</HalfLife>
+      <Intencity>1.92</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Ac-228 (Th-232) (129–141)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>129.31</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0007015742642026009</HalfLife>
+      <Intencity>2.47</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Ac-228 (Th-232) (1557–1588)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>1585.66</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0007015742642026009</HalfLife>
+      <Intencity>3.998</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Ac-228 (Th-232) (1625–1678)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>1635.13</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0007015742642026009</HalfLife>
+      <Intencity>2.467</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Ac-228 (Th-232) (204–215)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>210.02</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0007015742642026009</HalfLife>
+      <Intencity>4.762</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Ac-228 (Th-232) (270–282)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>270.85</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0007015742642026009</HalfLife>
+      <Intencity>3.692</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Ac-228 (Th-232) (322–341)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>335.91</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0007015742642026009</HalfLife>
+      <Intencity>15.335</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Ac-228 (Th-232) (440–463)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>462.4</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0007015742642026009</HalfLife>
+      <Intencity>4.521</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Ac-228 (Th-232) (652–677)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>673.72</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0007015742642026009</HalfLife>
+      <Intencity>2.418</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Ac-228 (Th-232) (772–795)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>788.44</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0007015742642026009</HalfLife>
+      <Intencity>6.365</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Ac-228 (Th-232) (825–840)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>836</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0007015742642026009</HalfLife>
+      <Intencity>3.11</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Ac-228 (Th-232) (904–944)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>911.12</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0007015742642026009</HalfLife>
+      <Intencity>26.665</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Ac-228 (Th-232) (948–989)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>967.9</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0007015742642026009</HalfLife>
+      <Intencity>21.38</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Ac-228 X KA1 (Th-232) (90.0–100)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>93.59</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0007015742642026009</HalfLife>
+      <Intencity>6.563</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Ac-228 X KB (Th-232) (106–107)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>106.32</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0007015742642026009</HalfLife>
+      <Intencity>2.7</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Bi-212 (Th-232)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>39.857</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.00011512282302836718</HalfLife>
+      <Intencity>1.06</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Bi-212 (Th-232)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>288.2</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.00011512282302836718</HalfLife>
+      <Intencity>0.337</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Bi-212 (Th-232)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>727.33</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.00011512282302836718</HalfLife>
+      <Intencity>6.67</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Bi-212 (Th-232)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>785.37</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.00011512282302836718</HalfLife>
+      <Intencity>1.102</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Bi-212 (Th-232)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>893.408</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.00011512282302836718</HalfLife>
+      <Intencity>0.378</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Bi-212 (Th-232)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>1078.62</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.00011512282302836718</HalfLife>
+      <Intencity>0.564</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Bi-212 (Th-232)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>1512.7</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.00011512282302836718</HalfLife>
+      <Intencity>0.29</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Bi-212 (Th-232)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>1620.5</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.00011512282302836718</HalfLife>
+      <Intencity>1.47</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Bi-212 (Th-232) (453–473)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>455.4</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.00011512282302836718</HalfLife>
+      <Intencity>0.413</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Pb-212 (Th-232)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>238.632</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0012117271275382158</HalfLife>
+      <Intencity>43.6</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Pb-212 (Th-232)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>300.087</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0012117271275382158</HalfLife>
+      <Intencity>3.3005</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Pb-212 X KA1 (Th-232) (74.8–77.1)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>76.25</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0012117271275382158</HalfLife>
+      <Intencity>26.804</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Pb-212 X KB (Th-232) (87.4–89.8)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>88.2</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0012117271275382158</HalfLife>
+      <Intencity>15.01</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Ra-224 (Th-232)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>240.986</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.00994277891854894</HalfLife>
+      <Intencity>4.1</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Rn-220 (Th-232)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>549.73</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.0000017618576824600097</HalfLife>
+      <Intencity>0.114</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Th-228 (Th-232)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>84.373</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>1.9115591709455113</HalfLife>
+      <Intencity>1.188</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Th-232</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>63.81</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>13999700979.931553</HalfLife>
+      <Intencity>0.263</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Tl-208 (Th-232)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>277.371</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.000005804623925773824</HalfLife>
+      <Intencity>2.372</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Tl-208 (Th-232)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>510.77</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.000005804623925773824</HalfLife>
+      <Intencity>8.1224</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Tl-208 (Th-232)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>860.557</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.000005804623925773824</HalfLife>
+      <Intencity>4.4925</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Tl-208 (Th-232)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>2614.511</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.000005804623925773824</HalfLife>
+      <Intencity>35.8516</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Tl-208 (Th-232) (583–588)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>583.19</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.000005804623925773824</HalfLife>
+      <Intencity>30.571</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>Tl-208 X KA1 (Th-232) (72.8–75.0)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>74.16</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#E6821E</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>0.000005804623925773824</HalfLife>
+      <Intencity>1.977</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>ХРИ I Kα1 (28.3–33.0)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>29.25</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#2E7D32</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>1000000000</HalfLife>
+      <Intencity>190.5</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>ХРИ W Kα1 (58.0–67.2)</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>60.18</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#C03535</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>1000000000</HalfLife>
+      <Intencity>188.9</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+    <ROIDefinitionData>
+      <Name>ХРИ W Kβ2</Name>
+      <Enabled>true</Enabled>
+      <PeakEnergy>69.07</PeakEnergy>
+      <LowerLimit>-10</LowerLimit>
+      <UpperLimit>-10</UpperLimit>
+      <Color>#C03535</Color>
+      <BecquerelCoefficient>0</BecquerelCoefficient>
+      <BecquerelCoefficientError>0</BecquerelCoefficientError>
+      <HalfLife>1000000000</HalfLife>
+      <Intencity>7.6</Intencity>
+      <Note />
+      <ROIPrimitives />
+    </ROIDefinitionData>
+  </ROIDefinitions>
+  <ROIEfficiency />
+  <Note />
+</ROIConfigData>

@@ -80,8 +80,14 @@ def mu_of(E, table):
 CENTRES = (np.arange(N_RODS) - (N_RODS - 1) / 2.0) * PITCH
 
 
-def metal_path_to_interaction(x, y, ux, uy, sin_t, s_need):
+def metal_path_to_interaction(x, y, ux, uy, s_need):
     """Идём по лучу через 10 цилиндров, пока не набрано s_need металла.
+
+    ux, uy — компоненты ПОЛНОГО единичного направления (ux = sinθ·cosψ), не
+    единичного вектора проекции. Поэтому параметр t решения квадратного
+    уравнения — трёхмерная длина, и отдельный множитель sinθ нигде не нужен.
+    Прежняя редакция принимала его аргументом и делила на него длины сегментов;
+    аргумент убран, чтобы такой пересчёт не вернулся.
 
     Возвращает (escaped, t_hit) — вышел ли квант и параметр точки
     взаимодействия вдоль луча (в трёхмерной длине).
@@ -110,17 +116,24 @@ def metal_path_to_interaction(x, y, ux, uy, sin_t, s_need):
     # inf - inf в np.where считался бы всё равно (обе ветви вычисляются),
     # поэтому разность берётся только там, где отрезок существует
     fin = np.isfinite(t_in) & np.isfinite(t_out)
-    seg = np.zeros_like(t_in)                                 # длина в плоскости
+    # Параметр t решения — УЖЕ трёхмерная длина: уравнение записано в
+    # компонентах ux = sinθ·cosψ полного единичного направления, поэтому за
+    # параметр t точка смещается на t·|U| = t. Прежняя редакция делила ещё раз
+    # на sinθ и завышала путь в металле в 1/sinθ (находка S1 внешнего аудита
+    # от 07.08.2026; проверено лучом из оси цилиндра: t/эталон = 1,0000 при
+    # θ = 90/60/30/10°).
+    seg = np.zeros_like(t_in)
     np.subtract(t_out, t_in, out=seg, where=fin)
-    seg3 = seg / sin_t[:, None]                                # в трёхмерной длине
-    cum = np.cumsum(seg3, axis=1)
+    cum = np.cumsum(seg, axis=1)
     total = cum[:, -1]
     escaped = s_need >= total
     idx = np.argmax(cum >= s_need[:, None], axis=1)
     prev = np.where(idx > 0, np.take_along_axis(cum, np.maximum(idx - 1, 0)[:, None],
                                                 axis=1)[:, 0], 0.0)
     t_seg_in = np.take_along_axis(t_in, idx[:, None], axis=1)[:, 0]
-    t_hit = t_seg_in + (s_need - prev) * sin_t                 # обратно в параметр луча
+    # обратного пересчёта в параметр луча не требуется: и s_need, и t — в одной
+    # трёхмерной длине
+    t_hit = t_seg_in + (s_need - prev)
     return escaped, t_hit
 
 
@@ -198,9 +211,7 @@ def trace_line(E0_kev, n=N_HIST):
         mu_c = mu_of(Ei, COH); mu_i = mu_of(Ei, INC); mu_p = mu_of(Ei, PE)
         mu_t = mu_c + mu_i + mu_p
         s = -np.log(RNG.random(idx.size)) / mu_t
-        st = np.sqrt(np.clip(1 - uz[idx] ** 2, 1e-12, None))
-        esc, t_hit = metal_path_to_interaction(x[idx], y[idx], ux[idx], uy[idx],
-                                               st, s)
+        esc, t_hit = metal_path_to_interaction(x[idx], y[idx], ux[idx], uy[idx], s)
         gone = idx[esc]
         escaped_any[gone] = True
         out_E[gone] = E[gone]
@@ -212,10 +223,12 @@ def trace_line(E0_kev, n=N_HIST):
         if hit.size == 0:
             continue
         th = t_hit[~esc]
-        x[hit] += ux[hit] * th * np.sqrt(np.clip(1 - uz[hit] ** 2, 1e-12, None)) / \
-            np.maximum(np.sqrt(ux[hit] ** 2 + uy[hit] ** 2), 1e-12)
-        y[hit] += uy[hit] * th * np.sqrt(np.clip(1 - uz[hit] ** 2, 1e-12, None)) / \
-            np.maximum(np.sqrt(ux[hit] ** 2 + uy[hit] ** 2), 1e-12)
+        # смещение по осям — прямо на компоненты полного направления: t уже
+        # трёхмерная длина. Прежняя редакция домножала на sinθ и делила на
+        # √(ux²+uy²) — то же самое sinθ, то есть на единицу, но записанное так,
+        # что читалось как необходимый пересчёт
+        x[hit] += ux[hit] * th
+        y[hit] += uy[hit] * th
 
         u = RNG.random(hit.size)
         mc = mu_of(E[hit], COH); mi = mu_of(E[hit], INC); mp = mu_of(E[hit], PE)

@@ -296,6 +296,36 @@ function drawComp() {
   g.strokeStyle = css('--rule'); g.lineWidth = 1;
   g.strokeRect(L + .5, T + .5, W - L - R - 1, H - T - B - 1);
   compGeom.px = px;
+  drawZones($('#zonesComp'), DATA.comp.zones, W, L, R,
+            function (e) { return px(e); }, e0, e1);
+}
+
+/* ── зоны спектра под графиком ───────────────────────────────────────────
+   Полосы под холстом с реальным текстом: они читаются с экрана и с
+   клавиатуры, в отличие от штриховых линий на самом графике. Ширина
+   каждой полосы в пикселях считается той же координатной сеткой, что и
+   ось X главного холста, — иначе цветной блок и подпись под осью уехали
+   бы друг относительно друга при любом изменении размера окна. */
+function drawZones(host, zones, W, L, R, px, xlo, xhi) {
+  if (!host) return;
+  host.textContent = '';
+  host.style.paddingLeft = L + 'px';
+  host.style.paddingRight = R + 'px';
+  var plot = W - L - R;
+  zones.forEach(function (z) {
+    if (z.hi <= xlo || z.lo >= xhi) return;                // вне поля
+    var a = Math.max(z.lo, xlo), b = Math.min(z.hi, xhi);
+    var w = px(b) - px(a);
+    if (w < 4) return;                                     // уже нечего рисовать
+    var el = document.createElement('div');
+    el.className = 'zone';
+    el.setAttribute('data-id', z.id);
+    el.style.width = w + 'px';
+    el.style.flex = '0 0 auto';
+    el.textContent = z.label;
+    el.title = z.label + ': ' + keV(a) + '–' + keV(b) + ' кэВ';
+    host.appendChild(el);
+  });
 }
 
 cvComp.addEventListener('pointermove', function (ev) {
@@ -364,6 +394,7 @@ function selectTab(i) {
   if (isMap) {
     drawMap(); drawSlice();
     $('#elems').textContent = '';
+    $('#zones').textContent = '';                       // на карте зон нет
     $('#hint').textContent = 'строка — энергия падающего кванта, столбец — '
       + 'энерговыделение, цвет — вероятность на квант; штриховая — пик '
       + 'полного поглощения, точечные — вылет одного и обоих квантов '
@@ -488,6 +519,7 @@ function draw() {
   var L = 62, R = 14, T = 14, B = 40, i;
   var xmax = Math.min(3200, t.e0 * 1.15);
   var px = function (e) { return L + (e / xmax) * (W - L - R); };
+  drawZones($('#zones'), t.zones, W, L, R, px, 0, xmax);
   var dim = css('--dim'), faint = css('--faint'), ink = css('--ink'),
       grid = css('--grid'), gridS = css('--grid-soft');
 

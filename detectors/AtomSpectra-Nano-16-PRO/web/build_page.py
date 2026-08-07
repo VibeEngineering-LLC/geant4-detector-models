@@ -92,6 +92,14 @@ def make_fill(d):
         need(name in t["feat"], "на узле %s нет величины %s" % (e0, name))
         return t["feat"][name]
 
+    def pshare(key, e0):
+        t = tab(e0)
+        need("peak_ch" in t, "в выгрузке нет состава окна пика — "
+                             "пересобери asn16_data.json")
+        need(key in t["peak_ch"],
+             "на узле %s канал %s в окне пика не встречается" % (e0, key))
+        return rpct(100.0 * t["peak_ch"][key] / t["n_peak"])
+
     def run(name):
         need(name in d["run"], "нет параметра прогона %s" % name)
         v = d["run"][name]
@@ -119,10 +127,11 @@ def make_fill(d):
         "matM": lambda: str(len(d["matrix"]["cols"])),
         "psum": lambda e0, *keys: rpct(sum(chan(e0, k)["pct"] for k in keys)),
         "ratio": lambda e0, a, b: rnum(chan(e0, a)["pct"] / chan(e0, b)["pct"], 1),
-        # Доля канала СРЕДИ СОБЫТИЙ БЕЗ ВЫЛЕТА — не среди всех. Рядом со
-        # словом «пик» доля от всех событий читается неверно.
-        "share": lambda key, e0: rpct(
-            100.0 * chan(e0, key)["pct"] / tab(e0)["nofly_pct"]),
+        # Доля канала В ОКНЕ ПИКА. Ни доля от всех событий, ни доля среди
+        # событий без вылета для этого не годятся: множества не вложены, и
+        # доля фотоэффекта в пике на 1480 кэВ — 20,7 %, а среди «без
+        # вылета» — 33,2 %.
+        "pshare": pshare,
     }
 
 
@@ -137,7 +146,9 @@ def substitute(text, fill, where):
         except TypeError as ex:
             raise Bad("%s: %s — неверные аргументы (%s)"
                       % (where, m.group(0), ex))
-        need(out is not None and "nan" not in str(out).lower(),
+        bad = ("nan", "inf")
+        need(out is not None
+             and not any(b in str(out).lower() for b in bad),
              "%s: %s не разрешилась" % (where, m.group(0)))
         used.append(m.group(0))
         return str(out)
@@ -147,18 +158,39 @@ def substitute(text, fill, where):
     return out, used
 
 
+# Разделитель пути — И обратный, И прямой слэш. Прежний образец был записан
+# так, что совпадал с текстом «C:\\Users\\» (по два слэша), то есть ровно с
+# той формой, в которой путь НЕ утекает. Windows-форма проходила мимо скана.
+SECRETS = ((r"[A-Za-z]:[\\/]+Users[\\/]+[^\s\"'<>)]*", "локальный путь"),
+           (r"[\w.+-]+@[\w-]+\.[\w.]{2,}", "адрес почты"),
+           (r"gh[pousr]_[A-Za-z0-9]{16,}", "токен GitHub"))
+
+
 def secret_scan(text):
     bad = []
-    for pat, why in ((r"C:\\\\Users\\\\[^\s\"'<]*", "локальный путь"),
-                     (r"C:/Users/[^\s\"'<]*", "локальный путь"),
-                     (r"[\w.+-]+@[\w-]+\.[\w.]+", "адрес почты"),
-                     (r"gh[pousr]_[A-Za-z0-9]{16,}", "токен GitHub")):
+    for pat, why in SECRETS:
         for m in re.findall(pat, text):
             bad.append("%s: %s" % (why, m))
     return bad
 
 
+def secret_scan_selftest():
+    """Сторож на сторожа: скан обязан сработать на заведомо грязной строке.
+
+    Без этой проверки дырявый образец молчит ровно так же, как чистый файл,
+    и отличить одно от другого по выводу сборки нельзя.
+    """
+    dirty = ("path C:" + chr(92) + "Users" + chr(92) + "someone" + chr(92)
+             + "secret.txt and C:/Users/someone/x and a@b.co and "
+             + "ghp_" + "0123456789abcdef0123")
+    hits = secret_scan(dirty)
+    need(len(hits) >= 4, "самопроверка секрет-скана провалена: %s" % hits)
+    need(not secret_scan("обычный текст без утечек, путь C:/g4work/asn16"),
+         "секрет-скан срабатывает на чистом тексте")
+
+
 def main():
+    secret_scan_selftest()
     d = json.loads(io.open(DATA_JSON, encoding="utf-8").read())
     html = io.open(os.path.join(SRC, "index.html"), encoding="utf-8").read()
     style = io.open(os.path.join(SRC, "styles", "asn16.css"), encoding="utf-8").read()
@@ -166,8 +198,11 @@ def main():
 
     # Сторож против чисел расчёта, набранных руками. Прецедент в проекте уже
     # был: литералы в шаблоне при заявлении «чисел руками нет».
-    pcts = re.findall(r"\d+,\d+\s*%", html)
-    need(not pcts, "проценты набраны цифрами, нужна подстановка: %s" % pcts)
+    # Сторож против чисел расчёта, набранных руками: и дробные доли
+    # («12,3 %»), и целые («17 %»), и кратности («в 2,0 раза»).
+    pcts = (re.findall(r"\d+(?:,\d+)?\s*%", html)
+            + re.findall(r"в\s+\d+,\d+\s+раза", html))
+    need(not pcts, "числа расчёта набраны цифрами, нужна подстановка: %s" % pcts)
 
     fill = make_fill(d)
     html, used = substitute(html, fill, "index.html")
@@ -179,6 +214,9 @@ def main():
 
     need("<!--@styles-->" in html and "<!--@script-->" in html,
          "в разметке нет точек вставки оформления и кода")
+    # Метка подстановки в стилях или в коде уехала бы в сборку как есть.
+    for nm, txt in (("styles/asn16.css", style), ("scripts/asn16.js", script)):
+        need("{{" not in txt, "%s: метка подстановки вне разметки" % nm)
 
     linked = (html
               .replace("<!--@styles-->",
@@ -206,13 +244,15 @@ def main():
 
     os.makedirs(os.path.join(DIST, "styles"), exist_ok=True)
     os.makedirs(os.path.join(DIST, "scripts"), exist_ok=True)
-    io.open(os.path.join(DIST, "index.html"), "w", encoding="utf-8").write(linked)
-    io.open(os.path.join(DIST, "data.js"), "w", encoding="utf-8").write(data_js)
-    io.open(os.path.join(DIST, "styles", "asn16.css"), "w",
-            encoding="utf-8").write(style)
-    io.open(os.path.join(DIST, "scripts", "asn16.js"), "w",
-            encoding="utf-8").write(script)
-    io.open(SINGLE, "w", encoding="utf-8").write(single)
+    def put(path, text):
+        with io.open(path, "w", encoding="utf-8") as g:
+            g.write(text)
+
+    put(os.path.join(DIST, "index.html"), linked)
+    put(os.path.join(DIST, "data.js"), data_js)
+    put(os.path.join(DIST, "styles", "asn16.css"), style)
+    put(os.path.join(DIST, "scripts", "asn16.js"), script)
+    put(SINGLE, single)
 
     kb = lambda p: os.path.getsize(p) / 1024.0
     print("подстановок разрешено: %d" % len(used))

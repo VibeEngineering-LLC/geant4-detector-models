@@ -178,6 +178,32 @@ canvas{display:block; width:100%; max-width:100%; touch-action:none}
 .plotbox{position:absolute; inset:.7rem .85rem .1rem}
 .plotbox canvas{width:100%; height:100%}
 #cv{cursor:crosshair}
+/* ── зоны спектра ─────────────────────────────────────────────────────
+   Цветные полосы под графиком, шириной пропорционально энергетическому
+   охвату зоны. Слева-справа отступы отвечают полям поля графика на
+   холсте; JS выставляет width каждой зоны в пикселях, а не через flex —
+   так текст переносится при недостатке места, и полоса не сжимается
+   меньше своей энергетической доли. */
+.zones{display:flex; gap:2px; margin-top:.3rem;
+  font:11px/1.25 var(--sans); color:var(--dim); user-select:none}
+.zones .zone{
+  padding:.32rem .5rem; text-align:center; border-radius:4px;
+  background:var(--zc, var(--sunk));
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  cursor:default;
+}
+.zones .zone[data-id="peak"]   {--zc:color-mix(in srgb, var(--accent) 24%, var(--sunk))}
+.zones .zone[data-id="cont"]   {--zc:color-mix(in srgb, var(--ch-compt_esc1) 16%, var(--sunk))}
+.zones .zone[data-id="gap"]    {--zc:color-mix(in srgb, var(--ch-compt_escN) 16%, var(--sunk))}
+.zones .zone[data-id="over"]   {--zc:var(--sunk); color:var(--faint)}
+.zones .zone[data-id="soft"]   {--zc:color-mix(in srgb, var(--ch-photo) 22%, var(--sunk))}
+.zones .zone[data-id="compton"]{--zc:color-mix(in srgb, var(--ch-compt_esc1) 22%, var(--sunk))}
+.zones .zone[data-id="pair"]   {--zc:color-mix(in srgb, var(--ch-pair_esc2) 24%, var(--sunk))}
+/* Старые движки без color-mix — не срываем: полоса просто в цвете фона. */
+@supports not (color: color-mix(in srgb, red, blue)){
+  .zones .zone{background:var(--sunk)}
+}
+
 .plot-foot{
   display:flex; gap:.5rem .9rem; flex-wrap:wrap; align-items:center;
   padding:.2rem .95rem .6rem; font:11.5px/1.5 var(--sans); color:var(--faint);

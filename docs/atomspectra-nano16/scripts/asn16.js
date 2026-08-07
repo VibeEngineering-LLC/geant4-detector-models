@@ -312,20 +312,10 @@ function drawZones(host, zones, W, L, R, px, xlo, xhi) {
   host.style.paddingLeft = L + 'px';
   host.style.paddingRight = R + 'px';
   var vis = zones.filter(function (z) { return z.hi > xlo && z.lo < xhi; });
-  // Тонкая шкала над плашками: цветная полоска пропорционально энергии.
-  // Плашки ниже — равной ширины, чтобы подписи не обрезались, а связь с
-  // осью X сохраняется через шкалу-полоску и через диапазон в самой плашке.
-  var scale = document.createElement('div');
-  scale.className = 'zscale';
-  vis.forEach(function (z) {
-    var a = Math.max(z.lo, xlo), b = Math.min(z.hi, xhi);
-    var w = px(b) - px(a);
-    if (w < 1) return;
-    var s = document.createElement('span');
-    s.setAttribute('data-id', z.id); s.style.width = w + 'px';
-    scale.appendChild(s);
-  });
-  host.appendChild(scale);
+  // Плашки равной ширины — единственный ряд; связь с осью читается по
+  // цвету и по диапазону в подписи. Пропорциональная цветная линейка над
+  // плашками читалась как отдельная сущность, у которой другой масштаб,
+  // чем у графика, и путала — снята.
   var row = document.createElement('div');
   row.className = 'zrow';
   vis.forEach(function (z) {
@@ -412,11 +402,13 @@ function selectTab(i) {
     drawMap(); drawSlice();
     $('#elems').textContent = '';
     $('#zones').textContent = '';                       // на карте зон нет
+    var b = $('#btnMap'); if (b) b.hidden = false;
     $('#hint').textContent = 'строка — энергия падающего кванта, столбец — '
       + 'энерговыделение, цвет — вероятность на квант; штриховая — пик '
       + 'полного поглощения, точечные — вылет одного и обоих квантов '
       + '511 кэВ';
   } else {
+    var b = $('#btnMap'); if (b) b.hidden = true;
     buildLegend(); draw();
   }
 }

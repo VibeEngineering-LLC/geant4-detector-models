@@ -23,7 +23,6 @@
       <canvas id="cvComp" height="150" role="img"
         aria-label="доли каналов взаимодействия на всех узлах сетки; числовые значения — в сводке «числа»"
         data-en-aria="interaction-channel fractions on every grid node; values — in the «numbers» summary"></canvas>
-      <div class="readout" id="roComp"></div>
       <div class="zones" id="zonesComp" role="group"
         aria-label="границы полос по составу отклика"
         data-en-aria="response-composition band boundaries"></div>
@@ -32,6 +31,9 @@
       Наведение курсора даёт доли на любом узле.</p>
     </div>
   </div>
+
+  <!-- Оверлей полосы состава вынесен из .hero в .app: top так надёжно -->
+  <div class="readout" id="roComp"></div>
 
   <div class="panel">
     <div class="toolbar">

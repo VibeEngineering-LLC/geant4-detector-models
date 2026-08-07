@@ -30,3 +30,9 @@ sanitize.py
 __pycache__/
 *.pyc
 .venv/
+
+# Производные интерактивной страницы: пересобираются из web/src одной
+# командой, в истории только раздували бы дельты (335 КБ данных на сборку)
+detectors/*/web/dist/
+detectors/*/web/asn16_data.json
+detectors/*/web/asn16_response.html

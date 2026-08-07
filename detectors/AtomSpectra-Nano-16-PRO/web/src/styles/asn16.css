@@ -1,0 +1,334 @@
+/* AtomSpectra Nano 16 PRO — функция отклика, интерактивная страница.
+   Оформление отделено от разметки и от кода: правки палитры и типографики
+   не задевают ни шаблон, ни отрисовку холста. */
+
+:root{
+  color-scheme: light dark;
+
+  /* Нейтраль с фиолетовым уклоном и акцент взяты из палитры magma — той
+     самой, которой в этом проекте рисуется карта отклика. */
+  --paper:#faf8fb; --panel:#ffffff; --sunk:#f4f1f7;
+  --ink:#171220; --dim:#544b60; --faint:#7d7489;
+  --rule:#ded7e5; --rule-soft:#eee9f2; --accent:#8c2981; --accent-soft:#f7eaf4;
+  --grid:#e6e0ec; --grid-soft:#f2eef6;
+  --shadow:0 1px 2px #17122012, 0 10px 34px #17122014;
+
+  /* Цвета каналов — по физическим группам: синие «энергия осталась»,
+     янтарные «ушёл рассеянный первичный», зелёные «аннигиляционные»,
+     красные «вторичное излучение из кристалла», серый «пришло извне».
+     Светлая и тёмная тема держат РАЗНЫЕ значения: одна и та же заливка не
+     может дать 3:1 к фону и на белом, и на почти чёрном (WCAG 1.4.11 —
+     нетекстовый контраст; линии здесь несут основной смысл). */
+  --ch-photo:#2d5fa8;
+  --ch-compt_full:#3f7ab8;
+  --ch-pair_full:#5a8cbe;
+  --ch-compt_esc1:#a9660f;
+  --ch-compt_escN:#bd7f1c;
+  --ch-pair_esc1:#1f7345;
+  --ch-pair_esc2:#2d9462;
+  --ch-brems_esc:#8f2f2f;
+  --ch-xray_esc:#c23a36;
+  --ch-external:#6a6674;
+  --ch-other:#9b96a5;
+
+  --serif:Georgia,"Times New Roman",serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,"DejaVu Sans Mono",monospace;
+}
+
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#110e17; --panel:#191521; --sunk:#15111c;
+    --ink:#efeaf3; --dim:#ada3b9; --faint:#867d94;
+    --rule:#2f2740; --rule-soft:#241e31; --accent:#df8bc9; --accent-soft:#2b1c2e;
+    --grid:#282136; --grid-soft:#1e1929;
+    --shadow:0 1px 2px #00000055, 0 12px 34px #00000066;
+    --ch-photo:#6ea6e8;
+    --ch-compt_full:#8cc0f0;
+    --ch-pair_full:#b3d6f7;
+    --ch-compt_esc1:#e0952f;
+    --ch-compt_escN:#f0bd72;
+    --ch-pair_esc1:#4fbe84;
+    --ch-pair_esc2:#86dfae;
+    --ch-brems_esc:#e0736d;
+    --ch-xray_esc:#ef9d97;
+    --ch-external:#a49fae;
+    --ch-other:#7c7688;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#110e17; --panel:#191521; --sunk:#15111c;
+  --ink:#efeaf3; --dim:#ada3b9; --faint:#867d94;
+  --rule:#2f2740; --rule-soft:#241e31; --accent:#df8bc9; --accent-soft:#2b1c2e;
+  --grid:#282136; --grid-soft:#1e1929;
+  --shadow:0 1px 2px #00000055, 0 12px 34px #00000066;
+  --ch-photo:#6ea6e8; --ch-compt_full:#8cc0f0; --ch-pair_full:#b3d6f7;
+  --ch-compt_esc1:#e0952f; --ch-compt_escN:#f0bd72;
+  --ch-pair_esc1:#4fbe84; --ch-pair_esc2:#86dfae;
+  --ch-brems_esc:#e0736d; --ch-xray_esc:#ef9d97;
+  --ch-external:#a49fae; --ch-other:#7c7688;
+}
+:root[data-theme="light"]{
+  --paper:#faf8fb; --panel:#ffffff; --sunk:#f4f1f7;
+  --ink:#171220; --dim:#544b60; --faint:#7d7489;
+  --rule:#ded7e5; --rule-soft:#eee9f2; --accent:#8c2981; --accent-soft:#f7eaf4;
+  --grid:#e6e0ec; --grid-soft:#f2eef6;
+  --shadow:0 1px 2px #17122012, 0 10px 34px #17122014;
+  --ch-photo:#2d5fa8; --ch-compt_full:#3f7ab8; --ch-pair_full:#5a8cbe;
+  --ch-compt_esc1:#a9660f; --ch-compt_escN:#bd7f1c;
+  --ch-pair_esc1:#1f7345; --ch-pair_esc2:#2d9462;
+  --ch-brems_esc:#8f2f2f; --ch-xray_esc:#c23a36;
+  --ch-external:#6a6674; --ch-other:#9b96a5;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font:16px/1.55 var(--serif); -webkit-text-size-adjust:100%;
+  /* Убирает задержку двойного тапа и делает подсветку касания намеренной,
+     а не браузерной по умолчанию. */
+  touch-action:manipulation; -webkit-tap-highlight-color:rgba(140,41,129,.18);
+}
+p{margin:0 0 .9em}
+p:last-child{margin-bottom:0}
+a{color:var(--accent)}
+h1,h2,h3{text-wrap:balance; font-weight:normal; margin:0}
+
+/* ── каркас: шапка, панель, подвал; страница помещается без прокрутки ── */
+/* Страница рассчитана на один экран: шапка и подвал занимают свою высоту,
+   панель забирает остаток, а холст растягивается под панель. Прокрутка
+   появляется только там, где содержимое действительно длиннее экрана, —
+   в списке каналов, в карте отклика и во всплывающих пояснениях. */
+.app{
+  max-width:88rem; margin:0 auto; padding:1.2rem 1.4rem .9rem;
+  display:flex; flex-direction:column; gap:.85rem; height:100%;
+}
+@media (min-width:900px) and (min-height:620px){
+  html,body{overflow:hidden}
+}
+.top{display:flex; align-items:flex-end; gap:1.6rem; flex-wrap:wrap}
+.title h1{font-size:2.1rem; line-height:1.06; letter-spacing:-.018em}
+.title .eyebrow{
+  font:600 11px/1.4 var(--sans); letter-spacing:.15em; text-transform:uppercase;
+  color:var(--faint); margin:0 0 .3em;
+}
+.title .stand{font-size:1rem; color:var(--dim); max-width:34rem; margin:.45rem 0 0}
+.top-actions{display:flex; gap:.5rem; flex-wrap:wrap; margin-left:auto}
+
+/* ── кнопки ── */
+button{font:inherit}
+.btn{
+  appearance:none; cursor:pointer; font:13.5px/1 var(--sans);
+  background:var(--panel); color:var(--dim);
+  border:1px solid var(--rule); border-radius:7px; padding:.55rem .8rem;
+  display:inline-flex; align-items:center; gap:.4rem;
+}
+.btn:hover{color:var(--ink); border-color:var(--faint)}
+.btn[aria-expanded="true"]{
+  color:var(--accent); border-color:var(--accent); background:var(--accent-soft)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+.seg{display:inline-flex; border:1px solid var(--rule); border-radius:7px;
+  overflow:hidden; background:var(--panel)}
+.seg .btn{border:none; border-radius:0; background:none}
+.seg .btn+.btn{border-left:1px solid var(--rule)}
+.seg .btn[aria-pressed="true"]{
+  background:var(--accent-soft); color:var(--accent); font-weight:600}
+
+/* ── полоса состава: главный рисунок шапки ── */
+.hero{position:relative; flex:1 1 26rem; min-width:17rem}
+.hero canvas{display:block; width:100%; max-width:100%; border-radius:9px;
+  background:var(--sunk); touch-action:none; cursor:crosshair}
+.hero-cap{font:11.5px/1.45 var(--sans); color:var(--faint); margin-top:.4rem}
+
+/* ── приборная панель ── */
+.panel{
+  background:var(--panel); border:1px solid var(--rule); border-radius:12px;
+  box-shadow:var(--shadow); overflow:hidden;
+  display:flex; flex-direction:column; flex:1 1 auto; min-height:0;
+}
+.toolbar{
+  display:flex; align-items:center; gap:.5rem; flex-wrap:wrap;
+  padding:.6rem .75rem; border-bottom:1px solid var(--rule); background:var(--sunk);
+}
+.toolbar .sp{flex:1}
+.tabs{display:flex; gap:.15rem; flex-wrap:wrap}
+.tabs .btn{background:none; border-color:transparent}
+.tabs .btn[aria-selected="true"]{
+  background:var(--panel); border-color:var(--rule); color:var(--accent);
+  font-weight:600}
+
+.stage{display:grid; grid-template-columns:1fr 23rem; min-height:0; flex:1 1 auto}
+.stage[hidden]{display:none}
+@media (max-width:1080px){ .stage{grid-template-columns:1fr} }
+
+.stage-map{flex:1 1 auto; min-height:0; overflow-y:auto}
+.stage-map[hidden]{display:none}
+
+/* Холст графика позиционирован абсолютно: иначе его высота участвовала бы
+   в высоте контейнера, из которой она же и вычисляется. */
+.plotwrap{position:relative; padding:.7rem .85rem .1rem; min-width:0;
+  min-height:12rem; overflow:hidden}
+canvas{display:block; width:100%; max-width:100%; touch-action:none}
+/* Холст графика лежит в абсолютно спозиционированной рамке: у элемента с
+   собственным размером (canvas 300x150) width/height:auto при заданных
+   left/right разрешаются в СОБСТВЕННЫЙ размер, а не в размер рамки, —
+   поэтому растяжка задаётся процентами внутри неё. */
+.plotbox{position:absolute; inset:.7rem .85rem .1rem}
+.plotbox canvas{width:100%; height:100%}
+#cv{cursor:crosshair}
+.plot-foot{
+  display:flex; gap:.5rem .9rem; flex-wrap:wrap; align-items:center;
+  padding:.2rem .95rem .6rem; font:11.5px/1.5 var(--sans); color:var(--faint);
+}
+.plot-foot .sp{flex:1}
+/* Элементы спектра — настоящие кнопки, а не только щелчок по холсту:
+   иначе пояснения к ним недостижимы с клавиатуры. */
+.elems{display:flex; gap:.35rem; flex-wrap:wrap}
+.elems button{
+  appearance:none; cursor:pointer; font:11.5px/1 var(--sans);
+  background:var(--sunk); color:var(--dim); border:1px solid var(--rule);
+  border-radius:999px; padding:.32rem .6rem;
+}
+.elems button:hover{color:var(--accent); border-color:var(--accent)}
+
+/* ── легенда каналов ── */
+.side{
+  border-left:1px solid var(--rule); background:var(--panel);
+  display:flex; flex-direction:column; min-height:0;
+}
+@media (max-width:1080px){ .side{border-left:none; border-top:1px solid var(--rule)} }
+.side-head{
+  padding:.7rem .85rem .4rem; font:600 10.5px/1.3 var(--sans);
+  letter-spacing:.1em; text-transform:uppercase; color:var(--faint);
+  display:flex; align-items:center; gap:.5rem;
+}
+.side-head .sp{flex:1}
+.side-head button{
+  font:11px/1 var(--sans); background:none; border:1px solid var(--rule);
+  border-radius:5px; color:var(--faint); padding:.28rem .45rem; cursor:pointer}
+.side-head button:hover{color:var(--ink); border-color:var(--faint)}
+.legend{overflow-y:auto; padding:0 .5rem .6rem; flex:1 1 auto; min-height:0}
+
+.ch{
+  display:grid; grid-template-columns:auto auto 1fr auto auto;
+  align-items:center; gap:.5rem; padding:.4rem .35rem;
+  border-radius:6px; cursor:pointer; font:13.5px/1.28 var(--sans);
+}
+.ch:hover{background:var(--sunk)}
+.ch input{margin:0; accent-color:var(--accent); cursor:pointer}
+.ch .sw{width:1.05rem; height:.68rem; border-radius:3px; background:var(--c)}
+.ch.off .nm,.ch.off .pc{opacity:.42}
+.ch.off .sw{opacity:.28}
+.ch .pc{font:12.5px/1 var(--mono); font-variant-numeric:tabular-nums;
+  color:var(--dim); text-align:right}
+.ch .go{
+  appearance:none; background:none; border:1px solid var(--rule);
+  border-radius:50%; width:1.25rem; height:1.25rem; line-height:1;
+  color:var(--faint); font:11px/1 var(--sans); cursor:pointer; padding:0}
+.ch .go:hover{color:var(--accent); border-color:var(--accent)}
+.ch.total .sw{background:var(--ink); height:.26rem}
+.ch.total .nm{font-weight:600}
+
+/* ── всплывающая подсказка под курсором ── */
+.readout{
+  position:absolute; pointer-events:none; opacity:0; transition:opacity .1s;
+  background:var(--panel); border:1px solid var(--rule); border-radius:8px;
+  padding:.5rem .6rem; font:12px/1.5 var(--mono); font-variant-numeric:tabular-nums;
+  box-shadow:var(--shadow); max-width:24rem; z-index:6; color:var(--ink);
+}
+.readout b{display:block; font-weight:600; margin-bottom:.25em;
+  border-bottom:1px solid var(--rule-soft); padding-bottom:.25em}
+.readout i{display:inline-block; width:.6em; height:.6em; border-radius:2px;
+  background:var(--c); margin-right:.45em}
+.readout span{display:block; white-space:nowrap}
+.readout .v{float:right; margin-left:1.2em; color:var(--dim)}
+
+/* ── всплывающие пояснения ── */
+.pop{
+  position:fixed; z-index:40; overscroll-behavior:contain; width:min(30rem, calc(100vw - 2rem));
+  max-height:min(34rem, calc(100vh - 2rem)); overflow:auto;
+  background:var(--panel); border:1px solid var(--rule); border-radius:12px;
+  box-shadow:var(--shadow); padding:1.05rem 1.2rem 1.1rem;
+  font:15px/1.55 var(--serif);
+}
+.pop[hidden]{display:none}
+.pop.wide{width:min(52rem, calc(100vw - 2rem))}
+.pop h2{font-size:1.15rem; line-height:1.25; margin:0 0 .1em; padding-right:2rem}
+.pop .key{font:600 10.5px/1.4 var(--mono); letter-spacing:.06em;
+  color:var(--faint); display:block; margin-bottom:.7em}
+.pop .close{
+  position:absolute; top:.55rem; right:.6rem; width:1.7rem; height:1.7rem;
+  border-radius:6px; border:1px solid var(--rule); background:var(--panel);
+  color:var(--faint); cursor:pointer; font:15px/1 var(--sans)}
+.pop .close:hover{color:var(--ink); border-color:var(--faint)}
+.pop h3{font-size:1rem; margin:1.1em 0 .25em}
+.pop h3:first-of-type{margin-top:.6em}
+.pop ol{padding-left:1.3rem; margin:.2em 0 .9em}
+.pop ol li{margin-bottom:.3em}
+.scrim{position:fixed; inset:0; background:#0b0810; opacity:.34; z-index:30}
+.scrim[hidden]{display:none}
+
+.mini{width:100%; border-collapse:collapse; margin:.2em 0 .9em;
+  font:12.5px/1 var(--mono); font-variant-numeric:tabular-nums}
+.mini th,.mini td{padding:.32rem .4rem; text-align:right;
+  border-bottom:1px solid var(--rule-soft)}
+.mini th:first-child,.mini td:first-child{text-align:left}
+.mini thead th{font:600 10px/1.3 var(--sans); letter-spacing:.07em;
+  text-transform:uppercase; color:var(--faint)}
+.mini td.bar-cell{position:relative}
+.mini td.bar-cell::before{
+  content:""; position:absolute; left:0; bottom:1px; height:2px;
+  width:calc(var(--w) * 1%); background:var(--c); opacity:.75}
+
+table.big{border-collapse:collapse; font:13px/1.35 var(--mono);
+  font-variant-numeric:tabular-nums; width:100%; min-width:32rem}
+table.big th,table.big td{padding:.42rem .6rem; text-align:right;
+  border-bottom:1px solid var(--rule-soft); white-space:nowrap}
+table.big th:first-child,table.big td:first-child{text-align:left;
+  font:13px/1.35 var(--sans); font-weight:normal}
+table.big thead th{font:600 10px/1.3 var(--sans); letter-spacing:.08em;
+  text-transform:uppercase; color:var(--faint); border-bottom:1px solid var(--rule)}
+table.big tbody tr.sum th,table.big tbody tr.sum td{
+  border-top:1px solid var(--rule); font-weight:600}
+table.big .sw{display:inline-block; width:.8rem; height:.5rem; border-radius:2px;
+  margin-right:.5rem; vertical-align:.05em; background:var(--c)}
+table.big td.num{position:relative}
+table.big td.num::before{
+  content:""; position:absolute; left:.35rem; right:.35rem; bottom:2px;
+  height:2px; background:var(--c); opacity:.7;
+  transform:scaleX(calc(var(--w) / 100)); transform-origin:left}
+.scroll{overflow-x:auto}
+
+.specs{display:grid; grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));
+  gap:0; margin:.4rem 0 1rem; border-top:1px solid var(--rule)}
+.specs div{padding:.6rem .8rem .6rem 0; border-bottom:1px solid var(--rule-soft)}
+.specs dt{font:600 10px/1.4 var(--sans); letter-spacing:.1em;
+  text-transform:uppercase; color:var(--faint); margin:0 0 .25em}
+.specs dd{margin:0; font:13.5px/1.4 var(--mono); font-variant-numeric:tabular-nums}
+
+.note{border-left:3px solid var(--accent); background:var(--accent-soft);
+  padding:.8rem 1rem; margin:1em 0 0; border-radius:0 7px 7px 0; font-size:14px}
+.formula{font:15px/1.6 var(--mono); background:var(--sunk); border-radius:7px;
+  padding:.6rem .8rem; margin:.6em 0 .9em; overflow-x:auto; white-space:nowrap}
+.formula em{font-style:normal; color:var(--faint); font-size:12.5px}
+
+footer.bot{
+  font:11.5px/1.55 var(--sans); color:var(--faint);
+  display:flex; gap:.4rem 1.6rem; flex-wrap:wrap; align-items:baseline;
+}
+footer.bot code{font:11px/1.4 var(--mono)}
+footer.bot button{
+  appearance:none; background:none; border:none; padding:0; cursor:pointer;
+  color:var(--accent); font:inherit; text-decoration:underline}
+
+@media (max-width:640px){
+  .app{padding:1rem .9rem}
+  .title h1{font-size:1.6rem}
+  .plotwrap{padding:.6rem .45rem .2rem}
+  .legend{max-height:15rem}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important; transition-duration:.01ms !important}
+}

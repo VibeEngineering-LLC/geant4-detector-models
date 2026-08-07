@@ -311,21 +311,32 @@ function drawZones(host, zones, W, L, R, px, xlo, xhi) {
   host.textContent = '';
   host.style.paddingLeft = L + 'px';
   host.style.paddingRight = R + 'px';
-  var plot = W - L - R;
-  zones.forEach(function (z) {
-    if (z.hi <= xlo || z.lo >= xhi) return;                // вне поля
+  var vis = zones.filter(function (z) { return z.hi > xlo && z.lo < xhi; });
+  // Тонкая шкала над плашками: цветная полоска пропорционально энергии.
+  // Плашки ниже — равной ширины, чтобы подписи не обрезались, а связь с
+  // осью X сохраняется через шкалу-полоску и через диапазон в самой плашке.
+  var scale = document.createElement('div');
+  scale.className = 'zscale';
+  vis.forEach(function (z) {
     var a = Math.max(z.lo, xlo), b = Math.min(z.hi, xhi);
     var w = px(b) - px(a);
-    if (w < 4) return;                                     // уже нечего рисовать
-    var el = document.createElement('div');
-    el.className = 'zone';
-    el.setAttribute('data-id', z.id);
-    el.style.width = w + 'px';
-    el.style.flex = '0 0 auto';
-    el.textContent = z.label;
-    el.title = z.label + ': ' + keV(a) + '–' + keV(b) + ' кэВ';
-    host.appendChild(el);
+    if (w < 1) return;
+    var s = document.createElement('span');
+    s.setAttribute('data-id', z.id); s.style.width = w + 'px';
+    scale.appendChild(s);
   });
+  host.appendChild(scale);
+  var row = document.createElement('div');
+  row.className = 'zrow';
+  vis.forEach(function (z) {
+    var a = Math.max(z.lo, xlo), b = Math.min(z.hi, xhi);
+    var el = document.createElement('div');
+    el.className = 'zone'; el.setAttribute('data-id', z.id);
+    el.innerHTML = '<b>' + z.label + '</b><i>' + keV(a) + '–' + keV(b) + ' кэВ</i>';
+    el.title = z.label + ': ' + keV(a) + '–' + keV(b) + ' кэВ';
+    row.appendChild(el);
+  });
+  host.appendChild(row);
 }
 
 cvComp.addEventListener('pointermove', function (ev) {

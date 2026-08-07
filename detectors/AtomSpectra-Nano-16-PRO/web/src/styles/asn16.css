@@ -158,6 +158,18 @@ button{font:inherit}
 .btn:hover{border-color:var(--rule)}
 .btn[aria-expanded="true"]{background:var(--accent-soft);
   border-color:var(--rule); color:#16140f}
+
+/* Переключатель языка — заметен постоянно, не только при наведении:
+   жёлтая плашка проекта, чёрная рамка, чёрный текст. Отделён от
+   остальных кнопок тулбара, стоит справа. */
+#btnLang{
+  background:var(--accent-soft); border-color:var(--rule); color:#16140f;
+  margin-left:.35rem; font-weight:800; letter-spacing:.08em;
+}
+#btnLang:hover{
+  background:var(--ink); color:var(--accent-soft);
+  border-color:var(--rule);
+}
 :focus-visible{outline:3px solid var(--accent-soft); outline-offset:1px}
 
 .seg{display:inline-flex; border:2px solid var(--rule); border-radius:0;

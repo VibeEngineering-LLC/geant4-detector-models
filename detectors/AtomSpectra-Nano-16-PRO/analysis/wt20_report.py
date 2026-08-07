@@ -6,8 +6,15 @@
 `line_activities.csv`, `unfold_spectrum.csv`) и шапок спектров Geant4. Правка
 результата — это перезапуск расчёта и пересборка страницы, а не правка текста.
 
-    python analysis/wt20_report.py <каталог расчёта> <каталог шаблонов> [выход.html]
+    python analysis/wt20_report.py <каталог расчёта> <каталог шаблонов>
+                                   [-o выход.html] [-x спектр.xml]
+
+Флаг -x — опциональный XML замера для интерактивной панели спектров. Позиционные
+и опциональные аргументы разбираются argparse (задача №65: раньше третий
+позиционный без строгого парсинга принял путь к XML как out.html и перезаписал
+исходный файл замера).
 """
+import argparse
 import csv
 import io
 import json
@@ -157,16 +164,30 @@ def load_spectra_pair(d, src_xml=None):
 
 
 def main():
-    if len(sys.argv) < 3:
-        raise SystemExit(__doc__)
-    d, tdir = sys.argv[1], sys.argv[2]
-    out = sys.argv[3] if len(sys.argv) > 3 else os.path.join(d, "wt20.html")
-    # Опциональный XML замера — для интерактивных спектров образца и фона.
-    # Позиционный аргумент через -x <путь>, чтобы не ломать существующий вызов.
-    src_xml = None
-    for i, a in enumerate(sys.argv):
-        if a == "-x" and i + 1 < len(sys.argv):
-            src_xml = sys.argv[i + 1]
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0],
+                                 formatter_class=argparse.RawTextHelpFormatter)
+    ap.add_argument("d", help="каталог расчёта (unfold_*.csv, calibration_*)")
+    ap.add_argument("tdir", help="каталог шаблонов Geant4 (для чтения шапок)")
+    ap.add_argument("-o", "--out",
+                    help="выход HTML (по умолчанию <d>/wt20.html)")
+    ap.add_argument("-x", "--xml",
+                    help="XML замера AtomSpectra для панели спектров")
+    args = ap.parse_args()
+    d, tdir = args.d, args.tdir
+    out = args.out or os.path.join(d, "wt20.html")
+    src_xml = args.xml
+
+    # Защита №65: -x должен показывать на .xml, out — на .html.
+    # Иначе argparse мог принять xml-путь как позиционный тремя разными
+    # способами (через -o=..., через мисклики CLI), и запись HTML в этот путь
+    # разрушала бы исходный XML.
+    if not out.lower().endswith(".html"):
+        raise SystemExit("выходной путь %r не .html — отказ; --out обязателен "
+                         "и должен указывать HTML-файл" % out)
+    if src_xml and not src_xml.lower().endswith(".xml"):
+        raise SystemExit("XML замера %r не .xml — отказ" % src_xml)
+    if src_xml and os.path.abspath(src_xml) == os.path.abspath(out):
+        raise SystemExit("--out и --xml указывают на один файл — отказ")
 
     names, spec = load_spectrum(os.path.join(d, "unfold_spectrum.csv"))
     # Фон вычитается ЗДЕСЬ, до всякого показа: разложение считается по разности

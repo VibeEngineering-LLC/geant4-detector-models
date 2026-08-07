@@ -108,6 +108,10 @@ def make_fill(d):
         "fwhm": lambda: rnum(d["fwhm_662"], 2),
         "mec2": lambda: rnum(d["mec2"], 5),
         "peakhalf": lambda: rkev(d["tabs"][0]["peak_half"]),
+        # Доля событий В ПИКЕ (окно вокруг E0) — не доля событий, из которых
+        # ничего не вылетело: вторая больше и растёт расхождение с энергией.
+        "peak": lambda e0: rpct(tab(e0)["peak_pct"]),
+        "nofly": lambda e0: rpct(tab(e0)["nofly_pct"]),
         "sang": lambda: rnum(d["run"]["solid_angle_frac"], 4),
         "stamp": lambda: d["stamp"],
         "git": lambda: d["git_describe"],

@@ -1,0 +1,224 @@
+# МАТРИЦА ОТКЛИКА в контактной геометрии WT-20 (задача №42, директива
+# оператора 07.08.2026: «можем сделать так же, используя матрицу поглощения
+# детектора и модель источника?»).
+#
+# Разыгрываются МОНОЭНЕРГЕТИЧЕСКИЕ КВАНТЫ, рождённые равномерно по объёму
+# стержней, — та же область, что у нуклидных шаблонов. Отличие от них одно и
+# принципиальное: первичная частица — квант, а не ион, поэтому разложение
+# отклика по каналам (<файл>_chan.csv) работает. На нуклидных шаблонах оно
+# вырождается: классификатор описывает судьбу первичной частицы, а ион в
+# кристалл не попадает (дефект №42).
+#
+# В матрицу входит ВСЁ, что стоит на пути: самопоглощение в вольфраме,
+# крышка пенала, ножки, дно корпуса, слои платы, обёртка. Поэтому шаблон
+# нуклида собирается свёрткой матрицы с библиотечными выходами линий МАГАТЭ,
+# без новых прогонов на каждый нуклид.
+#
+# ЧЕГО ЭТА СХЕМА НЕ ДАЁТ: суммирования каскада. Линии свёртываются
+# независимо, а сумм-пики живут на корреляции квантов ОДНОГО распада. Их
+# член берётся отдельно — разностью «понуклидный шаблон минус свёртка».
+#
+# Сетка сгущена у K-краёв вольфрама (69,5) и иода (33,2): там отклик рвётся.
+#
+# ВАЖНО: файл в UTF-8 БЕЗ BOM.
+/asn16/wt20 on
+/run/initialize
+/control/verbose 0
+/run/verbose 0
+/gps/particle gamma
+/gps/pos/type Volume
+/gps/pos/shape Para
+/gps/pos/halfx 23.43 mm
+/gps/pos/halfy 1.60 mm
+/gps/pos/halfz 87.5 mm
+/gps/pos/centre 0 -22.00 -10.40 mm
+/gps/pos/confine Rod
+/gps/ang/type iso
+
+/gps/energy 30.0 keV
+/asn16/outFile wt20_resp/rod_E0030.0.csv
+/run/beamOn 200000
+
+/gps/energy 35.0 keV
+/asn16/outFile wt20_resp/rod_E0035.0.csv
+/run/beamOn 200000
+
+/gps/energy 40.0 keV
+/asn16/outFile wt20_resp/rod_E0040.0.csv
+/run/beamOn 200000
+
+/gps/energy 45.0 keV
+/asn16/outFile wt20_resp/rod_E0045.0.csv
+/run/beamOn 200000
+
+/gps/energy 50.0 keV
+/asn16/outFile wt20_resp/rod_E0050.0.csv
+/run/beamOn 200000
+
+/gps/energy 55.0 keV
+/asn16/outFile wt20_resp/rod_E0055.0.csv
+/run/beamOn 200000
+
+/gps/energy 60.0 keV
+/asn16/outFile wt20_resp/rod_E0060.0.csv
+/run/beamOn 200000
+
+/gps/energy 65.0 keV
+/asn16/outFile wt20_resp/rod_E0065.0.csv
+/run/beamOn 200000
+
+/gps/energy 68.0 keV
+/asn16/outFile wt20_resp/rod_E0068.0.csv
+/run/beamOn 200000
+
+/gps/energy 70.0 keV
+/asn16/outFile wt20_resp/rod_E0070.0.csv
+/run/beamOn 200000
+
+/gps/energy 72.0 keV
+/asn16/outFile wt20_resp/rod_E0072.0.csv
+/run/beamOn 200000
+
+/gps/energy 75.0 keV
+/asn16/outFile wt20_resp/rod_E0075.0.csv
+/run/beamOn 200000
+
+/gps/energy 80.0 keV
+/asn16/outFile wt20_resp/rod_E0080.0.csv
+/run/beamOn 200000
+
+/gps/energy 85.0 keV
+/asn16/outFile wt20_resp/rod_E0085.0.csv
+/run/beamOn 200000
+
+/gps/energy 90.0 keV
+/asn16/outFile wt20_resp/rod_E0090.0.csv
+/run/beamOn 200000
+
+/gps/energy 95.0 keV
+/asn16/outFile wt20_resp/rod_E0095.0.csv
+/run/beamOn 200000
+
+/gps/energy 100.0 keV
+/asn16/outFile wt20_resp/rod_E0100.0.csv
+/run/beamOn 200000
+
+/gps/energy 110.0 keV
+/asn16/outFile wt20_resp/rod_E0110.0.csv
+/run/beamOn 200000
+
+/gps/energy 120.0 keV
+/asn16/outFile wt20_resp/rod_E0120.0.csv
+/run/beamOn 200000
+
+/gps/energy 130.0 keV
+/asn16/outFile wt20_resp/rod_E0130.0.csv
+/run/beamOn 200000
+
+/gps/energy 140.0 keV
+/asn16/outFile wt20_resp/rod_E0140.0.csv
+/run/beamOn 200000
+
+/gps/energy 150.0 keV
+/asn16/outFile wt20_resp/rod_E0150.0.csv
+/run/beamOn 200000
+
+/gps/energy 175.0 keV
+/asn16/outFile wt20_resp/rod_E0175.0.csv
+/run/beamOn 200000
+
+/gps/energy 200.0 keV
+/asn16/outFile wt20_resp/rod_E0200.0.csv
+/run/beamOn 200000
+
+/gps/energy 225.0 keV
+/asn16/outFile wt20_resp/rod_E0225.0.csv
+/run/beamOn 200000
+
+/gps/energy 250.0 keV
+/asn16/outFile wt20_resp/rod_E0250.0.csv
+/run/beamOn 200000
+
+/gps/energy 275.0 keV
+/asn16/outFile wt20_resp/rod_E0275.0.csv
+/run/beamOn 200000
+
+/gps/energy 300.0 keV
+/asn16/outFile wt20_resp/rod_E0300.0.csv
+/run/beamOn 200000
+
+/gps/energy 350.0 keV
+/asn16/outFile wt20_resp/rod_E0350.0.csv
+/run/beamOn 200000
+
+/gps/energy 400.0 keV
+/asn16/outFile wt20_resp/rod_E0400.0.csv
+/run/beamOn 200000
+
+/gps/energy 450.0 keV
+/asn16/outFile wt20_resp/rod_E0450.0.csv
+/run/beamOn 200000
+
+/gps/energy 500.0 keV
+/asn16/outFile wt20_resp/rod_E0500.0.csv
+/run/beamOn 200000
+
+/gps/energy 600.0 keV
+/asn16/outFile wt20_resp/rod_E0600.0.csv
+/run/beamOn 200000
+
+/gps/energy 700.0 keV
+/asn16/outFile wt20_resp/rod_E0700.0.csv
+/run/beamOn 200000
+
+/gps/energy 800.0 keV
+/asn16/outFile wt20_resp/rod_E0800.0.csv
+/run/beamOn 200000
+
+/gps/energy 900.0 keV
+/asn16/outFile wt20_resp/rod_E0900.0.csv
+/run/beamOn 200000
+
+/gps/energy 1000.0 keV
+/asn16/outFile wt20_resp/rod_E1000.0.csv
+/run/beamOn 200000
+
+/gps/energy 1200.0 keV
+/asn16/outFile wt20_resp/rod_E1200.0.csv
+/run/beamOn 200000
+
+/gps/energy 1400.0 keV
+/asn16/outFile wt20_resp/rod_E1400.0.csv
+/run/beamOn 200000
+
+/gps/energy 1600.0 keV
+/asn16/outFile wt20_resp/rod_E1600.0.csv
+/run/beamOn 200000
+
+/gps/energy 1800.0 keV
+/asn16/outFile wt20_resp/rod_E1800.0.csv
+/run/beamOn 200000
+
+/gps/energy 2000.0 keV
+/asn16/outFile wt20_resp/rod_E2000.0.csv
+/run/beamOn 200000
+
+/gps/energy 2200.0 keV
+/asn16/outFile wt20_resp/rod_E2200.0.csv
+/run/beamOn 200000
+
+/gps/energy 2400.0 keV
+/asn16/outFile wt20_resp/rod_E2400.0.csv
+/run/beamOn 200000
+
+/gps/energy 2600.0 keV
+/asn16/outFile wt20_resp/rod_E2600.0.csv
+/run/beamOn 200000
+
+/gps/energy 2800.0 keV
+/asn16/outFile wt20_resp/rod_E2800.0.csv
+/run/beamOn 200000
+
+/gps/energy 3000.0 keV
+/asn16/outFile wt20_resp/rod_E3000.0.csv
+/run/beamOn 200000

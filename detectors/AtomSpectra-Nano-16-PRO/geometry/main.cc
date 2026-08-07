@@ -600,6 +600,13 @@ class OutMessenger : public G4UImessenger {
   G4UIcmdWithAString* fPackCmd;
   G4UIcmdWithAString* fTabCmd;
   G4UIcmdWithAString* fCryYCmd;
+  G4UIcmdWithAString* fPcbCuCmd;
+  G4UIcmdWithAString* fPcbSolCmd;
+  G4UIcmdWithAString* fPcbCmpCmd;
+  G4UIcmdWithAString* fPcbPbCmd;
+  G4UIcmdWithAString* fCaseOffCmd;
+  G4UIcmdWithAString* fRoomCmd;
+  G4UIcmdWithAString* fRodDCmd;
 public:
   OutMessenger(RunAct* r, ASN16Detector* d) : fRun(r), fDet(d) {
     fDir = new G4UIdirectory("/asn16/");
@@ -643,13 +650,137 @@ public:
     fCryYCmd = new G4UIcmdWithAString("/asn16/cryY", this);
     fCryYCmd->SetGuidance("толщина кристалла по Y, мм (диагностика!)");
     fCryYCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+    // НАПОЛНЕНИЕ ПЛАТЫ — тем же приёмом параметра одной ревизии. Реальная
+    // разводка неизвестна, поэтому медь, припой и корпуса компонентов заданы
+    // эффективной сплошной толщиной, а команды позволяют по ним СКАНИРОВАТЬ:
+    // вклад свинца припоя в горб 75-95 кэВ меряется разностью прогонов, а не
+    // назначается. Ноль отключает слой.
+    fPcbCuCmd = new G4UIcmdWithAString("/asn16/pcbCu", this);
+    fPcbCuCmd->SetGuidance("эффективная сплошная медь дорожек, мм");
+    fPcbCuCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+    fPcbSolCmd = new G4UIcmdWithAString("/asn16/pcbSolder", this);
+    fPcbSolCmd->SetGuidance("эффективный сплошной припой, мм");
+    fPcbSolCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+    fPcbCmpCmd = new G4UIcmdWithAString("/asn16/pcbComp", this);
+    fPcbCmpCmd->SetGuidance("эффективные корпуса компонентов (Al2O3), мм");
+    fPcbCmpCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+    fPcbPbCmd = new G4UIcmdWithAString("/asn16/pcbSolderPb", this);
+    fPcbPbCmd->SetGuidance("on|off — припой Sn63Pb37 (on) или SAC305 (off)");
+    fPcbPbCmd->SetCandidates("on off");
+    fPcbPbCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+    // ДИАМЕТР СТЕРЖНЯ — только для ДИАГНОСТИКИ, как и /asn16/cryY. Этикетка
+    // даёт 3,2 мм, фотография другой пачки того же типа — 2,4 мм, и разница
+    // бьёт по мягкому концу спектра сильнее всего: тоньше пруток — меньше
+    // самопоглощение, выше пик 238,63 и выход K-серии дочерних наружу.
+    // Публикуемые числа считаются ТОЛЬКО при подтверждённом замером диаметре.
+    // ВНИМАНИЕ: ось стержней зависит от диаметра (yRod = yInT − зазор − r),
+    // поэтому область розыгрыша GPS обязана пересчитываться вместе с ним —
+    // ловушка, на которой уже был забракован скан по толщине кристалла.
+    fRodDCmd = new G4UIcmdWithAString("/asn16/rodD", this);
+    fRodDCmd->SetGuidance("диаметр стержня WT-20, мм (ДИАГНОСТИКА!)");
+    fRodDCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+    fRoomCmd = new G4UIcmdWithAString("/asn16/room", this);
+    fRoomCmd->SetGuidance("on|off — бетонный пол под столом (рассеиватель)");
+    fRoomCmd->SetCandidates("on off");
+    fRoomCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+    fCaseOffCmd = new G4UIcmdWithAString("/asn16/caseOff", this);
+    fCaseOffCmd->SetGuidance("on|off — корпус и крышки вакуумом (ДИАГНОСТИКА!)");
+    fCaseOffCmd->SetCandidates("on off");
+    fCaseOffCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
   }
   ~OutMessenger() override {
+    delete fRodDCmd; delete fRoomCmd; delete fCaseOffCmd;
+    delete fPcbPbCmd; delete fPcbCmpCmd; delete fPcbSolCmd; delete fPcbCuCmd;
     delete fCryYCmd; delete fTabCmd; delete fPackCmd; delete fWinCmd;
     delete fCmd; delete fDir;
   }
+  // Общая часть трёх команд по слоям платы: проверка, запись, перестройка.
+  // Вынесена, потому что три копии одного кода — это три места, где потом
+  // забудут поправить проверку.
+  void SetPcbLayer(double& field, double want, const char* what) {
+    if (want < 0.0 || want > 1.0) {
+      std::fprintf(stderr, "ОТКАЗ: слой платы %s = %g вне (0…1 мм)\n",
+                   what, want);
+      return;
+    }
+    if (want == field) return;
+    field = want;
+    if (auto* rm = G4RunManager::GetRunManager()) {
+      rm->ReinitializeGeometry(true);
+      rm->GeometryHasBeenModified();
+      std::printf("[плата] %s = %.4f мм, геометрия перестроена\n", what, want);
+    }
+  }
   void SetNewValue(G4UIcommand* c, G4String v) override {
     if (c == fCmd) { fRun->fOut = v; return; }
+    if (fDet) {
+      if (c == fPcbCuCmd) {
+        SetPcbLayer(fDet->fGeom.pcbCuT, std::atof(v.c_str()), "медь"); return;
+      }
+      if (c == fPcbSolCmd) {
+        SetPcbLayer(fDet->fGeom.pcbSnPbT, std::atof(v.c_str()), "припой");
+        return;
+      }
+      if (c == fPcbCmpCmd) {
+        SetPcbLayer(fDet->fGeom.pcbCompT, std::atof(v.c_str()), "корпуса");
+        return;
+      }
+      if (c == fRodDCmd) {
+        const double want = std::atof(v.c_str());
+        if (want <= 0.5 || want > 6.0) {
+          std::fprintf(stderr, "ОТКАЗ: /asn16/rodD %g вне разумного "
+                               "(0,5…6 мм)\n", want);
+          return;
+        }
+        if (want == fDet->fGeom.wt20D) return;
+        fDet->fGeom.wt20D = want;
+        if (auto* rm = G4RunManager::GetRunManager()) {
+          rm->ReinitializeGeometry(true);
+          rm->GeometryHasBeenModified();
+          std::printf("[rodD] диаметр стержня %.2f мм, геометрия перестроена "
+                      "— ЭТО ДИАГНОСТИКА, не этикетка. Ось стержней сместилась,"
+                      " область розыгрыша GPS пересчитать!\n", want);
+        }
+        return;
+      }
+      if (c == fRoomCmd) {
+        const bool want = (v == "on");
+        if (want == fDet->fGeom.room) return;
+        fDet->fGeom.room = want;
+        if (auto* rm = G4RunManager::GetRunManager()) {
+          rm->ReinitializeGeometry(true);
+          rm->GeometryHasBeenModified();
+          std::printf("[room] бетонный пол %s, мир %s\n",
+                      want ? "ПОСТРОЕН" : "УБРАН",
+                      want ? "расширен" : "прежний");
+        }
+        return;
+      }
+      if (c == fCaseOffCmd) {
+        const bool want = (v == "on");
+        if (want == fDet->fGeom.caseOff) return;
+        fDet->fGeom.caseOff = want;
+        if (auto* rm = G4RunManager::GetRunManager()) {
+          rm->ReinitializeGeometry(true);
+          rm->GeometryHasBeenModified();
+          std::printf("[caseOff] корпус и крышки %s — ЭТО ДИАГНОСТИКА\n",
+                      want ? "ВАКУУМ" : "алюминий");
+        }
+        return;
+      }
+      if (c == fPcbPbCmd) {
+        const bool want = (v == "on");
+        if (want == fDet->fGeom.pcbSolderPb) return;
+        fDet->fGeom.pcbSolderPb = want;
+        if (auto* rm = G4RunManager::GetRunManager()) {
+          rm->ReinitializeGeometry(true);
+          rm->GeometryHasBeenModified();
+          std::printf("[плата] припой %s, геометрия перестроена\n",
+                      want ? "Sn63Pb37 (свинцовый)" : "SAC305 (бессвинцовый)");
+        }
+        return;
+      }
+    }
     if (c == fCryYCmd && fDet) {
       const double want = std::atof(v.c_str());
       if (want <= 0.0 || want > 24.0) {

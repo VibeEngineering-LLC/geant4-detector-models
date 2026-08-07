@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <ResultDataFile xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <FormatVersion />
   <ResultDataList>
@@ -12,14 +12,14 @@
         <Note />
       </SampleInfo>
       <DeviceConfigReference>
-        <Name>AtomSpectra Nano 16 PRO</Name>
-        <Guid>00000000-0000-0000-0000-000000000000</Guid>
+        <Name>1.Atom Spectra Nano 16 Pro RadiaScan 701A</Name>
+        <Guid>1a0651a2-0b84-4c4e-8be8-c2d286eb82eb</Guid>
       </DeviceConfigReference>
       <ROIConfigReference>
         <Name>Nano - marinelli</Name>
-        <Guid>00000000-0000-0000-0000-000000000000</Guid>
+        <Guid>860c2f80-7d13-4c0b-a137-f1187da10d99</Guid>
       </ROIConfigReference>
-      <BackgroundSpectrumFile>background.xml</BackgroundSpectrumFile>
+      <BackgroundSpectrumFile>Фон дом 11.03.2024.xml</BackgroundSpectrumFile>
       <StartTime>2024-06-01T15:24:38.5733718+03:00</StartTime>
       <EndTime>2024-06-01T17:21:53.5458069+03:00</EndTime>
       <PresetTime>360000000</PresetTime>

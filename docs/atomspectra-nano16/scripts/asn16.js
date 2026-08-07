@@ -15,6 +15,16 @@ var $ = function (s) { return document.querySelector(s); };
 var lang = 'ru';
 try { var st = localStorage.getItem('asn16_lang'); if (st==='ru'||st==='en') lang = st; }
 catch (e) {}
+// URL-параметр приоритетнее localStorage: «…/atomspectra-nano16/?lang=en»
+// или «…?en» открывает страницу сразу на английском, ссылка шарится как
+// English. Поддерживаем оба короткой и полной формы.
+try {
+  var q = new URLSearchParams(location.search);
+  var qLang = q.get('lang');
+  if (!qLang && q.has('en')) qLang = 'en';
+  if (!qLang && q.has('ru')) qLang = 'ru';
+  if (qLang === 'en' || qLang === 'ru') lang = qLang;
+} catch (e) {}
 
 // pick — универсальный доступ к паре {ru,en} из data.js; строку возвращает
 // как есть (для меток, которые ещё не переведены).
@@ -209,6 +219,16 @@ function applyLangTo(root) {
 function applyLang(newLang) {
   lang = newLang;
   try { localStorage.setItem('asn16_lang', lang); } catch (e) {}
+  // Обновляем URL, чтобы ссылка сразу открывалась на нужном языке.
+  // RU — параметр удаляется (это дефолт), EN — ставится «?lang=en».
+  try {
+    var u = new URL(location.href);
+    u.searchParams.delete('en'); u.searchParams.delete('ru');
+    if (lang === 'en') u.searchParams.set('lang', 'en');
+    else u.searchParams.delete('lang');
+    history.replaceState(null, '', u.pathname
+      + (u.search || '') + (u.hash || ''));
+  } catch (e) {}
   document.documentElement.lang = lang;
   applyLangTo(document);
   var docTitle = document.querySelector('title');
@@ -454,14 +474,24 @@ cvComp.addEventListener('pointermove', function (ev) {
   }).join('');
   roComp.style.opacity = 1;
   var bw = roComp.offsetWidth;
-  // Оверлей опускается ПОД всю шапку (canvas + плашки + подпись): раньше он
-  // всплывал над курсором и накрывал полосу состава и плашки зон под ней.
-  // Горизонталь — по курсору, с прижимом к краю канваса.
-  var side = x + bw + 28 > compGeom.W ? -1 : 1;
-  var lx = side > 0 ? x + 14 : x - bw - 14;
-  roComp.style.left = Math.max(4, Math.min(lx, compGeom.W - bw - 4)) + 'px';
-  var hero = cvComp.parentElement;
-  roComp.style.top = (hero.offsetHeight + 6) + 'px';
+  // #roComp вынесен из .hero в .app; top отсчитывается от .app и ложится
+  // сразу ПОД канвас полосы состава — над плашками и подписью, но НЕ
+  // налезая на приборный модуль. Горизонталь — по курсору в системе
+  // координат канваса, дальше пересчитанным в .app.
+  var appEl = cvComp.closest('.app');
+  var cvBox = cvComp.getBoundingClientRect();
+  var appBox = appEl.getBoundingClientRect();
+  var cx = cvBox.left - appBox.left + x;
+  var side = cx + bw + 28 > appBox.width ? -1 : 1;
+  var lx = side > 0 ? cx + 14 : cx - bw - 14;
+  roComp.style.left = Math.max(6,
+    Math.min(lx, appBox.width - bw - 6)) + 'px';
+  // Оверлей поднимается НАД канвасом полосы состава: между низом canvas и
+  // приборным модулем места мало (высота списка каналов), поэтому ложим
+  // сверху шапки. Если не влезает — прижимаем к верху .app.
+  var ry = cvBox.top - appBox.top - roComp.offsetHeight - 6;
+  if (ry < 4) ry = 4;
+  roComp.style.top = ry + 'px';
 });
 cvComp.addEventListener('pointerleave', function () { roComp.style.opacity = 0; });
 
@@ -829,7 +859,7 @@ cv.addEventListener('pointermove', function (ev) {
   t.channels.forEach(function (c) {
     if (!st[c.key] || c.ys[i] === 0) return;
     var pct = tot > 0 ? 100 * c.ys[i] / tot : 0;
-    rows.push([chColor(c.key), c.label, pctf(pct)]);
+    rows.push([chColor(c.key), pick(c.label), pctf(pct)]);
   });
   ro.innerHTML = '<b>' + keV(t.xs[i]) + ' ' + keVunit()
     + (mode === 'log' && tot > 0 ? ' · ' + sci(tot) : '')

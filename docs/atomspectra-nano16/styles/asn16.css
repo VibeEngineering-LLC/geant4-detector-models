@@ -79,43 +79,55 @@
 }
 
 *{box-sizing:border-box}
-html,body{height:100%}
 body{
-  margin:0; background:var(--paper); color:var(--ink);
+  margin:0;
+  /* Цвет стены за плакатом: тёплый серый оттенок бумаги, чуть темнее и
+     менее насыщенный, чтобы сам лист читался как более светлый. */
+  background:var(--wall, #d8d3c4); color:var(--ink);
   font:15px/1.55 var(--sans); -webkit-text-size-adjust:100%;
   touch-action:manipulation; -webkit-tap-highlight-color:rgba(246,211,28,.4);
+  padding:1.6rem;
 }
+@media (prefers-color-scheme: dark){ :root{ --wall:#0b0a08 } }
+:root[data-theme="dark"]{ --wall:#0b0a08 }
+:root[data-theme="light"]{ --wall:#d8d3c4 }
 p{margin:0 0 .9em}
 p:last-child{margin-bottom:0}
 a{color:var(--ink); text-decoration-thickness:2px; text-underline-offset:2px}
 a:hover{background:var(--accent-soft)}
 h1,h2,h3{text-wrap:balance; font-weight:normal; margin:0}
 
-/* ── каркас ── */
+/* ── каркас: плакат на стене ────────────────────────────────────────────
+   Обёртка страницы — сам лист: узкая колонка на цветном фоне «стены», с
+   толстой рамкой и жёсткой ступенчатой тенью 7×7 px без размытия
+   (переменная --shadow объявлена в блоке темы). Прокрутка внешняя, на
+   документе: страница целиком, а не приборный модуль внутри неё. */
 .app{
-  max-width:100rem; margin:0 auto; padding:1.1rem 1.3rem 1rem;
-  display:flex; flex-direction:column; gap:.9rem; height:100%;
-}
-@media (min-width:900px) and (min-height:620px){
-  html,body{overflow:hidden}
+  max-width:78rem; margin:0 auto; padding:1.5rem 1.7rem 1.3rem;
+  display:flex; flex-direction:column; gap:.95rem;
+  background:var(--paper); color:var(--ink);
+  border:3px solid var(--rule); box-shadow:var(--shadow);
 }
 
 /* Шапка-афиша: тяжёлый заголовок слева, полоса состава в раме справа,
-   толстая линейка снизу. */
-.top{display:flex; align-items:flex-end; gap:2.6rem; flex-wrap:wrap;
+   толстая линейка снизу. Выравнивание по ВЕРХУ: заголовок должен стоять
+   вверху колонки, а не тянуться вниз к полосе состава. */
+.top{display:flex; align-items:flex-start; gap:2.6rem; flex-wrap:wrap;
   border-bottom:3px solid var(--rule); padding-bottom:.95rem}
 .title{flex:1 1 26rem; min-width:19rem}
 .title h1{
   font-size:clamp(1.9rem, 3vw, 2.7rem); line-height:.98;
-  letter-spacing:-.032em; font-weight:800;
+  letter-spacing:-.032em; font-weight:800; margin:0;
 }
 .title .eyebrow{
   font:800 11px/1.4 var(--sans); letter-spacing:.13em; text-transform:uppercase;
-  color:var(--ink); margin:0 0 .7em;
+  color:var(--ink); margin:0 0 .35em;
 }
+/* Ширина текста аннотации равна ширине заголовка, не 32rem: короткий stand
+   выглядел бы прижатым к левому краю, а длинный обрывался бы раньше h1. */
 .title .stand{
   font-size:13.5px; line-height:1.5; color:var(--dim);
-  max-width:32rem; margin:.7rem 0 0; text-wrap:pretty; font-weight:500;
+  max-width:none; margin:.55rem 0 0; text-wrap:pretty; font-weight:500;
 }
 .top-actions{display:flex; gap:.5rem; flex-wrap:wrap; margin-left:auto}
 
@@ -174,7 +186,7 @@ button{font:inherit}
 .stage-map[hidden]{display:none}
 
 .plotwrap{position:relative; padding:.7rem .8rem .3rem; min-width:0;
-  min-height:22rem; overflow:hidden}
+  min-height:32rem; overflow:hidden}
 canvas{display:block; width:100%; max-width:100%; touch-action:none}
 .plotbox{position:absolute; inset:.7rem .8rem .3rem}
 .plotbox canvas{width:100%; height:100%}
@@ -194,30 +206,39 @@ canvas{display:block; width:100%; max-width:100%; touch-action:none}
 .elems button:hover{background:var(--accent-soft); color:#16140f}
 
 /* ── зоны спектра ─────────────────────────────────────────────────────
-   Ряд плотно прижатых плашек под графиком; ширина каждой считается в JS
-   в пикселях оси X, поэтому подпись под полосой ложится в точности над
-   ней. flex:0 0 auto — чтобы длинный текст переносился ВНУТРИ плашки, а
-   не растягивал её; overflow:hidden — чтобы плашка не наползала на
-   соседей, если подписи не хватило места. */
-.zones{display:flex; gap:2px; margin-top:.35rem;
-  font:700 10.5px/1.2 var(--sans); text-transform:uppercase;
+   Двухрядная разметка. Верхний ряд `.zscale` — тонкая цветная линейка,
+   ширина полосок ПРОПОРЦИОНАЛЬНА энергетическому диапазону зоны и
+   выровнена по оси X главного холста: это и есть связь плашки с
+   графиком. Нижний ряд `.zrow` — плашки РАВНОЙ ширины (flex:1), чтобы
+   подписи не резались; связь с осью читается по цвету и по диапазону
+   в подписи. */
+.zones{margin-top:.35rem; font:700 10.5px/1.2 var(--sans);
   letter-spacing:.03em; color:var(--ink); user-select:none}
-.zones .zone{
-  flex:0 0 auto; padding:.32rem .5rem; text-align:center;
+.zscale{display:flex; gap:2px; height:8px; margin-bottom:3px}
+.zscale span{display:block; height:100%; background:var(--zc, var(--sunk));
+  border:1.5px solid var(--rule)}
+.zrow{display:flex; gap:2px}
+.zrow .zone{
+  flex:1 1 0; min-width:0; padding:.35rem .45rem; text-align:center;
   border:2px solid var(--rule); border-radius:0;
   background:var(--zc, var(--sunk));
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   cursor:default;
 }
-.zones .zone[data-id="peak"]   {--zc:var(--accent-soft); color:#16140f}
-.zones .zone[data-id="cont"]   {--zc:color-mix(in srgb, var(--ch-compt_esc1) 18%, var(--paper))}
-.zones .zone[data-id="gap"]    {--zc:color-mix(in srgb, var(--ch-compt_escN) 18%, var(--paper))}
-.zones .zone[data-id="over"]   {--zc:var(--paper); color:var(--dim)}
-.zones .zone[data-id="soft"]   {--zc:color-mix(in srgb, var(--ch-photo) 24%, var(--paper))}
-.zones .zone[data-id="compton"]{--zc:color-mix(in srgb, var(--ch-compt_esc1) 24%, var(--paper))}
-.zones .zone[data-id="pair"]   {--zc:color-mix(in srgb, var(--ch-pair_esc2) 26%, var(--paper))}
+.zrow .zone b{display:block; font:700 11px/1.2 var(--sans);
+  letter-spacing:.03em; text-transform:uppercase; color:var(--ink);
+  white-space:normal; overflow:hidden; text-overflow:ellipsis}
+.zrow .zone i{display:block; font:600 10.5px/1.3 var(--mono);
+  font-style:normal; font-variant-numeric:tabular-nums; color:var(--dim);
+  margin-top:.15em}
+.zones [data-id="peak"]   {--zc:var(--accent-soft)}
+.zones [data-id="cont"]   {--zc:color-mix(in srgb, var(--ch-compt_esc1) 18%, var(--paper))}
+.zones [data-id="gap"]    {--zc:color-mix(in srgb, var(--ch-compt_escN) 18%, var(--paper))}
+.zones [data-id="over"]   {--zc:var(--paper)}
+.zones [data-id="soft"]   {--zc:color-mix(in srgb, var(--ch-photo) 24%, var(--paper))}
+.zones [data-id="compton"]{--zc:color-mix(in srgb, var(--ch-compt_esc1) 24%, var(--paper))}
+.zones [data-id="pair"]   {--zc:color-mix(in srgb, var(--ch-pair_esc2) 26%, var(--paper))}
 @supports not (color: color-mix(in srgb, red, blue)){
-  .zones .zone{background:var(--sunk)}
+  .zones .zone,.zscale span{background:var(--sunk)}
 }
 
 /* ── легенда каналов ──

@@ -67,6 +67,24 @@ def rkev(x):
     return re.sub(r",0$", "", rnum(float(x), 1))
 
 
+# EN-варианты форматирования: десятичная точка, единицы латиницей.
+def rnum_en(x, d=1):
+    return "%.*f" % (d, x)
+
+
+def rpct_en(x):
+    return rnum_en(x, 2 if x < 1 else 1) + " %"
+
+
+def rkev_en(x):
+    return re.sub(r"\.0$", "", rnum_en(float(x), 1))
+
+
+def en_units(s):
+    return (s.replace("мм", "mm").replace("см", "cm")
+             .replace("кэВ", "keV"))
+
+
 def rplural(n, one, few, many):
     a, b = abs(n) % 100, abs(n) % 10
     w = many if (10 < a < 20) or b > 4 or b == 0 else (one if b == 1 else few)
@@ -101,9 +119,17 @@ def make_fill(d):
         return rpct(100.0 * t["peak_ch"][key] / t["n_peak"])
 
     def run(name):
+        # Суффикс `_en` — тот же параметр, но в EN-формате: точка вместо
+        # запятой, «мм/см/кэВ» → «mm/cm/keV». Используется в атрибутах
+        # `data-en` HTML-шаблона.
+        en = name.endswith("_en")
+        if en:
+            name = name[:-3]
         need(name in d["run"], "нет параметра прогона %s" % name)
         v = d["run"][name]
-        return rkev(v) if isinstance(v, (int, float)) else str(v)
+        if isinstance(v, (int, float)):
+            return rkev_en(v) if en else rkev(v)
+        return en_units(str(v)) if en else str(v)
 
     return {
         "p": lambda key, e0: rpct(chan(e0, key)["pct"]),
@@ -119,6 +145,7 @@ def make_fill(d):
         # Доля событий В ПИКЕ (окно вокруг E0) — не доля событий, из которых
         # ничего не вылетело: вторая больше и растёт расхождение с энергией.
         "peak": lambda e0: rpct(tab(e0)["peak_pct"]),
+        "peak_en": lambda e0: rpct_en(tab(e0)["peak_pct"]),
         "nofly": lambda e0: rpct(tab(e0)["nofly_pct"]),
         "sang": lambda: rnum(d["run"]["solid_angle_frac"], 4),
         "stamp": lambda: d["stamp"],

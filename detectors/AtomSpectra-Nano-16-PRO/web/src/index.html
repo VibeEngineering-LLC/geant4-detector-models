@@ -2,16 +2,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#faf8fb" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#110e17" media="(prefers-color-scheme: dark)">
-<title>Из чего складывается спектр — функция отклика сцинтилляционного детектора</title>
+<title data-en="Where the spectrum comes from — scintillation detector response function">Из чего складывается спектр — функция отклика сцинтилляционного детектора</title>
 <!--@styles-->
 
 <div class="app">
 
   <div class="top">
     <div class="title">
-      <p class="eyebrow">AtomSpectra Nano 16 PRO · {{run crystal}} · расчёт Geant4</p>
-      <h1>Из чего складывается спектр</h1>
-      <p class="stand">С ростом энергии кванта энерговыделение в
+      <p class="eyebrow" data-en="AtomSpectra Nano 16 PRO · {{run crystal_en}} · Geant4 simulation">AtomSpectra Nano 16 PRO · {{run crystal}} · расчёт Geant4</p>
+      <h1 data-en="Where the spectrum comes from">Из чего складывается спектр</h1>
+      <p class="stand" data-en="As the incident energy rises, the energy deposited in the crystal less and less often equals the full quantum energy: the full-energy peak at 180 keV holds {{peak_en 180}} of events, at 3000 — {{peak_en 3000}}. The remainder is carried away by quanta that leave the crystal — scattered, annihilation, bremsstrahlung, characteristic X-rays. The decomposition shows each such channel separately.">С ростом энергии кванта энерговыделение в
       кристалле всё реже равно его полной энергии: в пик полного
       поглощения на 180 кэВ попадает {{peak 180}} событий, на 3000 —
       {{peak 3000}}. Остаток уносят кванты, покинувшие кристалл, —
@@ -21,11 +21,13 @@
 
     <div class="hero">
       <canvas id="cvComp" height="150" role="img"
-        aria-label="доли каналов взаимодействия на всех узлах сетки; числовые значения — в сводке «числа»"></canvas>
+        aria-label="доли каналов взаимодействия на всех узлах сетки; числовые значения — в сводке «числа»"
+        data-en-aria="interaction-channel fractions on every grid node; values — in the «numbers» summary"></canvas>
       <div class="readout" id="roComp"></div>
       <div class="zones" id="zonesComp" role="group"
-        aria-label="границы полос по составу отклика"></div>
-      <p class="hero-cap">Состав отклика на каждом из {{run n_nodes}} узлов
+        aria-label="границы полос по составу отклика"
+        data-en-aria="response-composition band boundaries"></div>
+      <p class="hero-cap" data-en="Composition of the response on each of the {{run n_nodes}} grid nodes. Dashed lines — the three energies analysed on the panel. Hover for the fractions at any node.">Состав отклика на каждом из {{run n_nodes}} узлов
       сетки. Штриховые линии — три энергии, разобранные на панели.
       Наведение курсора даёт доли на любом узле.</p>
     </div>
@@ -33,36 +35,39 @@
 
   <div class="panel">
     <div class="toolbar">
-      <div class="tabs" role="tablist" aria-label="энергия падающего кванта" id="tabs"></div>
-      <span class="seg" role="group" aria-label="вид графика">
-        <button type="button" class="btn" id="mLog" aria-pressed="true">отклик</button>
-        <button type="button" class="btn" id="mFrac" aria-pressed="false">доли</button>
+      <div class="tabs" role="tablist" aria-label="энергия падающего кванта" data-en-aria="incident γ energy" id="tabs"></div>
+      <span class="seg" role="group" aria-label="вид графика" data-en-aria="plot mode">
+        <button type="button" class="btn" id="mLog" aria-pressed="true" data-en="response">отклик</button>
+        <button type="button" class="btn" id="mFrac" aria-pressed="false" data-en="fractions">доли</button>
       </span>
       <span class="sp"></span>
-      <button type="button" class="btn" data-pop="t-method" aria-expanded="false">как посчитано</button>
-      <button type="button" class="btn" data-pop="t-numbers" aria-expanded="false">числа</button>
-      <button type="button" class="btn" data-pop="t-absent" aria-expanded="false">чего здесь нет</button>
-      <button type="button" class="btn" id="btnMap" data-pop="t-map" aria-expanded="false" hidden>что показывает карта</button>
+      <button type="button" class="btn" data-pop="t-method" aria-expanded="false" data-en="how it was computed">как посчитано</button>
+      <button type="button" class="btn" data-pop="t-numbers" aria-expanded="false" data-en="numbers">числа</button>
+      <button type="button" class="btn" data-pop="t-absent" aria-expanded="false" data-en="what is absent">чего здесь нет</button>
+      <button type="button" class="btn" id="btnMap" data-pop="t-map" aria-expanded="false" hidden data-en="what the map shows">что показывает карта</button>
+      <button type="button" class="btn" id="btnLang" aria-label="switch to English" data-en-aria="switch to Russian">EN</button>
     </div>
 
     <div class="stage" id="viewChart">
       <div class="plotwrap">
         <div class="plotbox">
           <canvas id="cv" role="img"
-            aria-label="разложение функции отклика по каналам взаимодействия; числовые значения — в сводке «числа»"></canvas>
+            aria-label="разложение функции отклика по каналам взаимодействия; числовые значения — в сводке «числа»"
+            data-en-aria="response-function decomposition by interaction channel; values — in the «numbers» summary"></canvas>
         </div>
         <div class="readout" id="ro"></div>
         <div class="marktip" id="mkTip" role="status" aria-live="polite" hidden></div>
         <div class="zones" id="zones" role="group"
-          aria-label="границы зон спектра"></div>
+          aria-label="границы зон спектра"
+          data-en-aria="spectrum-zone boundaries"></div>
       </div>
 
       <div class="side">
         <div class="side-head">
-          <span id="sideTitle">каналы</span>
+          <span id="sideTitle" data-en="channels">каналы</span>
           <span class="sp"></span>
-          <button type="button" id="bAll">все</button>
-          <button type="button" id="bNone">снять</button>
+          <button type="button" id="bAll" data-en="all">все</button>
+          <button type="button" id="bNone" data-en="none">снять</button>
         </div>
         <div class="legend" id="leg"></div>
       </div>
@@ -71,17 +76,19 @@
     <div class="stage-map" id="viewMap" hidden>
       <div class="mapwrap">
         <canvas id="cvMap" height="300" role="img"
-          aria-label="карта функции отклика: энергия падающего кванта и энерговыделение"></canvas>
+          aria-label="карта функции отклика: энергия падающего кванта и энерговыделение"
+          data-en-aria="response-function map: incident γ energy vs energy deposition"></canvas>
       </div>
       <div class="slider">
-        <label for="rowSel">падающий квант</label>
+        <label for="rowSel" data-en="incident γ">падающий квант</label>
         <input type="range" id="rowSel" min="0" max="60" value="30" step="1">
         <output id="rowOut" for="rowSel"></output>
-        <label><input type="checkbox" id="cRaw"> без приборного разрешения</label>
+        <label data-en="&lt;input type=&quot;checkbox&quot; id=&quot;cRaw&quot;&gt; without instrument resolution"><input type="checkbox" id="cRaw"> без приборного разрешения</label>
       </div>
       <div class="mapwrap">
         <canvas id="cvSlice" height="190" role="img"
-          aria-label="выбранная строка матрицы отклика"></canvas>
+          aria-label="выбранная строка матрицы отклика"
+          data-en-aria="selected row of the response matrix"></canvas>
       </div>
     </div>
 
@@ -93,9 +100,9 @@
   </div>
 
   <footer class="bot">
-    <span>Расчёт <code>{{stamp}}</code>, ревизия <code>{{git}}</code>.</span>
-    <span>Матрица отклика {{matN}} × {{matM}}, канал {{run cell_keV}} кэВ.</span>
-    <button type="button" data-pop="t-about" aria-expanded="false">о странице и её числах</button>
+    <span data-en="Simulation <code>{{stamp}}</code>, revision <code>{{git}}</code>.">Расчёт <code>{{stamp}}</code>, ревизия <code>{{git}}</code>.</span>
+    <span data-en="Response matrix {{matN}} × {{matM}}, bin {{run cell_keV}} keV.">Матрица отклика {{matN}} × {{matM}}, канал {{run cell_keV}} кэВ.</span>
+    <button type="button" data-pop="t-about" aria-expanded="false" data-en="about this page and its numbers">о странице и её числах</button>
   </footer>
 </div>
 

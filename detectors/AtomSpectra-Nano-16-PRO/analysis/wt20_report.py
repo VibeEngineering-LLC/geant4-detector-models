@@ -189,23 +189,16 @@ def main():
     if src_xml and os.path.abspath(src_xml) == os.path.abspath(out):
         raise SystemExit("--out и --xml указывают на один файл — отказ")
 
-    names, spec = load_spectrum(os.path.join(d, "unfold_spectrum.csv"))
-    # Фон вычитается ЗДЕСЬ, до всякого показа: разложение считается по разности
-    # «измеренное минус фон», и страница должна показывать ту же величину, что
-    # раскладывается. Отдельной компонентой в стопке фон больше не стоит —
-    # иначе на рисунке видно одно, а подгоняется другое.
-    bg_sum = 0.0
-    if names and "фон" in names:
-        jb = names.index("фон")
-        bg_sum = sum(r[jb] for r in spec)
-        for r in spec:
-            r[1] -= r[jb]          # измеренное минус фон
-            r[2] -= r[jb]          # модель тоже без фона
-            del r[jb]
-        names = [n for n in names if n != "фон"]
+    # Рисунки наложения строятся по ПРЯМОЙ задаче: расчёт по составу поверх
+    # измеренного (analysis/wt20_forward.py). Формат forward_components.csv
+    # совпадает с тем, что ждёт фабрика графика: столбец 0 — энергия,
+    # 1 — измерено за вычетом фона, 2 — сумма модели, дальше вклады звеньев.
+    names, spec = load_spectrum(os.path.join(d, "forward_components.csv"))
+    if names:
         names[1] = "измерено минус фон"
-        names[2] = "сумма компонент"
-    meas_sum = sum(r[1] for r in spec) + bg_sum
+        names[2] = "сумма расчёта"
+    bg_sum = 0.0
+    meas_sum = sum(r[1] for r in spec) if spec else 0.0
     acts = read_csv(os.path.join(d, "unfold_activities.csv"))
     lines = read_csv(os.path.join(d, "line_activities.csv"))
     cal = read_csv(os.path.join(d, "calibration_check.csv"))
@@ -235,21 +228,57 @@ def main():
     # Разложение методом 2 (матрица отклика × выходы линий) — если есть,
     # кладётся отдельным блоком payload. Формат тот же, что у метода 1:
     # столбец 0 — E, столбец 1 — измерено, 2 — модель, дальше компоненты.
-    names_m2, spec_m2 = load_spectrum(os.path.join(d,
-                                                   "unfold_matrix_spectrum.csv"))
-    acts_m2 = read_csv(os.path.join(d, "unfold_matrix_activities.csv"))
-    if spec_m2 and "фон" in names_m2:
-        jb = names_m2.index("фон")
-        for r in spec_m2:
-            r[1] -= r[jb]
-            r[2] -= r[jb]
-            del r[jb]
-        names_m2 = [n for n in names_m2 if n != "фон"]
-        names_m2[1] = "измерено минус фон"
-        names_m2[2] = "сумма компонент"
+    # Рис. 5 — тот же расчёт вторым способом. Столбец «метод2_<возраст>лет»
+    # берётся из forward_spectra.csv и подаётся как суммарная кривая; вклады
+    # отдельных звеньев вторым способом отдельно не выводятся, поэтому
+    # заливка на этом рисунке повторяет разбиение первого способа,
+    # отмасштабированное отношением сумм.
+    nm_f, sp_f = load_spectrum(os.path.join(d, "forward_spectra.csv"))
+    names_m2, spec_m2, acts_m2 = [], [], []
+    if nm_f and spec:
+        j2 = next((i for i, n in enumerate(nm_f)
+                   if n.startswith("метод2_")), None)
+        j1 = next((i for i, n in enumerate(nm_f)
+                   if n.startswith("метод1_")), None)
+        if j2 is not None and j1 is not None and len(sp_f) == len(spec):
+            names_m2 = list(names)
+            names_m2[2] = "сумма расчёта (метод 2)"
+            spec_m2 = []
+            for i, row in enumerate(spec):
+                tot1 = sp_f[i][j1]
+                tot2 = sp_f[i][j2]
+                k = (tot2 / tot1) if tot1 > 0 else 0.0
+                spec_m2.append([row[0], row[1], round(tot2, 4)]
+                               + [round(v * k, 4) for v in row[3:]])
+
+    # Таблицы прямой задачи
+    fwd_acts = opt("forward_activities.csv")
+    fwd_bands = opt("forward_bands.csv")
+    # Согласие способов: отношение сумм по полосам, считается здесь по тем же
+    # данным, что и рисунки, чтобы число на странице и кривая не разошлись.
+    m2m1 = []
+    if nm_f and sp_f:
+        j2 = next((i for i, n in enumerate(nm_f)
+                   if n.startswith("метод2_")), None)
+        j1 = next((i for i, n in enumerate(nm_f)
+                   if n.startswith("метод1_")), None)
+        if j1 is not None and j2 is not None:
+            for lo, hi, lab in ((50, 72, "K-серия вольфрама"),
+                                (72, 100, "K-серия дочерних"),
+                                (150, 300, "полоса 238,63"),
+                                (500, 650, "полоса 583,19"),
+                                (850, 1000, "полоса 911,20"),
+                                (2500, 2700, "полоса 2614,51"),
+                                (3100, 3300, "сумм-пик 2614+583")):
+                s1 = sum(r[j1] for r in sp_f if lo <= r[0] < hi)
+                s2 = sum(r[j2] for r in sp_f if lo <= r[0] < hi)
+                if s1 > 0:
+                    m2m1.append(["%d–%d кэВ, %s" % (lo, hi, lab),
+                                 "%.4f" % (s2 / s1)])
     payload = dict(names=names, spec=spec, acts=acts, lines=lines, cal=cal,
                    spectra=spectra,
                    names_m2=names_m2, spec_m2=spec_m2, acts_m2=acts_m2,
+                   fwd_acts=fwd_acts, fwd_bands=fwd_bands, m2m1=m2m1,
                    src_head=src_head,
                    head=head,
                    bg_sum=round(bg_sum, 1),

@@ -17,7 +17,10 @@
      работает подложкой активного состояния, --accent остаётся чернотой:
      цветной текст на плакате не используется. */
   --paper:#f5f2ea; --panel:#f5f2ea; --sunk:#ebe7dc;
-  --ink:#16140f; --dim:#4c493f; --faint:#807b6d;
+  /* --faint используется для подписей делений и осей размером 10-11 px.
+     #807b6d на бумаге давало 3,66:1 (WCAG AA требует ≥4,5:1 для мелкого
+     текста); #6a6558 — 5,2:1. Оттенок сохранён тёплым, лишь темнее. */
+  --ink:#16140f; --dim:#4c493f; --faint:#6a6558;
   --rule:#16140f; --rule-soft:#c9c4b4; --accent:#16140f; --accent-soft:#f6d31c;
   --grid:#dcd7c8; --grid-soft:#e8e4d7;
   --shadow:7px 7px 0 #16140f;
@@ -67,7 +70,7 @@
 }
 :root[data-theme="light"]{
   --paper:#f5f2ea; --panel:#f5f2ea; --sunk:#ebe7dc;
-  --ink:#16140f; --dim:#4c493f; --faint:#807b6d;
+  --ink:#16140f; --dim:#4c493f; --faint:#6a6558;
   --rule:#16140f; --rule-soft:#c9c4b4; --accent:#16140f; --accent-soft:#f6d31c;
   --grid:#dcd7c8; --grid-soft:#e8e4d7;
   --shadow:7px 7px 0 #16140f;
@@ -139,6 +142,12 @@ h1,h2,h3{text-wrap:balance; font-weight:normal; margin:0}
 
 /* ── кнопки: блоки с рамками, активное — на жёлтой плашке ── */
 button{font:inherit}
+/* UA `[hidden]{display:none}` имеет спец. 0,0,1 и проигрывает автор-правилам
+   `.btn{display:inline-flex}` и `.seg{display:inline-flex}` (0,1,0). Явное
+   правило `.btn[hidden]/.seg[hidden]` (0,1,1) возвращает скрытие: без него
+   `#btnMap` и переключатель «отклик/доли» оставались активными там, где
+   уже не относились к текущей вкладке. */
+[hidden]{display:none !important}
 .btn{
   appearance:none; cursor:pointer; font:800 12px/1 var(--sans);
   letter-spacing:.05em; text-transform:uppercase;

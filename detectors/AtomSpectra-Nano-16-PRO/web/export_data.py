@@ -301,7 +301,7 @@ def export_tabs(src):
         gap_lo, gap_hi = e_ed, peak_lo
         if gap_hi - gap_lo > fw * 0.6:
             zones.append({"lo": gap_lo, "hi": gap_hi, "id": "gap",
-                          "label": "зазор до пика"})
+                          "label": "между краем и пиком"})
         zones.append({"lo": peak_lo, "hi": peak_hi, "id": "peak",
                       "label": "пик полного поглощения"})
         if xmax - peak_hi > fw * 0.4:

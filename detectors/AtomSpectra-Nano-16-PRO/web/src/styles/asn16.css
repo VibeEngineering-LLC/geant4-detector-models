@@ -198,6 +198,21 @@ canvas{display:block; width:100%; max-width:100%; touch-action:none}
 .plotbox canvas{width:100%; height:100%}
 .plotwrap #zones{position:absolute; left:.8rem; right:.8rem; bottom:.3rem;
   margin:0}
+/* Тултип маркера-элемента: горизонтальная плашка над линией маркера.
+   Крутящихся подписей на графике больше нет — полное имя маркера
+   показывается только при наведении, и всегда читается по-нормальному. */
+.marktip{
+  position:absolute; z-index:6; pointer-events:none;
+  background:var(--paper); border:2px solid var(--rule); border-radius:0;
+  box-shadow:var(--shadow); padding:.42rem .6rem;
+  font:12px/1.35 var(--mono); font-variant-numeric:tabular-nums;
+  color:var(--ink); max-width:20rem; white-space:nowrap;
+}
+.marktip[hidden]{display:none}
+.marktip b{display:block; font:800 12.5px/1.25 var(--sans);
+  letter-spacing:.02em; margin:0 0 .15em}
+.marktip span{color:var(--dim); font:600 10.5px/1.3 var(--sans);
+  letter-spacing:.03em}
 #cv{cursor:crosshair}
 .plot-foot{
   display:flex; gap:.4rem 1.3rem; flex-wrap:wrap; align-items:center;
@@ -416,8 +431,11 @@ footer.bot button:hover{background:var(--accent-soft)}
 @media (max-width:640px){
   .app{padding:.9rem .8rem .8rem}
   .title h1{font-size:1.65rem}
-  .plotwrap{padding:.5rem .5rem .2rem; min-height:17rem}
-  .plotbox{inset:.5rem .5rem .2rem}
+  /* Место под плашки зон на узком экране больше: подписи многострочные,
+     и `inset` без учёта --zones-h раньше клал canvas ПОВЕРХ плашек. */
+  .plotwrap{padding:.5rem .5rem .2rem; min-height:22rem; --zones-h:96px}
+  .plotbox{inset:.5rem .5rem calc(.2rem + var(--zones-h))}
+  .plotwrap #zones{left:.5rem; right:.5rem; bottom:.2rem}
   .toolbar{padding:.45rem .5rem}
   .side{padding:0 .5rem}
   .pop{padding:1.2rem 1.1rem 1.3rem}

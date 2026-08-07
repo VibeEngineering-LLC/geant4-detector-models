@@ -5,7 +5,7 @@
 разыгранные в объёме стержней, каталог `wt20_resp/`) с абсолютными выходами
 линий из библиотеки МАГАТЭ (гамма + K/L-рентген атомной релаксации). Дальше
 задача решается тем же способом, что и в методике 1 (`wt20_unfold.py`):
-нормальная система ЛСРМ гл. 12 с полной дисперсией весов, идентификация
+нормальная система взвешенного МНК с полной дисперсией весов, оценка
 δa < 1 по гл. 14; ширина линии — ExpGaussExp с хвостами файла замера,
 ПШПВ² = f₀ + f₁·E берётся из выходов методики 1 (единая пара, чтобы
 сравнение форм шло при одинаковом уширении).
@@ -32,12 +32,18 @@ if not _ROOT:
 sys.path.insert(0, os.path.join(_ROOT, "scripts"))
 sys.path.insert(0, _HERE)
 
-from wt20_unfold import (E_MAX, E_STEP, LIB, TAIL_L, TAIL_R,          # noqa: E402
+from wt20_unfold import (E_MAX, E_STEP, LIB, N_SIG_MIN,               # noqa: E402
+                         TAIL_L, TAIL_R,
                          branch_to_tl208, broaden, broaden_var,
                          lsrm_solve, read_atomspectra_xml,
                          read_correction, read_template, rebin_to_grid)
 
-E_FIT = (60.0, 3000.0)   # полоса подгонки
+# Полоса подгонки — та же, что у методики 1, иначе методы сравнивать нельзя.
+# Низ 150 кэВ: в полосе 72-100 кэВ модель даёт 0,24 измеренного (задача №9),
+# и подгонка, вынужденная описывать эту дыру, ломает остальное. Прогон от
+# 30 кэВ доступен переменной WT20_FIT_LO.
+E_FIT = (float(os.environ.get("WT20_FIT_LO", "150")),
+         float(os.environ.get("WT20_FIT_HI", "3000")))
 
 # Нуклиды разложения — тот же набор, что в методике 1, включая слабые
 # звенья (Th-232, Ra-228, Th-228, Rn-220): по гамма-выходу их вклад мал,
@@ -61,11 +67,49 @@ NUCS = [
 # закрывает задача №45); A2 = Th-228 + Ra-224 + Rn-220 + Pb-212 + Bi-212
 # + Tl-208·br. Ветвление Bi-212 → Tl-208 читается из библиотеки МАГАТЭ.
 def make_groups(br):
-    return {
-        "A1 (Ra-228 -> Ac-228)": {"Th232": 1.0, "Ra228": 1.0, "Ac228": 1.0},
-        "A2 (Th-228 -> Tl-208)": {"Th228": 1.0, "Ra224": 1.0, "Rn220": 1.0,
-                                  "Pb212": 1.0, "Bi212": 1.0, "Tl208": br},
-    }
+    """Компоненты разложения — ПО НУКЛИДАМ, по одной переменной на звено.
+
+    Группировка в подцепочки A1/A2 снята (задача №68, директива оператора
+    «а надо по нуклидам»): она держалась на предположении о вековом
+    равновесии внутри ветви, которое этим замером не проверяется и после
+    заводской очистки тория выполняться не обязано. Ветвление Bi-212 в
+    матрицу не входит — Tl-208 свободен, а библиотечное значение служит
+    величиной для сверки.
+
+    Аргумент `br` сохранён для совместимости вызова и не используется.
+    """
+    return {lab: {key: 1.0} for key, lab, _fn, _c in NUCS}
+
+
+def usable_nuclides(tdir=None):
+    """Нуклиды, чей МК-шаблон набран достаточной статистикой (методика 1).
+
+    Порог тот же, что в analysis/wt20_unfold.py (N_SIG_MIN): при малом числе
+    событий шаблон есть реализация шума, а не спектр, и величина замером не
+    определяется. Возвращает set ключей либо None, если каталог шаблонов не
+    задан (переменная WT20_TEMPLATES).
+    """
+    if tdir is None:
+        tdir = os.environ.get("WT20_TEMPLATES", "")
+    if not tdir or not os.path.isdir(tdir):
+        return None
+    ok = set()
+    for key, _lab, _fn, _c in NUCS:
+        p = os.path.join(tdir, "%s.csv" % key)
+        if not os.path.exists(p):
+            continue
+        n_sig = 0.0
+        for ln in io.open(p, encoding="utf-8"):
+            if not ln.startswith("#"):
+                break
+            if "N_with_signal" in ln and "=" in ln:
+                try:
+                    n_sig = float(ln.split("=", 1)[1].split()[0])
+                except (ValueError, IndexError):
+                    pass
+        if n_sig >= N_SIG_MIN:
+            ok.add(key)
+    return ok or None
 
 
 def read_lines_ext(nuc_key, e_lo, e_hi):
@@ -200,7 +244,7 @@ def broaden_dispersion(raw_var, e_grid, f0, f1):
     сетки трактуем как отдельную линию с интенсивностью raw_var[k] * N,
     N=1 — усреднение раз просто вернёт то же значение. Проще применить ту
     же процедуру broaden к массиву σ² и результат оставить как есть — это
-    сумма Kᵢⱼ² · c_j, что и требуется по формуле ЛСРМ 12.1.
+    сумма Kᵢⱼ² · c_j — дисперсия свёртки пуассоновских счётчиков.
     """
     lin = broaden(e_grid, raw_var, e_grid, f0, f1)
     return lin
@@ -251,11 +295,26 @@ def main():
                 f1 = float(row[1])
     print("ПШПВ² = %.1f + %.3f·E  (взято из методики 1)" % (f0, f1))
 
+    # Набор нуклидов берётся ТОТ ЖЕ, что у методики 1 — иначе методы
+    # сравнивать нельзя. Отбраковка там идёт по статистике прогона распада
+    # (N_with_signal в шапке шаблона): если прогон не набрал событий, у звена
+    # нет заметного гамма-выхода, и его вклад неопределим в обоих методах
+    # одинаково. Список читается из тех же файлов шаблонов; при их отсутствии
+    # берутся все нуклиды, а расхождение наборов печатается.
+    usable = usable_nuclides()
+    if usable is not None:
+        skipped = [lab for key, lab, _f, _c in NUCS if key not in usable]
+        if skipped:
+            print("исключены (нет статистики прогона у методики 1): %s"
+                  % ", ".join(skipped))
+
     # Понуклидные шаблоны
     br_tl = branch_to_tl208()
     raw = {}
     varm = {}
     for key, lab, fn, _c in NUCS:
+        if usable is not None and key not in usable:
+            continue
         lines = read_lines_ext(fn, 1.0, E_MAX)
         r, v = convolve_nuc(lines, grid_E, mats, sigs, centres, f0, f1)
         raw[key] = r
@@ -272,7 +331,11 @@ def main():
         tmap[key] = broaden(centres, raw[key], centres, f0, f1) * t_smp
         vmap[key] = broaden_dispersion(varm[key], centres, f0, f1) * t_smp**2
 
-    GROUP = make_groups(br_tl)
+    # Компоненты — только те, чьи шаблоны построены (набор согласован с
+    # методикой 1 выше). Отброшенные нуклиды в GROUP не входят: иначе столбец
+    # матрицы подгонки собирается из пустой суммы и ломает сборку.
+    GROUP = {lab: mem for lab, mem in make_groups(br_tl).items()
+             if all(k in tmap for k in mem)}
     print("ветвление Bi-212 -> Tl-208: %.2f %% (МАГАТЭ)" % (100.0 * br_tl))
 
     m = (centres >= E_FIT[0]) & (centres <= E_FIT[1])

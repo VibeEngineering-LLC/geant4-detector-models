@@ -494,29 +494,28 @@ $('#mFrac').onclick = function () { setMode('frac'); };
 var cv = $('#cv'), ro = $('#ro'), geom = null, hoverIdx = -1;
 
 function drawMarkers(g, t, px, xmax, top, bot) {
-  var acc = css('--accent'), faint = css('--faint'), panel = css('--panel');
+  var acc = css('--accent'), faint = css('--faint'), paper = css('--paper');
   var boxes = [];
-  t.markers.forEach(function (m, k) {
+  t.markers.forEach(function (m) {
     if (m.e > xmax) return;
     var col = m.kind === 'peak' ? acc : faint;
+    var x = px(m.e);
+    // Штриховая линия сверху донизу поля, флажок-маркер над ней. Полная
+    // подпись — в горизонтальном тултипе при наведении: повёрнутые подписи
+    // на жёстких узлах сходились и не читались, а горизонтальные не
+    // помещались бы под графиком.
     g.setLineDash([4, 3]); g.lineWidth = 1; g.strokeStyle = col;
-    g.beginPath(); g.moveTo(px(m.e) + .5, top); g.lineTo(px(m.e) + .5, bot);
-    g.stroke(); g.setLineDash([]);
-    var txt = m.short + ' · ' + keV(m.e);
-    g.save();
-    g.font = '10.5px ' + css('--sans');
-    var tw = g.measureText(txt).width;
-    // Подпись повёрнута и идёт вниз вдоль линии; под ней плашка цвета
-    // панели, иначе текст ложится поверх заливки и не читается. Соседние
-    // подписи разводятся по высоте: на жёстких узлах маркеры сходятся
-    // ближе, чем ширина подписи.
-    var y0 = top + 5 + (k % 2) * 16;
-    g.translate(px(m.e) - 3, y0); g.rotate(Math.PI / 2);
-    g.globalAlpha = .93; g.fillStyle = panel; g.fillRect(-2, -10.5, tw + 4, 13);
-    g.globalAlpha = 1; g.fillStyle = col; g.textAlign = 'left';
-    g.fillText(txt, 0, 0);
-    g.restore();
-    boxes.push({id: m.id, x: px(m.e), y0: y0 - 6, y1: Math.min(bot, y0 + tw)});
+    g.beginPath(); g.moveTo(x + .5, top); g.lineTo(x + .5, bot); g.stroke();
+    g.setLineDash([]);
+    g.beginPath();
+    g.moveTo(x - 5.5, top - 2);
+    g.lineTo(x + 5.5, top - 2);
+    g.lineTo(x, top + 6);
+    g.closePath();
+    g.fillStyle = col; g.fill();
+    g.strokeStyle = paper; g.lineWidth = 1.5; g.stroke();
+    boxes.push({id: m.id, x: x, y0: top - 6, y1: bot,
+                e: m.e, short: m.short, kind: m.kind});
   });
   return boxes;
 }
@@ -664,12 +663,15 @@ function draw() {
   g.strokeRect(L + .5, T + .5, W - L - R - 1, H - T - B - 1);
 }
 
+var mkTip = $('#mkTip');
+function hideMark() { if (mkTip && !mkTip.hidden) mkTip.hidden = true; }
 cv.addEventListener('pointermove', function (ev) {
   if (!geom || tabIdx >= DATA.tabs.length) return;
   var r = cv.getBoundingClientRect();
   var x = ev.clientX - r.left, y = ev.clientY - r.top;
   if (x < geom.L || x > geom.W - geom.R || y < geom.T || y > geom.H - geom.B) {
     ro.style.opacity = 0;
+    hideMark();
     if (hoverIdx !== -1) { hoverIdx = -1; draw(); }
     return;
   }
@@ -678,10 +680,32 @@ cv.addEventListener('pointermove', function (ev) {
   // xs[i] — ЦЕНТР канала шириной step, первый центр = step/2; обратный
   // переход поэтому e/step − 1/2, а не e/step.
   var i = Math.max(0, Math.min(t.xs.length - 1, Math.round(e / t.step - 0.5)));
+  // Ловим маркер шире, чем при клике: наведение мыши на штриховую линию
+  // должно показывать полное имя маркера. Тултип позиционируется по
+  // маркеру, а не по курсору: он не двигается пока курсор идёт вдоль
+  // линии одного маркера.
   var near = geom.boxes.filter(function (b) {
-    return Math.abs(b.x - x) <= 4 && y >= b.y0 && y <= b.y1;
+    return Math.abs(b.x - x) <= 5 && y >= b.y0 && y <= b.y1;
   })[0];
   cv.style.cursor = near ? 'pointer' : 'crosshair';
+  if (near && mkTip) {
+    ro.style.opacity = 0;
+    var name = ELEM_NAME[near.id] || near.short;
+    mkTip.innerHTML = '<b>' + name + '</b><span>' + keV(near.e)
+      + ' кэВ · клик — пояснение</span>';
+    mkTip.hidden = false;
+    var tw = mkTip.offsetWidth, th = mkTip.offsetHeight;
+    // Тултип центрируется по маркеру, зажимается в поле графика.
+    // Верх кладём чуть ниже маркера; если не влезает — переносим выше.
+    var lx = Math.max(geom.L + 2,
+      Math.min(near.x - tw / 2, geom.W - geom.R - tw - 2));
+    var ty = geom.T + 14;
+    if (ty + th > geom.H - geom.B - 4) ty = geom.T - th - 6;
+    mkTip.style.left = lx + 'px';
+    mkTip.style.top = ty + 'px';
+    return;
+  }
+  hideMark();
   var rows = [];
   if (mode === 'log' && st.total)
     rows.push([css('--ink'), 'полный отклик', sci(t.total[i])]);
@@ -709,6 +733,7 @@ cv.addEventListener('pointermove', function (ev) {
 });
 cv.addEventListener('pointerleave', function () {
   ro.style.opacity = 0;
+  hideMark();
   if (hoverIdx !== -1) { hoverIdx = -1; draw(); }
 });
 cv.addEventListener('click', function (ev) {

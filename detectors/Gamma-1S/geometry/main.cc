@@ -94,6 +94,49 @@ public:
 // считаются РАЗНЫМИ срабатываниями спектрометра. Подробно — перед EventAct.
 constexpr double kResolvingTimeNs = 1000.0;
 
+// --- Разложение отклика по каналам взаимодействия (директива оператора,
+// R45 сессии 08.08.2026, по образцу AtomSpectra Nano 16 PRO geometry/main.cc)
+//
+// Каналы ВЗАИМОИСКЛЮЧАЮЩИЕ и в сумме дают полный спектр: событие попадает
+// ровно в один канал. Правило приоритета — по тому, ЧТО унесло энергию из
+// кристалла, потому что именно вылет определяет, куда событие уходит из
+// пика (тот же порядок и то же обоснование, что в ASN16):
+//
+//   1) было рождение пар -> канал по числу вылетевших аннигиляционных
+//      квантов;
+//   2) иначе ушёл сам первичный квант после комптона -> одно- или
+//      многократное рассеяние;
+//   3) иначе вылетел характеристический рентген;
+//   4) иначе вылетел тормозной квант;
+//   5) иначе ничего не вылетело: фотоэффект или комптон с последующим
+//      поглощением.
+//
+// "external" здесь — вторичные кванты из свинцовой защиты, MgO-отражателя,
+// алюминиевого корпуса/банки или резины-амортизатора, вошедшие в кристалл
+// без взаимодействия самого первичного кванта в нём (в ASN16 — аналог
+// "вторичные из корпуса и обёртки").
+enum Chan {
+  kChPhoto = 0,     // фотоэффект, ничего не вылетело
+  kChComptFull,     // комптон(ы) и поглощение, ничего не вылетело
+  kChComptEsc1,     // однократный комптон, квант ушёл
+  kChComptEscN,     // многократный комптон, квант ушёл
+  kChXrayEsc,       // вылет характеристического рентгена
+  kChBremsEsc,      // вылет тормозного кванта
+  kChPairFull,      // пары, оба аннигиляционных кванта поглощены
+  kChPairEsc1,      // пары, вылетел один квант 511 кэВ
+  kChPairEsc2,      // пары, вылетели оба
+  kChExternal,      // первичный квант в кристалле не взаимодействовал:
+                    // энергию принесла вторичная частица извне (защита,
+                    // MgO, корпус, резина)
+  kChOther,         // остаточный: не должен населяться, служит сторожем
+  kNChan
+};
+
+static const char* const kChanName[kNChan] = {
+  "photo", "compt_full", "compt_esc1", "compt_escN", "xray_esc",
+  "brems_esc", "pair_full", "pair_esc1", "pair_esc2", "external", "other"
+};
+
 // --- Накопление спектра -----------------------------------------------------
 // 1024 канала — как у самого спектрометра (паспорт, п. 2.12), но шкала здесь
 // линейная по энергии и без уширения: разрешение навешивается в постобработке.
@@ -114,6 +157,11 @@ public:
   // суммирование — чтобы выход линии p_gamma брать из ТОЙ ЖЕ базы
   // PhotonEvaporation, что и транспорт, а не вписывать из справочника руками.
   std::vector<long> fEmit;
+  // Разложение отклика по каналам взаимодействия (см. enum Chan выше).
+  // Канал ставится В МОМЕНТ СОБЫТИЯ по истории процессов: из готового
+  // спектра его восстановить нельзя, форма к тому времени уже сложена.
+  // Каналы взаимоисключающие и в сумме дают fHist — проверяется при записи.
+  std::vector<std::vector<long>> fChan;
   long fWithSignal = 0;
   double fSumEprim = 0;
   G4String fPart = "?";
@@ -131,11 +179,13 @@ public:
   Primary* fPrimary = nullptr;
   G4String fOut = "spectrum.csv";
 
-  RunAct() : fHist(kBins + 1, 0), fEmit(kBins + 1, 0) {}
+  RunAct() : fHist(kBins + 1, 0), fEmit(kBins + 1, 0),
+             fChan(kNChan, std::vector<long>(kBins + 1, 0)) {}
 
   void BeginOfRunAction(const G4Run*) override {
     std::fill(fHist.begin(), fHist.end(), 0L);
     std::fill(fEmit.begin(), fEmit.end(), 0L);
+    for (auto& c : fChan) std::fill(c.begin(), c.end(), 0L);
     fWithSignal = 0;
     fSumEprim = 0;
     fPart = "?";
@@ -154,12 +204,13 @@ public:
   // разделению E_prim_keV множился бы на число срабатываний.
   void FillPrimary(double eprim) { fSumEprim += eprim; }
 
-  void Fill(double edepKeV) {
+  void Fill(double edepKeV, int chan = -1) {
     if (edepKeV <= 0) return;
     ++fWithSignal;
     int b = static_cast<int>(edepKeV / kBinKeV);
     if (b > kBins) b = kBins;
     ++fHist[b];
+    if (chan >= 0 && chan < kNChan) ++fChan[chan][b];
   }
 
   void EndOfRunAction(const G4Run* run) override {
@@ -204,6 +255,51 @@ public:
     for (int i = 0; i <= kBins; ++i)
       if (fHist[i]) std::fprintf(f, "%.1f,%ld\n", (i + 0.5) * kBinKeV, fHist[i]);
     std::fclose(f);
+
+    // --- разложение отклика по каналам, отдельным файлом ---
+    // Отдельным, а не колонками основного спектра: формат «E_keV,counts»
+    // читают все разборные скрипты дерева, и менять его ради нового
+    // содержимого значит чинить их все.
+    {
+      G4String cn = fOut;
+      const size_t dot = cn.rfind('.');
+      cn = (dot == G4String::npos ? cn : cn.substr(0, dot)) + "_chan.csv";
+      FILE* g = std::fopen(cn.c_str(), "w");
+      if (g) {
+        std::fprintf(g, "# разложение отклика по каналам, канал ставится по "
+                        "истории процессов события\n");
+        std::fprintf(g, "# src_sha1 = %s\n", G1S_SRC_SHA1);
+        std::fprintf(g, "# git_describe = %s\n", G1S_GIT_DESCRIBE);
+        std::fprintf(g, "# E_prim_keV = %.4f\n", fSumEprim / N);
+        std::fprintf(g, "# N_primaries = %ld\n", N);
+        std::fprintf(g, "# solid_angle_frac = %.8f\n", fSolidAngleFrac);
+        std::fprintf(g, "# bin_keV = %.3f\n", kBinKeV);
+        std::fprintf(g, "# правило приоритета: пары -> вылет первичного после "
+                        "комптона -> рентген -> тормозное -> без вылета\n");
+        std::fprintf(g, "E_keV");
+        for (int c = 0; c < kNChan; ++c) std::fprintf(g, ",%s", kChanName[c]);
+        std::fprintf(g, "\n");
+        for (int i = 0; i <= kBins; ++i) {
+          if (!fHist[i]) continue;
+          std::fprintf(g, "%.1f", (i + 0.5) * kBinKeV);
+          for (int c = 0; c < kNChan; ++c)
+            std::fprintf(g, ",%ld", fChan[c][i]);
+          std::fprintf(g, "\n");
+        }
+        std::fclose(g);
+      }
+      // Каналы обязаны в сумме давать полный спектр. Если не дают — правило
+      // приоритета пропускает случай, и это дефект разложения, а не мелочь.
+      long sumChan = 0, sumHist = 0;
+      for (int i = 0; i <= kBins; ++i) {
+        sumHist += fHist[i];
+        for (int c = 0; c < kNChan; ++c) sumChan += fChan[c][i];
+      }
+      if (sumChan != sumHist)
+        G4cerr << "ВНИМАНИЕ: сумма каналов " << sumChan
+               << " не равна спектру " << sumHist
+               << " — правило приоритета неполно" << G4endl;
+    }
 
     // Спектр испускания — отдельным файлом, если он не пуст (прогон распада)
     long emitted = 0;
@@ -258,8 +354,43 @@ class EventAct : public G4UserEventAction {
 public:
   // (глобальное время, кэВ) по каждому шагу в кристалле
   std::vector<std::pair<double, double>> fDep;
+
+  // Признаки истории события для разложения по каналам. Ставятся в Stepping.
+  // Без fChargedIn/fBeta (были у ASN16 — там источник бета-активен через
+  // акриловый пенал; здесь источник в свинцовом экране, вклад беты в
+  // кристалл не рассматривается, см. память beta-must-be-checked — вопрос
+  // решён прогоном ДЛЯ ASN16, для Гамма-1С отдельно не вставал).
+  int fFirst = 0;          // 1 phot, 2 compt, 3 conv, 0 ничего неупругого
+  bool fHadRayl = false;   // было упругое рассеяние (энергии не оставляет)
+  int fNCompt = 0;         // сколько раз первичный квант рассеялся в кристалле
+  bool fHadConv = false;   // было рождение пар в кристалле
+  int fNAnnihEsc = 0;      // сколько аннигиляционных квантов покинуло кристалл
+  double fEBremEsc = 0;    // энергия вылетевшего тормозного, кэВ
+  double fEXrayEsc = 0;    // энергия вылетевших прочих вторичных гамма, кэВ
+  bool fPrimEsc = false;   // сам первичный квант вышел из кристалла
+
   explicit EventAct(RunAct* r) : fRun(r) {}
-  void BeginOfEventAction(const G4Event*) override { fDep.clear(); }
+  void BeginOfEventAction(const G4Event*) override {
+    fDep.clear();
+    fFirst = 0; fHadRayl = false; fNCompt = 0; fHadConv = false;
+    fNAnnihEsc = 0; fEBremEsc = 0; fEXrayEsc = 0; fPrimEsc = false;
+  }
+
+  // Канал по правилу приоритета (см. enum Chan). Возвращает индекс канала.
+  int Channel() const {
+    if (fHadConv)
+      return fNAnnihEsc == 0 ? kChPairFull
+           : (fNAnnihEsc == 1 ? kChPairEsc1 : kChPairEsc2);
+    if (fPrimEsc && fNCompt > 0)
+      return fNCompt == 1 ? kChComptEsc1 : kChComptEscN;
+    if (fEXrayEsc > 0) return kChXrayEsc;
+    if (fEBremEsc > 0) return kChBremsEsc;
+    if (fFirst == 1) return kChPhoto;
+    if (fNCompt > 0) return kChComptFull;
+    if (fFirst == 0) return kChExternal;
+    return kChOther;
+  }
+
   void EndOfEventAction(const G4Event* e) override {
     double ep = 0;
     if (e->GetNumberOfPrimaryVertex() > 0) {
@@ -271,6 +402,12 @@ public:
     fRun->FillPrimary(ep);
     if (fDep.empty()) return;
 
+    // Канал один на событие Geant4. При моноэнергетическом источнике группа
+    // энерговыделений одна; при розыгрыше распада событие может разбиться
+    // на несколько срабатываний — все получают канал первичного кванта,
+    // это огрубление, и оно объявлено (как в ASN16).
+    const int ch = Channel();
+
     // Шаги приходят в порядке обработки треков, а не по времени, поэтому
     // сортировка обязательна: без неё группировка развалится на первом же
     // треке, начавшемся раньше предыдущего.
@@ -278,13 +415,13 @@ public:
     double sum = fDep[0].second, t0 = fDep[0].first;
     for (size_t i = 1; i < fDep.size(); ++i) {
       if (fDep[i].first - t0 > kResolvingTimeNs) {
-        fRun->Fill(sum);
+        fRun->Fill(sum, ch);
         sum = 0;
       }
       t0 = fDep[i].first;
       sum += fDep[i].second;
     }
-    fRun->Fill(sum);
+    fRun->Fill(sum, ch);
   }
 };
 
@@ -294,12 +431,56 @@ class Stepping : public G4UserSteppingAction {
 public:
   Stepping(EventAct* ev, const G4LogicalVolume* c) : fEvt(ev), fCry(c) {}
   void UserSteppingAction(const G4Step* s) override {
+    auto* pre = s->GetPreStepPoint();
+    auto* post = s->GetPostStepPoint();
+    auto* h = pre->GetTouchableHandle()->GetVolume();
+    const bool inCry = h && h->GetLogicalVolume() == fCry;
+    if (!inCry) return;
+
+    // --- пометка канала: что произошло с квантом ВНУТРИ кристалла ---
+    const G4Track* trk = s->GetTrack();
+    const bool isGamma = trk->GetDefinition() == G4Gamma::Gamma();
+    if (isGamma) {
+      const G4VProcess* pr = post->GetProcessDefinedStep();
+      const G4String pn = pr ? pr->GetProcessName() : G4String();
+      if (trk->GetParentID() == 0) {
+        if (pn == "compt") {
+          ++fEvt->fNCompt;
+          if (!fEvt->fFirst) fEvt->fFirst = 2;
+        } else if (pn == "phot") {
+          if (!fEvt->fFirst) fEvt->fFirst = 1;
+        } else if (pn == "conv") {
+          fEvt->fHadConv = true;
+          if (!fEvt->fFirst) fEvt->fFirst = 3;
+        } else if (pn == "Rayl") {
+          // Рэлеевское рассеяние УПРУГОЕ: энергии не оставляет и первым
+          // взаимодействием не считается (см. ASN16: без этой оговорки
+          // канал «рэлей+фотоэффект» уходил в остаточный).
+          fEvt->fHadRayl = true;
+        }
+      }
+      // Выход кванта из кристалла. Квант, вернувшийся обратно (из защиты,
+      // MgO, корпуса), здесь уже посчитан вылетевшим — огрубление в пользу
+      // каналов вылета, доля возвратов не измерена.
+      if (post->GetStepStatus() == fGeomBoundary) {
+        auto* hp = post->GetTouchableHandle()->GetVolume();
+        const bool outCry = !hp || hp->GetLogicalVolume() != fCry;
+        const double ek = post->GetKineticEnergy() / keV;
+        if (outCry && ek > 0) {
+          const G4VProcess* cp = trk->GetCreatorProcess();
+          const G4String cn = cp ? cp->GetProcessName() : G4String();
+          if (cn == "annihil") ++fEvt->fNAnnihEsc;
+          else if (cn == "eBrem") fEvt->fEBremEsc += ek;
+          else if (trk->GetParentID() == 0) fEvt->fPrimEsc = true;
+          else fEvt->fEXrayEsc += ek;
+        }
+      }
+    }
+
+    // --- энерговыделение ---
     const double e = s->GetTotalEnergyDeposit();
-    if (e <= 0) return;
-    auto* h = s->GetPreStepPoint()->GetTouchableHandle()->GetVolume();
-    if (h && h->GetLogicalVolume() == fCry)
-      fEvt->fDep.emplace_back(s->GetPreStepPoint()->GetGlobalTime() / ns,
-                              e / keV);
+    if (e > 0)
+      fEvt->fDep.emplace_back(pre->GetGlobalTime() / ns, e / keV);
   }
 };
 

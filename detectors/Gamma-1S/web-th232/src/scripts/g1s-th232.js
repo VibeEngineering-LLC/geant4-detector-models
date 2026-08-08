@@ -1137,7 +1137,7 @@
         + "<span class='cmp-note'>" + note + "</span></div>";
     }
     el.innerHTML =
-      row("cmp-pass", "паспорт (партия " + esc(pass.batch) + ")",
+      row("cmp-pass", "паспорт",
           pass.A_Bq, pass.dA_Bq,
           "удельная " + cnt(pass.Bq_per_kg) + " Бк/кг × "
           + num(pass.mass_g, 0) + " г; распад между аттестацией и "

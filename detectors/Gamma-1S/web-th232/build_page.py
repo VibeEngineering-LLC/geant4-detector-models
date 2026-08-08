@@ -98,7 +98,6 @@ def make_fill(d):
         "date_pass":  lambda: p["date_certified"],
         "date_meas":  lambda: p["date_measured"],
         "decayf":     lambda: rnum(p["decay_factor"], 6),
-        "batch":      lambda: p["batch"],
 
         # --- измерение и фон --------------------------------------------
         "tlive":      lambda: rnum(d["meta"]["live_s"], 0) + " с",

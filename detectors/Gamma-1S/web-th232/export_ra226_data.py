@@ -51,10 +51,14 @@ def read_pair():
     return ({"counts": np.asarray(s.counts, dtype=np.int64),
              "e_of_ch": np.asarray(s.channel_to_energy(ch_s), dtype=float),
              "live_s": float(s.live_time), "real_s": float(s.real_time),
-             "start": str(s.start_datetime)},
+             "start": str(s.start_datetime),
+             "coefs": [float(c) for c in s.energy_cal],
+             "n_channels": s.n_channels},
             {"counts": np.asarray(b.counts, dtype=np.int64),
              "e_of_ch": np.asarray(b.channel_to_energy(ch_b), dtype=float),
-             "live_s": float(b.live_time), "real_s": float(b.real_time)})
+             "live_s": float(b.live_time), "real_s": float(b.real_time),
+             "coefs": [float(c) for c in b.energy_cal],
+             "n_channels": b.n_channels})
 
 
 def run_method2(library, sums, resp, e, ch_edges, keys):
@@ -232,6 +236,11 @@ def main():
             "start_time": meas["start"],
             "fwhm662_keV": ed.FWHM662,
             "e_fit_lo": ed.E_FIT_LO, "e_fit_hi": ed.E_FIT_HI,
+            "cal_sample": {"coefs": meas["coefs"],
+                          "order": len(meas["coefs"]) - 1,
+                          "n_channels": meas["n_channels"]},
+            "cal_bg": {"coefs": bg["coefs"], "order": len(bg["coefs"]) - 1,
+                      "n_channels": bg["n_channels"]},
             "level_note": "Библиотека и сумм-пики -- IAEA Live Chart of "
                           "Nuclides (decay_rads), быстрый проход без "
                           "перекрёстной проверки LNHB, в отличие от "
@@ -239,9 +248,11 @@ def main():
                           "МК-шаблоны по нуклидам ветви Ra-226 ещё не "
                           "прогнаны.",
         },
-        "fwhm_cal": {"k": fwhm_cal["k"], "p": fwhm_cal["p"],
-                    "rms_dev_pct": fwhm_cal["rms_dev_pct"],
-                    "n_used": fwhm_cal.get("n_used")},
+        # Полный словарь fit_fwhm_calibration -- те же поля, что несёт
+        # g1s_th232_data.json (points/n_anchors/fwhm662_law/fwhm662_cs/
+        # res662_pct), калибровочная вкладка одна и та же на обеих
+        # страницах (JS-код общий, см. buildCal/drawFwhm в ra226.js).
+        "fwhm_cal": fwhm_cal,
         "passport": {"A_Bq": A_pass, "dA_Bq": dA_pass,
                     "Bq_per_kg": p["bq_per_kg"], "unc_pct": p["unc_pct"],
                     "mass_g": p["mass_g"], "date_certified": p["passport_date"],

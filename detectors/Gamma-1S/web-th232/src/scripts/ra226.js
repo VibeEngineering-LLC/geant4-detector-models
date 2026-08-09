@@ -1,8 +1,8 @@
-/* Разложение спектра Ra-226 в маринелли — ТОЛЬКО метод 2 (пилот
-   обобщённого конвейера, задача #182/#183). Данные — window.RA226
-   (export_ra226_data.py). Лёгкая версия g1s-th232.js: нет метода 1,
-   нет варианта "cs" по отдельной калибровке цезия, нет масок
-   достоверности МК-статистики (нет самих МК-шаблонов). */
+/* Разложение спектра Ra-226 в маринелли — метод 1 (МК-шаблоны по
+   нуклидам, добавлен 10.08.2026) и метод 2. Данные — window.RA226
+   (export_ra226_data.py). Короче g1s-th232.js: нет варианта "cs" по
+   отдельной калибровке цезия, нет масок достоверности МК-статистики
+   (R66) на самих шаблонах. */
 (function () {
   "use strict";
   var D = window.RA226;
@@ -75,8 +75,18 @@
     return acc;
   }
 
-  function drawSpectrum() {
-    var cv = document.getElementById("cvM2");
+  // mode: "m1" | "m2" -- какая вкладка/canvas/стек. ST.on/легенда общие
+  // для обеих (тот же набор нуклидов + XRAY), ST.cursorE тоже общий (как
+  // в g1s-th232.js: одновременно виден только один график).
+  function STACK(mode) {
+    return mode === "m1" ? D.spectrum.stack1 : M2().stack;
+  }
+  function CV_ID(mode) { return mode === "m1" ? "cvM1" : "cvM2"; }
+  function TIP_ID(mode) { return mode === "m1" ? "m1-tip" : "m2-tip"; }
+  function CURSOR_ID(mode) { return mode === "m1" ? "cursorM1" : "cursorM2"; }
+
+  function drawSpectrum(mode) {
+    var cv = document.getElementById(CV_ID(mode));
     if (!cv) return;
     var p = pal(), f = fit(cv), g = f.g, W = f.w, H = f.h;
     var m = { l: 60, r: 14, t: 12, b: 34 };
@@ -89,7 +99,7 @@
     var yy = D.spectrum.counts.map(function (c, i) {
       return c - D.spectrum.bg_counts[i];
     });
-    var stk = M2().stack;
+    var stk = STACK(mode);
     var xLo = 30, xHi = 3000;
 
     var vMax = 1;
@@ -191,9 +201,9 @@
 
   /* ── наведение курсора на спектр (порт cursorText/attachCursor
      g1s-th232.js один в один — задача оператора «мышь не определяет
-     энергию») ──────────────────────────────────────────────────── */
-  function cursorTextM2() {
-    var el = document.getElementById("cursorM2");
+     энергию»); mode: "m1" | "m2" ─────────────────────────────────── */
+  function cursorText(mode) {
+    var el = document.getElementById(CURSOR_ID(mode));
     if (!el) return;
     if (ST.cursorE === null) {
       el.textContent = "наведи курсор на канал спектра";
@@ -206,7 +216,7 @@
       if (dd < best) { best = dd; i = k; }
     }
     var meas = D.spectrum.counts[i] - D.spectrum.bg_counts[i];
-    var stk = M2().stack;
+    var stk = STACK(mode);
     var contribs = [];
     D.nuclides.forEach(function (nd) {
       if (!ST.on[nd.key] || !stk[nd.key]) return;
@@ -221,16 +231,16 @@
             + ", модель " + cnt(stackTotal(stk, i));
     if (top) txt += " — " + top;
     el.textContent = txt;
-    var tip = document.getElementById("m2-tip");
+    var tip = document.getElementById(TIP_ID(mode));
     if (tip) tip.textContent = num(e[i], 0) + " кэВ · " + cnt(meas);
   }
 
-  var CURSOR_M2_wired = false;
-  function attachCursorM2() {
-    if (CURSOR_M2_wired) return;
-    CURSOR_M2_wired = true;
-    var cv = document.getElementById("cvM2");
-    var tip = document.getElementById("m2-tip");
+  var CURSOR_wired = {};
+  function attachCursor(mode) {
+    if (CURSOR_wired[mode]) return;
+    CURSOR_wired[mode] = true;
+    var cv = document.getElementById(CV_ID(mode));
+    var tip = document.getElementById(TIP_ID(mode));
     if (!cv) return;
     cv.addEventListener("pointermove", function (ev) {
       var r = cv.getBoundingClientRect();
@@ -239,7 +249,7 @@
       var xLo = 30, xHi = 3000;
       if (x < m.l || x > r.width - m.r) ST.cursorE = null;
       else ST.cursorE = xLo + ((x - m.l) / (r.width - m.r - m.l)) * (xHi - xLo);
-      cursorTextM2(); drawSpectrum();
+      cursorText(mode); drawSpectrum(mode);
       if (tip) {
         if (ST.cursorE === null) tip.hidden = true;
         else {
@@ -250,7 +260,7 @@
       }
     });
     cv.addEventListener("pointerleave", function () {
-      ST.cursorE = null; cursorTextM2(); drawSpectrum();
+      ST.cursorE = null; cursorText(mode); drawSpectrum(mode);
       if (tip) tip.hidden = true;
     });
   }
@@ -261,19 +271,19 @@
   // списке для полноты цепочки распада, но их вклад в модель ТОЧНЫЙ НОЛЬ —
   // чекбокс декоративен, и легенда обязана честно это показывать, а не
   // тихо рисовать пустой квадратик рядом с рабочими нуклидами.
-  function isInert(key) {
-    var v = D.method2_sel.stack[key];
+  function isInert(key, mode) {
+    var v = STACK(mode)[key];
     if (!v) return true;
     for (var i = 0; i < v.length; i++) if (v[i] !== 0) return false;
     return true;
   }
 
-  function buildLegend() {
-    var el = document.getElementById("legendM2");
+  function buildLegend(mode) {
+    var el = document.getElementById(mode === "m1" ? "legendM1" : "legendM2");
     if (!el) return;
     el.innerHTML = "";
     D.nuclides.forEach(function (nd) {
-      var inert = isInert(nd.key);
+      var inert = isInert(nd.key, mode);
       var chip = document.createElement("label");
       chip.className = "chip";
       if (inert) { chip.title =
@@ -281,7 +291,7 @@
       var cb = document.createElement("input");
       cb.type = "checkbox"; cb.checked = ST.on[nd.key];
       cb.addEventListener("change", function () {
-        ST.on[nd.key] = cb.checked; cursorTextM2(); drawSpectrum();
+        ST.on[nd.key] = cb.checked; cursorText(mode); drawSpectrum(mode);
       });
       var sw = document.createElement("span");
       sw.className = "sw"; sw.style.background = nd.color;
@@ -314,6 +324,18 @@
     return (s < 0 ? "−" : "+") + num(Math.abs(s), 1) + " %";
   }
 
+  function fillSummary1() {
+    var el = document.getElementById("sumM1");
+    if (!el || !D.method1) return;
+    var m1 = D.method1, pass = D.passport;
+    el.innerHTML =
+      cell("активность (метод 1)", cnt(m1.A_Bq) + " Бк <em>± " + cnt(m1.dA_Bq) + " Бк</em>", true) +
+      cell("против паспорта", num(m1.A_Bq / pass.A_Bq, 3) + " (" + signedPct(m1.A_Bq / pass.A_Bq) + ")") +
+      cell("χ²/ν", num(m1.chi2_ndof, 2)) +
+      cell("К-рентген дочерних", num(m1.xray_total_per_branch_pct, 3) + " % на распад ветви") +
+      cell("амплитуда фона", num(m1.bg_amplitude, 2));
+  }
+
   function labelRu(key) {
     for (var i = 0; i < D.nuclides.length; i++)
       if (D.nuclides[i].key === key) return D.nuclides[i].label_ru;
@@ -337,12 +359,46 @@
     tbl.innerHTML = html;
   }
 
+  function fillTable1() {
+    var tbl = document.getElementById("tblM1");
+    if (!tbl || !D.method1_meta) return;
+    var stk = D.spectrum.stack1;
+    var decays = {};
+    (D.method1_meta.template_decays || []).forEach(function (t) {
+      decays[t.nuclide] = t.n;
+    });
+    var total = 0;
+    D.nuclides.forEach(function (nd) {
+      var v = stk[nd.key];
+      if (v) for (var i = 0; i < v.length; i++) total += v[i];
+    });
+    var html = "<thead><tr><th>нуклид</th><th class='num'>распадов в МК-шаблоне</th>"
+      + "<th class='num'>вклад в модель, Бк</th><th class='num'>доля модели</th></tr></thead><tbody>";
+    D.nuclides.forEach(function (nd) {
+      var v = stk[nd.key];
+      var s = 0;
+      if (v) for (var i = 0; i < v.length; i++) s += v[i];
+      var share = total > 0 ? 100 * s / total : 0;
+      var decN = decays[nd.label_ru] !== undefined ? decays[nd.label_ru] : "—";
+      html += "<tr><td><span class='sw' style='background:" + nd.color + "'></span>"
+        + esc(nd.label_ru) + "</td><td class='num'>" + (typeof decN === "number" ? cnt(decN) : decN)
+        + "</td><td class='num'>" + num(s / D.meta.live_s, 4)
+        + "</td><td class='num'>" + num(share, 2) + " %</td></tr>";
+    });
+    html += "<tr class='sum'><td>МК-прогон полной цепочки</td>"
+      + "<td class='num'>" + cnt(D.method1_meta.chain_decays) + "</td>"
+      + "<td class='num' colspan='2'>chain_Ra226.csv, использован для формы и амплитуды</td></tr>";
+    html += "</tbody>";
+    tbl.innerHTML = html;
+  }
+
   function fillCompare() {
     var cv = document.getElementById("cvCmp");
     var tbl = document.getElementById("cmpTable");
     var pass = D.passport;
     var items = [
       { lab: "паспорт", A: pass.A_Bq, dA: pass.dA_Bq, col: "#6a6558" },
+      { lab: "метод 1 (МК по нуклидам)", A: D.method1.A_Bq, dA: D.method1.dA_Bq, col: "#2c6e2c" },
       { lab: "метод 2 (отобр.)", A: D.method2_sel.A_Bq, dA: D.method2_sel.dA_Bq, col: "#0f5aa8" },
       { lab: "метод 2 (полн.)", A: D.method2_full.A_Bq, dA: D.method2_full.dA_Bq, col: "#c8541c" },
     ];
@@ -906,7 +962,7 @@
     document.getElementById("p-apassdev").textContent = "± " + cnt(pass.dA_Bq) + " Бк";
   }
 
-  var VIEW_ID = { m2: "viewM2", cmp: "viewCmp", cal: "viewCal" };
+  var VIEW_ID = { m1: "viewM1", m2: "viewM2", cmp: "viewCmp", cal: "viewCal" };
   function switchTab(name) {
     Object.keys(VIEW_ID).forEach(function (t) {
       document.getElementById(VIEW_ID[t]).hidden = t !== name;
@@ -914,8 +970,10 @@
     document.querySelectorAll("#tabs .tab").forEach(function (b) {
       b.setAttribute("aria-selected", String(b.dataset.tab === name));
     });
-    if (name === "m2") { buildLegend(); fillSummary(); fillTable();
-                         attachCursorM2(); cursorTextM2(); drawSpectrum(); }
+    if (name === "m1") { buildLegend("m1"); fillSummary1(); fillTable1();
+                         attachCursor("m1"); cursorText("m1"); drawSpectrum("m1"); }
+    if (name === "m2") { buildLegend("m2"); fillSummary(); fillTable();
+                         attachCursor("m2"); cursorText("m2"); drawSpectrum("m2"); }
     if (name === "cmp") fillCompare();
     if (name === "cal") { buildCal(); drawCal(); drawFwhm(); }
   }
@@ -929,15 +987,47 @@
       document.querySelectorAll("#libseg .btn").forEach(function (x) {
         x.setAttribute("aria-pressed", String(x === b));
       });
-      fillSummary(); fillTable(); cursorTextM2(); drawSpectrum();
+      fillSummary(); fillTable(); cursorText("m2"); drawSpectrum("m2");
     });
   });
 
+  /* ── попапы («как посчитано») ──────────────────────────────────── */
+  function openPop(id) {
+    var tpl = document.getElementById(id);
+    if (!tpl) return;
+    var pop = document.getElementById("pop");
+    var scrim = document.getElementById("scrim");
+    if (!pop || !scrim) return;
+    pop.innerHTML = "";
+    pop.appendChild(tpl.content.cloneNode(true));
+    var close = document.createElement("button");
+    close.type = "button"; close.className = "pop-close";
+    close.setAttribute("aria-label", "закрыть");
+    close.textContent = "×";
+    close.addEventListener("click", closePop);
+    pop.appendChild(close);
+    pop.hidden = false; scrim.hidden = false;
+  }
+  function closePop() {
+    var pop = document.getElementById("pop"), scrim = document.getElementById("scrim");
+    if (pop) pop.hidden = true;
+    if (scrim) scrim.hidden = true;
+  }
+  document.querySelectorAll("[data-pop]").forEach(function (b) {
+    b.addEventListener("click", function () { openPop(b.getAttribute("data-pop")); });
+  });
+  var scrimEl = document.getElementById("scrim");
+  if (scrimEl) scrimEl.addEventListener("click", closePop);
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape") closePop();
+  });
+
   window.addEventListener("resize", function () {
-    if (!document.getElementById("viewM2").hidden) drawSpectrum();
+    if (!document.getElementById("viewM1").hidden) drawSpectrum("m1");
+    if (!document.getElementById("viewM2").hidden) drawSpectrum("m2");
     if (!document.getElementById("viewCal").hidden) { drawCal(); drawFwhm(); }
   });
 
   fillHeader();
-  switchTab("m2");
+  switchTab("m1");
 })();

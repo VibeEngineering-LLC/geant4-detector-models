@@ -143,6 +143,7 @@ def make_fill(d):
         "matrix":     lambda: MATRIX_RU.get(d["meta"]["matrix_name"],
                                             d["meta"]["matrix_name"]),
         "matrix_rho": lambda: rnum(d["meta"]["matrix_density_g_cm3"], 2),
+        "nuclide_list": lambda: d["meta"]["nuclide_list_ru"],
         "matrix_comp": lambda: ", ".join(
             "%s %s" % (c["element"], rpct(100 * c["mass_fraction"], 1))
             for c in d["meta"]["matrix_composition"]),

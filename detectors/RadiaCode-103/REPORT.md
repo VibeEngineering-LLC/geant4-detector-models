@@ -234,7 +234,9 @@ t — время набора, m — масса пробы.
 
 ε_p^предел(E) — в [`results/m200/efficiency.csv`](results/m200/efficiency.csv),
 таблица по линиям ЕРН — в
-[`efficiency_table.md`](results/m200/efficiency_table.md).
+[`efficiency_table.md`](results/m200/efficiency_table.md); то же для сосуда
+500 мл — [`results/m500/efficiency.csv`](results/m500/efficiency.csv) и
+[`efficiency_table.md`](results/m500/efficiency_table.md).
 
 Самопоглощение расслаивает кривые **только ниже 150 кэВ**, зато там радикально:
 на 30 кэВ грунт 1,6 г/см³ даёт вчетверо меньше, чем предельный случай. Выше

@@ -40,10 +40,6 @@
     fwhmLaw: "lines", // закон ширины линии: lines (по спектру) | cs (цезий)
     lib: "fixed",     // состав библиотеки метода 2: fixed | full
     m2sort: "contrib",// сортировка таблицы метода 2: contrib | nuclide | energy
-    // Переключателя режима разложения больше нет (директива оператора
-    // 09.08.2026): гипотеза утечки торона измерением не подтвердилась, знак
-    // вышел обратный, и её разложение не показывается как равноправный вид.
-    // Сама проверка с выводом осталась отдельным разделом.
     cursorE: null,
   };
   D.nuclides.forEach(function (n) { ST.on[n.key] = true; });
@@ -55,9 +51,6 @@
   function M2()   {
     return ST.lib === "full" ? SRC().method2_full : SRC().method2;
   }
-  // Разложение — всегда с ОДНОЙ амплитудой. Стеки подгонки с утечкой
-  // (stack_leak, stack2_leak) остаются в данных, но на графике не
-  // показываются: гипотеза не подтвердилась (см. ST выше).
   function STACK1() { return SPEC().stack; }
   function STACK2() {
     return ST.lib === "full" ? SPEC().stack2_full : SPEC().stack2;
@@ -476,56 +469,9 @@
   }
 
   /* ── сводки методов ─────────────────────────────────────────── */
-  var PM = "±";
   function cell(lab, val, big) {
     return "<div><span class='lab'>" + lab + "</span><span class='val"
          + (big ? " big-num" : "") + "'>" + val + "</span></div>";
-  }
-  // Карточка подгонки с гипотезой утечки торона (R53/R56) — общая для
-  // метода 1 (#sumLeak) и метода 2 (#sumLeak2): delta_chi2_vs_single —
-  // χ²(одна амплитуда ЭТОГО ЖЕ метода) минус χ²(с утечкой), положительное
-  // число = утечка лучше. Знак не переворачивается нигде — одна точка
-  // правды, чтобы не разъехались бэкенд и подпись.
-  // single — подгонка ТОГО ЖЕ метода одной амплитудой. Передаётся обязательно:
-  // без её χ²/ν карточка показывала только «χ²/ν с утечкой 4,17» и «снижение
-  // χ² 496,6», и сравнить было не с чем — читателю приходилось искать
-  // исходное число в другой карточке (замечание оператора 09.08.2026).
-  function fillLeakCard(elId, lf, single) {
-    var s = document.getElementById(elId);
-    if (!s || !lf) return;
-    var d = lf.delta_chi2_vs_single;
-    var c0 = single && typeof single.chi2_ndof === "number"
-             ? single.chi2_ndof : null;
-    s.innerHTML =
-      cell("до Rn-220 (" + lf.keys_before.length + " звена)",
-           cnt(lf.A_before_Bq) + " Бк <em>± " + cnt(lf.dA_before_Bq)
-           + " Бк</em>", true)
-      + cell("после Rn-220 (" + lf.keys_after.length + " звена)",
-             cnt(lf.A_after_Bq) + " Бк <em>± " + cnt(lf.dA_after_Bq)
-             + " Бк</em>", true)
-      // Величина подписана НЕЙТРАЛЬНО, а не «утечкой торона». Утечка газа
-      // способна группу «после» только уменьшить; знак у подгонки вышел
-      // обратный (−11 %, то есть поздняя часть ряда ВЫШЕ ранней), и подпись
-      // «утечка η» выдавала бы опровержение гипотезы за её измерение
-      // (замечание оператора 09.08.2026). Что означает отрицательный знак —
-      // в выводе строкой ниже.
-      + cell("1 − A<sub>после</sub>/A<sub>до</sub>",
-             num(lf.eta_leak * 100, 2) + " % <em>± "
-             + num(lf.d_eta * 100, 2) + " %</em>")
-      + cell("χ²/ν: одна амплитуда → с утечкой",
-             (c0 === null ? "—" : num(c0, 2)) + " → " + num(lf.chi2_ndof, 2))
-      + cell("снижение χ² (1 параметр)", num(d, 1)
-             + (d >= 0 ? " (лучше)" : " (хуже)"))
-      + cell("вывод", leakVerdict(lf.eta_leak, d));
-  }
-  // Вывод по знаку И по значимости сразу. Одной значимости мало: улучшение
-  // χ² может быть бесспорным, а знак — отрицать саму проверяемую гипотезу.
-  function leakVerdict(eta, d) {
-    if (d <= 7.88) return "различие групп статистически незначимо";
-    return eta > 0
-      ? "утечка значима (p&lt;0,005 по Уилксу)"
-      : "значимо, но ЗНАК ОБРАТНЫЙ: поздние звенья выше ранних — "
-        + "утечкой торона это не объясняется";
   }
   // Подпись величины bg_amplitude. Это свободный множитель, на который
   // подгонка домножает фоновую запись, УЖЕ приведённую к живому времени.
@@ -537,34 +483,10 @@
   // вердикт «термина не существует» выносит Терминолог.
   var BG_LAB = "фоновая запись, множитель подгонки";
 
-  // Сводка режима «с утечкой»: две амплитуды вместо одной, и обязательно
-  // базовое значение хи-квадрат рядом — иначе «стало 4,17» не с чем сравнить.
-  function leakSummary(lf, single, pass) {
-    return cell("до Rn-220 (" + lf.keys_before.length + " звена)",
-                cnt(lf.A_before_Bq) + " Бк <em>" + PM + " "
-                + cnt(lf.dA_before_Bq) + " Бк</em>", true)
-      + cell("после Rn-220 (" + lf.keys_after.length + " звена)",
-             cnt(lf.A_after_Bq) + " Бк <em>" + PM + " "
-             + cnt(lf.dA_after_Bq) + " Бк</em>", true)
-      + cell("против паспорта", num(lf.A_before_Bq / pass.A_Bq, 3) + " / "
-             + num(lf.A_after_Bq / pass.A_Bq, 3))
-      + cell("1 &minus; A<sub>после</sub>/A<sub>до</sub>",
-             num(100 * lf.eta_leak, 2) + " % <em>" + PM + " "
-             + num(100 * lf.d_eta, 2) + " %</em>")
-      + cell("&chi;&sup2;/&nu;: одна амплитуда &rarr; две",
-             num(single.chi2_ndof, 2) + " &rarr; " + num(lf.chi2_ndof, 2))
-      + cell(BG_LAB, num(lf.bg_amplitude, 2));
-  }
-
   function fillSummaries() {
     var m1 = M1(), m2 = M2(), pass = D.passport;
     var s1 = document.getElementById("sumM1");
     if (s1) {
-      // Карточка показывает числа ВЫБРАННОГО режима. Прежде она всегда брала
-      // подгонку одной амплитудой, и переключатель «с утечкой торона» менял
-      // только заливки на графике: активность, отношение к паспорту и хи-квадрат
-      // оставались прежними, из чего читатель заключил бы, что сдвиг
-      // равновесия на активность не влияет (замечание оператора 09.08.2026).
       s1.innerHTML =
         cell("активность ветви", cnt(m1.A_Bq) + " Бк <em>± "
              + cnt(m1.dA_Bq) + " Бк</em>", true)
@@ -576,9 +498,6 @@
                + " кэВ")
         + cell(BG_LAB, num(m1.bg_amplitude, 2));
     }
-    var lf2 = ST.lib === "full" ? D.leak_fit2_full : D.leak_fit2;
-    fillLeakCard("sumLeak", D.leak_fit, m1);
-    fillLeakCard("sumLeak2", lf2, m2);
     var s2 = document.getElementById("sumM2");
     if (s2) {
       s2.innerHTML =
@@ -598,16 +517,12 @@
   function buildM1() {
     var tbl = document.getElementById("tblM1");
     if (!tbl) return;
-    var m1 = M1(), lf = D.leak_fit, leak = false;   // режим утечки снят
+    var m1 = M1();
     var stk = STACK1();
     var head = "<thead><tr><th>нуклид</th><th class='num'>амплитуда, Бк</th>"
              + "<th class='num'>к паспорту</th><th class='num'>доля в спектре</th>"
              + "<th>пояснение</th></tr></thead>";
     var body = "<tbody>";
-    // «Доля в спектре» — из ТОГО ЖЕ стека, что рисует диаграмма (не из
-    // m1.per_nuclide, который считался для одноамплитудной модели): в
-    // leak-режиме доли групп до/после Rn-220 реально смещаются, таблица
-    // обязана показывать то же число, что и картинка.
     var grand = 0;
     D.nuclides.forEach(function (nuc) {
       var arr = stk[nuc.key];
@@ -620,20 +535,9 @@
       var sum = 0;
       for (var i = 0; i < arr.length; i++) sum += arr[i];
       var amp, damp, tag;
-      if (leak) {
-        var inBefore = lf.keys_before.indexOf(nuc.key) >= 0;
-        var inAfter = lf.keys_after.indexOf(nuc.key) >= 0;
-        if (inBefore) { amp = lf.A_before_Bq; damp = lf.dA_before_Bq;
-                         tag = " \u00b7 \u0434\u043e Rn-220"; }
-        else if (inAfter) { amp = lf.A_after_Bq; damp = lf.dA_after_Bq;
-                             tag = " \u00b7 \u043f\u043e\u0441\u043b\u0435 Rn-220"; }
-        else { amp = lf.xray_amp_leak; damp = lf.xray_damp_leak;
-               tag = " \u00b7 \u0441\u043c\u0435\u0448\u0430\u043d\u043e (\u0434\u043e+\u043f\u043e\u0441\u043b\u0435)"; }
-      } else {
-        var v = m1.per_nuclide[nuc.key];
-        if (!v) return;
-        amp = v.A_Bq; damp = v.dA_Bq; tag = "";
-      }
+      var v = m1.per_nuclide[nuc.key];
+      if (!v) return;
+      amp = v.A_Bq; damp = v.dA_Bq; tag = "";
       body += "<tr>"
         + "<td><span class='sw' style='background:" + nuc.color + "'></span>"
         + esc(nuc.label_ru) + "</td>"
@@ -680,17 +584,7 @@
     D.nuclides.forEach(function (n, i) {
       nucCol[n.key] = n.color; nucLab[n.key] = n.label_ru; nucIdx[n.key] = i;
     });
-    // \u0420\u0435\u0436\u0438\u043c "\u0441 \u0443\u0442\u0435\u0447\u043a\u043e\u0439" (R56): \u043f\u0440\u0435\u0434\u0441\u043a\u0430\u0437\u0430\u043d\u043d\u0430\u044f \u043f\u043b\u043e\u0449\u0430\u0434\u044c \u043b\u0438\u043d\u0438\u0438 \u2014 \u0441\u0432\u043e\u0438\u043c
-    // \u0433\u0440\u0443\u043f\u043f\u043e\u0432\u044b\u043c \u043a\u043e\u044d\u0444\u0444\u0438\u0446\u0438\u0435\u043d\u0442\u043e\u043c (\u0434\u043e/\u043f\u043e\u0441\u043b\u0435 Rn-220), \u043d\u0435 \u043e\u0431\u0449\u0435\u0439 A_ph. \u0418\u0441\u0442\u043e\u0447\u043d\u0438\u043a
-    // \u0430\u043c\u043f\u043b\u0438\u0442\u0443\u0434 \u2014 leak_fit2(_full), \u0433\u0440\u0443\u043f\u043f\u0438\u0440\u043e\u0432\u043a\u0430 \u2014 \u0442\u0430 \u0436\u0435, \u0447\u0442\u043e \u0443 \u043c\u0435\u0442\u043e\u0434\u0430 1.
-    var leak2 = false;                              // режим утечки снят
-    function predicted(r) {
-      if (!leak2) return r.predicted_net;
-      var amp = leak2.keys_before.indexOf(r.nuclide) >= 0 ? leak2.A_before_Bq
-              : leak2.keys_after.indexOf(r.nuclide) >= 0 ? leak2.A_after_Bq
-              : leak2.xray_amp_leak;
-      return r.weight_per_branch * amp * D.meta.live_s;
-    }
+    function predicted(r) { return r.predicted_net; }
     var sorters = {
       contrib: function (a, b) { return predicted(b) - predicted(a); },
       nuclide: function (a, b) {

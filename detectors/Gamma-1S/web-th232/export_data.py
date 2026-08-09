@@ -1186,7 +1186,8 @@ def main():
             raise SystemExit(
                 "%s: есть iso_%s_emit.csv, но нет iso_%s_emitx.csv — "
                 "посчитано сборкой до разделения эмиссии по происхождению "
-                "(R69). Перепрогнать rerun_th232_R61.mac текущим exe."
+                "(R69). Перепрогнать macros/decay_th232_isotopes.mac "
+                "(tools/generate_isotope_macro.py) текущим exe."
                 % (key, key, key))
         else:
             hist_x, N_x = {}, N_iso     # нуклид не эмитирует вовсе — легитимный ноль

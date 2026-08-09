@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Экспорт данных для лёгкой страницы Ra-226 -- ТОЛЬКО метод 2 (по прямому
-указанию оператора 09.08.2026), в двух вариантах библиотеки (отобранная
-I>=2% / полная цепочка), сумм-пики те же в обоих (физика каскада не
-зависит от того, какие ОДИНОЧНЫЕ линии показаны отдельно).
+"""Экспорт данных для страницы Ra-226 -- метод 2 (двух вариантов библиотеки,
+отобранная I>=2% / полная цепочка, сумм-пики те же в обоих) и метод 1
+(МК-шаблоны по нуклидам, добавлен 10.08.2026 -- прогон
+macros/decay_ra226_isotopes.mac, добро оператора).
 
-Метод 1 здесь нет: iso_*.csv по звеньям Ra-226 не прогнаны (задача #182,
-следующий шаг). Схема JSON -- СВОЯ, короче g1s_th232_data.json (нет
-метода 1, нет варианта "cs" по отдельной калибровке цезия, нет масок
-достоверности МК-статистики) -- под лёгкий фронтенд ra226.js, не
-g1s-th232.js.
+Схема JSON остаётся СВОЕЙ, короче g1s_th232_data.json (нет варианта "cs"
+по отдельной калибровке цезия, нет масок достоверности МК-статистики R66)
+-- под фронтенд ra226.js, не g1s-th232.js. run_method1() -- копия
+build_templates()/run_method1() из export_data.py (те объявлены ВНУТРИ
+main(), не переиспользуемы напрямую), логика воспроизведена дословно,
+включая выделение К-рентгена дочерних отдельной сущностью.
 
 Запуск:
     python export_ra226_data.py
@@ -127,6 +128,153 @@ def run_method2(library, sums, resp, e, ch_edges, keys):
     return shape_total, by_nuc_w, lines_out, n_sum_used
 
 
+def load_col(path, name):
+    """{E_keV: counts} по именованной колонке и число распадов прогона --
+    копия одноимённого вложенного помощника export_data.py.main() (та же
+    логика; export_data.py объявляет его ВНУТРИ main(), не переиспользуем
+    напрямую -- см. докстринг run_method2 выше про урезанные копии в этом
+    лёгком конвейере)."""
+    hist, N = {}, None
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        cols = None
+        for ln in fh:
+            if ln.startswith("#"):
+                if "N_primaries" in ln:
+                    N = float(ln.split("=")[1])
+                continue
+            p = ln.rstrip("\n").split(",")
+            if cols is None:
+                cols = p
+                if name not in cols:
+                    raise SystemExit(
+                        "в %s нет колонки %s -- файл посчитан сборкой до "
+                        "разделения по происхождению кванта"
+                        % (os.path.basename(path), name))
+                continue
+            hist[float(p[0])] = float(p[cols.index(name)])
+    if not N:
+        raise SystemExit("в %s нет N_primaries" % path)
+    return hist, N
+
+
+def run_method1(e, ch_edges, T, y_sel, bgm, sel, NUCS):
+    """Метод 1 для Ra-226 -- прогон 10.08.2026 (оператор дал добро после
+    вопроса про ХРИ дочерних, которого в лёгкой странице не было).
+
+    Физика та же, что build_templates()/run_method1() в export_data.py, для
+    Th-232 давно проверена и не переизобретается: `chain_<id>.csv` (полный
+    физический транспорт всей цепочки за один прогон, уже есть в build/,
+    прежняя работа) задаёт АМПЛИТУДУ и полную форму `templ_total`; отдельные
+    `iso_<Nuc>.csv` (свежий прогон, macros/decay_ra226_isotopes.mac) дают
+    только НОРМИРОВАННУЮ долю каждого нуклида в каждом канале -- суммировать
+    их напрямую с амплитудой нельзя (систематика nucleusLimits: одиночный
+    нуклид регистрирует энергию отдачи и вторичные, которых в цепочечном
+    прогоне нет, см. комментарий в export_data.py). К-рентген дочерних
+    (`iso_<Nuc>_shield.csv`, колонка `src_xray`) выделяется вычитанием
+    ТОЧНОГО подмножества по признаку рождения кванта в самом Geant4
+    (model_RDM_AtomicRelaxation), не энергетическим окном -- то самое,
+    что оператор просил учесть в шаблонах нуклидов, не только упомянуть
+    как ограничение.
+
+    Копия, не переиспользование: build_templates/run_method1 в
+    export_data.py объявлены ВНУТРИ main() (замыкание на локальные
+    переменные), импортировать напрямую нельзя -- тот же компромисс, что
+    уже принят для run_method2 в этом файле.
+    """
+    hist_chain, N_chain = ed.load_hist(ed.TEMPLATE_CSV)
+
+    hist_iso = {}
+    missing = []
+    for key, ru, en, col, br, note in NUCS:
+        p = os.path.join(ed.BUILD, "iso_%s.csv" % key)
+        if not os.path.isfile(p):
+            missing.append(key)
+            continue
+        hist_iso[key] = ed.load_hist(p)
+    if missing:
+        raise SystemExit(
+            "Нет МК-шаблонов индивидуальных нуклидов Ra-226: %s\n"
+            "Запустить: cd %s && ./g1s.exe decay_ra226_isotopes.mac vessel 1.60 OISN16"
+            % (missing, ed.BUILD))
+
+    xray_frac_of_branch = {}
+    xray_dep = {}
+    xray_emit = {}
+    for key, ru, en, col, br, note in NUCS:
+        _, N_iso = hist_iso[key]
+        pe = os.path.join(ed.BUILD, "iso_%s_emitx.csv" % key)
+        if os.path.isfile(pe):
+            hist_x, N_x = load_col(pe, "x_atomic")
+        else:
+            hist_x, N_x = {}, N_iso     # нуклид не эмитирует рентген вовсе -- легитимный ноль
+        tot = 0.0
+        for E0, c in hist_x.items():
+            if c <= 0:
+                continue
+            tot += c
+            xray_emit[float(E0)] = xray_emit.get(float(E0), 0.0) + (c / N_x) * br
+        xray_frac_of_branch[key] = (tot / N_x) * br
+
+        ps = os.path.join(ed.BUILD, "iso_%s_shield.csv" % key)
+        if os.path.isfile(ps):
+            hist_d, N_d = load_col(ps, "src_xray")
+        else:
+            hist_d, N_d = {}, N_iso
+        xray_dep[key] = ({E0: c for E0, c in hist_d.items() if c > 0}, N_d)
+    XRAY_TOTAL_PER_BRANCH = sum(xray_frac_of_branch.values())
+
+    keys1 = [k for k, _, _, _, _, _ in NUCS] + ["XRAY"]
+
+    templ_total = ed.broaden_and_rebin(hist_chain, N_chain, ch_edges, True)
+    by_nuc_raw = {}
+    for key, ru, en, col, br, note in NUCS:
+        hist, N = hist_iso[key]
+        by_nuc_raw[key] = ed.broaden_and_rebin(hist, N, ch_edges, True) * br
+    xray_raw = {}
+    for key, ru, en, col, br, note in NUCS:
+        hist_d, N_d = xray_dep[key]
+        xray_raw[key] = ed.broaden_and_rebin(hist_d, N_d, ch_edges, True) * br
+        by_nuc_raw[key] = by_nuc_raw[key] - xray_raw[key]
+        bad = float(by_nuc_raw[key].min())
+        if bad < -1e-9 * float(np.max(np.abs(by_nuc_raw[key])) + 1e-30):
+            raise SystemExit(
+                "%s: рентген больше самого шаблона (%.3e) -- iso_%s.csv и "
+                "iso_%s_shield.csv из разных прогонов" % (key, bad, key, key))
+        by_nuc_raw[key] = np.maximum(by_nuc_raw[key], 0.0)
+    by_nuc_raw["XRAY"] = sum(xray_raw.values())
+    iso_sum = sum(by_nuc_raw.values())
+
+    by_nuc = {}
+    for k in by_nuc_raw:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            share = np.where(iso_sum > 0, by_nuc_raw[k] / iso_sum, 0.0)
+        by_nuc[k] = templ_total * share
+
+    neg = {k: float(v.min()) for k, v in by_nuc.items() if float(v.min()) < -1e-12}
+    if neg:
+        raise SystemExit("отрицательные значения в разложении метода 1: %s" % neg)
+
+    resid = float(np.max(np.abs(sum(by_nuc.values()) - templ_total)))
+    if resid > 1e-6 * float(np.max(templ_total)):
+        raise SystemExit(
+            "XRAY: баланс Σ by_nuc == templ_total нарушен, невязка %.3e" % resid)
+
+    coef, dcoef, chi2, ndof, _ = ed.fit_amplitudes(y_sel, [templ_total[sel] * T, bgm])
+    A_branch, dA_branch, bg_amp = float(coef[0]), float(dcoef[0]), float(coef[1])
+
+    stack = {k: (by_nuc[k] * A_branch * T).tolist() for k in keys1}
+    lines_out = {"template_decays": [{"nuclide": ru, "n": hist_iso[key][1]}
+                                     for key, ru, en, col, br, note in NUCS],
+                "chain_decays": N_chain}
+    return {
+        "A_Bq": A_branch, "dA_Bq": dA_branch,
+        "bg_amplitude": bg_amp, "d_bg_amplitude": float(dcoef[1]),
+        "chi2": chi2, "ndof": ndof, "chi2_ndof": chi2 / ndof,
+        "xray_total_per_branch_pct": 100.0 * XRAY_TOTAL_PER_BRANCH,
+        "n_channels_fit": int(sel.sum()),
+    }, stack, lines_out
+
+
 def main():
     meas, bg = read_pair()
     e = meas["e_of_ch"]
@@ -152,6 +300,19 @@ def main():
     sel = (e >= ed.E_FIT_LO) & (e <= ed.E_FIT_HI)
     y_sel = meas["counts"][sel].astype(float)
     bgm = bg_scaled[sel]
+
+    # ── метод 1: МК-шаблоны по нуклидам (прогон 10.08.2026, добро оператора)
+    m1_result, m1_stack, m1_meta = run_method1(e, ch_edges, T, y_sel, bgm,
+                                               sel, ed.NUCS)
+    print("метод 1: A=%.0f+-%.0f Бк  ratio=%.3f  chi2/ndof=%.2f  "
+          "рентген=%.3f%% на распад ветви"
+          % (m1_result["A_Bq"], m1_result["dA_Bq"],
+             m1_result["A_Bq"] / (ed._CFG["passport"]["bq_per_kg"]
+                                  * ed._CFG["passport"]["mass_g"] / 1000.0
+                                  * ed.decay_factor_years(
+                                        ed._CFG["passport"]["half_life_years"],
+                                        ed._CFG["passport"]["days_pass_to_meas"])),
+             m1_result["chi2_ndof"], m1_result["xray_total_per_branch_pct"]))
 
     keys = [n[0] for n in ed.NUCS]
     lib_full, _ = ed.load_full_library(nuc_keys=set(keys))
@@ -311,9 +472,12 @@ def main():
             "level_note": "Библиотека и сумм-пики -- IAEA Live Chart of "
                           "Nuclides (decay_rads), быстрый проход без "
                           "перекрёстной проверки LNHB, в отличие от "
-                          "библиотеки Th-232. Метод 1 не строился -- "
-                          "МК-шаблоны по нуклидам ветви Ra-226 ещё не "
-                          "прогнаны.",
+                          "библиотеки Th-232. Метод 1 (МК-шаблоны по "
+                          "нуклидам, прогон 10.08.2026) построен, включая "
+                          "К-рентген дочерних отдельной сущностью; "
+                          "статистика слабых звеньев (R66) на порядки ниже, "
+                          "чем у Th-232 (тот прогон занял недели ручной "
+                          "донастройки, этот -- первый заход).",
         },
         # Полный словарь fit_fwhm_calibration -- те же поля, что несёт
         # g1s_th232_data.json (points/n_anchors/fwhm662_law/fwhm662_cs/
@@ -326,17 +490,24 @@ def main():
                     "date_measured": p["measured_date"],
                     "decay_factor": decay_f},
         "nuclides": [{"key": k, "label_ru": label_ru[k], "color": palette[k]}
-                    for k in keys],
+                    for k in keys]
+                   # XRAY -- та же сущность и тот же цвет, что на Th-232
+                   # (export_data.py: {"key":"XRAY","color":"#6b5f4a"}).
+                   + [{"key": "XRAY", "label_ru": "K-рентген",
+                       "color": "#6b5f4a"}],
         "spectrum": {
             "e_of_ch": e.tolist(),
             "counts": meas["counts"].tolist(),
             "bg_counts": bg_scaled.tolist(),
         },
+        "method1": m1_result,
+        "method1_meta": m1_meta,
         "method2_sel": variants["sel"],
         "method2_full": variants["full"],
         "reference_lines": reference_lines,
         "radon_check": radon_check,
     }
+    data["spectrum"]["stack1"] = m1_stack
 
     out = os.path.join(HERE, "g1s_ra226_data.json")
     with open(out, "w", encoding="utf-8") as f:

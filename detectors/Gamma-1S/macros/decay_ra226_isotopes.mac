@@ -1,0 +1,61 @@
+# Отдельные прогоны каждого γ-испускающего звена ветви распада источника ra226.
+# СГЕНЕРИРОВАНО: tools/generate_isotope_macro.py из web-th232/configs/ra226.yaml (geant4.isotope_runs).
+# Руками не редактировать -- правки потеряются при следующей генерации; менять n_events/состав в конфиге.
+#
+# Ключ разделения: nucleusLimits в Geant4 ограничивает диапазон (A_min,A_max,
+# Z_min,Z_max) распадающихся ядер. Задавая один нуклид на прогон, получаем
+# ТОЛЬКО его собственный вклад -- цепочка ниже не пойдёт, ничего к нему не
+# примешается. n_events выбран по каждому звену отдельно (не «побольше
+# всем») -- слабая гамма-ветвь требует на порядки больше распадов на тот же
+# отсчёт в кристалле (см. комментарий в конфиге, R66).
+/run/initialize
+/control/verbose 0
+/run/verbose 0
+/process/had/rdm/verbose 0
+/process/had/rdm/thresholdForVeryLongDecayTime 1.0e+30 ns
+
+/gps/particle ion
+/gps/energy 0 keV
+/gps/pos/type Volume
+/gps/pos/shape Cylinder
+/gps/pos/centre 0 0 16 mm
+/gps/pos/radius 90 mm
+/gps/pos/halfz 60 mm
+/gps/pos/confine Sample
+/gps/ang/type iso
+
+# --- Ra226 (Z=88, A=226) ---
+/process/had/rdm/nucleusLimits 226 226 88 88
+/gps/ion 88 226 0 0
+/g1s/outFile iso_Ra226.csv
+/run/beamOn 3000000
+
+# --- Rn222 (Z=86, A=222) ---
+/process/had/rdm/nucleusLimits 222 222 86 86
+/gps/ion 86 222 0 0
+/g1s/outFile iso_Rn222.csv
+/run/beamOn 3000000
+
+# --- Po218 (Z=84, A=218) ---
+/process/had/rdm/nucleusLimits 218 218 84 84
+/gps/ion 84 218 0 0
+/g1s/outFile iso_Po218.csv
+/run/beamOn 200000
+
+# --- Pb214 (Z=82, A=214) ---
+/process/had/rdm/nucleusLimits 214 214 82 82
+/gps/ion 82 214 0 0
+/g1s/outFile iso_Pb214.csv
+/run/beamOn 200000
+
+# --- Bi214 (Z=83, A=214) ---
+/process/had/rdm/nucleusLimits 214 214 83 83
+/gps/ion 83 214 0 0
+/g1s/outFile iso_Bi214.csv
+/run/beamOn 2000000
+
+# --- Po214 (Z=84, A=214) ---
+/process/had/rdm/nucleusLimits 214 214 84 84
+/gps/ion 84 214 0 0
+/g1s/outFile iso_Po214.csv
+/run/beamOn 200000

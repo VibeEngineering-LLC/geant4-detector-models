@@ -37,6 +37,7 @@ OUT = os.path.join(BUILD, "grid")
 os.makedirs(OUT, exist_ok=True)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gps_region  # noqa: E402
 from grid_energies import LINES  # noqa: E402
 
 N = 400000
@@ -62,12 +63,14 @@ def todo(tag, force=False):
     return left
 
 
-def macro(lines, n, tag):
+def macro(lines, n, tag, rho, matrix):
+    # Тело розыгрыша — из выгрузки ПОСТРОЕННОЙ геометрии, а не константами:
+    # прежние 73/45/16 писались под сосуд из таблицы ЛСРМ и после перехода на
+    # чертёж изготовителя перестали покрывать пробу (R68, R75).
     txt = ["/run/initialize", "/control/verbose 0", "/run/verbose 0",
-           "/gps/particle gamma", "/gps/pos/type Volume",
-           "/gps/pos/shape Cylinder", "/gps/pos/centre 0 0 16 mm",
-           "/gps/pos/radius 73 mm", "/gps/pos/halfz 45 mm",
-           "/gps/pos/confine Sample", "/gps/ang/type iso"]
+           "/gps/particle gamma"]
+    txt += gps_region.gps_lines(BUILD, "vessel", [str(rho), matrix])
+    txt += ["/gps/ang/type iso"]
     for e in lines:
         txt.append("/gps/energy %.3f keV" % e)
         txt.append("/g1s/outFile %s" % os.path.join(OUT, "%s_E%07.1f.csv" % (tag, e)))
@@ -91,7 +94,8 @@ if __name__ == "__main__":
             print("=== %s: всё посчитано ===" % tag, flush=True)
             continue
         mpath = os.path.join(BUILD, "grid_%s.mac" % tag)
-        open(mpath, "w", encoding="utf-8").write(macro(left, N, tag))
+        open(mpath, "w", encoding="utf-8").write(
+            macro(left, N, tag, rho, matrix))
         print("=== %s (%s) : %d энергий x %d событий ==="
               % (tag, matrix, len(left), N), flush=True)
         # ВАЖНО: text=True без encoding декодирует вывод в cp1251 (локаль

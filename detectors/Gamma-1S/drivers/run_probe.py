@@ -25,6 +25,8 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import paths  # noqa: E402
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gps_region  # noqa: E402
 
 
 BUILD = str(paths.build("Gamma-1S"))
@@ -74,29 +76,29 @@ FRAC = (1 - math.cos(math.radians(THETA))) / 2
 # есть смещаем результат ПРОТИВ проверяемой гипотезы (мельче колодец — ниже
 # эффективность). Скан нашёл бы оптимум там, где его нет.
 #
-# Поэтому габарит считается из тех же формул, что и G1SDetector::BuildVessel,
-# и печатается в лог: расхождение с «объём пробы» из вывода модели сразу видно.
-WALL, Z_FACE, R_IN, R_WELL_OUT, SAMPLE_CM3 = 2.0, 41.0, 73.0, 42.0, 1000.0
+# Первая правка повторяла здесь формулы G1SDetector::BuildVessel. Это лечило
+# симптом: формулы повторены — значит, у них два места, и они разойдутся. Так
+# и вышло — константы (R_IN = 73, R_WELL_OUT = 42) писались под сосуд из
+# таблицы ЛСРМ и после перехода на чертёж изготовителя (R68) стали неверны, а
+# скрипт продолжал печатать правдоподобные числа. Теперь габарит снимается с
+# ПОСТРОЕННОЙ геометрии (drivers/gps_region.py): модель строит сосуд с этой
+# глубиной колодца и сама выгружает габарит пробы.
+Z_FACE = 41.0                     # наружная плоскость торца, мм
 
 
-def sample_span(well):
-    """(центр, полувысота) цилиндра, объемлющего пробу, мм. См. BuildVessel."""
-    z_lo = Z_FACE - well + 2 * WALL              # низ пробы (над дном сосуда)
-    ring = math.pi * (R_IN ** 2 - R_WELL_OUT ** 2) * (well - WALL) / 1000.0
-    top_h = (SAMPLE_CM3 - ring) * 1000.0 / (math.pi * R_IN ** 2)
-    z_hi = Z_FACE + WALL + top_h                 # уровень засыпки
-    return 0.5 * (z_lo + z_hi), 0.5 * (z_hi - z_lo)
-
-
-def mac_vol(tag, lines, well):
-    zc, hz = sample_span(well)
-    hz += 0.5                                    # запас на округления
-    print("    колодец %.0f мм: розыгрыш z = %.2f +- %.2f мм"
-          % (well, zc, hz), flush=True)
+def mac_vol(tag, lines, well, args):
+    # Габарит пробы берётся у самой модели: она строит сосуд с ЭТОЙ глубиной
+    # колодца и выгружает построенное (gps_region). Повторять формулы
+    # BuildVessel здесь больше нельзя — их константы (R_IN = 73, R_WELL_OUT =
+    # 42) писались под сосуд из таблицы ЛСРМ и после перехода на чертёж
+    # изготовителя разошлись с моделью (R68, R75).
+    r, zc, hz = gps_region.sample_region(BUILD, args[0], args[1:])
+    print("    колодец %.0f мм: розыгрыш r <= %.2f, z = %.2f +- %.2f мм"
+          % (well, r, zc, hz), flush=True)
     t = ["/run/initialize", "/control/verbose 0", "/run/verbose 0",
          "/gps/particle gamma", "/gps/pos/type Volume",
          "/gps/pos/shape Cylinder", "/gps/pos/centre 0 0 %.2f mm" % zc,
-         "/gps/pos/radius %.1f mm" % R_IN, "/gps/pos/halfz %.2f mm" % hz,
+         "/gps/pos/radius %.2f mm" % r, "/gps/pos/halfz %.2f mm" % hz,
          "/gps/pos/confine Sample", "/gps/ang/type iso"]
     for e in lines:
         t += ["/gps/energy %.3f keV" % e,
@@ -140,8 +142,8 @@ if __name__ == "__main__":
         for w in WELLS:
             tag = "well%.0f" % w
             # маринелли, ОИСН-16 ро=1,6 — как в сверке с .efr
-            run(mac_vol(tag, E_WELL, w),
-                ["vessel:marinelli", "1.6", "OISN16", "1000", "2.0", str(w)],
+            gargs = ["vessel:marinelli", "1.6", "OISN16", "1000", "2.0", str(w)]
+            run(mac_vol(tag, E_WELL, w, gargs), gargs,
                 "колодец %.0f мм" % w)
     if what in ("all", "mgo"):
         for m in MGOS:

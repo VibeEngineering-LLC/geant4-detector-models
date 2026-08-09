@@ -29,14 +29,21 @@
 #  define G1S_GIT_DESCRIBE "БЕЗ-ШТАМПА"
 #endif
 
+#include "G4Box.hh"
 #include "G4Event.hh"
 #include "G4Gamma.hh"
+#include "G4PhysicalVolumeStore.hh"
+#include "G4Polycone.hh"
+#include "G4Tubs.hh"
+#include "G4VPhysicalVolume.hh"
 #include "G4GeneralParticleSource.hh"
 #include "G4EmStandardPhysics_option4.hh"
 #include "G4DecayPhysics.hh"
 #include "G4LogicalVolume.hh"
+#include "G4Navigator.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4PrimaryParticle.hh"
+#include "G4PrimaryVertex.hh"
 #include "G4RadioactiveDecayPhysics.hh"
 #include "G4Run.hh"
 #include "G4RunManagerFactory.hh"
@@ -50,7 +57,9 @@
 #include "G4UserRunAction.hh"
 #include "G4UserSteppingAction.hh"
 #include "G4UserTrackingAction.hh"
+#include "G4PhysicsModelCatalog.hh"
 #include "G4Track.hh"
+#include "G4TransportationManager.hh"
 #include "G4VProcess.hh"
 #include "G4VModularPhysicsList.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
@@ -58,6 +67,9 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <fstream>
+#include <set>
+#include <sstream>
 #include <cstdlib>
 #include <string>
 #include <vector>
@@ -88,7 +100,162 @@ public:
     const double th = src->GetAngDist()->GetMaxTheta();
     return 0.5 * (1.0 - std::cos(th));
   }
+
+  // Тело розыгрыша и ограничение по объёму — как их видит САМ генератор после
+  // исполнения макроса. Спрашивать надо у него, а не разбирать макрос: макрос
+  // может быть собран драйвером на лету, склеен из нескольких файлов или
+  // переопределён следующей командой.
+  struct Region {
+    G4String vol;          // имя тома в /gps/pos/confine, пусто — ограничения нет
+    bool active = false;   // ограничение ДЕЙСТВУЕТ (том найден в этом режиме)
+    G4String type, shape;  // Volume / Cylinder и т.п.
+    G4ThreeVector centre;
+    double radius = 0, halfz = 0;
+  };
+
+  Region Confinement() {
+    Region r;
+    auto* src = fGPS.GetCurrentSource();
+    if (!src || !src->GetPosDist()) return r;
+    auto* p = src->GetPosDist();
+    r.vol = p->GetConfineVolume();
+    if (r.vol == "NULL") r.vol = "";
+    r.active = p->GetConfined();
+    r.type = p->GetPosDisType();
+    r.shape = p->GetPosDisShape();
+    r.centre = p->GetCentreCoords();
+    r.radius = p->GetRadius();
+    r.halfz = p->GetHalfZ();
+    return r;
+  }
 };
+
+// Сторож области розыгрыша: тело /gps/pos против confine-тома.
+//
+// Ловит ДВА дефекта одного семейства, каждый из которых уже стоил недель.
+//
+//   R61. Том назван, но в текущем режиме не построен. Geant4 печатает
+//   «Volume <...> does not exist / Ignoring confine condition» и МОЛЧА
+//   продолжает: ограничение снято, розыгрыш идёт по всему телу /gps/pos,
+//   включая детектор. Восемь шаблонов разложения по нуклидам так и были
+//   посчитаны — 12,5 % распадов родились внутри кристалла NaI.
+//
+//   R75. Том построен, но тело розыгрыша МЕНЬШЕ него. Ограничение по объёму
+//   лишние точки отбрасывает, недостающих не добавляет: часть пробы не
+//   облучается вовсе. После перехода сосуда Маринелли на чертёж изготовителя
+//   (проба до r = 75 и до z = +65,2) прежнее тело r = 73, z ∈ [−29; +61]
+//   теряло наружное кольцо 2 мм и верхние 4 мм — ровно самые дальние от
+//   кристалла области, отчего эффективность выходила завышенной.
+//
+// Оба дефекта беззвучны: имя выходного файла, его формат и порядок величин
+// не меняются. Поэтому проверка стоит В МОДЕЛИ и роняет прогон, а не живёт
+// отдельным скриптом, мимо которого можно написать следующий макрос.
+//
+// Возвращает строку для шапки спектра: чем ограничен розыгрыш и каким телом.
+// Тома, названные в /gps/pos/confine ТЕКСТОМ макроса. Спрашивать об этом
+// генератор бесполезно: G4SPSPosDistribution::ConfineSourceToVolume, не найдя
+// тома, ставит VolName = "NULL" и Confine = false, то есть стирает сам факт,
+// что ограничение запрашивалось. После этого «ограничения нет» и «ограничение
+// молча снято» с точки зрения генератора неразличимы — а это ровно те два
+// состояния, которые надо развести (R61).
+static std::vector<G4String> MacroConfineVolumes(const std::string& path,
+                                                 int depth = 0) {
+  std::vector<G4String> out;
+  if (depth > 4) return out;                 // защита от кольцевых include
+  std::ifstream f(path);
+  if (!f) return out;
+  std::string ln;
+  while (std::getline(f, ln)) {
+    std::istringstream is(ln);
+    std::string cmd, arg;
+    if (!(is >> cmd)) continue;
+    if (cmd == "#" || cmd[0] == '#') continue;
+    if (cmd == "/gps/pos/confine" && (is >> arg) && arg != "NULL")
+      out.push_back(arg);
+    else if (cmd == "/control/execute" && (is >> arg))
+      for (const auto& v : MacroConfineVolumes(arg, depth + 1))
+        out.push_back(v);
+  }
+  return out;
+}
+
+static G4String CheckConfinement(const Primary::Region& r,
+                                 const std::vector<G4String>& asked) {
+  // Сначала — по тексту макроса: том, который в этом режиме не построен.
+  for (const auto& v : asked) {
+    if (G4PhysicalVolumeStore::GetInstance()->GetVolume(v, false)) continue;
+    G4ExceptionDescription d;
+    d << "/gps/pos/confine " << v << ": тома с таким именем в построенной "
+         "геометрии НЕТ. Geant4 в этом случае печатает «Volume <" << v
+      << "> does not exist / Ignoring confine condition» и продолжает счёт: "
+         "ограничение снято, розыгрыш идёт по всему телу /gps/pos, включая "
+         "детектор.\nПроверить режим (аргумент 2): том Sample строится только "
+         "в режимах vessel*.";
+    G4Exception("CheckConfinement", "G1S_CONFINE_MISSING", FatalException, d);
+  }
+
+  if (r.vol.empty()) return asked.empty() ? "нет" : "снято";
+
+  if (!r.active) {
+    G4ExceptionDescription d;
+    d << "/gps/pos/confine " << r.vol << ": ограничение по объёму не действует.";
+    G4Exception("CheckConfinement", "G1S_CONFINE_MISSING", FatalException, d);
+    return "снято";
+  }
+
+  auto* pv = G4PhysicalVolumeStore::GetInstance()->GetVolume(r.vol, false);
+  if (!pv || !pv->GetLogicalVolume()) return r.vol + " (габарит не снят)";
+  auto* sol = pv->GetLogicalVolume()->GetSolid();
+  G4ThreeVector lo, hi;
+  sol->BoundingLimits(lo, hi);
+  const G4ThreeVector t = pv->GetObjectTranslation();
+  const double zlo = (lo.z() + t.z()) / mm, zhi = (hi.z() + t.z()) / mm;
+
+  // Радиус тела берётся у самого тела, а не из габаритной коробки: у коробки
+  // угол лежит на r·√2, и цилиндрический розыгрыш требовалось бы делать в
+  // полтора раза шире без всякой нужды.
+  double rmax = 0;
+  if (auto* tb = dynamic_cast<G4Tubs*>(sol)) {
+    rmax = tb->GetOuterRadius();
+  } else if (auto* pc = dynamic_cast<G4Polycone*>(sol)) {
+    const auto* op = pc->GetOriginalParameters();
+    for (G4int i = 0; i < op->Num_z_planes; ++i)
+      rmax = std::max(rmax, op->Rmax[i]);
+  } else {
+    rmax = std::max(std::max(std::abs(lo.x()), std::abs(hi.x())),
+                    std::max(std::abs(lo.y()), std::abs(hi.y())));
+  }
+  rmax = rmax / mm + std::hypot(t.x(), t.y()) / mm;
+
+  char buf[320];
+  if (r.type != "Volume" || r.shape != "Cylinder") {
+    // Судить не берёмся, но и молчать нельзя: строка уйдёт в шапку спектра.
+    std::snprintf(buf, sizeof(buf), "%s (розыгрыш %s/%s, покрытие не проверено)",
+                  r.vol.c_str(), r.type.c_str(), r.shape.c_str());
+    return buf;
+  }
+
+  const double cz = r.centre.z() / mm;
+  const double off = std::hypot(r.centre.x(), r.centre.y()) / mm;
+  const double rr = r.radius / mm, hz = r.halfz / mm;
+  const bool covered = (rr >= rmax + off) && (cz - hz <= zlo) && (cz + hz >= zhi);
+
+  std::snprintf(buf, sizeof(buf),
+                "%s: том r<=%.1f z %.1f..%.1f; розыгрыш r<=%.1f z %.1f..%.1f%s",
+                r.vol.c_str(), rmax, zlo, zhi, rr, cz - hz, cz + hz,
+                covered ? "" : " — НЕ ПОКРЫВАЕТ");
+  if (!covered && !std::getenv("G1S_ALLOW_PARTIAL_CONFINE")) {
+    G4ExceptionDescription d;
+    d << "Тело розыгрыша /gps/pos не покрывает том " << r.vol << ".\n" << buf
+      << "\nОграничение по объёму лишние точки отбрасывает, но недостающих не "
+         "добавляет: часть тома не будет облучена вовсе, и эффективность "
+         "выйдет смещённой.\nРасширить /gps/pos/radius и /gps/pos/halfz до "
+         "габарита тома с запасом.\nОсознанный прогон по части тома: "
+         "G1S_ALLOW_PARTIAL_CONFINE=1.";
+    G4Exception("CheckConfinement", "G1S_CONFINE_PARTIAL", FatalException, d);
+  }
+  return buf;
+}
 
 // Время разрешения тракта: энерговыделения, разнесённые больше чем на столько,
 // считаются РАЗНЫМИ срабатываниями спектрометра. Подробно — перед EventAct.
@@ -157,6 +324,16 @@ public:
   // суммирование — чтобы выход линии p_gamma брать из ТОЙ ЖЕ базы
   // PhotonEvaporation, что и транспорт, а не вписывать из справочника руками.
   std::vector<long> fEmit;
+  // Та часть fEmit, что родилась атомной релаксацией (K-, L-серии дочернего
+  // атома), а не ядерной деэксцитацией. Подмножество, а не отдельный счёт:
+  // вычитанием получается чисто ядерная часть, и сумма сходится по построению.
+  std::vector<long> fEmitX;
+  // Имена моделей, породивших испущенные кванты, — для проверки самого
+  // признака: при G1S_DUMP_MODELS=1 печатаются в конце прогона. Без такой
+  // печати классификация опиралась бы на память об именах моделей Geant4,
+  // а не на то, что каталог отдаёт в этой сборке.
+  std::set<G4String> fEmitModels, fEmitXModels;
+  bool fDumpModels = std::getenv("G1S_DUMP_MODELS") != nullptr;
   // Разложение отклика по каналам взаимодействия (см. enum Chan выше).
   // Канал ставится В МОМЕНТ СОБЫТИЯ по истории процессов: из готового
   // спектра его восстановить нельзя, форма к тому времени уже сложена.
@@ -170,21 +347,76 @@ public:
   // только «из каких исходников собран exe», и два спектра, различающиеся
   // глубиной колодца или матрицей, выглядят одинаково прослеженными.
   G4String fArgs = "?";
+  // Чем ограничен розыгрыш и покрывает ли его тело этот том — строкой в шапку
+  // спектра. Заполняется сторожем CheckConfinement на старте каждого прогона.
+  G4String fConfine = "?";
+  // Тома, названные в /gps/pos/confine текстом макроса, — снимаются до его
+  // исполнения (см. MacroConfineVolumes).
+  std::vector<G4String> fMacroConfine;
   // Доля телесного угла розыгрыша (1−cos θ)/2 при конусе, иначе 1. Прямой
   // множитель на eps конусных сеток; сообщает его тот, кто разыгрывал.
   // Спрашивается в EndOfRunAction, а не при настройке: угол задаётся макросом,
   // то есть ПОСЛЕ создания действий, и опрос до /run/beamOn вернул бы значение
   // по умолчанию — молча и правдоподобно.
   double fSolidAngleFrac = 1.0;
+  // Первичные вершины, попавшие ВНУТРЬ кристалла. Всегда обязан быть нулём:
+  // источник в этой модели — проба или внешний пучок, но не сам детектор.
+  // Сторож заведён по разбору R61: макрос запирал источник в объём пробы
+  // (/gps/pos/confine Sample), а прогон шёл в режиме без сосуда, где тома
+  // «Sample» нет вовсе. Geant4 на несуществующий том в confine печатает
+  // предупреждение и МОЛЧА снимает ограничение — розыгрыш пошёл по всему
+  // сырому цилиндру, и 12,5 % распадов родились в NaI. Восемь шаблонов
+  // разложения по нуклидам оказались негодны, и заметили это только по
+  // «лишнему» горбу на графике вебки, спустя недели. Предупреждение в
+  // потоке вывода такой прогон не остановило: его никто не читает.
+  long fSrcInCrystal = 0;
+  // Срабатывания, вызванные вторичным квантом, РОДИВШИМСЯ В СВИНЦЕ ЗАЩИТЫ, —
+  // характеристическое рентгеновское излучение (ХРИ) свинца, K-серия 72,8 /
+  // 75,0 / 84,9 / 87,3 кэВ. Это НЕ излучение пробы: свинец флуоресцирует под
+  // квантами пробы и фона, и его линии лежат ровно там же, где K-серия
+  // дочерних ряда. Разделять их по энергии нельзя, по МЕСТУ РОЖДЕНИЯ — можно,
+  // и это делает МК, а не модель постфактум (разбор R69: прежняя сущность
+  // рентгена отбиралась окном 60-110 кэВ и забирала ядерные гамма-линии
+  // Th-228 84,4 и Th-232 63,8, а вычитание резалось по нулю).
+  //
+  // Разбиение по СРАБАТЫВАНИЯМ, не по энергии: срабатывание целиком
+  // относится к ХРИ защиты, если хоть часть его энергии принёс квант
+  // свинцового происхождения. Смешанные срабатывания редки (квант 75-87 кэВ
+  // поглощается целиком), доля объявлена полем в шапке.
+  std::vector<long> fPbX;    // флуоресценция свинца защиты
+  std::vector<long> fShX;    // обратное рассеяние в защите
+  std::vector<long> fSrcX;   // рентген атомной релаксации самой пробы
+  long fPbXHits = 0;
+  long fShXHits = 0;
+  long fSrcXHits = 0;
   Primary* fPrimary = nullptr;
   G4String fOut = "spectrum.csv";
 
   RunAct() : fHist(kBins + 1, 0), fEmit(kBins + 1, 0),
-             fChan(kNChan, std::vector<long>(kBins + 1, 0)) {}
+             fEmitX(kBins + 1, 0),
+             fChan(kNChan, std::vector<long>(kBins + 1, 0)),
+             fPbX(kBins + 1, 0), fShX(kBins + 1, 0),
+             fSrcX(kBins + 1, 0) {}
 
   void BeginOfRunAction(const G4Run*) override {
+    // Проверка ДО первого события: смысла считать час, чтобы потом узнать, что
+    // источник разыгран не по пробе, нет. Спрашивается каждый раз, а не один
+    // раз за прогон: в макросе несколько /run/beamOn, и между ними том или
+    // тело розыгрыша могут смениться.
+    if (fPrimary) fConfine = CheckConfinement(fPrimary->Confinement(),
+                                              fMacroConfine);
     std::fill(fHist.begin(), fHist.end(), 0L);
     std::fill(fEmit.begin(), fEmit.end(), 0L);
+    std::fill(fEmitX.begin(), fEmitX.end(), 0L);
+    fEmitModels.clear();
+    fEmitXModels.clear();
+    std::fill(fPbX.begin(), fPbX.end(), 0L);
+    std::fill(fShX.begin(), fShX.end(), 0L);
+    std::fill(fSrcX.begin(), fSrcX.end(), 0L);
+    fSrcInCrystal = 0;
+    fPbXHits = 0;
+    fShXHits = 0;
+    fSrcXHits = 0;
     for (auto& c : fChan) std::fill(c.begin(), c.end(), 0L);
     fWithSignal = 0;
     fSumEprim = 0;
@@ -198,18 +430,42 @@ public:
     ++fEmit[b];
   }
 
+  // Испущенное при распаде, РАЗДЕЛЁННОЕ ПО ПРОИСХОЖДЕНИЮ: рентген атомной
+  // релаксации против гаммы ядерной деэксцитации. Разделение принципиально:
+  // в полосе 60-110 кэВ лежат и K-серии Z = 80…83, и ядерные линии Th-228
+  // 84,373 и Th-232 63,8. Отбор по энергетическому окну их не различает и
+  // отдаёт ядерные линии рентгену — то есть лишает Th-228 единственной
+  // наблюдаемой линии (разбор R69). Здесь признак берётся у самого Geant4:
+  // трек несёт идентификатор породившей его МОДЕЛИ.
+  void FillEmitX(double eKeV) {
+    if (eKeV <= 0) return;
+    int b = static_cast<int>(eKeV / kBinKeV);
+    if (b > kBins) b = kBins;
+    ++fEmitX[b];
+  }
+
   // Энергия первичной частицы учитывается ОДИН раз на событие Geant4, а Fill()
   // вызывается по разу на каждое РАЗДЕЛЁННОЕ ВО ВРЕМЕНИ срабатывание внутри
   // события (см. EventAct). Раньше это было одной функцией, и при переходе к
   // разделению E_prim_keV множился бы на число срабатываний.
   void FillPrimary(double eprim) { fSumEprim += eprim; }
 
-  void Fill(double edepKeV, int chan = -1) {
+  // Классификация срабатывания по защите ВЗАИМОИСКЛЮЧАЮЩАЯ и приоритетная:
+  // флуоресценция сильнее рассеяния. Иначе сумма трёх вкладов (проба,
+  // рассеяние, флуоресценция) перестала бы равняться полному спектру.
+  void Fill(double edepKeV, int chan = -1, bool fromPb = false,
+            bool fromShield = false, bool fromSrcX = false) {
     if (edepKeV <= 0) return;
     ++fWithSignal;
     int b = static_cast<int>(edepKeV / kBinKeV);
     if (b > kBins) b = kBins;
     ++fHist[b];
+    if (fromPb)            { ++fPbX[b]; ++fPbXHits; }
+    else if (fromShield)   { ++fShX[b]; ++fShXHits; }
+    // Рентген пробы — ОТДЕЛЬНЫЙ признак, не входящий в приоритетную цепочку
+    // «свинец → защита»: он относится к самой пробе и вычитается из шаблона
+    // её нуклида, тогда как первые два вычитаются из отклика как чужой вклад.
+    if (fromSrcX)          { ++fSrcX[b]; ++fSrcXHits; }
     if (chan >= 0 && chan < kNChan) ++fChan[chan][b];
   }
 
@@ -236,6 +492,10 @@ public:
     // этом же файле названа главным подозреваемым. Найдено независимым
     // аудитом: печатался mode и ни один из позиционных аргументов.
     std::fprintf(f, "# run_args = %s\n", fArgs.c_str());
+    // Чем ограничен розыгрыш и покрывает ли его тело этот том. В шапке, а не
+    // только в консоли: спектр переживает лог, а вопрос «по всей ли пробе
+    // разыгран источник» задаётся к файлу спустя недели (разбор R61 и R75).
+    std::fprintf(f, "# confine = %s\n", fConfine.c_str());
     // Доля телесного угла розыгрыша: конусные сетки приводятся делением на неё,
     // то есть это ПРЯМОЙ множитель на каждую точечную eps. Прежде он лежал в
     // отдельном файле, который писал драйвер, и в цепочку провенанса не входил
@@ -249,6 +509,17 @@ public:
     // N_with_signal может превысить N_primaries. Это не ошибка, а счёт
     // импульсов на распад родителя — именно так задана паспортная активность.
     std::fprintf(f, "# N_with_signal = %ld\n", fWithSignal);
+    // Сторож «источник в детекторе» в шапке, а не только в консоли: спектр
+    // переживает лог, и вопрос «а этот файл прогнан со сторожем?» должен
+    // отвечаться по самому файлу. Ноль — прогон проверен; поля нет — файл
+    // старше сторожа и доверия не заслуживает (разбор R61).
+    std::fprintf(f, "# src_in_crystal = %ld\n", fSrcInCrystal);
+    // Срабатываний от ХРИ свинца защиты — подмножество N_with_signal.
+    // Их спектр лежит отдельным файлом *_shield.csv (колонка pb_fluor) и
+    // ВЫЧИТАЕТСЯ из шаблона нуклида читающей стороной: разбиение точное, по
+    // месту рождения кванта, без подгонки формы (см. разбор R69).
+    std::fprintf(f, "# pbx_hits = %ld\n", fPbXHits);
+    std::fprintf(f, "# shx_hits = %ld\n", fShXHits);
     std::fprintf(f, "# resolving_time_ns = %.0f\n", kResolvingTimeNs);
     std::fprintf(f, "# bin_keV = %.3f  (последний канал = переполнение)\n", kBinKeV);
     std::fprintf(f, "E_keV,counts\n");
@@ -301,6 +572,54 @@ public:
                << " — правило приоритета неполно" << G4endl;
     }
 
+    // --- вклад защиты, отдельным файлом ---
+    // Две колонки: флуоресценция свинца и обратное рассеяние в защите.
+    // Это ПОДМНОЖЕСТВА полного спектра, отобранные по истории трека, а не
+    // модельные формы. Читающая сторона вычитает их из шаблона нуклида —
+    // разбиение точное, обрезки по нулю быть не может (в отличие от
+    // прежней сущности рентгена по энергетическому окну, разбор R69).
+    if (fPbXHits || fShXHits || fSrcXHits) {
+      G4String sn = fOut;
+      const size_t dot = sn.rfind('.');
+      sn = (dot == G4String::npos ? sn : sn.substr(0, dot)) + "_shield.csv";
+      FILE* g = std::fopen(sn.c_str(), "w");
+      if (g) {
+        std::fprintf(g, "# вклад защиты, отобран по истории трека\n");
+        std::fprintf(g, "#   pb_fluor — квант родился в свинце (K-серия Pb "
+                        "72,8/75,0/84,9/87,3 кэВ)\n");
+        std::fprintf(g, "#   sh_scat  — квант побывал в защите и вернулся "
+                        "(обратное рассеяние)\n");
+        std::fprintf(g, "#   src_xray — энергию принёс рентген атомной "
+                        "релаксации САМОЙ пробы (K-, L-серии дочерних атомов "
+                        "ряда)\n");
+        std::fprintf(g, "# первые два признака взаимоисключающие, "
+                        "флуоресценция приоритетнее рассеяния\n");
+        std::fprintf(g, "# src_xray — ОТДЕЛЬНЫЙ признак, к первым двум не "
+                        "относится: это вклад самой пробы, и вычитается он "
+                        "из шаблона её нуклида\n");
+        std::fprintf(g, "# отбор по модели-родителю трека, а НЕ по "
+                        "энергетическому окну: окно 60-110 кэВ забирало "
+                        "ядерные линии Th-228 84,4 и Th-232 63,8 (R69)\n");
+        std::fprintf(g, "# src_sha1 = %s\n", G1S_SRC_SHA1);
+        std::fprintf(g, "# mode = %s\n", fMode.c_str());
+        std::fprintf(g, "# run_args = %s\n", fArgs.c_str());
+        std::fprintf(g, "# src_in_crystal = %ld\n", fSrcInCrystal);
+        std::fprintf(g, "# N_primaries = %ld\n", N);
+        std::fprintf(g, "# pbx_hits = %ld\n", fPbXHits);
+        std::fprintf(g, "# shx_hits = %ld\n", fShXHits);
+        std::fprintf(g, "# srcx_hits = %ld\n", fSrcXHits);
+        std::fprintf(g, "E_keV,pb_fluor,sh_scat,src_xray\n");
+        for (int i = 0; i <= kBins; ++i)
+          if (fPbX[i] || fShX[i] || fSrcX[i])
+            std::fprintf(g, "%.1f,%ld,%ld,%ld\n", (i + 0.5) * kBinKeV,
+                         fPbX[i], fShX[i], fSrcX[i]);
+        std::fclose(g);
+      }
+      G4cout << "SHIELD флуоресценция " << fPbXHits << ", рассеяние "
+             << fShXHits << ", рентген пробы " << fSrcXHits << " из "
+             << fWithSignal << " срабатываний" << G4endl;
+    }
+
     // Спектр испускания — отдельным файлом, если он не пуст (прогон распада)
     long emitted = 0;
     for (long c : fEmit) emitted += c;
@@ -316,6 +635,16 @@ public:
         std::fprintf(g, "# src_sha1 = %s\n", G1S_SRC_SHA1);
         std::fprintf(g, "# git_describe = %s\n", G1S_GIT_DESCRIBE);
         std::fprintf(g, "# build = %s %s\n", __DATE__, __TIME__);
+        // Режим и сторож — и здесь, теми же именами полей. Спектр испускания
+        // от положения источника не зависит (проверено при разборе R61:
+        // дефект, менявший депозитные спектры в 3-8 раз, сдвинул выход
+        // K-серии на 0,29 %), и проверка ему физически не нужна. Поля всё
+        // равно пишутся: читающая сторона не должна знать, для какого файла
+        // проверку можно пропустить, — исключение «этот не проверяем» и есть
+        // тот механизм, которым R61 прожил недели.
+        std::fprintf(g, "# mode = %s\n", fMode.c_str());
+        std::fprintf(g, "# run_args = %s\n", fArgs.c_str());
+        std::fprintf(g, "# src_in_crystal = %ld\n", fSrcInCrystal);
         std::fprintf(g, "# N_primaries = %ld\n", N);
         std::fprintf(g, "E_keV,counts\n");
         for (int i = 0; i <= kBins; ++i)
@@ -324,6 +653,49 @@ public:
       }
       G4cout << "EMIT всего " << emitted << " квантов на " << N
              << " распадов -> " << en << G4endl;
+
+      // --- эмиссия, разделённая по происхождению кванта ---
+      // Отдельным файлом, как _chan.csv и _shield.csv: формат «E_keV,counts»
+      // основного файла читают все скрипты дерева.
+      long emx = 0;
+      for (long c : fEmitX) emx += c;
+      G4String xn = (dot == G4String::npos ? fOut : fOut.substr(0, dot))
+                  + "_emitx.csv";
+      FILE* h = std::fopen(xn.c_str(), "w");
+      if (h) {
+        std::fprintf(h, "# испущенное при распаде, разделённое по "
+                        "происхождению кванта, на %ld распадов\n", N);
+        std::fprintf(h, "#   x_atomic  — рентген атомной релаксации "
+                        "(K-, L-серии дочернего атома)\n");
+        std::fprintf(h, "#   g_nuclear — гамма ядерной деэксцитации\n");
+        std::fprintf(h, "# признак — модель Geant4, породившая трек "
+                        "(G4Track::GetCreatorModelID), не энергетическое "
+                        "окно (разбор R69)\n");
+        std::fprintf(h, "# сумма колонок равна counts из _emit.csv "
+                        "по построению\n");
+        std::fprintf(h, "# src_sha1 = %s\n", G1S_SRC_SHA1);
+        std::fprintf(h, "# git_describe = %s\n", G1S_GIT_DESCRIBE);
+        std::fprintf(h, "# mode = %s\n", fMode.c_str());
+        std::fprintf(h, "# run_args = %s\n", fArgs.c_str());
+        std::fprintf(h, "# src_in_crystal = %ld\n", fSrcInCrystal);
+        std::fprintf(h, "# N_primaries = %ld\n", N);
+        std::fprintf(h, "# x_atomic_total = %ld\n", emx);
+        std::fprintf(h, "E_keV,x_atomic,g_nuclear\n");
+        for (int i = 0; i <= kBins; ++i)
+          if (fEmit[i])
+            std::fprintf(h, "%.1f,%ld,%ld\n", (i + 0.5) * kBinKeV,
+                         fEmitX[i], fEmit[i] - fEmitX[i]);
+        std::fclose(h);
+      }
+      G4cout << "EMITX рентген атомной релаксации " << emx << " из "
+             << emitted << G4endl;
+      if (fDumpModels) {
+        G4cout << "MODELS ядерные:";
+        for (const auto& s : fEmitModels) G4cout << " [" << s << "]";
+        G4cout << G4endl << "MODELS рентген:";
+        for (const auto& s : fEmitXModels) G4cout << " [" << s << "]";
+        G4cout << G4endl;
+      }
     }
 
     G4cout << "RESULT E_keV= " << fSumEprim / N << " N= " << N
@@ -352,8 +724,43 @@ public:
 class EventAct : public G4UserEventAction {
   RunAct* fRun;
 public:
-  // (глобальное время, кэВ) по каждому шагу в кристалле
-  std::vector<std::pair<double, double>> fDep;
+  // (глобальное время, кэВ, «принесено квантом свинцового происхождения»)
+  // по каждому шагу в кристалле
+  struct Dep {
+    double t, e;
+    bool pb;    // принесено квантом, родившимся в свинце (флуоресценция)
+    bool sh;    // принесено квантом, побывавшим в защите (рассеяние)
+    bool xr;    // принесено рентгеном атомной релаксации САМОЙ пробы
+    bool operator<(const Dep& o) const { return t < o.t; }
+  };
+  std::vector<Dep> fDep;
+
+  // Защита участвует в отклике ДВУМЯ разными способами, и оба до сих пор
+  // сидели внутри шаблонов нуклидов неразличимо:
+  //
+  //   fPbBorn      — квант РОДИЛСЯ в свинце: характеристическое излучение
+  //                  свинца, K-серия 72,8 / 75,0 / 84,9 / 87,3 кэВ.
+  //                  Тормозное на этих энергиях пренебрежимо, рассеянный
+  //                  квант новым треком не становится, поэтому «рождение
+  //                  в свинце» и есть флуоресценция.
+  //   fShieldSeen  — квант ПОБЫВАЛ в любом теле защиты (Pb, Cd, Cu, сталь)
+  //                  и вернулся в кристалл: обратное рассеяние. Даёт
+  //                  характерный горб около 200-250 кэВ и подложку.
+  //
+  // Оба признака наследуются потомками. Разделять эти вклады по ЭНЕРГИИ
+  // нельзя: ХРИ свинца ложится ровно на K-серию дочерних ряда, а обратное
+  // рассеяние — на комптоновскую подложку. По ИСТОРИИ ТРЕКА можно, и знает
+  // её только МК. Приоритет при классификации срабатывания: флуоресценция
+  // сильнее рассеяния, рассеяние сильнее «чистой пробы».
+  std::set<int> fPbBorn;
+  std::set<int> fShieldSeen;
+  // Кванты рентгена атомной релаксации САМОЙ пробы (K-, L-серии дочерних
+  // атомов ряда) и их потомки. Тот же приём, что fPbBorn, но признак берётся
+  // не по материалу рождения, а по модели-родителю: релаксация идёт в том же
+  // объёме, что и ядерный распад, и по месту их не различить. Нужен, чтобы
+  // рентген выделялся отдельной сущностью ТОЧНО, вычитанием подмножества, а
+  // не приближённой формой по энергетическому окну (разбор R69).
+  std::set<int> fXrayBorn;
 
   // Признаки истории события для разложения по каналам. Ставятся в Stepping.
   // Без fChargedIn/fBeta (были у ASN16 — там источник бета-активен через
@@ -369,11 +776,60 @@ public:
   double fEXrayEsc = 0;    // энергия вылетевших прочих вторичных гамма, кэВ
   bool fPrimEsc = false;   // сам первичный квант вышел из кристалла
 
+  // Сторож «источник в детекторе» (см. RunAct::fSrcInCrystal). Проставляется
+  // из main() ПОСЛЕ rm->Initialize(): до неё геометрии ещё нет и fCrystalLV
+  // равен nullptr. Навигатор свой, отдельный от трекингового: тот в момент
+  // конца события хранит состояние последнего шага, и запрос точки по нему
+  // сбил бы транспорт.
+  const G4LogicalVolume* fCry = nullptr;
+  G4Navigator fNav;
+  bool fNavReady = false;
+
   explicit EventAct(RunAct* r) : fRun(r) {}
   void BeginOfEventAction(const G4Event*) override {
     fDep.clear();
+    // ОБА множества чистить обязательно: идентификаторы треков в каждом
+    // событии начинаются заново с единицы, и несброшенное множество через
+    // десяток событий содержит почти все возможные идентификаторы. Поймано
+    // прогоном: доля «рассеяния в защите» вышла 99,8 % вместо единиц
+    // процентов. Сначала был обратный промах — признак рассеяния не
+    // заполнялся в Stepping вовсе и давал строгий ноль.
+    fPbBorn.clear();
+    fShieldSeen.clear();
+    fXrayBorn.clear();
     fFirst = 0; fHadRayl = false; fNCompt = 0; fHadConv = false;
     fNAnnihEsc = 0; fEBremEsc = 0; fEXrayEsc = 0; fPrimEsc = false;
+  }
+
+  // Где родилась первичная частица. Ноль событий в кристалле — условие
+  // осмысленности прогона; одно такое событие роняет прогон немедленно,
+  // не через час счёта и не молча в предупреждении (разбор R61).
+  void CheckSourcePlacement(const G4Event* e) {
+    if (!fCry || e->GetNumberOfPrimaryVertex() == 0) return;
+    if (!fNavReady) {
+      auto* tm = G4TransportationManager::GetTransportationManager();
+      fNav.SetWorldVolume(tm->GetNavigatorForTracking()->GetWorldVolume());
+      fNavReady = true;
+    }
+    const G4ThreeVector pos = e->GetPrimaryVertex(0)->GetPosition();
+    const G4VPhysicalVolume* pv =
+        fNav.LocateGlobalPointAndSetup(pos, nullptr, false, true);
+    if (!pv || pv->GetLogicalVolume() != fCry) return;
+    ++fRun->fSrcInCrystal;
+    if (std::getenv("G1S_ALLOW_SOURCE_IN_CRYSTAL")) return;
+    G4ExceptionDescription d;
+    d << "Первичная частица рождена ВНУТРИ кристалла NaI: ("
+      << pos.x() / mm << ", " << pos.y() / mm << ", " << pos.z() / mm
+      << ") мм. Источник в этой модели — проба или внешний пучок, но не сам "
+         "детектор.\nТипичная причина: /gps/pos/confine <том> назван в макросе, "
+         "а том в текущем режиме геометрии не построен — Geant4 снимает "
+         "ограничение молча, и розыгрыш идёт по всему заданному телу.\n"
+         "Проверить: режим прогона (аргумент 2) строит нужный том? Для "
+         "confine Sample нужен режим vessel.\n"
+         "Осознанный прогон с источником в кристалле: G1S_ALLOW_SOURCE_IN_"
+         "CRYSTAL=1.";
+    G4Exception("EventAct::CheckSourcePlacement", "G1S_SRC_IN_CRYSTAL",
+                FatalException, d);
   }
 
   // Канал по правилу приоритета (см. enum Chan). Возвращает индекс канала.
@@ -392,6 +848,7 @@ public:
   }
 
   void EndOfEventAction(const G4Event* e) override {
+    CheckSourcePlacement(e);
     double ep = 0;
     if (e->GetNumberOfPrimaryVertex() > 0) {
       auto* p = e->GetPrimaryVertex(0)->GetPrimary(0);
@@ -412,16 +869,25 @@ public:
     // сортировка обязательна: без неё группировка развалится на первом же
     // треке, начавшемся раньше предыдущего.
     std::sort(fDep.begin(), fDep.end());
-    double sum = fDep[0].second, t0 = fDep[0].first;
+    // Признак «свинцовое» ставится на СРАБАТЫВАНИЕ целиком, если хоть часть
+    // его энергии принёс квант, родившийся в свинце. Смешанные срабатывания
+    // редки: квант K-серии свинца 73-88 кэВ поглощается в NaI целиком и с
+    // квантом пробы в одно срабатывание попадает лишь при наложении.
+    // Огрубление объявлено; его цена меряется полем pbx_hits в шапке.
+    double sum = fDep[0].e, t0 = fDep[0].t;
+    bool pb = fDep[0].pb, sh = fDep[0].sh, xr = fDep[0].xr;
     for (size_t i = 1; i < fDep.size(); ++i) {
-      if (fDep[i].first - t0 > kResolvingTimeNs) {
-        fRun->Fill(sum, ch);
-        sum = 0;
+      if (fDep[i].t - t0 > kResolvingTimeNs) {
+        fRun->Fill(sum, ch, pb, sh, xr);
+        sum = 0; pb = false; sh = false; xr = false;
       }
-      t0 = fDep[i].first;
-      sum += fDep[i].second;
+      t0 = fDep[i].t;
+      sum += fDep[i].e;
+      pb = pb || fDep[i].pb;
+      sh = sh || fDep[i].sh;
+      xr = xr || fDep[i].xr;
     }
-    fRun->Fill(sum, ch);
+    fRun->Fill(sum, ch, pb, sh, xr);
   }
 };
 
@@ -435,7 +901,23 @@ public:
     auto* post = s->GetPostStepPoint();
     auto* h = pre->GetTouchableHandle()->GetVolume();
     const bool inCry = h && h->GetLogicalVolume() == fCry;
-    if (!inCry) return;
+    if (!inCry) {
+      // Шаг вне кристалла: если он в теле защиты, помечаем трек как
+      // побывавший в ней. Квант, вернувшийся оттуда в кристалл, принесёт
+      // обратно рассеянную энергию — это отдельный вклад защиты, и
+      // отличить его от излучения пробы можно только по истории трека.
+      // Материалы защиты в этой геометрии больше нигде не встречаются:
+      // головка собрана из Al, MgO, резины, стекла и «Electronics».
+      const G4Material* m =
+          h ? h->GetLogicalVolume()->GetMaterial() : nullptr;
+      if (m) {
+        const G4String& mn = m->GetName();
+        if (mn == "G4_Pb" || mn == "G4_Cd" || mn == "G4_Cu" ||
+            mn == "G4_STAINLESS-STEEL")
+          fEvt->fShieldSeen.insert(s->GetTrack()->GetTrackID());
+      }
+      return;
+    }
 
     // --- пометка канала: что произошло с квантом ВНУТРИ кристалла ---
     const G4Track* trk = s->GetTrack();
@@ -479,8 +961,13 @@ public:
 
     // --- энерговыделение ---
     const double e = s->GetTotalEnergyDeposit();
-    if (e > 0)
-      fEvt->fDep.emplace_back(pre->GetGlobalTime() / ns, e / keV);
+    if (e > 0) {
+      const G4int id = trk->GetTrackID();
+      const bool pb = fEvt->fPbBorn.count(id) > 0;
+      const bool sh = pb || fEvt->fShieldSeen.count(id) > 0;
+      const bool xr = fEvt->fXrayBorn.count(id) > 0;
+      fEvt->fDep.push_back({pre->GetGlobalTime() / ns, e / keV, pb, sh, xr});
+    }
   }
 };
 
@@ -488,15 +975,72 @@ public:
 // линии p_gamma приходит из той же базы PhotonEvaporation, что и транспорт.
 class Tracking : public G4UserTrackingAction {
   RunAct* fRun;
+  EventAct* fEvt;
 public:
-  explicit Tracking(RunAct* r) : fRun(r) {}
+  Tracking(RunAct* r, EventAct* ev) : fRun(r), fEvt(ev) {}
   void PreUserTrackingAction(const G4Track* t) override {
+    // --- происхождение из свинца защиты (см. EventAct::fPbBorn) ---
+    // Geant4 отдаёт вторичные ПОСЛЕ родителя, поэтому к моменту старта
+    // потомка идентификатор родителя в множестве уже есть, и признак
+    // наследуется по цепочке без отдельного обхода.
+    const G4int id = t->GetTrackID(), pid = t->GetParentID();
+    bool pb = pid > 0 && fEvt->fPbBorn.count(pid) > 0;
+    if (!pb && pid > 0) {
+      // Рождение НОВОГО трека в свинце — это флуоресценция (тормозное на
+      // этих энергиях пренебрежимо). Рассеянный квант новым треком не
+      // становится, поэтому комптон в свинце сюда не попадает.
+      const G4VPhysicalVolume* v = t->GetVolume();
+      const G4Material* m = v ? v->GetLogicalVolume()->GetMaterial() : nullptr;
+      pb = m && m->GetName() == "G4_Pb";
+    }
+    if (pb) fEvt->fPbBorn.insert(id);
+    // Рентген атомной релаксации пробы: признак наследуется так же, как
+    // «родился в свинце». Проставляется ниже, при разборе кванта распада;
+    // здесь — только передача потомкам.
+    if (pid > 0 && fEvt->fXrayBorn.count(pid) > 0) fEvt->fXrayBorn.insert(id);
+
     if (t->GetDefinition() != G4Gamma::Definition()) return;
     const G4VProcess* p = t->GetCreatorProcess();
     if (!p) return;                       // первичная частица, не распад
     const G4String& n = p->GetProcessName();
-    if (n == "RadioactiveDecay" || n == "Radioactivation")
-      fRun->FillEmit(t->GetKineticEnergy() / keV);
+    if (n != "RadioactiveDecay" && n != "Radioactivation") return;
+    const double e = t->GetKineticEnergy() / keV;
+    fRun->FillEmit(e);
+
+    // Чем именно квант порождён — атомной релаксацией или ядерной
+    // деэксцитацией. Признак берётся у Geant4: трек несёт идентификатор
+    // породившей его модели, каталог переводит его в имя. Разбор R69:
+    // прежний отбор рентгена по окну 60-110 кэВ отдавал рентгену ядерные
+    // линии Th-228 84,373 и Th-232 63,8, то есть лишал Th-228 единственной
+    // наблюдаемой линии — той самой, на которой держится проверка возраста
+    // ряда. Имена моделей не угадываются: они печатаются прогоном с
+    // G1S_DUMP_MODELS=1 и сверяются глазами.
+    //
+    // СНЯТО ПРОГОНОМ 09.08.2026 (Pb-212, 20 тыс. распадов, Geant4 11.2.1),
+    // каталог вернул ровно два имени:
+    //     MODELS ядерные: [model_RDM_IT]
+    //     MODELS рентген: [model_RDM_AtomicRelaxation]
+    // Контроль на том же прогоне: K-серия висмута 75,5/77,5/87,5 кэВ ушла
+    // целиком в x_atomic (64/70/39 отсчётов из 67/70/39), ядерная линия
+    // Pb-212 238,6 кэВ — целиком в g_nuclear (8660 из 8660), её выход
+    // 43,3 % на распад против 43,6 % ENSDF. Признак различает то, что
+    // должен, и на энергетическое окно не опирается.
+    const G4int mid = t->GetCreatorModelID();
+    const G4String mn = (mid < 0) ? G4String("?")
+                                  : G4PhysicsModelCatalog::GetModelNameFromID(mid);
+    const bool xray = mn.find("luo") != std::string::npos     // Fluo/fluo
+                   || mn.find("uger") != std::string::npos    // Auger
+                   || mn.find("elax") != std::string::npos    // Relaxation
+                   || mn.find("ARM") != std::string::npos;    // atomic rearr.
+    if (xray) {
+      fRun->FillEmitX(e);
+      // Признак наследуется потомками (см. инициализацию xr выше): рентген
+      // поглощается в кристалле фотоэффектом, и энергию в счёт вносит уже
+      // фотоэлектрон, а не сам квант.
+      fEvt->fXrayBorn.insert(id);
+    }
+    if (fRun->fDumpModels)
+      (xray ? fRun->fEmitXModels : fRun->fEmitModels).insert(mn);
   }
 };
 
@@ -515,6 +1059,53 @@ public:
   ~OutMessenger() override { delete fCmd; delete fDir; }
   void SetNewValue(G4UIcommand*, G4String v) override { fRun->fOut = v; }
 };
+
+// Выгрузка ПОСТРОЕННОЙ геометрии в CSV: имя, материал, границы по r и z.
+// Смысл — рисовать разрез по тому, что Geant4 действительно собрал, а не по
+// тому, что задумано в исходнике. Обходится хранилище физических объёмов,
+// каждое тело раскладывается на кольцевые сегменты (r_in, r_out, z0, z1).
+// Годится потому, что вся геометрия ГАММА-1С осесимметрична и собрана из
+// G4Tubs и G4Polycone; тело другого класса выводится строкой «?» и в разрез
+// не попадёт молча — это видно в файле.
+static void DumpGeometry(const std::string& path) {
+  std::ofstream f(path);
+  if (!f) {
+    G4cerr << "DUMPGEOM: не открыть " << path << G4endl;
+    return;
+  }
+  f << "# геометрия ГАММА-1С, снята с построенного дерева\n";
+  f << "# src_sha1 " << G1S_SRC_SHA1 << "\n";
+  f << "name,material,rin_mm,rout_mm,z0_mm,z1_mm\n";
+  auto* store = G4PhysicalVolumeStore::GetInstance();
+  int unknown = 0;
+  for (auto* pv : *store) {
+    auto* lv = pv->GetLogicalVolume();
+    if (!lv) continue;
+    const G4String nm = pv->GetName();
+    if (nm == "World") continue;
+    const G4String mt = lv->GetMaterial() ? lv->GetMaterial()->GetName() : "?";
+    const double zc = pv->GetObjectTranslation().z() / mm;
+    auto* sol = lv->GetSolid();
+    if (auto* t = dynamic_cast<G4Tubs*>(sol)) {
+      const double dz = t->GetZHalfLength() / mm;
+      f << nm << "," << mt << "," << t->GetInnerRadius() / mm << ","
+        << t->GetOuterRadius() / mm << "," << zc - dz << "," << zc + dz << "\n";
+    } else if (auto* p = dynamic_cast<G4Polycone*>(sol)) {
+      const auto* op = p->GetOriginalParameters();
+      for (G4int i = 0; i + 1 < op->Num_z_planes; ++i) {
+        const double z0 = op->Z_values[i] / mm, z1 = op->Z_values[i + 1] / mm;
+        if (z1 <= z0) continue;                 // вертикальная ступень
+        f << nm << "," << mt << "," << op->Rmin[i] / mm << ","
+          << op->Rmax[i] / mm << "," << zc + z0 << "," << zc + z1 << "\n";
+      }
+    } else {
+      ++unknown;
+      f << nm << "," << mt << ",?,?,?,?\n";
+    }
+  }
+  G4cout << "DUMPGEOM " << path << " (тел неизвестного класса: " << unknown
+         << ")" << G4endl;
+}
 
 int main(int argc, char** argv) {
   const std::string mode = (argc > 2) ? argv[2] : "shield";
@@ -595,11 +1186,20 @@ int main(int argc, char** argv) {
 
   rm->Initialize();
   det->ReportMasses();
+  if (const char* dg = std::getenv("G1S_DUMP_GEOM")) DumpGeometry(dg);
+  // Кристалл известен только после Initialize(): до неё Construct() не звался.
+  evtAct->fCry = det->fCrystalLV;
   rm->SetUserAction(new Stepping(evtAct, det->fCrystalLV));
-  rm->SetUserAction(new Tracking(runAct));
+  rm->SetUserAction(new Tracking(runAct, evtAct));
 
   auto* ui = G4UImanager::GetUIpointer();
-  if (argc > 1) ui->ApplyCommand(G4String("/control/execute ") + argv[1]);
+  // Текст макроса читается ДО исполнения: генератор, не найдя тома, стирает
+  // само имя (см. MacroConfineVolumes), и после исполнения спросить уже не у
+  // кого.
+  if (argc > 1) {
+    runAct->fMacroConfine = MacroConfineVolumes(argv[1]);
+    ui->ApplyCommand(G4String("/control/execute ") + argv[1]);
+  }
 
   delete mess;
   delete rm;

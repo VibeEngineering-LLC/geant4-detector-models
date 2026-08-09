@@ -32,6 +32,8 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "..", "..", "common", "py"))
 import paths  # noqa: E402
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gps_region  # noqa: E402
 
 
 BUILD = str(paths.build("Gamma-1S"))
@@ -62,23 +64,24 @@ NUCS = [
     ("Cs137", 55, 137, "137 137 55 56", 300000),
 ]
 
-# (геометрия, режим, плотность, объём мл, радиус розыгрыша, полу-Z, центр Z)
+# (геометрия, режим, плотность, объём мл). Тело розыгрыша здесь не задаётся:
+# оно снимается с ПОСТРОЕННОЙ геометрии (gps_region). Прежние константы
+# (73/45/16 и т.д.) писались под сосуд из таблицы ЛСРМ и перестали покрывать
+# пробу после перехода на чертёж изготовителя — молча (R68, R75).
 GEOMS = [
-    ("marinelli", "vessel:marinelli", 1.00, 1000.0, 73.0, 45.0, 16.0),
-    ("denta", "vessel:denta", 1.00, 100.0, 36.0, 18.0, 61.0),
-    ("petri", "vessel:petri", 1.00, 60.0, 42.5, 7.0, 50.0),
+    ("marinelli", "vessel:marinelli", 1.00, 1000.0),
+    ("denta", "vessel:denta", 1.00, 100.0),
+    ("petri", "vessel:petri", 1.00, 60.0),
 ]
 
 
-def macro(geom, r, hz, zc):
+def macro(geom, args):
     t = ["/run/initialize", "/control/verbose 0", "/run/verbose 0",
          "/process/had/rdm/verbose 0",
          "/process/had/rdm/thresholdForVeryLongDecayTime 1.0e+30 ns",
-         "/gps/particle ion", "/gps/energy 0 keV",
-         "/gps/pos/type Volume", "/gps/pos/shape Cylinder",
-         "/gps/pos/centre 0 0 %.1f mm" % zc,
-         "/gps/pos/radius %.1f mm" % r, "/gps/pos/halfz %.1f mm" % hz,
-         "/gps/pos/confine Sample", "/gps/ang/type iso"]
+         "/gps/particle ion", "/gps/energy 0 keV"]
+    t += gps_region.gps_lines(BUILD, args[0], args[1:])
+    t += ["/gps/ang/type iso"]
     for name, z, a, lim, n in NUCS:
         t += ["/process/had/rdm/nucleusLimits " + lim,
               "/gps/ion %d %d 0 0" % (z, a),
@@ -93,15 +96,15 @@ if __name__ == "__main__":
     # прогонов уже идёт на нём. После пересборки запускать явно:
     #   python run_mix_decay.py "" risn379
     matrix = sys.argv[2] if len(sys.argv) > 2 else "water"
-    for geom, mode, rho, vol, r, hz, zc in GEOMS:
+    for geom, mode, rho, vol in GEOMS:
         if only and only != geom:
             continue
+        gargs = [mode, str(rho), matrix, str(vol)]
         mp = os.path.join(BUILD, "mix_%s.mac" % geom)
-        open(mp, "w", encoding="utf-8").write(macro(geom, r, hz, zc))
+        open(mp, "w", encoding="utf-8").write(macro(geom, gargs))
         print("=== %s: 4 нуклида x распады, %s %s ро=%.2f %.0f мл ==="
               % (geom, mode, matrix, rho, vol), flush=True)
-        res = subprocess.run([os.path.join(BUILD, "g1s.exe"), mp, mode,
-                              str(rho), matrix, str(vol)],
+        res = subprocess.run([os.path.join(BUILD, "g1s.exe"), mp] + gargs,
                              cwd=BUILD, capture_output=True, text=True,
                              encoding="utf-8", errors="replace")
         for ln in (res.stdout or "").splitlines():

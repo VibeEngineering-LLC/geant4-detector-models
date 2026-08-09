@@ -10,8 +10,8 @@
 /gps/pos/type Volume
 /gps/pos/shape Cylinder
 /gps/pos/centre 0 0 16 mm
-/gps/pos/radius 73 mm
-/gps/pos/halfz 45 mm
+/gps/pos/radius 90 mm
+/gps/pos/halfz 60 mm
 /gps/pos/confine Sample
 /gps/ang/type iso
 

@@ -84,6 +84,21 @@ def ract(x):
     return rcnt(x) + "\u00a0Бк"
 
 
+def tpl_decays_text(items):
+    """meta.template_decays -> строка вида «3 000 000 (Th-232,
+    Rn-220), 200 000 (Ac-228, Pb-212, Tl-208), ...», от большего
+    числа розыгрышей к меньшему. Числа разные с R66 (слабым звеньям
+    добавлена статистика) — одной цифры на всю ветвь больше нет,
+    поэтому группировка, а не текст руками."""
+    groups = {}
+    for it in items:
+        groups.setdefault(int(it["n"]), []).append(it["nuclide"])
+    out = []
+    for n in sorted(groups, reverse=True):
+        out.append("%s (%s)" % (rcnt(n), ", ".join(groups[n])))
+    return "; ".join(out)
+
+
 def make_fill(d):
     """Подстановки для ПРОЗЫ страницы.
 
@@ -120,6 +135,9 @@ def make_fill(d):
         # в текст руками: страница обязана называть тот порог, по которому
         # реально построена маска достоверности.
         "n_eff_min":  lambda: rnum(d["spectrum"]["n_eff_min"], 0),
+        # Число розыгрышей МК-шаблонов по нуклидам (R66: слабым звеньям
+        # статистика добавлена, общей цифры на всю ветвь больше нет).
+        "tpl_decays": lambda: tpl_decays_text(d["meta"]["template_decays"]),
         # Состав матрицы — из выгрузки ПОСТРОЕННОЙ геометрии (export_data),
         # не из текста шаблона: имя «ОИСН-16» состава не определяет.
         "matrix":     lambda: MATRIX_RU.get(d["meta"]["matrix_name"],

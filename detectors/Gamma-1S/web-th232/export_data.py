@@ -1111,11 +1111,6 @@ def main():
             hist_d, N_d = {}, N_iso
         xray_dep[key] = ({E0: c for E0, c in hist_d.items() if c > 0}, N_d)
     XRAY_TOTAL_PER_BRANCH = sum(xray_frac_of_branch.values())
-    # Доля каждого нуклида-источника в потоке рентгена — нужна там, где XRAY
-    # надо разнести по группам «до/после» узла ряда (подгонка с гипотезой
-    # утечки торона), а не только суммировать целиком.
-    xray_share = {k: v / XRAY_TOTAL_PER_BRANCH
-                  for k, v in xray_frac_of_branch.items()}
     # Диапазон энергий, реально классифицированных как рентген атомной
     # релаксации, — для отчёта на странице. Не окно отбора (его больше нет,
     # разбор R69): это то, что фактически вернул признак Geant4.
@@ -1448,81 +1443,6 @@ def main():
     V = variants["lines"]
     templ_total, by_nuc = V["templ_total"], V["by_nuc"]
     method1_mc, method2_photon = V["method1"], V["method2"]
-    A_branch = method1_mc["A_Bq"]
-
-    # ── подгонка с гипотезой утечки торона (Rn-220 — газ, T½ = 55,6 с) ──
-    # Ветвь разделена по узлу Rn-220: утечка отрубает всё, что образуется
-    # ИЗ ушедшего газа, — группу «after» пропорционально её доле. Две
-    # амплитуды NNLS дают A_before и A_after независимо; η = 1 − A_after/A_before.
-    # Применяется к ОБОИМ методам (уточнение оператора, R56) — метод 1
-    # (МК-шаблоны по нуклидам) и метод 2 (библиотека линий) дважды,
-    # отобранная и полная библиотека: физика деления по группам одна и та
-    # же, входные шаблоны — разные.
-    KEYS_BEFORE = ["Th232", "Ac228", "Th228", "Ra224"]
-    KEYS_AFTER  = ["Rn220", "Pb212", "Bi212", "Tl208"]
-    # XRAY распределён между группами по факту происхождения, иначе
-    # templ_before + templ_after перестаёт замыкаться на templ_total.
-    xray_share_before = sum(xray_share.get(k, 0.0) for k in KEYS_BEFORE)
-    xray_share_after  = sum(xray_share.get(k, 0.0) for k in KEYS_AFTER)
-
-    def _leak_refit(by_nuc_src, m_single):
-        """Подгонка с гипотезой утечки на ЛЮБОМ источнике по-нуклидных
-        форм (by_nuc метода 1 или by_nuc_w2/by_nuc_w2f метода 2) — та же
-        схема групп KEYS_BEFORE/KEYS_AFTER, тот же взвешенный XRAY.
-        m_single — однoамплитудный результат ЭТОГО ЖЕ метода (источник
-        χ² для сравнения). Возвращает (fit-словарь, stack по нуклидам)."""
-        tb = (sum(by_nuc_src[k] for k in KEYS_BEFORE)
-              + xray_share_before * by_nuc_src["XRAY"])
-        ta = (sum(by_nuc_src[k] for k in KEYS_AFTER)
-              + xray_share_after * by_nuc_src["XRAY"])
-        c, d, chi, ndof_l, _ = fit_amplitudes(
-            y_sel, [tb[sel] * T, ta[sel] * T, bgm])
-        Ab, Aa = float(c[0]), float(c[1])
-        dAb, dAa = float(d[0]), float(d[1])
-        if Ab > 0:
-            eta = 1.0 - Aa / Ab
-            rel = math.sqrt((dAa / max(Aa, 1e-9)) ** 2
-                            + (dAb / max(Ab, 1e-9)) ** 2)
-            d_eta = abs(Aa / Ab) * rel
-        else:
-            eta = float("nan"); d_eta = float("nan")
-        xray_amp = xray_share_before * Ab + xray_share_after * Aa
-        xray_damp = xray_share_before * dAb + xray_share_after * dAa
-        fit = {
-            "A_before_Bq": Ab, "dA_before_Bq": dAb,
-            "A_after_Bq":  Aa, "dA_after_Bq":  dAa,
-            "eta_leak": eta, "d_eta": d_eta,
-            "bg_amplitude": float(c[2]),
-            "chi2": chi, "chi2_ndof": chi / ndof_l, "ndof": ndof_l,
-            # Δχ² однoамплитудной модели ЭТОГО ЖЕ метода минус эта подгонка
-            # (одним параметром больше) — знак: положительное = утечка лучше.
-            "delta_chi2_vs_single": m_single["chi2"] - chi,
-            "keys_before": KEYS_BEFORE, "keys_after": KEYS_AFTER,
-            # XRAY не принадлежит целиком ни одной группе (шаблон — уже
-            # сумма вкладов всех нуклидов-источников) — взвешенная по факту
-            # происхождения амплитуда; погрешность — линейная комбинация той
-            # же весовой смесью (консервативно, без учёта корреляции
-            # A_before/A_after — вклад XRAY в спектр ~0,1 %, точнее не нужно).
-            "xray_amp_leak": xray_amp, "xray_damp_leak": xray_damp,
-        }
-        stack_leak = {}
-        for k in keys:
-            if k == "XRAY":
-                amp = xray_amp
-            elif k in KEYS_BEFORE:
-                amp = Ab
-            else:
-                amp = Aa
-            stack_leak[k] = (by_nuc_src[k] * amp * T).tolist()
-        return fit, stack_leak
-
-    # Посчитано ОДИН раз, на законе ширины «по линиям» — при переключении
-    # на закон цезия страница показывает этот же результат (упрощение,
-    # объявлено явно, тот же класс, что у остальных полей V=variants["lines"]).
-    leak_fit, stack_leak = _leak_refit(by_nuc, method1_mc)
-    leak_fit2, stack2_leak = _leak_refit(V["by_nuc_w2"], method2_photon)
-    leak_fit2_full, stack2_leak_full = _leak_refit(
-        V["by_nuc_w2f"], V["method2_full"])
 
     # ── состав матрицы пробы: из ПОСТРОЕННОЙ геометрии ────────────────────
     # Имя «ОИСН-16» состав не определяет: под ним в комплекте ходят две
@@ -1665,11 +1585,8 @@ def main():
             # она идёт в легенду: доля КАНАЛОВ обманывает — у нуклида с
             # короткой шкалой почти все каналы пусты по физике.
             "noise_frac": V["noise_frac"],
-            "stack_leak": stack_leak,
             "stack2": V["stack2"],
             "stack2_full": V["stack2_full"],
-            "stack2_leak": stack2_leak,
-            "stack2_leak_full": stack2_leak_full,
             "stack2_chan": V["stack2_chan"],
             "stack2_chan_full": V["stack2_chan_full"],
         },
@@ -1709,9 +1626,6 @@ def main():
                       "(decay_rads, rad_types=g)",
             "csv": os.path.basename(FULL_LIBRARY_CSV),
         },
-        "leak_fit": leak_fit,
-        "leak_fit2": leak_fit2,
-        "leak_fit2_full": leak_fit2_full,
         "reference_lines": [
             # (E_keV, нуклид, короткая метка) — для реперов в калибровке
             (238.632, "Pb-212", "Pb-212 238"),

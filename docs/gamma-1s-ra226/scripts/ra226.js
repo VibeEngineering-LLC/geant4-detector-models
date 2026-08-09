@@ -498,7 +498,7 @@
   }
 
   var CAL = { smp: true, bg: true, diff: false, log: true, anch: true,
-              zoom: null, drag: null, dragging: false };
+              zoom: null, drag: null, dragging: false, cursorE: null };
   var CAL_wired = false;
   var CAL_MARGIN = { l: 62, r: 14, t: 12, b: 32 };
   var CAL_MARK_H = 7;        // высота маркера-флажка репера, px
@@ -619,6 +619,17 @@
     })(), "#c8541c", CAL.log ? false : true);
     if (CAL.smp) drawTrace(y, p.ink, false);
 
+    // Вертикальный пунктир под указателем (замечание оператора, как на
+    // спектре метода 2) — рисуется, только если курсор не тянет зум.
+    if (CAL.cursorE !== null && !CAL.dragging
+        && CAL.cursorE >= xLo && CAL.cursorE <= xHi) {
+      var xCur = mapX(CAL.cursorE, xLo, xHi, m.l, W - m.r);
+      g.strokeStyle = p.rule; g.lineWidth = 1; g.setLineDash([4, 3]);
+      g.globalAlpha = 0.7;
+      g.beginPath(); g.moveTo(xCur, m.t); g.lineTo(xCur, H - m.b); g.stroke();
+      g.setLineDash([]); g.globalAlpha = 1;
+    }
+
     if (CAL.drag) {
       var xa2 = Math.min(CAL.drag.x0, CAL.drag.x1);
       var xb2 = Math.max(CAL.drag.x0, CAL.drag.x1);
@@ -686,8 +697,10 @@
         if (x < CAL_MARGIN.l || x > r.width - CAL_MARGIN.r) {
           ro.textContent = "";
           if (tip) tip.hidden = true;
+          CAL.cursorE = null; drawCal();
           return;
         }
+        CAL.cursorE = calEfromX(x, r.width);
         var ref = calRefLineAt(x, y, r.width);
         if (ref) {
           var refTxt = ref[1] + " · " + num(ref[0], 1) + " кэВ";
@@ -698,6 +711,7 @@
             tip.style.left = x + "px";
             tip.style.top = Math.max(0, y) + "px";
           }
+          drawCal();
           return;
         }
         var e = D.spectrum.e_of_ch;
@@ -716,9 +730,13 @@
           tip.style.left = x + "px";
           tip.style.top = Math.max(0, y) + "px";
         }
+        drawCal();
       });
       cv.addEventListener("pointerleave", function () {
-        if (!CAL.dragging) { ro.textContent = ""; if (tip) tip.hidden = true; }
+        if (!CAL.dragging) {
+          ro.textContent = ""; if (tip) tip.hidden = true;
+          CAL.cursorE = null; drawCal();
+        }
       });
       cv.addEventListener("mousedown", function (ev) {
         var r = cv.getBoundingClientRect();

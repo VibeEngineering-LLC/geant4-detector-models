@@ -54,11 +54,19 @@ XML_MEAS = os.path.join(
 # распадов Th-232 с прохождением всей цепочки через nucleusLimits
 # 208..232 81..90). Нормирован на 1 распад РОДИТЕЛЯ ветви со всеми
 # ветвлениями внутри — им пользуются оба метода. Индивидуальные iso_
-# файлы дают только ДОЛИ нуклидов в отклике (визуально), в амплитуду не
-# входят: суммирование iso с учётом branching совпадает с chain_Th232
-# по интегралу в 2× (систематика Geant4 с nucleusLimits для одиночных
-# нуклидов — регистрация энергии отдачи ядра и вторичных, зависит от
-# `applyToAllProcesses`; в chain_Th232 её нет, а физический ответ там).
+# файлы дают только ДОЛИ нуклидов в отклике, в амплитуду не входят.
+#
+# Прежде здесь стояло объяснение расхождения iso и chain «систематикой
+# Geant4 с nucleusLimits — регистрацией энергии отдачи ядра и вторичных».
+# Объяснение было НЕВЕРНЫМ и держалось потому, что звучало правдоподобно
+# и никто не сверил его с числом. Настоящая причина (R61, 08.08.2026):
+# восемь iso_-прогонов шли в режиме geометрии без сосуда, где тома
+# «Sample» не существует, поэтому /gps/pos/confine Sample был снят самим
+# Geant4 с предупреждением в консоли, и 12,5 % распадов рождались внутри
+# кристалла NaI. Доля объёма розыгрыша, попадающая в кристалл, считается
+# из чертежа: 12,517 % — наблюдалось 12,494…12,562 %.
+# Файлы перегнаны в режиме vessel; в шапке каждого прогона теперь есть
+# поле `src_in_crystal`, и оно обязано быть нулём (проверяется ниже).
 TEMPLATE_CSV = os.path.join(BUILD, "chain_Th232.csv")
 
 # ─── Ветвь Th-232: восемь звеньев с γ-эмиссией + сама голова ветви ─────────
@@ -294,19 +302,54 @@ def read_becqmoni_pair(xml_path):
 
 # ─── читатель CSV-выхода Geant4 ────────────────────────────────────────────
 
-def load_hist(path):
+def load_hist(path, require_vessel=True):
+    """Гистограмма энерговыделения из выхода Geant4, с проверкой шапки.
+
+    `require_vessel` — прогон обязан быть сделан с построенным сосудом и
+    без единой первичной вершины внутри кристалла. Проверка не косметика:
+    ровно этих двух полей не хватало, чтобы поймать R61 — восемь шаблонов
+    ветви были посчитаны в режиме без сосуда, /gps/pos/confine молча снят
+    самим Geant4, и 12,5 % распадов разыграно внутри NaI. Дефект прожил
+    недели и всплыл случайно, по «лишнему» горбу на графике страницы.
+    Файл без поля `src_in_crystal` считается прогнанным до появления
+    сторожа в main.cc и потому непроверенным — тоже отказ.
+    """
     hist = {}
     N = None
+    mode = None
+    src_in_crystal = None
     for line in open(path, encoding="utf-8"):
         if line.startswith("#"):
             if "N_primaries" in line:
                 N = int(line.split("=")[1])
+            elif line.startswith("# mode ="):
+                mode = line.split("=", 1)[1].strip()
+            elif line.startswith("# src_in_crystal ="):
+                src_in_crystal = int(line.split("=", 1)[1])
             continue
         s = line.strip()
         if not s or not s[0].isdigit():
             continue
         e, c = s.split(",")
         hist[float(e)] = int(c)
+    if require_vessel:
+        name = os.path.basename(path)
+        if mode is None or not mode.startswith("vessel"):
+            raise SystemExit(
+                "%s: прогон в режиме '%s', а нужен vessel. В режиме без\n"
+                "сосуда тома 'Sample' не существует, /gps/pos/confine Sample\n"
+                "снимается самим Geant4 с предупреждением, и источник\n"
+                "разыгрывается по всему цилиндру, включая кристалл (R61)."
+                % (name, mode))
+        if src_in_crystal is None:
+            raise SystemExit(
+                "%s: в шапке нет поля src_in_crystal — файл посчитан сборкой\n"
+                "без сторожа 'источник в детекторе'. Перегнать текущим exe."
+                % name)
+        if src_in_crystal != 0:
+            raise SystemExit(
+                "%s: src_in_crystal = %d, первичные вершины попали внутрь\n"
+                "кристалла. Шаблон негоден." % (name, src_in_crystal))
     return hist, N
 
 
@@ -573,16 +616,21 @@ def peak_area_with_shelf(counts, e_of_ch, E, roi=1.0, shelf=1.0):
 # наклоном, что на крайнем интервале (библиотека линий из неё не выходит).
 
 def _grid_main_csvs(grid_dir, pattern):
-    """glob(pattern), но БЕЗ файлов-спутников _chan.csv/_emit.csv.
+    """glob(pattern), но БЕЗ файлов-спутников _chan/_emit/_emitx/_shield.csv.
 
     R45 (08.08.2026): main.cc стал писать rho1.60_E00661.7_chan.csv рядом
     с основным rho1.60_E00661.7.csv — новый файл текстуально подходит под
     старый шаблон "rho1.60_E*.csv" (glob не видит границу токена), и
     load_eps_peak_grid пытался распарсить 12-колоночный файл разложения по
     каналам как 2-колоночный спектр — ValueError на первой же строке.
-    Найдено этим же прогоном на первом запуске после правки."""
+    Найдено этим же прогоном на первом запуске после правки.
+
+    R69 (09.08.2026), тот же класс: main.cc стал писать rho1.60_E00088.0_
+    shield.csv (4-колоночный, src_xray) — glob снова его подобрал, снова
+    ValueError, снова на первом прогоне после правки."""
+    SUFFIXES = ("_chan.csv", "_emit.csv", "_emitx.csv", "_shield.csv")
     return [f for f in glob.glob(os.path.join(grid_dir, pattern))
-            if not (f.endswith("_chan.csv") or f.endswith("_emit.csv"))]
+            if not f.endswith(SUFFIXES)]
 
 
 def load_eps_peak_grid(grid_dir):
@@ -892,35 +940,108 @@ def main():
             "Запустить: cd %s && ./g1s.exe decay_th232_isotopes.mac"
             % (missing, BUILD))
 
-    # Доля K-рентгена каждого нуклида-источника в потоке ветви — из
-    # ЭМИССИОННЫХ спектров (энергия кванта до детектора). Депозитный
-    # спектр этого не хранит: 60–110 кэВ там набирается и рассеянными
-    # квантами жёстких линий, отделить рентген постфактум нельзя.
-    K_XRAY_LO, K_XRAY_HI = 60.0, 110.0
-    XRAY_GRID_CSV = os.path.join(BUILD, "grid", "rho1.60_E00088.0.csv")
+    # ── K-рентген: отбор ПО ПРОЦЕССУ РОЖДЕНИЯ, не по энергетическому окну ──
+    #
+    # Было (до 09.08.2026): доля рентгена считалась как интеграл спектра
+    # эмиссии в полосе 60–110 кэВ, а форма приближалась одним моно-откликом
+    # 88 кэВ. Окно не различает, ЧЕМ рождён квант, и забирало ядерные линии
+    # Th-228 84,373 и Th-232 63,8 — то есть лишало Th-228 единственной
+    # наблюдаемой линии, на которой держится проверка возраста ряда (R69).
+    # Приближение формы одной энергией вдобавок перебирало в максимуме и
+    # недобирало по краям, отчего вычет уходил в минус, обрезался по нулю, и
+    # слои нуклидов ложились в РОВНЫЙ ноль на 73–105 кэВ.
+    #
+    # Стало: разделение делает сам Geant4 по модели, породившей трек
+    # (main.cc, Tracking: model_RDM_AtomicRelaxation против model_RDM_IT).
+    # Модель пишет два файла на каждый нуклид:
+    #   iso_<X>_emitx.csv  — испущенное, колонки x_atomic и g_nuclear;
+    #   iso_<X>_shield.csv — ОТКЛИК, колонка src_xray: срабатывания, энергию
+    #                        в которые принёс рентген атомной релаксации.
+    # Второй — точное ПОДМНОЖЕСТВО шаблона нуклида, поэтому вычитание не
+    # может дать отрицательного и обрезки по нулю не требует вовсе.
+    def load_col(path, name):
+        """{E_keV: counts} по ИМЕНОВАННОЙ колонке и число распадов прогона."""
+        hist, N = {}, None
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            cols = None
+            for ln in fh:
+                if ln.startswith("#"):
+                    if "N_primaries" in ln:
+                        N = float(ln.split("=")[1])
+                    continue
+                p = ln.rstrip("\n").split(",")
+                if cols is None:
+                    cols = p
+                    if name not in cols:
+                        raise SystemExit(
+                            "в %s нет колонки %s — файл посчитан сборкой до "
+                            "разделения по происхождению кванта (R69)"
+                            % (os.path.basename(path), name))
+                    continue
+                hist[float(p[0])] = float(p[cols.index(name)])
+        if not N:
+            raise SystemExit("в %s нет N_primaries" % path)
+        return hist, N
+
     xray_frac_of_branch = {}
-    # Здесь же собирается СПЕКТР эмиссии рентгена (не только его интеграл):
-    # методу 2 нужны отдельные энергии, чтобы взять ε_ПП на каждой, — K-серия
-    # Z = 80…83 разнесена от 72 до 91 кэВ, и эффективность на её краях
-    # отличается заметно.
+    xray_dep = {}          # депозитный спектр рентгена нуклида, на распад
+    # Спектр ЭМИССИИ рентгена (не только интеграл): методу 2 нужны отдельные
+    # энергии, чтобы взять ε_ПП на каждой, — K-серия Z = 80…83 разнесена от
+    # 72 до 91 кэВ, и эффективность на её краях отличается заметно.
     xray_emit = defaultdict(float)
     for key, ru, en, col, br, note in NUCS:
-        pe = os.path.join(BUILD, "iso_%s_emit.csv" % key)
-        if not os.path.isfile(pe):
-            continue
-        hist_e, N_e = load_hist(pe)
-        win = 0
-        for E0, c in hist_e.items():
-            if K_XRAY_LO <= E0 <= K_XRAY_HI:
-                win += c
-                xray_emit[float(E0)] += (c / N_e) * br
-        xray_frac_of_branch[key] = (win / N_e) * br
+        # N_primaries того же прогона — из уже проверенного load_hist(iso_X.csv)
+        # (mode=vessel*, src_in_crystal=0, см. hist_iso чуть выше). emitx.csv и
+        # shield.csv — файлы ТОГО ЖЕ вызова EndOfRunAction, отдельно их не
+        # штампуют: доверие к главному файлу распространяется на спутников.
+        _, N_iso = hist_iso[key]
+
+        pe = os.path.join(BUILD, "iso_%s_emitx.csv" % key)
+        pemit = os.path.join(BUILD, "iso_%s_emit.csv" % key)
+        if os.path.isfile(pe):
+            hist_x, N_x = load_col(pe, "x_atomic")
+        elif os.path.isfile(pemit):
+            # _emit.csv есть, _emitx.csv нет: main.cc пишет их одним блоком
+            # `if (emitted > 0)`, разойтись при текущем exe они не могут —
+            # значит спектр посчитан сборкой ДО разделения по происхождению.
+            raise SystemExit(
+                "%s: есть iso_%s_emit.csv, но нет iso_%s_emitx.csv — "
+                "посчитано сборкой до разделения эмиссии по происхождению "
+                "(R69). Перепрогнать rerun_th232_R61.mac текущим exe."
+                % (key, key, key))
+        else:
+            hist_x, N_x = {}, N_iso     # нуклид не эмитирует вовсе — легитимный ноль
+        tot = 0.0
+        for E0, c in hist_x.items():
+            if c <= 0:
+                continue
+            tot += c
+            xray_emit[float(E0)] += (c / N_x) * br
+        xray_frac_of_branch[key] = (tot / N_x) * br
+
+        ps = os.path.join(BUILD, "iso_%s_shield.csv" % key)
+        if os.path.isfile(ps):
+            hist_d, N_d = load_col(ps, "src_xray")
+        else:
+            # Файл пишется, только если хоть одно срабатывание несёт признак
+            # свинца/защиты/рентгена (main.cc: `if (fPbXHits||fShXHits||
+            # fSrcXHits)`). Его отсутствие для нуклида с редкой эмиссией —
+            # легитимный ноль, а не признак старого прогона: пары в
+            # load_col уже отказывают на файле без колонки src_xray, и
+            # отдельно на «есть emit, нет emitx» выше.
+            hist_d, N_d = {}, N_iso
+        xray_dep[key] = ({E0: c for E0, c in hist_d.items() if c > 0}, N_d)
     XRAY_TOTAL_PER_BRANCH = sum(xray_frac_of_branch.values())
+    # Доля каждого нуклида-источника в потоке рентгена — нужна там, где XRAY
+    # надо разнести по группам «до/после» узла ряда (подгонка с гипотезой
+    # утечки торона), а не только суммировать целиком.
     xray_share = {k: v / XRAY_TOTAL_PER_BRANCH
                   for k, v in xray_frac_of_branch.items()}
-    if not os.path.isfile(XRAY_GRID_CSV):
-        raise SystemExit("Нет моно-отклика для XRAY: " + XRAY_GRID_CSV)
-    hist_grid_xray, N_grid_xray = load_hist(XRAY_GRID_CSV)
+    # Диапазон энергий, реально классифицированных как рентген атомной
+    # релаксации, — для отчёта на странице. Не окно отбора (его больше нет,
+    # разбор R69): это то, что фактически вернул признак Geant4.
+    XRAY_SPAN_LO = min(xray_emit) if xray_emit else 0.0
+    XRAY_SPAN_HI = max(xray_emit) if xray_emit else 0.0
 
     eps_peak = make_eps_peak_interp(os.path.join(BUILD, "grid"))
     BR_of = {k: br for k, _, _, _, br, _ in NUCS}
@@ -939,6 +1060,24 @@ def main():
         for key, ru, en, col, br, note in NUCS:
             hist, N = hist_iso[key]
             by_nuc_raw[key] = broaden_and_rebin(hist, N, ch_edges, broaden) * br
+        # Рентген атомной релаксации выделяется ДО нормировки, вычитанием
+        # подмножества: в шаблоне нуклида он уже есть, и, если его не вынуть,
+        # сущность XRAY учла бы его вторично.
+        xray_raw = {}
+        for key, ru, en, col, br, note in NUCS:
+            hist_d, N_d = xray_dep[key]
+            xray_raw[key] = broaden_and_rebin(hist_d, N_d, ch_edges,
+                                              broaden) * br
+            by_nuc_raw[key] = by_nuc_raw[key] - xray_raw[key]
+            # Подмножество не может превысить целое; отрицательное здесь
+            # означало бы рассогласование файлов, а не неточность формы.
+            bad = float(by_nuc_raw[key].min())
+            if bad < -1e-9 * float(np.max(np.abs(by_nuc_raw[key])) + 1e-30):
+                raise SystemExit(
+                    "%s: рентген больше самого шаблона (%.3e) — iso_%s.csv и "
+                    "iso_%s_shield.csv из разных прогонов" % (key, bad, key, key))
+            by_nuc_raw[key] = np.maximum(by_nuc_raw[key], 0.0)
+        by_nuc_raw["XRAY"] = sum(xray_raw.values())
         iso_sum = sum(by_nuc_raw.values())
         # Амплитуду даёт chain_Th232 (полный физический транспорт), iso —
         # только НОРМИРОВАННУЮ долю нуклида в канале: суммирование iso с
@@ -951,35 +1090,27 @@ def main():
                 share = np.where(iso_sum > 0, by_nuc_raw[k] / iso_sum, 0.0)
             by_nuc[k] = templ_total * share
 
-        # Псевдо-нуклид XRAY: форма — моно-отклик ~88 кэВ (K-серия Z=80..83
-        # лежит в узкой полосе 72–91 кэВ), масштаб — выход рентгена на распад
-        # ветви. Вычитается из нуклидов-источников пропорционально их доле в
-        # эмиссии, иначе рентген был бы учтён дважды.
-        xray_shape = broaden_and_rebin(hist_grid_xray, N_grid_xray,
-                                       ch_edges, broaden)
-        xray_template = xray_shape * XRAY_TOTAL_PER_BRANCH
-        for k, sh in xray_share.items():
-            if sh > 0 and k in by_nuc:
-                by_nuc[k] = by_nuc[k] - xray_template * sh
-        by_nuc["XRAY"] = xray_template
-        # Приближение одной моноэнергией не обязано точно повторять форму
-        # рентгеновской доли каждого источника: на краях полосы вычет уходит
-        # в минус. Недостачу возвращаем в XRAY, откуда она пришла, — тогда
-        # сумма по компонентам остаётся равна templ_total ТОЧНО в каждом
-        # канале, независимо от точности приближения формы.
-        for k, sh in xray_share.items():
-            if sh <= 0 or k not in by_nuc:
-                continue
-            deficit = np.clip(-by_nuc[k], 0.0, None)
-            if deficit.any():
-                by_nuc[k] = by_nuc[k] + deficit
-                by_nuc["XRAY"] = by_nuc["XRAY"] - deficit
+        # XRAY вошёл в by_nuc_raw наравне с нуклидами и потому уже
+        # отнормирован вместе с ними: обрезки по нулю и возврата недостачи
+        # больше нет — они и создавали ровные нули в слоях (R69).
         neg = {k: float(v.min()) for k, v in by_nuc.items()
                if float(v.min()) < -1e-12}
         if neg:
-            raise SystemExit(
-                "XRAY: после компенсации всё ещё отрицательно (ошибка в "
-                "схеме перераспределения): %s" % neg)
+            raise SystemExit("отрицательные значения в разложении: %s" % neg)
+        # Сторож R69 п.4: вычет рентгена не должен обнулять слой там, где до
+        # вычета вклад был. Проверяется именно ЭТО, а не «нули вообще»: ноль
+        # там, где у нуклида нет линий (Th-232 выше 100 кэВ), законен и
+        # физичен, а ноль на месте бывшего вклада — след обрезки.
+        for k, v in by_nuc.items():
+            if k == "XRAY" or k not in xray_raw:
+                continue
+            full = by_nuc_raw[k] + xray_raw[k]
+            eaten = (full > 0) & (v <= 0)
+            if int(eaten.sum()) > 3:
+                lo = float(np.asarray(e)[eaten][0])
+                raise SystemExit(
+                    "%s: вычет рентгена обнулил слой в %d каналах, где вклад "
+                    "был (около %.1f кэВ) — R69" % (k, int(eaten.sum()), lo))
         resid = float(np.max(np.abs(sum(by_nuc.values()) - templ_total)))
         if resid > 1e-9 * float(np.max(templ_total)):
             raise SystemExit(
@@ -1058,9 +1189,9 @@ def main():
                          / max(sum(xray_emit.values()), 1e-30),
                 "nuclide": "XRAY", "I_gamma_pct": 100.0 * XRAY_TOTAL_PER_BRANCH,
                 "note": "K-серия дочерних атомов (Bi, Pb, Tl, Po, Ra, Th), "
-                        "%d энергий в окне %.0f-%.0f кэВ; выход на распад "
-                        "ветви — из эмиссионных спектров Geant4"
-                        % (len(xray_emit), K_XRAY_LO, K_XRAY_HI),
+                        "%d энергий, %.1f-%.1f кэВ; отбор по модели-родителю "
+                        "трека Geant4 (не по энергетическому окну, R69)"
+                        % (len(xray_emit), XRAY_SPAN_LO, XRAY_SPAN_HI),
                 "eps_peak": xray_w_total / max(sum(xray_emit.values()), 1e-30),
                 "weight_per_branch": xray_w_total, "kind": "xray"})
 
@@ -1262,7 +1393,9 @@ def main():
             "bg_live_s": bg["live_s"], "bg_real_s": bg["real_s"],
             "bg_scale_time": bg_scale_time,
             "fwhm662_keV": FWHM662, "escape_keV": ESCAPE_KEV,
-            "k_xray_lo_keV": K_XRAY_LO, "k_xray_hi_keV": K_XRAY_HI,
+            # Больше не окно отбора (снято в R69) — фактический диапазон
+            # энергий, которые модель Geant4 разобрала как атомную релаксацию.
+            "xray_span_lo_keV": XRAY_SPAN_LO, "xray_span_hi_keV": XRAY_SPAN_HI,
             "template_source": "iso_*.csv (200 000 распадов на нуклид)",
             "sys_floor_pct": SYS_FLOOR * 100.0,
             # Калибровка энергии из XML: полином E(канал) = Σ c_i · канал^i.

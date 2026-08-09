@@ -215,38 +215,62 @@
     g.strokeStyle = p.rule; g.lineWidth = 2;
     g.strokeRect(m.l, m.t, W - m.r - m.l, H - m.b - m.t);
 
-    // заливки полосами снизу вверх — по одному полигону на нуклид
+    // Заливки — НЕЗАВИСИМЫМ НАЛОЖЕНИЕМ, каждая от нижней границы окна до
+    // СВОЕГО значения. Прежде здесь был накопительный стек: слой рисовался
+    // поверх суммы предыдущих, поэтому по картинке нельзя было прочитать
+    // вклад нуклида — он ехал вверх вместе с соседями, а включение второго
+    // флажка визуально «поднимало» первый. Двигаться при переключении
+    // флажков должна СУММАРНАЯ кривая, а сами шаблоны стоять на месте.
+    //
+    // Порядок: сначала самые крупные (уходят назад), мелкие рисуются
+    // последними и оказываются впереди. При обратном порядке крупный слой
+    // накрыл бы мелкие целиком — они заливаются от одного и того же низа.
+    // Ранжирование — по интегралу в видимой полосе, а не по порядку в
+    // легенде: порядок ряда и порядок по величине вклада не совпадают.
+    var order = [];
     for (var ni = 0; ni < D.nuclides.length; ni++) {
-      var nuc = D.nuclides[ni];
-      if (!ST.on[nuc.key] || !stk[nuc.key]) continue;
-      var vec = stk[nuc.key];
-      g.fillStyle = nuc.color;
-      g.beginPath();
-      var below = new Array(e.length), above = new Array(e.length);
-      for (var i = 0; i < e.length; i++) {
-        var acc = 0;
-        for (var nj = 0; nj < ni; nj++) {
-          var k = D.nuclides[nj].key;
-          if (!ST.on[k] || !stk[k]) continue;
-          acc += stk[k][i];
-        }
-        below[i] = acc;
-        above[i] = acc + vec[i];
+      var nk = D.nuclides[ni].key;
+      if (!ST.on[nk] || !stk[nk]) continue;
+      var s = 0;
+      for (var si = 0; si < e.length; si++) {
+        if (e[si] < xLo || e[si] > xHi) continue;
+        s += stk[nk][si];
       }
-      var started = false;
+      order.push({ nuc: D.nuclides[ni], area: s });
+    }
+    order.sort(function (a, b) { return b.area - a.area; });
+
+    // Контур каждого шаблона своим цветом ПОВЕРХ всех заливок: там, где
+    // мелкий слой локально выше крупного, заливка крупного перекрыта, и
+    // без контура его ход в этом месте не прочитать.
+    function bandPath(vec) {
+      g.beginPath();
+      var st0 = false;
       for (var i2 = 0; i2 < e.length; i2++) {
         if (e[i2] < xLo || e[i2] > xHi) continue;
         var x = mapX(e[i2], xLo, xHi, m.l, W - m.r);
-        var y = Y.map(above[i2] > Y.lo ? above[i2] : Y.lo, m.t, H - m.b);
-        if (!started) { g.moveTo(x, y); started = true; } else g.lineTo(x, y);
+        var y = Y.map(vec[i2] > Y.lo ? vec[i2] : Y.lo, m.t, H - m.b);
+        if (!st0) { g.moveTo(x, y); st0 = true; } else g.lineTo(x, y);
       }
-      for (var i3 = e.length - 1; i3 >= 0; i3--) {
-        if (e[i3] < xLo || e[i3] > xHi) continue;
-        g.lineTo(mapX(e[i3], xLo, xHi, m.l, W - m.r),
-                 Y.map(below[i3] > Y.lo ? below[i3] : Y.lo, m.t, H - m.b));
-      }
+      return st0;
+    }
+
+    for (var oi = 0; oi < order.length; oi++) {
+      var vec = stk[order[oi].nuc.key];
+      if (!bandPath(vec)) continue;
+      var xR = mapX(xHi, xLo, xHi, m.l, W - m.r);
+      var xL = mapX(xLo, xLo, xHi, m.l, W - m.r);
+      var yB = Y.map(Y.lo, m.t, H - m.b);
+      g.lineTo(xR, yB); g.lineTo(xL, yB);
       g.closePath();
+      g.fillStyle = order[oi].nuc.color;
       g.fill();
+    }
+    for (var oj = 0; oj < order.length; oj++) {
+      if (!bandPath(stk[order[oj].nuc.key])) continue;
+      g.strokeStyle = order[oj].nuc.color;
+      g.lineWidth = 1.2;
+      g.stroke();
     }
 
     function trace(getV, color, width, dash) {

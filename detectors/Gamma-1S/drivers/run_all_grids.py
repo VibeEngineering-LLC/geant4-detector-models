@@ -50,14 +50,15 @@ OUT = os.path.join(BUILD, "grid")
 os.makedirs(OUT, exist_ok=True)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gps_region  # noqa: E402
 from grid_energies import LINES  # noqa: E402
 
-# сосуд -> (радиус розыгрыша мм, полувысота мм, центр по z мм)
-VOL_SRC = {
-    "marinelli": (73.0, 45.0, 16.0),
-    "denta": (36.0, 18.0, 61.0),    # кювета стоит на торце z=43, высота 35
-    "petri": (42.5, 7.0, 50.0),     # z 43..57
-}
+# Тело розыгрыша здесь больше не задаётся: оно снимается с построенной
+# геометрии (drivers/gps_region.py). Прежняя таблица констант
+#   marinelli (73,0; 45,0; 16,0) / denta (36,0; 18,0; 61,0) / petri (42,5; 7,0; 50,0)
+# писалась под сосуд из таблицы ЛСРМ и молча перестала покрывать пробу, когда
+# сосуд переставили на чертёж изготовителя (R68, R75). Дублировать размеры
+# модели в драйвере нельзя — они расходятся беззвучно.
 
 JOBS = [
     # (метка, сосуд, матрица, плотность, объём мл, режим, N)
@@ -93,13 +94,15 @@ def todo(tag):
     return left
 
 
-def macro_volume(tag, vessel, n, lines):
-    r, hz, zc = VOL_SRC[vessel]
+def macro_volume(tag, vessel, n, lines, args):
+    # Тело розыгрыша снимается с ПОСТРОЕННОЙ геометрии тем же прогоном exe,
+    # что потом и считает: константы VOL_SRC жили под сосуд из таблицы ЛСРМ и
+    # после перехода на чертёж изготовителя перестали покрывать пробу — теряли
+    # наружное кольцо и верх, то есть самые дальние от кристалла слои (R75).
     t = ["/run/initialize", "/control/verbose 0", "/run/verbose 0",
-         "/gps/particle gamma", "/gps/pos/type Volume",
-         "/gps/pos/shape Cylinder", "/gps/pos/centre 0 0 %.1f mm" % zc,
-         "/gps/pos/radius %.1f mm" % r, "/gps/pos/halfz %.1f mm" % hz,
-         "/gps/pos/confine Sample", "/gps/ang/type iso"]
+         "/gps/particle gamma"]
+    t += gps_region.gps_lines(BUILD, args[0], args[1:])
+    t += ["/gps/ang/type iso"]
     for e in lines:
         t.append("/gps/energy %.3f keV" % e)
         t.append("/g1s/outFile %s" % os.path.join(OUT, "%s_E%07.1f.csv" % (tag, e)))
@@ -156,8 +159,10 @@ if __name__ == "__main__":
             print("=== %s: всё посчитано ===" % tag, flush=True)
             continue
         p = os.path.join(BUILD, "grid_%s.mac" % tag)
-        open(p, "w", encoding="utf-8").write(macro_volume(tag, ves, n, left))
-        run(p, [mode, str(rho), mat, str(vol)],
+        gargs = [mode, str(rho), mat, str(vol)]
+        open(p, "w", encoding="utf-8").write(
+            macro_volume(tag, ves, n, left, gargs))
+        run(p, gargs,
             "%s: %s, %s, ро=%.2f, %.0f мл, энергий %d"
             % (tag, ves, mat, rho, vol, len(left)))
 

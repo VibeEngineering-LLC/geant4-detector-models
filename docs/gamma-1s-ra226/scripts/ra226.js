@@ -193,7 +193,6 @@
         "γ-линий в модели нет (пренебрежимо малый выход) — оставлен для полноты цепочки"; }
       var cb = document.createElement("input");
       cb.type = "checkbox"; cb.checked = ST.on[nd.key];
-      cb.disabled = inert;
       cb.addEventListener("change", function () {
         ST.on[nd.key] = cb.checked; drawSpectrum();
       });
@@ -201,7 +200,7 @@
       sw.className = "sw"; sw.style.background = nd.color;
       var lb = document.createElement("span");
       lb.className = "nm";
-      lb.textContent = nd.label_ru + (inert ? " (γ нет)" : "");
+      lb.textContent = nd.label_ru;
       chip.appendChild(cb); chip.appendChild(sw); chip.appendChild(lb);
       el.appendChild(chip);
     });

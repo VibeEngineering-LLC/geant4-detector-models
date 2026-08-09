@@ -4,6 +4,18 @@
 # sum_peaks: пары найдены вручную (перекрёстная проверка ENSDF/LNHB,
 # см. export_data.py._sum_peaks_with_fb) -- это заведомо ручной шаг
 # (категория C инвентаризации, задача #176), не результат перебора.
+#
+# geant4.isotope_runs (этап 3, задача #175): значения n_events -- слияние
+# decay_th232_isotopes.mac (базовый набор, 200000 на нуклид) и
+# decay_th232_isotopes_hi.mac (добор статистики R66 для Th232/Rn220/
+# Th228/Bi212/Ra224 -- см. историю коммитов macros/ до этапа 3). Раньше
+# это были ДВА файла, второй молча перезаписывал вывод первого для пяти
+# из восьми нуклидов; теперь одно число на нуклид, один генерируемый
+# макрос (tools/generate_isotope_macro.py), коллизия невозможна структурно.
+# GPS-регион (gps_region) -- та же проба, что и во ВСЕХ прогонах ветви
+# (macros/decay_all.mac, coinc_th232.mac и др. вне области этого этапа,
+# трогать не стал -- общая инфраструктура с другими потребителями,
+# нуклидами Cs-137/K-40, не только Th-232).
 
 source:
   id: th232
@@ -202,3 +214,19 @@ sum_peaks:
   i1_pct: 85.0
   i2_pct: 99.754
   note: уровень 3197,717 кэВ; сумма вне диапазона подгонки — запись только для истощения линий 583 и 2614
+
+geant4:
+  gps_region:
+    centre_mm: [0, 0, 16]
+    radius_mm: 90
+    halfz_mm: 60
+    confine_volume: Sample
+  isotope_runs:
+    - {key: Th232, z: 90, a: 232, n_events: 3000000, out_file: iso_Th232.csv}
+    - {key: Ac228, z: 89, a: 228, n_events: 200000,  out_file: iso_Ac228.csv}
+    - {key: Th228, z: 90, a: 228, n_events: 2000000, out_file: iso_Th228.csv}
+    - {key: Ra224, z: 88, a: 224, n_events: 1000000, out_file: iso_Ra224.csv}
+    - {key: Rn220, z: 86, a: 220, n_events: 3000000, out_file: iso_Rn220.csv}
+    - {key: Pb212, z: 82, a: 212, n_events: 200000,  out_file: iso_Pb212.csv}
+    - {key: Bi212, z: 83, a: 212, n_events: 2000000, out_file: iso_Bi212.csv}
+    - {key: Tl208, z: 81, a: 208, n_events: 200000,  out_file: iso_Tl208.csv}

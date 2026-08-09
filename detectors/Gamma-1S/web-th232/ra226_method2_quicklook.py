@@ -97,17 +97,23 @@ def main():
     # geant4-spectrum-pipeline, раздел TCS/F_B).
     shape_total = np.zeros_like(e)
 
+    # ИСПРАВЛЕНО 09.08.2026 (аудит Б2, коммит df5d178, та же находка, что и
+    # в export_data.py.run_method2 -- третья независимая копия формулы,
+    # тоже не была синхронизирована): эффективность ПАРТНЁРА каскада в
+    # депопуляции -- ПОЛНАЯ (eps_total=shape.sum()), не пиковая.
     depl = {}
     for E1, E2, nuc_key, I1_pct, I2_pct, note, fb_pct in ed.SUM_PEAKS:
-        _, _, eps1s = resp(E1)
-        _, _, eps2s = resp(E2)
+        shp1, _, _ = resp(E1)
+        shp2, _, _ = resp(E2)
+        eps1s_tot = float(shp1.sum())
+        eps2s_tot = float(shp2.sum())
         fb_frac_s = fb_pct / 100.0
         k1 = (nuc_key, round(E1, 3))
         k2 = (nuc_key, round(E2, 3))
         depl[k1] = depl.get(k1, 0.0) + (
-            (I1_pct / 100.0) * (I2_pct / 100.0) * eps2s / fb_frac_s)
+            (I1_pct / 100.0) * (I2_pct / 100.0) * eps2s_tot / fb_frac_s)
         depl[k2] = depl.get(k2, 0.0) + (
-            (I2_pct / 100.0) * (I1_pct / 100.0) * eps1s / fb_frac_s)
+            (I2_pct / 100.0) * (I1_pct / 100.0) * eps1s_tot / fb_frac_s)
 
     n_lines_used = 0
     for E, I_pct, nuc_key, note in ed.GAMMA_LIBRARY:

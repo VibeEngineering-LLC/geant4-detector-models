@@ -164,8 +164,11 @@ def _sum_peaks_with_fb(pairs, path=None):
     # FULL_LIBRARY_CSV определяется НИЖЕ по файлу (после этого блока) —
     # здесь нельзя ссылаться на неё как на значение по умолчанию
     # (NameError при загрузке модуля), поэтому путь собирается заново
-    # из HERE, определённого в начале файла.
-    csv_path = path or os.path.join(HERE, "data", "ensdf_th232_chain_lines.csv")
+    # из HERE и source.id конфига (не хардкод "th232" — найдено при
+    # Пилоте 1, задача #182: до этой правки F_B всегда считался по
+    # библиотеке Th-232 независимо от загруженного источника).
+    csv_path = path or os.path.join(
+        HERE, "data", "ensdf_%s_chain_lines.csv" % _CFG["source"]["id"])
     by_energy = {}   # (nuc, E_keV округлённая) -> (start, end)
     by_start = []     # (nuc, start, I_percent) — для депопуляции уровня
     with open(csv_path, encoding="utf-8", newline="") as f:
@@ -249,7 +252,8 @@ SUM_PEAKS = _sum_peaks_with_fb(SUM_PEAKS)
 #   * часть линий известна по энергии, но интенсивность в ENSDF не
 #     оценена (16 строк, Pb-212 и Bi-212) — поле пустое, не ноль. Такие
 #     строки пропускаются: подставить им интенсивность нечем.
-FULL_LIBRARY_CSV = os.path.join(HERE, "data", "ensdf_th232_chain_lines.csv")
+FULL_LIBRARY_CSV = os.path.join(
+    HERE, "data", "ensdf_%s_chain_lines.csv" % _CFG["source"]["id"])
 
 
 def load_full_library(path=FULL_LIBRARY_CSV, nuc_keys=None):

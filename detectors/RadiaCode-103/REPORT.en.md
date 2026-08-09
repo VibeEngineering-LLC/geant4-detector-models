@@ -145,7 +145,7 @@ field spectrum.
 The datasheet sensitivity of 30 counts/s per µSv/h (Cs-137) is not
 reproduced by the model — the calculation gives 20–24. The discrepancy is
 localized in the definition of the datasheet figure, not in the model: see
-["On the datasheet's 30 counts/s"](#on-the-datasheets-30-counts-s).
+["On the datasheet's 30 counts/s"](#on-the-datasheets-30-countss).
 
 ### Cross-check with an independent LSRM calculation (BecqMoni)
 
@@ -268,7 +268,9 @@ organic/soil/water matrices at densities 0.5–1.6 g/cm³ and energies
 ε_p^limit(E) — in
 [`results/m200/efficiency.csv`](results/m200/efficiency.csv), a table by
 natural-background lines — in
-[`efficiency_table.md`](results/m200/efficiency_table.en.md).
+[`efficiency_table.en.md`](results/m200/efficiency_table.en.md); same for the
+500 mL vessel — [`results/m500/efficiency.csv`](results/m500/efficiency.csv)
+and [`efficiency_table.en.md`](results/m500/efficiency_table.en.md).
 
 Self-absorption separates the curves **only below 150 keV**, but there
 radically: at 30 keV, 1.6 g/cm³ soil gives four times less than the

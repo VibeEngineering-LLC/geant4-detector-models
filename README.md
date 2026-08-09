@@ -116,6 +116,14 @@ ANON_MAP=<карта.json> python tools/check_paths.py
   которых уже стоила ошибки в разы, с признаками и лечением.
 - [common/docs/consumers.md](common/docs/consumers.md) — кто берёт репозиторий
   сабмодулем, что это запрещает и в каком порядке чинить остаток аудита.
+- [skills/geant4-spectrum-pipeline/SKILL.md](skills/geant4-spectrum-pipeline/SKILL.md) —
+  операционная процедура разбора гамма-спектра источника (два метода, поправка
+  на каскадное суммирование, генератор макросов) — для нового источника того
+  же класса, что Th-232/Ra-226.
+- [common/docs/becqmoni-data-map.md](common/docs/becqmoni-data-map.md),
+  [common/docs/becqmoni-reply-2026-08-06.md](common/docs/becqmoni-reply-2026-08-06.md) —
+  переписка с проектом `Am6er/BecqMoni`: что этот репозиторий берёт из его
+  базы данных (ничего) и что дают друг другу расчёт и измерение.
 
 ## Лицензия и происхождение данных
 

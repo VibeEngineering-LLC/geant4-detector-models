@@ -20,7 +20,7 @@ reference its address.
 - Cascade summing 0.06–0.33% — negligible, the crystal is small.
 - The factory-rated sensitivity of 30 counts/s per 1 µSv/h for Cs-137 **is
   not reproduced by the model**: the calculation gives 22–27. Discussed in
-  the [report](REPORT.en.md#on-the-datasheets-30-counts-s); in short, the conditions of
+  the [report](REPORT.en.md#on-the-datasheets-30-countss); in short, the conditions of
   the factory measurement are unknown, and the discrepancy has the opposite
   sign from the `K_NORM` systematic, so it cannot be explained by a single
   efficiency error. What should be trusted is the room-background
@@ -29,7 +29,7 @@ reference its address.
 
 ## Status of checks under the common protocol
 
-See [common/docs/validation.md](../../common/docs/validation.en.md).
+See [common/docs/validation.en.md](../../common/docs/validation.en.md).
 
 | item | status |
 |---|---|
@@ -75,7 +75,7 @@ model. This is the main unfinished business for this instrument.
 ## Reliability: what is known as of 28.07.2026
 
 The model is connected as a submodule to a third-party project (see
-[common/docs/consumers.md](../../common/docs/consumers.en.md)), and the
+[common/docs/consumers.en.md](../../common/docs/consumers.en.md)), and the
 consumer needs the **shape** of the curve, not the level: the level is
 absorbed by a free multiplier during activity fitting. Therefore defects are
 separated by exactly what they corrupt.

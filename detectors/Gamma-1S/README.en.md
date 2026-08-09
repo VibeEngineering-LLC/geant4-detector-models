@@ -13,7 +13,11 @@ supplies the detection efficiency. The measure is the reference kit: the
 instrument has passport curves for each geometry, the sources have passports
 with activities — that is, forty records with answers known in advance.
 
-Detailed report with all the numbers and caveats — [REPORT.md](REPORT.en.md).
+Detailed report with all the numbers and caveats —
+[docs/report.md](docs/report.md) (Russian only; the previous
+[REPORT.md](REPORT.en.md) is an earlier methodological draft on developing
+the analysis algorithms, superseded by the current report structure and
+provenance stamp).
 Spectra with found peaks, calibration verification and deconvolution insets —
 on the [summary page](https://vibeengineering-llc.github.io/geant4-detector-models/gamma-1s/).
 
@@ -22,13 +26,23 @@ efficiency curves (Marinelli, "Denta", Petri dish at two densities, water,
 point sources at 5 and 25 cm), a run manifest, and cascade-summing
 corrections. Building Geant4 to obtain the efficiency at a given energy is
 not required; column descriptions and caveats are in
-[results/README.md](results/README.en.md).
+[results/README.en.md](results/README.en.md).
 
 LSRM reference data are located in [reference/lsrm/](reference/lsrm/) in two
 formats: the instrument's binary `.spe` and BecqMoni XML. They are
 interchangeable — for 39 matching pairs the counts, times, and channel
 numbers coincide exactly, verified by the script
 [analysis/xml_vs_spe.py](analysis/xml_vs_spe.py).
+
+Photos and drawings of the instrument itself (redrawing the shield) — in
+[reference/device/](reference/device/) (Russian only). Export of the model
+to the EffCalcMC/NuclideMaster (LSRM) format — in
+[nuclidemaster/](nuclidemaster/). The public interactive page decomposing a
+source spectrum (Th-232, Ra-226; two methods, true-coincidence-summing
+correction) — in [web-th232/](web-th232/) (Russian only), the underlying
+method is generalized in
+[../../skills/geant4-spectrum-pipeline/SKILL.md](../../skills/geant4-spectrum-pipeline/SKILL.md)
+(Russian only).
 
 ## Status
 
@@ -82,7 +96,7 @@ models, not to a common normalization.
 
 ## Verification status per the common protocol
 
-See [common/docs/validation.md](../../common/docs/validation.en.md).
+See [common/docs/validation.en.md](../../common/docs/validation.en.md).
 
 | item | status |
 |---|---|

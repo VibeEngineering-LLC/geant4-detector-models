@@ -29,6 +29,14 @@
 на 39 совпадающих парах отсчёты, времена и число каналов совпадают точно,
 проверяется скриптом [analysis/xml_vs_spe.py](analysis/xml_vs_spe.py).
 
+Фото и чертежи самого прибора (перечерчивание защиты) — в
+[reference/device/](reference/device/). Экспорт модели в формат
+EffCalcMC/NuclideMaster (ЛСРМ) — в [nuclidemaster/](nuclidemaster/).
+Публичная интерактивная страница разложения спектра источника (Th-232,
+Ra-226; два метода, поправка на каскадное суммирование) — в
+[web-th232/](web-th232/), методология обобщена в
+[../../skills/geant4-spectrum-pipeline/SKILL.md](../../skills/geant4-spectrum-pipeline/SKILL.md).
+
 ## Состояние
 
 Числа таблицы синхронизированы с `results/` 31.07.2026 после пересчёта всех

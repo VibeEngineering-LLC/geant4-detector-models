@@ -13,7 +13,7 @@ Geant4 that does the transport.
 
 | detector | crystal | sample geometries | status |
 |---|---|---|---|
-| [Gamma-1S](detectors/Gamma-1S/) | NaI(Tl) 63×63 in 50 mm lead | 1 L Marinelli, "Denta", Petri dish, point sources at 5 and 25 cm | verified against 5 geometries; discrepancies localized in vessel models, cause not found — [report](detectors/Gamma-1S/REPORT.en.md) |
+| [Gamma-1S](detectors/Gamma-1S/) | NaI(Tl) 63×63 in 50 mm lead | 1 L Marinelli, "Denta", Petri dish, point sources at 5 and 25 cm | verified against 5 geometries; agreement with certification improves the farther the sample geometry is from a point source, the sign of the response trend is set by self-absorption in the sample — [report](detectors/Gamma-1S/docs/report.md) (Russian only; [REPORT.en.md](detectors/Gamma-1S/REPORT.en.md) is an earlier, superseded English draft) |
 | [RadiaCode 101–103](detectors/RadiaCode-103/) | CsI(Tl) 10×10×10 | custom-authored 200 and 500 mL Marinelli vessels | curves built and cross-checked; **three protocol items not completed** — [details](detectors/RadiaCode-103/README.en.md) |
 
 Both instruments were checked against LSRM curves in the Marinelli-vessel
@@ -107,23 +107,33 @@ The check looks for local paths, names, serial numbers, email addresses, and
 tokens — in file contents, including binary spectrum headers, and in file
 names. Once such data lands in git history, it does not disappear from there
 on its own. Details and de-identification rules are in
-[tools/TOOLS_INVENTORY.md](tools/TOOLS_INVENTORY.en.md).
+[tools/TOOLS_INVENTORY.en.md](tools/TOOLS_INVENTORY.en.md).
 
 **History is frozen.** The repository is attached as a submodule to a
 third-party project, and a history rewrite destroys the commit pinned
 externally — it breaks not for us, but for everyone who clones the consumer.
 The rules and editing order that follow from this are in
-[common/docs/consumers.md](common/docs/consumers.en.md).
+[common/docs/consumers.en.md](common/docs/consumers.en.md).
 
 ## What to read before building a new model
 
-- [common/docs/validation.md](common/docs/validation.en.md) — the mandatory
+- [common/docs/validation.en.md](common/docs/validation.en.md) — the mandatory
   verification protocol. A model without it is not a model, just a picture.
-- [common/docs/pitfalls.md](common/docs/pitfalls.en.md) — pitfalls, each of
+- [common/docs/pitfalls.en.md](common/docs/pitfalls.en.md) — pitfalls, each of
   which has already cost a multi-fold error, with symptoms and remedies.
-- [common/docs/consumers.md](common/docs/consumers.en.md) — who takes the
+- [common/docs/consumers.en.md](common/docs/consumers.en.md) — who takes the
   repository as a submodule, what that forbids, and in what order to fix the
   rest of the audit findings.
+- [skills/geant4-spectrum-pipeline/SKILL.md](skills/geant4-spectrum-pipeline/SKILL.md)
+  (Russian only) — operating procedure for decomposing a gamma spectrum of a
+  known source (two independent methods, true-coincidence-summing
+  correction, macro generator) — for a new source of the same class as
+  Th-232/Ra-226.
+- [common/docs/becqmoni-data-map.md](common/docs/becqmoni-data-map.md),
+  [common/docs/becqmoni-reply-2026-08-06.md](common/docs/becqmoni-reply-2026-08-06.md)
+  (Russian only) — correspondence with the `Am6er/BecqMoni` project: what this
+  repository takes from its database (nothing) and what the calculation and
+  the measurement give each other.
 
 ## License and data provenance
 

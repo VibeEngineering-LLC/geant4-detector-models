@@ -197,7 +197,7 @@ SUM_PEAKS = [
     (153.977, 911.204, "Ac228", 0.722, 25.8,
      "уровень 968,972 кэВ; один из трёх путей на ~1065,19"),
     (835.710, 129.065, "Ac228", 1.61, 2.42,
-     "уровень 1022,531 кэВ; суммирование в прямую линию 964,766"),
+     "уровень 186,827 кэВ; суммирование в прямую линию 964,766"),
     # Tl-208 583,187+2614,511=3197,7 — самый значимый канал во всей ветви
     # (I1·I2 = 8479 %², тот же уровень 3197,717 кэВ, что и первая пара
     # выше). Сама сумма ВНЕ диапазона подгонки E_FIT_HI=2900 кэВ — цикл
@@ -209,6 +209,102 @@ SUM_PEAKS = [
      "уровень 3197,717 кэВ; сумма вне диапазона подгонки — запись только "
      "для истощения линий 583 и 2614"),
 ]
+
+
+def _sum_peaks_with_fb(pairs, path=None):
+    """Добавляет седьмое поле fb_pct — суммарную интенсивность депопуляции
+    ОБЩЕГО уровня каскада (сумма I_percent всех гамма-переходов ветви,
+    начинающихся на этом уровне, из полной выгрузки ENSDF).
+
+    Зачем. P(оба кванта пары полностью поглощены за один распад) —
+    НЕ произведение маргинальных выходов I1·I2 (это двойной счёт
+    заселения уровня), а I1·I2/F_B, где F_B — доля распадов, в которых
+    уровень вообще заселяется (см. #166/R78, находка внутреннего аудита
+    09.08.2026, P1). При F_B=100% (уровень 3197,717 кэВ Tl-208, пары
+    583+2614/583+511/583+277) поправка ничтожна — I1·I2 уже совпадает
+    с истиной. При F_B<100% (уровни Ac-228, 42-85%) наивная формула
+    занижает и вклад в сумм-пик, и истощение одиночных линий в 1,2-2,4
+    раза — проверено численно на этом же CSV при аудите.
+
+    Уровень для каждой пары находится не по тексту `note` (там уже был
+    минимум один опечатанный номер — 1022,531 вместо 186,827 для пары
+    835,710+129,065, найдено и исправлено при том же аудите), а
+    программно: конец перехода E1 обязан совпасть с началом перехода
+    E2 (или наоборот) в колонке `level` полной выгрузки.
+    """
+    import csv
+    # FULL_LIBRARY_CSV определяется НИЖЕ по файлу (после этого блока) —
+    # здесь нельзя ссылаться на неё как на значение по умолчанию
+    # (NameError при загрузке модуля), поэтому путь собирается заново
+    # из HERE, определённого в начале файла.
+    csv_path = path or os.path.join(HERE, "data", "ensdf_th232_chain_lines.csv")
+    by_energy = {}   # (nuc, E_keV округлённая) -> (start, end)
+    by_start = []     # (nuc, start, I_percent) — для депопуляции уровня
+    with open(csv_path, encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(f):
+            if row.get("line_type") != "gamma":
+                continue
+            lvl = (row.get("level") or "").strip()
+            if not lvl or "->" not in lvl:
+                continue
+            try:
+                start_s, end_s = lvl.split("->")
+                start, end = float(start_s), float(end_s)
+                E_row = float(row["E_keV"])
+                ip = float(row["I_percent"])
+            except ValueError:
+                continue
+            nuc = row["nuclide"]
+            by_energy[(nuc, round(E_row, 3))] = (start, end)
+            by_start.append((nuc, start, ip))
+
+    def transition(nuc, E, tol=0.05):
+        # Матч по КОЛОНКЕ E_keV самой строки (то же число, что в SUM_PEAKS),
+        # а не пересчёт из start-end: разница уровней и заявленная E_keV
+        # округлены в ENSDF независимо и не обязаны совпасть день в день
+        # (пример: 510,77 кэВ vs 3708,41-3197,717=510,693 — 0,08 кэВ мимо).
+        best = None
+        for (n, e_row), se in by_energy.items():
+            if n != nuc:
+                continue
+            d = abs(e_row - E)
+            if d < tol and (best is None or d < best[0]):
+                best = (d, se)
+        return best[1] if best else None
+
+    def depopulation(nuc, level, tol=0.02):
+        return sum(ip for n, s, ip in by_start
+                   if n == nuc and abs(s - level) < tol)
+
+    out = []
+    for E1, E2, nuc, I1, I2, note in pairs:
+        t1, t2 = transition(nuc, E1), transition(nuc, E2)
+        if t1 is None or t2 is None:
+            raise SystemExit(
+                "SUM_PEAKS: переход %.3f или %.3f нуклида %s не найден в %s"
+                % (E1, E2, nuc, csv_path))
+        s1, e1 = t1
+        s2, e2 = t2
+        if abs(e1 - s2) < 0.05:
+            level = s2
+        elif abs(e2 - s1) < 0.05:
+            level = s1
+        else:
+            raise SystemExit(
+                "SUM_PEAKS: %.3f (%.3f→%.3f) и %.3f (%.3f→%.3f) "
+                "нуклида %s не стыкуются общим уровнем"
+                % (E1, s1, e1, E2, s2, e2, nuc))
+        fb = depopulation(nuc, level)
+        if fb <= 0 or fb < max(I1, I2) - 0.5:
+            raise SystemExit(
+                "SUM_PEAKS: депопуляция уровня %.3f кэВ (%s) = %.3f %% — "
+                "меньше входящей в неё линии, не может быть верно"
+                % (level, nuc, fb))
+        out.append((E1, E2, nuc, I1, I2, note, fb))
+    return out
+
+
+SUM_PEAKS = _sum_peaks_with_fb(SUM_PEAKS)
 
 # ─── Полная библиотека: ВСЕ известные γ-линии ветви, без порога ────────────
 # Выгрузка ENSDF через IAEA Live Chart of Nuclides (REST `decay_rads`,
@@ -1283,29 +1379,44 @@ def main():
         # эту потерю не учитывал — метод 2 предсказывал БОЛЬШЕ отсчётов
         # на активность, чем есть на самом деле, и подгонка той же
         # измеренной площади занижала активность (это и есть суть R78).
-        # Стандартная формула поправки (Debertin/Helmer, TCS correction):
-        # P(E1, депл.) = BR·I1/100·eps1·(1 − I2/100·eps2), симметрично E2.
+        # Стандартная формула поправки (Debertin/Helmer, TCS correction),
+        # ИСПРАВЛЕНО 09.08.2026 (внутренний аудит перед внешним, находка P1,
+        # #174): наивное произведение маргинальных выходов I1·I2 дважды
+        # учитывает заселение общего уровня, когда тот заселяется НЕ в
+        # 100% распадов (F_B<100%). Верно — I1·I2/F_B, где F_B — суммарная
+        # депопуляция уровня (см. SUM_PEAKS, седьмое поле fb_pct,
+        # _sum_peaks_with_fb выше). При F_B≈100% (583+2614 Tl-208)
+        # поправка на F_B ничтожна; при F_B=42% (пары 911,204 Ac-228) —
+        # растёт разложение в 2,4 раза; проверено также обратным счётом
+        # по независимому прогону внутреннего аудита — совпало день в день.
+        # P(E1, депл.) = BR·I1/100·eps1·(1 − I2/100/F_B·eps2), симметрично E2.
         # Вычитаем вес, не форму: дырка от истинного совпадения имеет ту
         # же форму отклика, что и сама линия (то же приближение первого
         # порядка, что и у формы сумм-пика ниже).
         depl = {}
-        for E1s, E2s, nuc_keys, I1s, I2s, _note_s in sums:
+        for E1s, E2s, nuc_keys, I1s, I2s, _note_s, fb_pct_s in sums:
             _, _, eps1s = resp(E1s)
             _, _, eps2s = resp(E2s)
+            fb_frac_s = fb_pct_s / 100.0
             k1 = (nuc_keys, round(E1s, 3))
             k2 = (nuc_keys, round(E2s, 3))
             depl[k1] = depl.get(k1, 0.0) + (
-                BR_of[nuc_keys] * (I1s / 100.0) * (I2s / 100.0) * eps2s)
+                BR_of[nuc_keys] * (I1s / 100.0) * (I2s / 100.0)
+                * eps2s / fb_frac_s)
             depl[k2] = depl.get(k2, 0.0) + (
-                BR_of[nuc_keys] * (I2s / 100.0) * (I1s / 100.0) * eps1s)
+                BR_of[nuc_keys] * (I2s / 100.0) * (I1s / 100.0)
+                * eps1s / fb_frac_s)
 
         for E, I_pct, nuc_key, note in library:
             shp, chans, eps = resp(E)
             w = BR_of[nuc_key] * (I_pct / 100.0)
             w_depl = depl.get((nuc_key, round(E, 3)), 0.0)
             if w_depl > 0:
+                # Доля веса ЭТОЙ строки библиотеки, не всего нуклида —
+                # правка формулировки по той же находке аудита (было
+                # ошибочно подписано «от нуклида»).
                 note = (note + "; " if note else "") + (
-                    "истощена совпадением на %.3f %% от нуклида (R78/R85)"
+                    "истощена совпадением на %.3f %% от линии (R78/R85)"
                     % (100.0 * w_depl / max(w, 1e-30)))
                 w = max(0.0, w - w_depl)
             add(nuc_key, w, shp, chans)
@@ -1342,30 +1453,35 @@ def main():
                 "weight_per_branch": xray_w_total, "kind": "xray"})
 
         n_sum_used = 0
-        for E1, E2, nuc_key, I1_pct, I2_pct, note in sums:
+        for E1, E2, nuc_key, I1_pct, I2_pct, note, fb_pct in sums:
             Esum = E1 + E2
             if Esum > E_FIT_HI:
                 continue
             _, _, eps1 = resp(E1)
             _, _, eps2 = resp(E2)
+            fb_frac = fb_pct / 100.0
             # Форма — с узла, ближайшего к СУММАРНОЙ энергии Esum: континуум
             # суммарного пика физически размазан похоже на континуум
             # одиночного кванта той же полной энергии (то же приближение
             # первого порядка, что и у обычных линий). Абсолютная величина —
             # честное произведение eps1*eps2 (эффективность КАЖДОГО из двух
-            # квантов на своей энергии), НЕ eps_peak(Esum).
+            # квантов на своей энергии), НЕ eps_peak(Esum), делённое на F_B
+            # уровня — та же поправка на неполное заселение, что и в
+            # истощении одиночных линий выше (одна и та же физическая
+            # величина с двух сторон, см. комментарий там).
             shp, chans, eps_sum_node = resp(Esum)
             w = (BR_of[nuc_key] * (I1_pct / 100.0) * (I2_pct / 100.0)
-                 * eps1 * eps2 / max(eps_sum_node, 1e-30))
+                 * eps1 * eps2 / max(eps_sum_node, 1e-30) / fb_frac)
             add(nuc_key, w, shp, chans)
             photon_lines.append({
                 "E_keV": Esum, "nuclide": nuc_key, "I_gamma_pct": None,
                 "branch": BR_of[nuc_key],
                 "note": note, "eps_peak": eps1 * eps2,
                 "weight_per_branch": BR_of[nuc_key] * (I1_pct / 100.0)
-                                      * (I2_pct / 100.0) * eps1 * eps2,
+                                      * (I2_pct / 100.0) * eps1 * eps2
+                                      / fb_frac,
                 "kind": "sum", "E1_keV": E1, "E2_keV": E2,
-                "I1_pct": I1_pct, "I2_pct": I2_pct})
+                "I1_pct": I1_pct, "I2_pct": I2_pct, "fb_pct": fb_pct})
             n_sum_used += 1
 
         # Подгонка по ВСЕМУ диапазону, как метод 1: модель теперь физически

@@ -1,0 +1,204 @@
+# Конфиг источника Th-232 для конвейера Гамма-1С.
+# Сгенерирован из export_data.py (этап 2, задача #175/#177,
+# 09.08.2026) -- НЕ переписан руками, транскрипционных ошибок нет.
+# sum_peaks: пары найдены вручную (перекрёстная проверка ENSDF/LNHB,
+# см. export_data.py._sum_peaks_with_fb) -- это заведомо ручной шаг
+# (категория C инвентаризации, задача #176), не результат перебора.
+
+source:
+  id: th232
+  measured_xml_rel: reference_spectra/reference_kits_becqmoni/Marinelli_1L/Th-232/Th232_420-7-17_Маринелли_0cm.xml
+  chain_template_csv: chain_Th232.csv
+passport:
+  bq_per_kg: 1940.0
+  unc_pct: 6.0
+  mass_g: 1600.0
+  passport_date: '2007-09-17'
+  measured_date: '2024-10-24'
+  half_life_years: 14050000000.0
+  days_pass_to_meas: 6247
+nuclides:
+- key: Th232
+  label_ru: Th-232
+  label_en: Th-232
+  color: '#4a3e6b'
+  br: 1.0
+  note_ru: α, γ практически отсутствуют — тонкая полоска у нуля
+- key: Ac228
+  label_ru: Ac-228
+  label_en: Ac-228
+  color: '#c4479e'
+  br: 1.0
+  note_ru: β⁻; γ 338, 911, 964, 969 кэВ — доминирует в средней полосе
+- key: Th228
+  label_ru: Th-228
+  label_en: Th-228
+  color: '#b04e2c'
+  br: 1.0
+  note_ru: α; γ малой интенсивности 84 и 216 кэВ
+- key: Ra224
+  label_ru: Ra-224
+  label_en: Ra-224
+  color: '#1b8a8f'
+  br: 1.0
+  note_ru: α; γ 241 кэВ
+- key: Rn220
+  label_ru: Rn-220
+  label_en: Rn-220
+  color: '#7a5cb0'
+  br: 1.0
+  note_ru: α; γ 549 кэВ малой интенсивности
+- key: Pb212
+  label_ru: Pb-212
+  label_en: Pb-212
+  color: '#e8801c'
+  br: 1.0
+  note_ru: β⁻; γ 238,6 / 300 / 415 кэВ
+- key: Bi212
+  label_ru: Bi-212
+  label_en: Bi-212
+  color: '#2f7a3c'
+  br: 1.0
+  note_ru: β⁻; γ 727, 785, 1620 кэВ; α-ветка 36 % идёт в Tl-208
+- key: Tl208
+  label_ru: Tl-208
+  label_en: Tl-208
+  color: '#d2b93a'
+  br: 0.3594
+  note_ru: β⁻; γ 2614,5 / 583 / 860 / 510 / 277 кэВ — весь жёсткий край; образуется только в 35,94 % распадов
+    Bi-212 (α-ветка)
+fit:
+  e_lo_kev: 100.0
+  e_hi_kev: 2900.0
+library:
+  intensity_threshold_pct: 2.0
+  lines:
+  - e_kev: 129.065
+    i_pct: 2.42
+    nuclide: Ac228
+    note: ''
+  - e_kev: 209.253
+    i_pct: 3.89
+    nuclide: Ac228
+    note: ''
+  - e_kev: 270.245
+    i_pct: 3.46
+    nuclide: Ac228
+    note: ''
+  - e_kev: 328.0
+    i_pct: 2.95
+    nuclide: Ac228
+    note: ''
+  - e_kev: 338.32
+    i_pct: 11.27
+    nuclide: Ac228
+    note: главная линия Ac-228
+  - e_kev: 463.004
+    i_pct: 4.4
+    nuclide: Ac228
+    note: ''
+  - e_kev: 794.947
+    i_pct: 4.25
+    nuclide: Ac228
+    note: ''
+  - e_kev: 911.204
+    i_pct: 25.8
+    nuclide: Ac228
+    note: главная линия Ac-228
+  - e_kev: 964.766
+    i_pct: 4.99
+    nuclide: Ac228
+    note: + суммирование 835,710+129,065
+  - e_kev: 968.971
+    i_pct: 15.8
+    nuclide: Ac228
+    note: ''
+  - e_kev: 1588.2
+    i_pct: 3.22
+    nuclide: Ac228
+    note: ''
+  - e_kev: 240.986
+    i_pct: 4.1
+    nuclide: Ra224
+    note: ''
+  - e_kev: 238.632
+    i_pct: 43.6
+    nuclide: Pb212
+    note: главная линия Pb-212
+  - e_kev: 300.087
+    i_pct: 3.301
+    nuclide: Pb212
+    note: ''
+  - e_kev: 727.33
+    i_pct: 6.67
+    nuclide: Bi212
+    note: главная линия Bi-212
+  - e_kev: 277.371
+    i_pct: 6.6
+    nuclide: Tl208
+    note: ''
+  - e_kev: 510.77
+    i_pct: 22.6
+    nuclide: Tl208
+    note: ядерный переход M1+E2, не аннигиляционная линия
+  - e_kev: 583.187
+    i_pct: 85.0
+    nuclide: Tl208
+    note: главная линия ветви (аналитическая, purity=1,000)
+  - e_kev: 860.557
+    i_pct: 12.5
+    nuclide: Tl208
+    note: + суммирование 277,371+583,187
+  - e_kev: 2614.511
+    i_pct: 99.754
+    nuclide: Tl208
+    note: реперная линия ветви
+sum_peaks:
+- e1_kev: 510.77
+  e2_kev: 583.187
+  nuclide: Tl208
+  i1_pct: 22.6
+  i2_pct: 85.0
+  note: уровень 3197,717 кэВ; crossover 1093,9 подтверждён (0,43-0,44 %)
+- e1_kev: 277.371
+  e2_kev: 583.187
+  nuclide: Tl208
+  i1_pct: 6.6
+  i2_pct: 85.0
+  note: уровень 3197,717 кэВ; суммирование в прямую линию 860,557
+- e1_kev: 463.004
+  e2_kev: 911.204
+  nuclide: Ac228
+  i1_pct: 4.4
+  i2_pct: 25.8
+  note: уровень 968,972 кэВ; crossover 1374,19 подтверждён (~0,014 %)
+- e1_kev: 794.947
+  e2_kev: 270.245
+  nuclide: Ac228
+  i1_pct: 4.25
+  i2_pct: 3.46
+  note: уровень 328,006 кэВ; один из трёх путей на ~1065,18
+- e1_kev: 726.863
+  e2_kev: 338.32
+  nuclide: Ac228
+  i1_pct: 0.62
+  i2_pct: 11.27
+  note: уровень 396,083 кэВ; один из трёх путей на ~1065,18
+- e1_kev: 153.977
+  e2_kev: 911.204
+  nuclide: Ac228
+  i1_pct: 0.722
+  i2_pct: 25.8
+  note: уровень 968,972 кэВ; один из трёх путей на ~1065,19
+- e1_kev: 835.71
+  e2_kev: 129.065
+  nuclide: Ac228
+  i1_pct: 1.61
+  i2_pct: 2.42
+  note: уровень 186,827 кэВ; суммирование в прямую линию 964,766
+- e1_kev: 583.187
+  e2_kev: 2614.511
+  nuclide: Tl208
+  i1_pct: 85.0
+  i2_pct: 99.754
+  note: уровень 3197,717 кэВ; сумма вне диапазона подгонки — запись только для истощения линий 583 и 2614

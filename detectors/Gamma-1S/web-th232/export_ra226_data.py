@@ -69,15 +69,26 @@ def run_method2(library, sums, resp, e, ch_edges, keys):
         shape_total[:] += weight * shp
         by_nuc_w[nuc_key] += weight * shp
 
+    # ИСПРАВЛЕНО 09.08.2026 (аудит Б2, коммит df5d178 -- та же находка, что и
+    # в export_data.py.run_method2, здесь отдельная, НЕ синхронизированная
+    # копия): эффективность ПАРТНЁРА каскада в депопуляции должна быть
+    # ПОЛНОЙ (eps_total = shape.sum(), вероятность зарегистрировать хоть
+    # что-то от кванта где угодно в спектре), не пиковой -- см. подробное
+    # обоснование и цитату (Chehade 2007, IUP Bremen, ур. 2.2-2.3) в
+    # export_data.py.run_method2. У сумм-пика ниже (строки 101-105) обе
+    # эффективности остаются пиковыми -- там другая физика (полное
+    # поглощение ОБОИХ квантов), Б2 её не касается.
     depl = {}
     for E1s, E2s, nuc_keys, I1s, I2s, _note_s, fb_pct_s in sums:
-        _, _, eps1s = resp(E1s)
-        _, _, eps2s = resp(E2s)
+        shp1s, _, _ = resp(E1s)
+        shp2s, _, _ = resp(E2s)
+        eps1s_tot = float(shp1s.sum())
+        eps2s_tot = float(shp2s.sum())
         fb_frac_s = fb_pct_s / 100.0
         k1 = (nuc_keys, round(E1s, 3))
         k2 = (nuc_keys, round(E2s, 3))
-        depl[k1] = depl.get(k1, 0.0) + (I1s / 100.0) * (I2s / 100.0) * eps2s / fb_frac_s
-        depl[k2] = depl.get(k2, 0.0) + (I2s / 100.0) * (I1s / 100.0) * eps1s / fb_frac_s
+        depl[k1] = depl.get(k1, 0.0) + (I1s / 100.0) * (I2s / 100.0) * eps2s_tot / fb_frac_s
+        depl[k2] = depl.get(k2, 0.0) + (I2s / 100.0) * (I1s / 100.0) * eps1s_tot / fb_frac_s
 
     lines_out = []
     for E, I_pct, nuc_key, note in library:

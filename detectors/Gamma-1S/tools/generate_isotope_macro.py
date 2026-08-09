@@ -46,6 +46,27 @@ def render(cfg):
     reg = g4["gps_region"]
     cx, cy, cz = reg["centre_mm"]
     src_id = cfg["source"]["id"]
+    runs = g4["isotope_runs"]
+
+    # ИСПРАВЛЕНО 09.08.2026 (аудит Б4, задача #6), три робастность-дефекта,
+    # ни один не задет текущими цепочками Th-232/Ra-226:
+    if not runs:
+        raise SystemExit(
+            "geant4.isotope_runs пуст в конфиге источника %s -- нечего "
+            "генерировать. Пустой макрос без /run/beamOn молча писать не "
+            "будем: он бы выглядел как успешно сгенерированный, но не "
+            "давал вообще никаких данных." % src_id)
+    seen_out = {}
+    for r in runs:
+        prev = seen_out.get(r["out_file"])
+        if prev is not None:
+            raise SystemExit(
+                "geant4.isotope_runs: out_file %r повторяется у %s и %s -- "
+                "второй прогон молча перезапишет вывод первого (тот самый "
+                "класс ловушки, ради которого этот генератор и написан, "
+                "см. докстринг модуля). Дать разным звеньям разные файлы."
+                % (r["out_file"], prev, r["key"]))
+        seen_out[r["out_file"]] = r["key"]
 
     lines = []
     lines.append("# Отдельные прогоны каждого γ-испускающего звена ветви распада"
@@ -82,12 +103,25 @@ def render(cfg):
     lines.append("/gps/pos/confine %s" % reg["confine_volume"])
     lines.append("/gps/ang/type iso")
 
-    for r in g4["isotope_runs"]:
+    for r in runs:
+        # excitation_keV (опционально, по умолчанию 0 = основное состояние)
+        # -- ИСПРАВЛЕНО 09.08.2026 (Б4, #6): nucleusLimits различает только
+        # (Z,A), не изомерное состояние -- сам по себе он не «ломает»
+        # изомеры, но БЕЗ этого поля /gps/ion всегда розыгрывал основное
+        # состояние (0 0), и для нуклида вроде Cs-137, где интересующая
+        # гамма-линия (661,657 кэВ) излучается ИЗОМЕРОМ Ba-137m
+        # (E*=661,659 кэВ), а не самим Cs-137 напрямую, не было способа
+        # это выразить в конфиге. Четвёртый параметр /gps/ion -- энергия
+        # возбуждения в кэВ (Geant4 General Particle Source, /gps/ion
+        # Z A Q E), не Z_min/Z_max nucleusLimits.
+        exc = r.get("excitation_keV", 0)
         lines.append("")
-        lines.append("# --- %s (Z=%d, A=%d) ---" % (r["key"], r["z"], r["a"]))
+        lines.append("# --- %s (Z=%d, A=%d%s) ---"
+                      % (r["key"], r["z"], r["a"],
+                         ", E*=%g кэВ" % exc if exc else ""))
         lines.append("/process/had/rdm/nucleusLimits %d %d %d %d"
                       % (r["a"], r["a"], r["z"], r["z"]))
-        lines.append("/gps/ion %d %d 0 0" % (r["z"], r["a"]))
+        lines.append("/gps/ion %d %d 0 %g" % (r["z"], r["a"], exc))
         lines.append("/g1s/outFile %s" % r["out_file"])
         lines.append("/run/beamOn %d" % r["n_events"])
     lines.append("")

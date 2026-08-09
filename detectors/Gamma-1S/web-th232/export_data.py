@@ -1079,6 +1079,35 @@ def main():
             by_nuc_raw[key] = np.maximum(by_nuc_raw[key], 0.0)
         by_nuc_raw["XRAY"] = sum(xray_raw.values())
         iso_sum = sum(by_nuc_raw.values())
+
+        # ── сторож статистики на долю нуклида (R66/R76) ──────────────────
+        # Доля нуклида в канале считается как by_nuc_raw[k]/iso_sum и потом
+        # умножается на templ_total. Там, где шаблон нуклида набран единицами
+        # отсчётов МК, эта доля — не физика, а пуассоновский шум; умноженная
+        # на большой полный отклик, она даёт слой, ПОВТОРЯЮЩИЙ ФОРМУ отклика
+        # и читающийся на лог-шкале как настоящие пики. Так вылезли «фантомы»
+        # слабых нуклидов выше 2000 кэВ и структура сущности рентгена на
+        # 1600-2600 кэВ, где рентгена быть не может (разбор R76).
+        #
+        # Мера доверия — ожидаемое число МК-отсчётов, попавших в канал: тот же
+        # broaden_and_rebin, но БЕЗ деления на число розыгрышей. Уширение
+        # размазывает отсчёт по ~ПШПВ (на 2614 кэВ это ~38 каналов), поэтому
+        # одиночный отсчёт даёт n_eff ~ 0,03, а населённая линия — сотни.
+        # Относительная пуассоновская погрешность доли ~ 1/sqrt(n_eff).
+        #
+        # ОГРУБЛЕНИЕ, объявленное явно: отсчёт, размазанный по нескольким
+        # каналам, вносит в них КОРРЕЛИРОВАННЫЕ доли, и точная дисперсия
+        # ниже пуассоновской по n_eff. Для порога «шум или не шум» этого
+        # достаточно; полноценная ковариация шаблонов здесь не считается.
+        n_eff = {}
+        for key, ru, en, col, br, note in NUCS:
+            hist, _ = hist_iso[key]
+            n_eff[key] = broaden_and_rebin(hist, 1.0, ch_edges, broaden)
+        xr_hist = {}
+        for key, ru, en, col, br, note in NUCS:
+            for E0, c in xray_dep[key][0].items():
+                xr_hist[E0] = xr_hist.get(E0, 0.0) + c
+        n_eff["XRAY"] = broaden_and_rebin(xr_hist, 1.0, ch_edges, broaden)
         # Амплитуду даёт chain_Th232 (полный физический транспорт), iso —
         # только НОРМИРОВАННУЮ долю нуклида в канале: суммирование iso с
         # branching расходится с chain по интегралу вдвое (систематика
@@ -1116,7 +1145,7 @@ def main():
             raise SystemExit(
                 "XRAY: баланс Σ by_nuc == templ_total нарушен, невязка %.3e"
                 % resid)
-        return templ_total, by_nuc
+        return templ_total, by_nuc, n_eff
 
     # ── метод 1: МК-шаблоны по нуклидам ────────────────────────────────
     # ОДНА амплитуда на всю ветвь: в вековом равновесии активности звеньев
@@ -1277,7 +1306,7 @@ def main():
     for tag, law in (("lines", LAW_LINES), ("cs", LAW_CS)):
         FWHM_LAW.clear()
         FWHM_LAW.update(law)
-        templ_total, by_nuc = build_templates(True)
+        templ_total, by_nuc, n_eff = build_templates(True)
         m1, model1 = run_method1(templ_total, by_nuc)
         resp = make_full_response(os.path.join(BUILD, "grid"), ch_edges,
                                    True, eps_peak)
@@ -1286,7 +1315,24 @@ def main():
         m2f, model2f, stack2f, stack2f_chan, by_nuc_w2f = run_method2(
             lib_full, SUM_PEAKS, resp, with_diag=False)
         stack = {k: (by_nuc[k] * m1["A_Bq"] * T).tolist() for k in keys}
+        # Сторож статистики (R66/R76): порог доверия к доле нуклида в канале.
+        # N_EFF_MIN = 4 отсчёта МК -> относительная пуассоновская погрешность
+        # доли 50 %. Ниже порога слой рисуется пунктиром без заливки: значение
+        # остаётся в данных (баланс Σ слоёв = сумме не рвётся), но читателю
+        # видно, что это шум шаблона, а не структура отклика.
+        N_EFF_MIN = 4.0
+        trusted = {k: (n_eff[k] >= N_EFF_MIN).tolist() for k in keys}
+        # Отчёт в консоль: какая доля интеграла слоя лежит ниже порога.
+        for k in keys:
+            v = by_nuc[k]
+            m = n_eff[k] < N_EFF_MIN
+            frac = float(v[m].sum() / max(v.sum(), 1e-30))
+            if frac > 0.01:
+                print("   сторож статистики: %-6s %.1f %% интеграла слоя "
+                      "ниже %g отсчётов МК на канал" % (k, 100 * frac,
+                                                        N_EFF_MIN), flush=True)
         variants[tag] = {
+            "trusted": trusted, "n_eff_min": N_EFF_MIN,
             "method1": m1, "method2": m2, "method2_full": m2f,
             "stack": stack, "stack2": stack2, "stack2_full": stack2f,
             "stack2_chan": stack2_chan, "stack2_chan_full": stack2f_chan,
@@ -1450,6 +1496,14 @@ def main():
             "model2_counts": V["model2_counts"],
             "model2_full_counts": V["model2_full_counts"],
             "stack": V["stack"],
+            # Сторож статистики (R66/R76): по каналу на нуклид — набран ли
+            # его МК-шаблон достаточно, чтобы доле в этом канале верить.
+            # false — доля определяется пуассоновским шумом шаблона, и слой
+            # там рисуется без заливки. Значение в stack при этом сохранено:
+            # выбрасывать его нельзя, иначе сумма слоёв перестанет сходиться
+            # с полным откликом.
+            "trusted": V["trusted"],
+            "n_eff_min": V["n_eff_min"],
             "stack_leak": stack_leak,
             "stack2": V["stack2"],
             "stack2_full": V["stack2_full"],

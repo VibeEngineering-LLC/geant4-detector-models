@@ -23,7 +23,7 @@
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
-  var ST = { on: {}, log: true, lib: "sel" };
+  var ST = { on: {}, log: true, lib: "sel", cursorE: null };
   D.nuclides.forEach(function (n) { ST.on[n.key] = true; });
 
   function M2() { return ST.lib === "full" ? D.method2_full : D.method2_sel; }
@@ -56,12 +56,13 @@
     if (logY) {
       lo = Math.max(0.5, lo); hi = Math.max(lo * 10, hi);
       var l0 = Math.log10(lo), l1 = Math.log10(hi);
-      return { map: function (v, y0, y1) {
+      return { lo: lo, hi: hi, log: true, map: function (v, y0, y1) {
         var t = (Math.log10(Math.max(v, lo)) - l0) / (l1 - l0);
         return y0 + (1 - t) * (y1 - y0);
       } };
     }
-    return { map: function (v, y0, y1) { return y0 + (1 - v / hi) * (y1 - y0); } };
+    return { lo: 0, hi: hi, log: false,
+             map: function (v, y0, y1) { return y0 + (1 - v / hi) * (y1 - y0); } };
   }
 
   function stackTotal(stk, i) {
@@ -89,18 +90,19 @@
       return c - D.spectrum.bg_counts[i];
     });
     var stk = M2().stack;
-    var xLo = 0, xHi = e[e.length - 1];
+    var xLo = 30, xHi = 3000;
 
     var vMax = 1;
     for (var i0 = 0; i0 < e.length; i0++) {
-      if (e[i0] < 30 || e[i0] > 2400) continue;
+      if (e[i0] < xLo || e[i0] > xHi) continue;
       var v0 = Math.max(yy[i0], stackTotal(stk, i0));
       if (v0 > vMax) vMax = v0;
     }
     var Y = makeY(ST.log, ST.log ? 0.5 : 0, vMax * (ST.log ? 2.0 : 1.1));
 
     g.strokeStyle = p.grid; g.lineWidth = 1; g.beginPath();
-    var xTicks = [250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2250];
+    var xTicks = [250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2250,
+                  2500, 2750, 3000];
     xTicks.forEach(function (tv) {
       var x = mapX(tv, xLo, xHi, m.l, W - m.r);
       g.moveTo(x, m.t); g.lineTo(x, H - m.b);
@@ -133,39 +135,124 @@
     });
     order.sort(function (a, b) { return b.area - a.area; });
 
+    // Каналы ЗА пределами [xLo,xHi] (замечание оператора: чёрная
+    // вертикальная полоса слева на 30-3000) в цикл не попадают вовсе —
+    // раньше рисовались ВСЕ каналы (включая e[i]<30, где нередок
+    // артефакт нулевого/первых каналов), mapX экстраполировал их в
+    // координату далеко за левым краем, и линия/заливка шла туда и
+    // обратно диагональю через всю видимую область.
+    var idxLo = 0, idxHi = n - 1;
+    while (idxLo < n && e[idxLo] < xLo) idxLo++;
+    while (idxHi >= 0 && e[idxHi] > xHi) idxHi--;
+
     order.forEach(function (o) {
       var nd = o.nd;
       g.fillStyle = nd.color; g.globalAlpha = 0.55;
       g.beginPath();
-      g.moveTo(mapX(e[0], xLo, xHi, x0, x1), Y.map(0, y0, y1));
-      for (var i = 0; i < n; i++) {
+      g.moveTo(mapX(e[idxLo], xLo, xHi, x0, x1), Y.map(0, y0, y1));
+      for (var i = idxLo; i <= idxHi; i++) {
         var x = mapX(e[i], xLo, xHi, x0, x1);
         g.lineTo(x, Y.map(stk[nd.key][i], y0, y1));
       }
-      g.lineTo(mapX(e[n - 1], xLo, xHi, x0, x1), Y.map(0, y0, y1));
+      g.lineTo(mapX(e[idxHi], xLo, xHi, x0, x1), Y.map(0, y0, y1));
       g.closePath(); g.fill();
       g.globalAlpha = 1;
     });
 
     g.strokeStyle = p.sum; g.lineWidth = 1.4; g.beginPath();
-    for (var i2 = 0; i2 < n; i2++) {
+    for (var i2 = idxLo; i2 <= idxHi; i2++) {
       var xs = mapX(e[i2], xLo, xHi, x0, x1);
       var ys = Y.map(stackTotal(stk, i2), y0, y1);
-      if (i2 === 0) g.moveTo(xs, ys); else g.lineTo(xs, ys);
+      if (i2 === idxLo) g.moveTo(xs, ys); else g.lineTo(xs, ys);
     }
     g.stroke();
 
     g.strokeStyle = p.ink; g.lineWidth = 1; g.globalAlpha = 0.85;
     g.beginPath();
-    for (var i3 = 0; i3 < n; i3++) {
+    for (var i3 = idxLo; i3 <= idxHi; i3++) {
       var xm = mapX(e[i3], xLo, xHi, x0, x1);
       var ym = Y.map(yy[i3], y0, y1);
-      if (i3 === 0) g.moveTo(xm, ym); else g.lineTo(xm, ym);
+      if (i3 === idxLo) g.moveTo(xm, ym); else g.lineTo(xm, ym);
     }
     g.stroke(); g.globalAlpha = 1;
 
+    // Вертикальный пунктир под указателем (замечание оператора).
+    if (ST.cursorE !== null && ST.cursorE >= xLo && ST.cursorE <= xHi) {
+      var xCur = mapX(ST.cursorE, xLo, xHi, x0, x1);
+      g.strokeStyle = p.rule; g.lineWidth = 1; g.setLineDash([4, 3]);
+      g.globalAlpha = 0.7;
+      g.beginPath(); g.moveTo(xCur, y0); g.lineTo(xCur, y1); g.stroke();
+      g.setLineDash([]); g.globalAlpha = 1;
+    }
+
     g.strokeStyle = p.rule; g.lineWidth = 1.2;
     g.beginPath(); g.moveTo(m.l, y0); g.lineTo(m.l, y1); g.lineTo(x1, y1); g.stroke();
+  }
+
+  /* ── наведение курсора на спектр (порт cursorText/attachCursor
+     g1s-th232.js один в один — задача оператора «мышь не определяет
+     энергию») ──────────────────────────────────────────────────── */
+  function cursorTextM2() {
+    var el = document.getElementById("cursorM2");
+    if (!el) return;
+    if (ST.cursorE === null) {
+      el.textContent = "наведи курсор на канал спектра";
+      return;
+    }
+    var e = D.spectrum.e_of_ch;
+    var i = 0, best = Infinity;
+    for (var k = 0; k < e.length; k++) {
+      var dd = Math.abs(e[k] - ST.cursorE);
+      if (dd < best) { best = dd; i = k; }
+    }
+    var meas = D.spectrum.counts[i] - D.spectrum.bg_counts[i];
+    var stk = M2().stack;
+    var contribs = [];
+    D.nuclides.forEach(function (nd) {
+      if (!ST.on[nd.key] || !stk[nd.key]) return;
+      var v = stk[nd.key][i];
+      if (v > 0.5) contribs.push({ nd: nd, v: v });
+    });
+    contribs.sort(function (a, b) { return b.v - a.v; });
+    var top = contribs.slice(0, 4).map(function (c) {
+      return c.nd.label_ru + " " + cnt(c.v);
+    }).join(" · ");
+    var txt = num(e[i], 0) + " кэВ — измерено (без фона) " + cnt(meas)
+            + ", модель " + cnt(stackTotal(stk, i));
+    if (top) txt += " — " + top;
+    el.textContent = txt;
+    var tip = document.getElementById("m2-tip");
+    if (tip) tip.textContent = num(e[i], 0) + " кэВ · " + cnt(meas);
+  }
+
+  var CURSOR_M2_wired = false;
+  function attachCursorM2() {
+    if (CURSOR_M2_wired) return;
+    CURSOR_M2_wired = true;
+    var cv = document.getElementById("cvM2");
+    var tip = document.getElementById("m2-tip");
+    if (!cv) return;
+    cv.addEventListener("pointermove", function (ev) {
+      var r = cv.getBoundingClientRect();
+      var x = ev.clientX - r.left, y = ev.clientY - r.top;
+      var m = { l: 60, r: 14 };
+      var xLo = 30, xHi = 3000;
+      if (x < m.l || x > r.width - m.r) ST.cursorE = null;
+      else ST.cursorE = xLo + ((x - m.l) / (r.width - m.r - m.l)) * (xHi - xLo);
+      cursorTextM2(); drawSpectrum();
+      if (tip) {
+        if (ST.cursorE === null) tip.hidden = true;
+        else {
+          tip.hidden = false;
+          tip.style.left = x + "px";
+          tip.style.top = Math.max(0, y) + "px";
+        }
+      }
+    });
+    cv.addEventListener("pointerleave", function () {
+      ST.cursorE = null; cursorTextM2(); drawSpectrum();
+      if (tip) tip.hidden = true;
+    });
   }
 
   // Не у каждого звена цепочки есть линия в модели — Rn-222/Po-218/Po-214
@@ -189,12 +276,12 @@
       var inert = isInert(nd.key);
       var chip = document.createElement("label");
       chip.className = "chip";
-      if (inert) { chip.style.opacity = "0.45"; chip.title =
+      if (inert) { chip.title =
         "γ-линий в модели нет (пренебрежимо малый выход) — оставлен для полноты цепочки"; }
       var cb = document.createElement("input");
       cb.type = "checkbox"; cb.checked = ST.on[nd.key];
       cb.addEventListener("change", function () {
-        ST.on[nd.key] = cb.checked; drawSpectrum();
+        ST.on[nd.key] = cb.checked; cursorTextM2(); drawSpectrum();
       });
       var sw = document.createElement("span");
       sw.className = "sw"; sw.style.background = nd.color;
@@ -259,28 +346,65 @@
       { lab: "метод 2 (отобр.)", A: D.method2_sel.A_Bq, dA: D.method2_sel.dA_Bq, col: "#0f5aa8" },
       { lab: "метод 2 (полн.)", A: D.method2_full.A_Bq, dA: D.method2_full.dA_Bq, col: "#c8541c" },
     ];
+    // Порт drawCmp() из g1s-th232.js один в один (замечание оператора
+    // «шкалу сравнений сделай как на референсе»): рамка, сетка по X с
+    // подписями делений, подпись оси, метка жирным над баром, значение
+    // моноширинным рядом. Раньше здесь была своя упрощённая заливка без
+    // рамки/сетки/оси.
     if (cv) {
+      var p = pal();
       var f = fit(cv), g = f.g, W = f.w, H = f.h;
-      var maxA = Math.max.apply(null, items.map(function (it) { return it.A + it.dA; })) * 1.15;
-      var m = { l: 130, r: 60, t: 14, b: 14 };
-      var rowH = (H - m.t - m.b) / items.length;
-      items.forEach(function (it, i) {
-        var y = m.t + i * rowH + rowH * 0.22;
-        var barH = rowH * 0.56;
-        var x0 = m.l, x1 = W - m.r;
-        var wA = (it.A / maxA) * (x1 - x0);
-        var wD = (it.dA / maxA) * (x1 - x0);
-        g.fillStyle = it.col; g.globalAlpha = 0.85;
-        g.fillRect(x0, y, wA, barH);
-        g.globalAlpha = 0.35;
-        g.fillRect(x0 + wA - wD, y, 2 * wD, barH);
-        g.globalAlpha = 1;
-        g.fillStyle = css("--ink", "#16140f");
-        g.font = "12px var(--sans, sans-serif)"; g.textAlign = "right"; g.textBaseline = "middle";
-        g.fillText(it.lab, m.l - 10, y + barH / 2);
-        g.textAlign = "left";
-        g.fillText(cnt(it.A) + " ± " + cnt(it.dA), x0 + wA + 8, y + barH / 2);
+      var m = { l: 26, r: 20, t: 18, b: 34 };
+      var lo = Infinity, hi = -Infinity;
+      items.forEach(function (it) {
+        lo = Math.min(lo, it.A - it.dA);
+        hi = Math.max(hi, it.A + it.dA);
       });
+      var pad = (hi - lo) * 0.15 + 1;
+      lo -= pad; hi += pad; lo = Math.max(0, lo);
+
+      g.strokeStyle = p.rule; g.lineWidth = 2;
+      g.strokeRect(m.l, m.t, W - m.r - m.l, H - m.b - m.t);
+
+      var range = hi - lo;
+      var stp = Math.pow(10, Math.floor(Math.log10(range / 4)));
+      var s = Math.max(stp, Math.ceil(range / 5 / stp) * stp);
+      g.strokeStyle = p.grid; g.beginPath();
+      g.fillStyle = p.faint; g.font = "11px system-ui, sans-serif";
+      g.textAlign = "center"; g.textBaseline = "top";
+      for (var v = Math.ceil(lo / s) * s; v <= hi; v += s) {
+        var x = mapX(v, lo, hi, m.l, W - m.r);
+        g.moveTo(x, m.t); g.lineTo(x, H - m.b);
+        g.fillText(cnt(v), x, H - m.b + 4);
+      }
+      g.stroke();
+      g.textAlign = "center"; g.textBaseline = "bottom";
+      g.fillText("активность, Бк", (m.l + W - m.r) / 2, H - 2);
+
+      var innerH = H - m.b - m.t;
+      var rowH = innerH / items.length;
+      for (var j = 0; j < items.length; j++) {
+        var it = items[j];
+        var yc = m.t + rowH * (j + 0.5);
+        var xl = mapX(it.A - it.dA, lo, hi, m.l, W - m.r);
+        var xr = mapX(it.A + it.dA, lo, hi, m.l, W - m.r);
+        var xm = mapX(it.A, lo, hi, m.l, W - m.r);
+        g.fillStyle = it.col; g.globalAlpha = 0.28;
+        g.fillRect(xl, yc - rowH * 0.28, Math.max(xr - xl, 1), rowH * 0.56);
+        g.globalAlpha = 1;
+        g.strokeStyle = it.col; g.lineWidth = 3;
+        g.beginPath();
+        g.moveTo(xm, yc - rowH * 0.36); g.lineTo(xm, yc + rowH * 0.36);
+        g.stroke();
+        g.fillStyle = it.col;
+        g.textAlign = "left"; g.textBaseline = "middle";
+        g.font = "bold 13px system-ui, sans-serif";
+        g.fillText(it.lab, m.l + 6, yc - rowH * 0.28);
+        g.fillStyle = p.ink;
+        g.font = "12px ui-monospace, Menlo, monospace";
+        g.fillText(cnt(it.A) + " ± " + cnt(it.dA) + " Бк",
+                   Math.min(xr + 8, W - m.r - 130), yc);
+      }
     }
     if (tbl) {
       var html = "<table class='big'><thead><tr><th>оценка</th><th>A, Бк</th><th>отношение к паспорту</th></tr></thead><tbody>";
@@ -293,13 +417,31 @@
       tbl.innerHTML = html;
     }
     var rn = document.getElementById("radonNote");
-    if (rn && D.radon_check) {
-      // Честный статус (замечание оператора №3, 09.08.2026): попытка
-      // независимой проверки утечки радона НЕ дала надёжного числа —
-      // см. export_ra226_data.py.radon_check.reason. Метод 2 в текущем
-      // виде (одна амплитуда на всю цепочку) утечку в принципе не видит.
-      rn.innerHTML = "<b>Утечка радона (Rn-222, T½=3,82 сут) — не проверена.</b> " +
-        esc(D.radon_check.reason);
+    // Честный статус (замечание оператора, 10.08.2026): двухамплитудный
+    // фит (родитель Ra-226 против дочерних Rn-222+Pb-214+Bi-214+Po-218/214,
+    // деконволюция по всему спектру методом 2) число ДАЁТ и оно устойчиво
+    // к границе окна подгонки, но физически неправдоподобно (родитель
+    // ≈вдвое больше паспорта) — см. export_ra226_data.py.radon_check.caveat.
+    // Не выдаётся как подтверждённая утечка (reliable=false).
+    if (rn && D.radon_check && D.radon_check.attempted) {
+      var rc = D.radon_check;
+      rn.innerHTML = "<b>Утечка радона (Rn-222, T½=3,82 сут) — ⚠️ число "
+        + "посчитано, НЕ подтверждено.</b> Двухамплитудный фит методом 2 "
+        + "(родитель Ra-226 против дочерних " + rc.daughter_nuclides.map(labelRu).join("+")
+        + "): A(родитель)=" + cnt(rc.A_parent_Bq) + " ± " + cnt(rc.dA_parent_Bq)
+        + " Бк, A(дочерние)=" + cnt(rc.A_daughter_Bq) + " ± " + cnt(rc.dA_daughter_Bq)
+        + " Бк, отношение дочерние/родитель=" + num(rc.ratio_daughter_to_parent, 3)
+        + " ± " + num(rc.d_ratio, 3) + ". Направление (дочерние &lt; родитель) "
+        + "формально совпало бы с утечкой, но величина неправдоподобна — "
+        + "A(родитель) ≈ " + num(rc.A_parent_over_passport, 2) + "× паспортной "
+        + "активности, а не на доли процента ниже, как ожидалось бы при "
+        + "частичной потере Rn-222. Родитель держится на единственной линии "
+        + "186,211 кэВ — избыток правдоподобнее объясняется несмоделированным "
+        + "вкладом (гипотеза, не подтверждена: кандидат — линия U-235 "
+        + "185,715 кэВ, неразличима с 186,211 при разрешении NaI), чем "
+        + "реальным дисбалансом цепочки.";
+    } else if (rn) {
+      rn.textContent = "";
     }
   }
 
@@ -373,8 +515,8 @@
     var e = D.spectrum.e_of_ch;
     var y = D.spectrum.counts;
     var b = D.spectrum.bg_counts;
-    var xLo = CAL.zoom ? CAL.zoom.xLo : 0;
-    var xHi = CAL.zoom ? CAL.zoom.xHi : e[e.length - 1];
+    var xLo = CAL.zoom ? CAL.zoom.xLo : 30;
+    var xHi = CAL.zoom ? CAL.zoom.xHi : 3000;
     var vMax = 1, series = [];
     if (CAL.smp) series.push(y);
     if (CAL.bg)  series.push(b);
@@ -491,8 +633,8 @@
 
   function calEfromX(x, rectWidth) {
     var e = D.spectrum.e_of_ch;
-    var xLo = CAL.zoom ? CAL.zoom.xLo : 0;
-    var xHi = CAL.zoom ? CAL.zoom.xHi : e[e.length - 1];
+    var xLo = CAL.zoom ? CAL.zoom.xLo : 30;
+    var xHi = CAL.zoom ? CAL.zoom.xHi : 3000;
     var m = CAL_MARGIN;
     return xLo + ((x - m.l) / (rectWidth - m.r - m.l)) * (xHi - xLo);
   }
@@ -501,8 +643,8 @@
     if (!CAL.anch || !D.reference_lines) return null;
     if (y < CAL_MARGIN.t - 2 || y > CAL_MARGIN.t + CAL_MARK_H + 3) return null;
     var e = D.spectrum.e_of_ch;
-    var xLo = CAL.zoom ? CAL.zoom.xLo : 0;
-    var xHi = CAL.zoom ? CAL.zoom.xHi : e[e.length - 1];
+    var xLo = CAL.zoom ? CAL.zoom.xLo : 30;
+    var xHi = CAL.zoom ? CAL.zoom.xHi : 3000;
     var best = null, bestD = CAL_MARK_HIT_PX;
     D.reference_lines.forEach(function (r) {
       var E = r[0];
@@ -754,7 +896,8 @@
     document.querySelectorAll("#tabs .tab").forEach(function (b) {
       b.setAttribute("aria-selected", String(b.dataset.tab === name));
     });
-    if (name === "m2") { buildLegend(); fillSummary(); fillTable(); drawSpectrum(); }
+    if (name === "m2") { buildLegend(); fillSummary(); fillTable();
+                         attachCursorM2(); cursorTextM2(); drawSpectrum(); }
     if (name === "cmp") fillCompare();
     if (name === "cal") { buildCal(); drawCal(); drawFwhm(); }
   }
@@ -768,7 +911,7 @@
       document.querySelectorAll("#libseg .btn").forEach(function (x) {
         x.setAttribute("aria-pressed", String(x === b));
       });
-      fillSummary(); fillTable(); drawSpectrum();
+      fillSummary(); fillTable(); cursorTextM2(); drawSpectrum();
     });
   });
 

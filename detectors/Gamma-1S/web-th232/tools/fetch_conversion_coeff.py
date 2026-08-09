@@ -25,12 +25,12 @@ lines.csv — не потому, что источник его не даёт (A
 брал подмножество колонок и её не сохранил. Здесь колонка добывается заново
 из ТОГО ЖЕ источника, тем же запросом.
 
-Область действия: F_B в _sum_peaks_with_fb() используется ТОЛЬКО для
-уровней, фигурирующих в SUM_PEAKS (configs/th232.yaml, configs/ra226.yaml) —
-это Ac228 (4 уровня), Tl208 (1 уровень) в цепочке Th-232, и Bi214
-(1 уровень) в цепочке Ra-226. Список нуклидов ниже поэтому закрытый и
-осознанно узкий (не вся цепочка) — расширять при появлении новых пар в
-SUM_PEAKS для других нуклидов.
+Область действия: изначально (09.08.2026, аудит Б1) список нуклидов был
+закрытый и узкий — только те, что фигурируют в SUM_PEAKS (Ac228, Tl208,
+Bi214). РАСШИРЕН тем же вечером (аудит Б4, задача #2) на ВСЕ нуклиды
+обеих цепочек: tools/enumerate_sum_peaks.py (перебор НОВЫХ кандидатов,
+не только уже принятых пар) должен уметь считать правильный F_B для
+любого нуклида библиотеки, не только уже отобранных вручную.
 
 Запуск:
     python tools/fetch_conversion_coeff.py
@@ -48,10 +48,27 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT_CSV = os.path.join(HERE, "..", "data", "conversion_coeff_sum_peak_levels.csv")
 
 # nuclide-ключ пайплайна (как в data/ensdf_*_chain_lines.csv) -> формат IAEA Live Chart
+# Список РАСШИРЕН 09.08.2026 (аудит Б4, задача #2): изначально только три
+# нуклида, реально фигурирующих в SUM_PEAKS (Ac228, Tl208, Bi214) -- теперь
+# ВСЕ нуклиды обеих цепочек (Th-232 и Ra-226), чтобы tools/enumerate_sum_
+# peaks.py мог считать F_B по правильной формуле (гамма+конверсия) для
+# ЛЮБОГО кандидата, а не только для уже принятых в конфиг пар.
 NUCLIDES = {
+    # Цепочка Th-232 (configs/th232.yaml)
     "Ac228": "228AC",
+    "Bi212": "212BI",
+    "Pb212": "212PB",
+    "Ra224": "224RA",
+    "Rn220": "220RN",
+    "Th228": "228TH",
+    "Th232": "232TH",
     "Tl208": "208TL",
+    # Цепочка Ra-226 (configs/ra226.yaml)
     "Bi214": "214BI",
+    "Pb214": "214PB",
+    "Po214": "214PO",
+    "Ra226": "226RA",
+    "Rn222": "222RN",
 }
 
 API = "https://nds.iaea.org/relnsd/v1/data?fields=decay_rads&nuclides={nuc}&rad_types=g"
@@ -112,10 +129,10 @@ def main():
                 % (extraction_date or "?"))
         f.write("# Только строки с непустыми start_level_energy/end_level_energy "
                 "(нуклидные гамма-переходы, не характеристический рентген).\n")
-        f.write("# Назначение: F_B в export_data.py._sum_peaks_with_fb() "
-                "(аудит Б1, коммит df5d178). Список нуклидов — только те, что "
-                "фигурируют в SUM_PEAKS (configs/*.yaml), см. докстринг "
-                "tools/fetch_conversion_coeff.py.\n")
+        f.write("# Назначение: F_B в export_data.py._sum_peaks_with_fb() и в "
+                "tools/enumerate_sum_peaks.py (аудит Б1/Б4, коммит df5d178). "
+                "Список нуклидов — ОБЕ цепочки целиком (Th-232 и Ra-226), см. "
+                "докстринг tools/fetch_conversion_coeff.py.\n")
         w = csv.DictWriter(f, fieldnames=fieldnames)
         w.writeheader()
         for r in out_rows:

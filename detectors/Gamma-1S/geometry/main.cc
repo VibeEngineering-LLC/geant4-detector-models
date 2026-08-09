@@ -40,6 +40,7 @@
 #include "G4EmStandardPhysics_option4.hh"
 #include "G4DecayPhysics.hh"
 #include "G4LogicalVolume.hh"
+#include "G4Material.hh"
 #include "G4Navigator.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4PrimaryParticle.hh"
@@ -68,6 +69,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <fstream>
+#include <map>
 #include <set>
 #include <sstream>
 #include <cstdlib>
@@ -389,6 +391,21 @@ public:
   long fPbXHits = 0;
   long fShXHits = 0;
   long fSrcXHits = 0;
+
+  // Разбиение срабатываний по ЧИСЛУ И ТИПУ первичных частиц распада, чьи
+  // ветви принесли энергию (R78). Отвечает на прямой вопрос: чего именно
+  // недостаёт методу 2, который складывает отклики отдельных гамма-линий и
+  // потому моделирует РОВНО одноквантовые срабатывания.
+  //   fCo1    — энергию принесла ветвь ОДНОГО гамма-кванта распада: это и
+  //             есть то, что метод 2 умеет;
+  //   fCoN    — сложились ветви ДВУХ и более гамма-квантов одного распада:
+  //             истинное совпадение (true coincidence summing), приход;
+  //   fCoBeta — в срабатывании участвовала ветвь беты (сама бета либо её
+  //             тормозное): в свёртке гамма-библиотеки такого вклада нет
+  //             вовсе;
+  //   fCoOth  — прочее (альфа, отдача ядра, конверсионный электрон).
+  // Разбиение полное и взаимоисключающее: сумма четырёх равна fHist.
+  std::vector<long> fCo1, fCoN, fCoBeta, fCoOth;
   Primary* fPrimary = nullptr;
   G4String fOut = "spectrum.csv";
 
@@ -396,7 +413,9 @@ public:
              fEmitX(kBins + 1, 0),
              fChan(kNChan, std::vector<long>(kBins + 1, 0)),
              fPbX(kBins + 1, 0), fShX(kBins + 1, 0),
-             fSrcX(kBins + 1, 0) {}
+             fSrcX(kBins + 1, 0),
+             fCo1(kBins + 1, 0), fCoN(kBins + 1, 0),
+             fCoBeta(kBins + 1, 0), fCoOth(kBins + 1, 0) {}
 
   void BeginOfRunAction(const G4Run*) override {
     // Проверка ДО первого события: смысла считать час, чтобы потом узнать, что
@@ -413,6 +432,10 @@ public:
     std::fill(fPbX.begin(), fPbX.end(), 0L);
     std::fill(fShX.begin(), fShX.end(), 0L);
     std::fill(fSrcX.begin(), fSrcX.end(), 0L);
+    std::fill(fCo1.begin(), fCo1.end(), 0L);
+    std::fill(fCoN.begin(), fCoN.end(), 0L);
+    std::fill(fCoBeta.begin(), fCoBeta.end(), 0L);
+    std::fill(fCoOth.begin(), fCoOth.end(), 0L);
     fSrcInCrystal = 0;
     fPbXHits = 0;
     fShXHits = 0;
@@ -454,7 +477,9 @@ public:
   // флуоресценция сильнее рассеяния. Иначе сумма трёх вкладов (проба,
   // рассеяние, флуоресценция) перестала бы равняться полному спектру.
   void Fill(double edepKeV, int chan = -1, bool fromPb = false,
-            bool fromShield = false, bool fromSrcX = false) {
+            bool fromShield = false, bool fromSrcX = false,
+            int nGammaAnc = 0, bool anyBetaAnc = false,
+            bool anyOtherAnc = false) {
     if (edepKeV <= 0) return;
     ++fWithSignal;
     int b = static_cast<int>(edepKeV / kBinKeV);
@@ -466,6 +491,14 @@ public:
     // «свинец → защита»: он относится к самой пробе и вычитается из шаблона
     // её нуклида, тогда как первые два вычитаются из отклика как чужой вклад.
     if (fromSrcX)          { ++fSrcX[b]; ++fSrcXHits; }
+    // Разбиение по происхождению вклада (R78). Приоритет: бета сильнее
+    // числа гамма-ветвей, потому что вклад тормозного метод 2 не моделирует
+    // ВООБЩЕ, а совпадение — моделирует частично (список сумм-пиков); смешать
+    // их в одну корзину значило бы приписать методу 2 то, чего у него нет.
+    if (anyBetaAnc)        ++fCoBeta[b];
+    else if (nGammaAnc >= 2) ++fCoN[b];
+    else if (nGammaAnc == 1) ++fCo1[b];
+    else if (anyOtherAnc)  ++fCoOth[b];
     if (chan >= 0 && chan < kNChan) ++fChan[chan][b];
   }
 
@@ -620,6 +653,52 @@ public:
              << fWithSignal << " срабатываний" << G4endl;
     }
 
+    // Разбиение срабатываний по происхождению вклада (R78). Пишется только
+    // для прогонов распада: у моноэнергетического источника предок один по
+    // построению, и файл был бы копией спектра.
+    long n1 = 0, nN = 0, nB = 0, nO = 0;
+    for (int i = 0; i <= kBins; ++i) {
+      n1 += fCo1[i]; nN += fCoN[i]; nB += fCoBeta[i]; nO += fCoOth[i];
+    }
+    if (nN + nB + nO > 0) {
+      G4String cn = fOut;
+      const size_t dot = cn.rfind('.');
+      cn = (dot == G4String::npos ? cn : cn.substr(0, dot)) + "_coinc.csv";
+      FILE* g = std::fopen(cn.c_str(), "w");
+      if (g) {
+        std::fprintf(g, "# срабатывания по происхождению вклада: сколько "
+                        "РАЗНЫХ первичных частиц распада принесли энергию\n");
+        std::fprintf(g, "#   one_gamma  — ровно одна гамма-ветвь: ровно то, "
+                        "что моделирует свёртка библиотеки линий\n");
+        std::fprintf(g, "#   coinc      — две и более гамма-ветви одного "
+                        "распада: истинное совпадение (true coincidence "
+                        "summing)\n");
+        std::fprintf(g, "#   beta       — участвовала бета-ветвь (сама бета "
+                        "или её тормозное); в свёртке гамма-библиотеки "
+                        "такого вклада нет\n");
+        std::fprintf(g, "#   other      — альфа, отдача ядра, конверсионный "
+                        "электрон\n");
+        std::fprintf(g, "# разбиение полное и взаимоисключающее: сумма "
+                        "четырёх колонок равна counts из основного файла\n");
+        std::fprintf(g, "# приоритет: beta > coinc > one_gamma > other\n");
+        std::fprintf(g, "# предок трека определяется по цепочке родителей до "
+                        "процесса RadioactiveDecay, а не по энергии\n");
+        std::fprintf(g, "# src_sha1 = %s\n", G1S_SRC_SHA1);
+        std::fprintf(g, "# mode = %s\n", fMode.c_str());
+        std::fprintf(g, "# run_args = %s\n", fArgs.c_str());
+        std::fprintf(g, "# N_primaries = %ld\n", N);
+        std::fprintf(g, "E_keV,one_gamma,coinc,beta,other\n");
+        for (int i = 0; i <= kBins; ++i)
+          if (fCo1[i] || fCoN[i] || fCoBeta[i] || fCoOth[i])
+            std::fprintf(g, "%.1f,%ld,%ld,%ld,%ld\n", (i + 0.5) * kBinKeV,
+                         fCo1[i], fCoN[i], fCoBeta[i], fCoOth[i]);
+        std::fclose(g);
+      }
+      G4cout << "COINC одна гамма " << n1 << ", совпадение " << nN
+             << ", бета " << nB << ", прочее " << nO << " из " << fWithSignal
+             << " срабатываний" << G4endl;
+    }
+
     // Спектр испускания — отдельным файлом, если он не пуст (прогон распада)
     long emitted = 0;
     for (long c : fEmit) emitted += c;
@@ -731,9 +810,26 @@ public:
     bool pb;    // принесено квантом, родившимся в свинце (флуоресценция)
     bool sh;    // принесено квантом, побывавшим в защите (рассеяние)
     bool xr;    // принесено рентгеном атомной релаксации САМОЙ пробы
+    int anc;    // предок: трек ПЕРВИЧНОЙ частицы распада, от которой ветвь
+    int apdg;   // тип этой первичной частицы (PDG)
     bool operator<(const Dep& o) const { return t < o.t; }
   };
   std::vector<Dep> fDep;
+
+  // Предок вклада (R78). Каждый трек возводится к той ПЕРВИЧНОЙ частице
+  // распада, от которой пошла его ветвь: гамма ядерной деэксцитации, рентген
+  // атомной релаксации, бета, альфа, отдача ядра. Признак наследуется так же,
+  // как fPbBorn, и позволяет ответить на два вопроса, которые иначе неотличимы
+  // по спектру:
+  //   * сколько РАЗНЫХ квантов одного распада сложилось в срабатывании —
+  //     это и есть истинное совпадение (true coincidence summing);
+  //   * пришла ли энергия по бета-ветви (сама бета или её тормозное) —
+  //     этого вклада нет в свёртке библиотеки гамма-линий вовсе.
+  // Метод 2 складывает отклики отдельных линий и потому моделирует РОВНО
+  // одноквантовые срабатывания; разделение даёт прямую меру того, чего ему
+  // недостаёт, вместо оценки по разности полных спектров.
+  std::map<int, int> fAnc;      // трек -> предок
+  std::map<int, int> fAncPdg;   // предок -> PDG первичной частицы
 
   // Защита участвует в отклике ДВУМЯ разными способами, и оба до сих пор
   // сидели внутри шаблонов нуклидов неразличимо:
@@ -797,6 +893,8 @@ public:
     fPbBorn.clear();
     fShieldSeen.clear();
     fXrayBorn.clear();
+    fAnc.clear();
+    fAncPdg.clear();
     fFirst = 0; fHadRayl = false; fNCompt = 0; fHadConv = false;
     fNAnnihEsc = 0; fEBremEsc = 0; fEXrayEsc = 0; fPrimEsc = false;
   }
@@ -894,12 +992,31 @@ public:
     // вычитается как ЧУЖОЙ вклад защиты, и срабатывание, задетое свинцовым
     // квантом, к пробе уже не относится целиком. Цена огрубления объявлена
     // полем pbx_hits в шапке.
+    // Предки собираются ПО СРАБАТЫВАНИЮ, а не по событию: окно разрешения
+    // может разбить один распад на два срабатывания, и совпадением считается
+    // только то, что сложилось ВНУТРИ окна — ровно как у прибора.
+    // Ключ — предок, значение — тип его частицы: считать надо РАЗНЫЕ ветви,
+    // а не вклады. Одна ветвь даёт десятки шагов, и счёт по шагам объявил бы
+    // совпадением любое многошаговое поглощение одного кванта.
+    std::map<int, int> anc;
+    auto flush = [&](double s, bool p, bool h, bool x) {
+      int ng = 0;
+      bool beta = false, other = false;
+      for (const auto& kv : anc) {
+        if (kv.second == 22) ++ng;
+        else if (kv.second == 11 || kv.second == -11) beta = true;
+        else if (kv.second != 0) other = true;
+      }
+      fRun->Fill(s, ch, p, h, x, ng, beta, other);
+      anc.clear();
+    };
     double sum = fDep[0].e, t0 = fDep[0].t;
     double sumx = fDep[0].xr ? fDep[0].e : 0.0;
     bool pb = fDep[0].pb, sh = fDep[0].sh;
+    anc[fDep[0].anc] = fDep[0].apdg;
     for (size_t i = 1; i < fDep.size(); ++i) {
       if (fDep[i].t - t0 > kResolvingTimeNs) {
-        fRun->Fill(sum, ch, pb, sh, sumx >= 0.999 * sum);
+        flush(sum, pb, sh, sumx >= 0.999 * sum);
         sum = 0; sumx = 0; pb = false; sh = false;
       }
       t0 = fDep[i].t;
@@ -907,8 +1024,9 @@ public:
       if (fDep[i].xr) sumx += fDep[i].e;
       pb = pb || fDep[i].pb;
       sh = sh || fDep[i].sh;
+      anc[fDep[i].anc] = fDep[i].apdg;
     }
-    fRun->Fill(sum, ch, pb, sh, sumx >= 0.999 * sum);
+    flush(sum, pb, sh, sumx >= 0.999 * sum);
   }
 };
 
@@ -987,7 +1105,14 @@ public:
       const bool pb = fEvt->fPbBorn.count(id) > 0;
       const bool sh = pb || fEvt->fShieldSeen.count(id) > 0;
       const bool xr = fEvt->fXrayBorn.count(id) > 0;
-      fEvt->fDep.push_back({pre->GetGlobalTime() / ns, e / keV, pb, sh, xr});
+      // Предок вклада (R78). Если трека нет в карте — он и есть свой предок:
+      // так бывает у самой первичной частицы, стартовавшей до заполнения.
+      auto ia = fEvt->fAnc.find(id);
+      const int anc = (ia == fEvt->fAnc.end()) ? id : ia->second;
+      auto ip = fEvt->fAncPdg.find(anc);
+      const int apdg = (ip == fEvt->fAncPdg.end()) ? 0 : ip->second;
+      fEvt->fDep.push_back({pre->GetGlobalTime() / ns, e / keV, pb, sh, xr,
+                            anc, apdg});
     }
   }
 };
@@ -1020,10 +1145,25 @@ public:
     // здесь — только передача потомкам.
     if (pid > 0 && fEvt->fXrayBorn.count(pid) > 0) fEvt->fXrayBorn.insert(id);
 
+    // --- предок: первичная частица распада (см. EventAct::fAnc, R78) ---
+    // Ставится ДО отсева по типу частицы: бета и альфа тоже начинают ветви,
+    // и именно по ним отличается вклад тормозного от вклада гамма-линий.
+    const G4VProcess* cp0 = t->GetCreatorProcess();
+    const G4String cn0 = cp0 ? cp0->GetProcessName() : G4String("");
+    const bool from_decay = (cn0 == "RadioactiveDecay" ||
+                             cn0 == "Radioactivation");
+    if (pid == 0 || from_decay) {
+      fEvt->fAnc[id] = id;
+      fEvt->fAncPdg[id] = t->GetDefinition()->GetPDGEncoding();
+    } else {
+      auto it = fEvt->fAnc.find(pid);
+      fEvt->fAnc[id] = (it == fEvt->fAnc.end()) ? id : it->second;
+    }
+
     if (t->GetDefinition() != G4Gamma::Definition()) return;
-    const G4VProcess* p = t->GetCreatorProcess();
+    const G4VProcess* p = cp0;
     if (!p) return;                       // первичная частица, не распад
-    const G4String& n = p->GetProcessName();
+    const G4String& n = cn0;
     if (n != "RadioactiveDecay" && n != "Radioactivation") return;
     const double e = t->GetKineticEnergy() / keV;
     fRun->FillEmit(e);
@@ -1088,7 +1228,7 @@ public:
 // Годится потому, что вся геометрия ГАММА-1С осесимметрична и собрана из
 // G4Tubs и G4Polycone; тело другого класса выводится строкой «?» и в разрез
 // не попадёт молча — это видно в файле.
-static void DumpGeometry(const std::string& path) {
+static void DumpGeometry(const std::string& path, const std::string& args) {
   std::ofstream f(path);
   if (!f) {
     G4cerr << "DUMPGEOM: не открыть " << path << G4endl;
@@ -1096,6 +1236,11 @@ static void DumpGeometry(const std::string& path) {
   }
   f << "# геометрия ГАММА-1С, снята с построенного дерева\n";
   f << "# src_sha1 " << G1S_SRC_SHA1 << "\n";
+  // Аргументы запуска — в том же виде, что в шапке спектров. Нужны потому,
+  // что геометрия и материалы зависят от них (режим, плотность, матрица), и
+  // потребитель выгрузки обязан иметь возможность СВЕРИТЬ, той ли сборкой и
+  // теми ли аргументами она снята, что и шаблоны, которые он ей объясняет.
+  f << "# run_args = " << args << "\n";
   f << "name,material,rin_mm,rout_mm,z0_mm,z1_mm\n";
   auto* store = G4PhysicalVolumeStore::GetInstance();
   int unknown = 0;
@@ -1122,6 +1267,21 @@ static void DumpGeometry(const std::string& path) {
     } else {
       ++unknown;
       f << nm << "," << mt << ",?,?,?,?\n";
+    }
+  }
+  // Составы материалов — сюда же, отдельным блоком. Нужны потому, что имя
+  // «ОИСН-16» состав не определяет: под ним в комплекте ходят две разные
+  // рецептуры (см. G1SDetector::MakeMatrix), и страница обязана называть ту,
+  // которой реально посчитана, а не переписанную руками в шаблон.
+  f << "\n# состав материалов: доли по МАССЕ, плотность г/см3\n";
+  f << "MAT,material,density_g_cm3,element,mass_fraction\n";
+  for (auto* m : *G4Material::GetMaterialTable()) {
+    const G4double rho = m->GetDensity() / (g / cm3);
+    const G4double* fr = m->GetFractionVector();
+    for (size_t i = 0; i < m->GetNumberOfElements(); ++i) {
+      f << "MAT," << m->GetName() << "," << rho << ","
+        << m->GetElement(static_cast<G4int>(i))->GetSymbol() << ","
+        << fr[i] << "\n";
     }
   }
   G4cout << "DUMPGEOM " << path << " (тел неизвестного класса: " << unknown
@@ -1207,7 +1367,7 @@ int main(int argc, char** argv) {
 
   rm->Initialize();
   det->ReportMasses();
-  if (const char* dg = std::getenv("G1S_DUMP_GEOM")) DumpGeometry(dg);
+  if (const char* dg = std::getenv("G1S_DUMP_GEOM")) DumpGeometry(dg, runAct->fArgs);
   // Кристалл известен только после Initialize(): до неё Construct() не звался.
   evtAct->fCry = det->fCrystalLV;
   rm->SetUserAction(new Stepping(evtAct, det->fCrystalLV));

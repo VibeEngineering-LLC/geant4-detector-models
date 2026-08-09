@@ -37,6 +37,12 @@
   --acc-blue:#0f5aa8;    /* метод 1: по чистой линии */
   --acc-orange:#c8541c;  /* метод 2: полный спектр */
   --acc-gray:#7d7768;    /* фон подгонки */
+
+  /* Суммарная кривая разложения (R79). Красный, а не чернота: сумма
+     отмеченных шаблонов — единственная кривая, которую читатель сравнивает
+     с измеренным спектром, а измеренный рисуется чернотой. Ни один нуклид
+     палитры в красный не окрашен, поэтому пересечения смысла нет. */
+  --sum-line:#d21f1f;
 }
 
 @media (prefers-color-scheme: dark){
@@ -51,6 +57,7 @@
     --ch-pair_esc1:#4fbe84; --ch-pair_esc2:#86dfae;
     --ch-brems_esc:#e0736d; --ch-xray_esc:#ef9d97;
     --ch-external:#a49fae; --ch-other:#7c7688;
+    --sum-line:#ff6a5e;
   }
 }
 :root[data-theme="dark"]{
@@ -64,6 +71,7 @@
   --ch-pair_esc1:#4fbe84; --ch-pair_esc2:#86dfae;
   --ch-brems_esc:#e0736d; --ch-xray_esc:#ef9d97;
   --ch-external:#a49fae; --ch-other:#7c7688;
+  --sum-line:#ff6a5e;
 }
 :root[data-theme="light"]{
   --paper:#f5f2ea; --panel:#f5f2ea; --sunk:#ebe7dc;
@@ -76,6 +84,7 @@
   --ch-pair_esc1:#1f7345; --ch-pair_esc2:#2d9462;
   --ch-brems_esc:#8f2f2f; --ch-xray_esc:#c23a36;
   --ch-external:#6a6674; --ch-other:#9b96a5;
+  --sum-line:#d21f1f;
 }
 
 *{box-sizing:border-box}
@@ -357,10 +366,15 @@ table.big th:last-child{text-align:center}
    экспоненту на вторую строку (R48). Число атомарное, переносить
    некуда, как и меткам нуклида выше. */
 #tblM2 td:nth-child(4){white-space:nowrap}
+/* z-index обязателен. Прилипший заголовок создаёт свой контекст наложения,
+   но БЕЗ z-index рисуется в порядке документа — то есть строки тела,
+   идущие ниже по разметке, проезжают ПОВЕРХ него, и подписи столбцов
+   читаются сквозь числа (замечание оператора 09.08.2026). Фон здесь
+   непрозрачный, дело было не в нём. */
 table.big thead th{font:800 10px/1.3 var(--sans); letter-spacing:.12em;
   text-transform:uppercase; color:var(--ink);
   border-bottom:2px solid var(--rule);
-  position:sticky; top:0; background:var(--paper)}
+  position:sticky; top:0; z-index:3; background:var(--paper)}
 table.big tbody tr.sum th,table.big tbody tr.sum td{
   border-top:2px solid var(--rule); font-weight:800}
 table.big .sw{display:inline-block; width:.7rem; height:.7rem;
@@ -565,7 +579,7 @@ footer.bot button:hover{background:var(--accent-soft)}
   var(--ink) 0 2px, transparent 2px 4px); border:1.5px solid var(--rule)}
 .chip .sw.sum{
   background-image:repeating-linear-gradient(to right,
-    var(--ink) 0 3px, transparent 3px 6px);
+    var(--sum-line) 0 3px, transparent 3px 6px);
   background-size:100% 2px; background-position:center; background-repeat:no-repeat;
   border:1.5px solid var(--rule);
 }
@@ -591,7 +605,14 @@ footer.bot button:hover{background:var(--accent-soft)}
   border-left:2px solid var(--rule); border-right:2px solid var(--rule)}
 .m1-wrap .plotbox{inset:.7rem .6rem .3rem}
 .m1-wrap .cursor-line{
-  border:2px solid var(--rule); border-top-width:2px; margin:0 0 1.2rem}
+  border:2px solid var(--rule); border-top-width:2px; margin:0 0 .55rem}
+
+/* Пояснение сторожа статистики (R66) под графиком разложения: почему часть
+   слоя идёт пунктиром без заливки. Без этой строки пунктир читается как
+   оформительский приём, а не как отметка о недостоверности. */
+.guard-note{
+  margin:0 0 1.2rem; font:13px/1.5 var(--serif); color:var(--dim);
+  text-align:justify; text-wrap:pretty}
 
 /* Переключатель состава библиотеки — отдельной строкой над сводкой. */
 #libseg{margin:0 0 .9rem}

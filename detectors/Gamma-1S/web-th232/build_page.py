@@ -31,6 +31,17 @@ SINGLE = os.path.join(HERE, "g1s_th232.html")
 
 TOKEN = re.compile(r"\{\{([a-z0-9_]+)((?:\s+[^\s}]+)*)\}\}", re.I)
 
+# Русские имена матриц. Ключ — тот, что стоит в аргументах запуска модели и
+# приходит в JSON; здесь только подпись, состав берётся из выгрузки геометрии.
+# Год в скобках у ОИСН-16 существенен: под одним именем в комплекте объявлены
+# два разных состава, и читателю надо видеть, какое из объявлений посчитано.
+MATRIX_RU = {
+    "OISN16": "ОИСН-16 (объявление поверки 2024)",
+    "OISN16_2016": "ОИСН-16 (объявление поверки 2016)",
+    "OISN06": "ОИСН-06",
+    "water": "вода",
+}
+
 
 class Bad(SystemExit):
     pass
@@ -105,6 +116,18 @@ def make_fill(d):
         "sysf":       lambda: rpct(d["meta"]["sys_floor_pct"], 0),
         "xr_lo":      lambda: rkev(d["meta"]["xray_span_lo_keV"]),
         "xr_hi":      lambda: rkev(d["meta"]["xray_span_hi_keV"]),
+        # Порог сторожа статистики (R66) — берётся из данных, не пишется
+        # в текст руками: страница обязана называть тот порог, по которому
+        # реально построена маска достоверности.
+        "n_eff_min":  lambda: rnum(d["spectrum"]["n_eff_min"], 0),
+        # Состав матрицы — из выгрузки ПОСТРОЕННОЙ геометрии (export_data),
+        # не из текста шаблона: имя «ОИСН-16» состава не определяет.
+        "matrix":     lambda: MATRIX_RU.get(d["meta"]["matrix_name"],
+                                            d["meta"]["matrix_name"]),
+        "matrix_rho": lambda: rnum(d["meta"]["matrix_density_g_cm3"], 2),
+        "matrix_comp": lambda: ", ".join(
+            "%s %s" % (c["element"], rpct(100 * c["mass_fraction"], 1))
+            for c in d["meta"]["matrix_composition"]),
 
         # --- закон ширины, снятый с этого же спектра ---------------------
         "fw_k":       lambda: rnum(fw["k"], 3),

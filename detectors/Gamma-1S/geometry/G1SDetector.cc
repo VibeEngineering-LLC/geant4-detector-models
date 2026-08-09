@@ -168,10 +168,40 @@ G4Material* G1SDetector::MakeMatrix(const G4String& matrix, double rho,
     m->AddElement(nist->FindOrBuildElement("Fe"), 0.151);
     return m;
   }
+  // Матрица ОИСН-16, ВТОРАЯ объявленная версия состава. В комплекте под одним
+  // именем «ОИСН-16» и одной плотностью Ro=1,6 лежат два разных состава:
+  //   поверка 2024: H 0,022  C 0,206  N 0,009  O 0,049  Fe 0,714  (OISN16)
+  //   поверка 2016: H 0,024826 C 0,218471 N 0,022840 O 0,078451 Fe 0,655412
+  // Источник запаян 17.09.2007 и не вскрывался, поэтому состав между
+  // поверками измениться не мог — верна не более чем одна запись.
+  // Запись 2016 года — ТОЧНОЕ целочисленное отношение 25 : 220 : 23 : 79 : 660
+  // при сумме 1007 (сходится до 5e-16), то есть нормировка рецептуры с целыми
+  // частями. Запись 2024 года — круглые тысячные 22 : 206 : 9 : 49 : 714 при
+  // сумме 1000, то есть набрано руками. Одно из другого не получается ни
+  // округлением, ни пересчётом атомных долей в массовые.
+  // Ни та, ни другая первичным документом НЕ подтверждена: паспорт эталона
+  // (certificates/Эталон_Маринелли__Аспект_2017_.src) называет матрицу только
+  // именем, а поле MATERIAL в .spe заполняется выбором из справочника ПО и,
+  // по указанию владельца комплекта, содержать ошибки может. Достоверны там
+  // масса, объём и заметки, а не состав.
+  // Поэтому оба состава заведены как отдельные матрицы: разница между ними —
+  // не выбор «правильного», а слагаемое бюджета систематики, и меряется
+  // прогоном, а не оценкой через Z_эфф.
+  if (matrix == "OISN16_2016") {
+    auto* m = new G4Material(g4name, rho * g / cm3, 5);
+    m->AddElement(nist->FindOrBuildElement("H"), 25.0 / 1007.0);
+    m->AddElement(nist->FindOrBuildElement("C"), 220.0 / 1007.0);
+    m->AddElement(nist->FindOrBuildElement("N"), 23.0 / 1007.0);
+    m->AddElement(nist->FindOrBuildElement("O"), 79.0 / 1007.0);
+    m->AddElement(nist->FindOrBuildElement("Fe"), 660.0 / 1007.0);
+    return m;
+  }
+
   if (matrix != "OISN16") {
     G4Exception("G1SDetector::MakeMatrix", "g1s002", FatalException,
                 ("неизвестная матрица: " + matrix).c_str());
   }
+  // Состав по объявлению поверки 2024 (см. разбор выше).
   auto* m = new G4Material(g4name, rho * g / cm3, 5);
   m->AddElement(nist->FindOrBuildElement("H"), 0.022);
   m->AddElement(nist->FindOrBuildElement("C"), 0.206);
@@ -202,17 +232,25 @@ G4VPhysicalVolume* G1SDetector::Construct() {
 }
 
 // ---------------------------------------------------------------------------
-// Сосуд Маринелли 1 л, надет на головку сверху. Габариты — таблица кювет ЛСРМ
-// («Прецизионные измерения», с. 11): внешние Ø150, H = 110. Сосуд выше
-// номинального объёма, поэтому уровень засыпки вычисляется из целевых 1000 мл;
-// над пробой до крышки — воздух. Колодец Ø80 садится на головку Ø78,3; дно
-// колодца лежит на крышке Al торца (z = 41, стек торца от оператора).
+// Сосуд Маринелли 1 л, надет на головку сверху. Габариты — чертёж изготовителя
+// источников (см. VesselGeom в заголовке): наружный Ø154, H = 112, колодец Ø97
+// глубиной 65. Сосуд выше номинального объёма, поэтому уровень засыпки
+// вычисляется из целевых 1000 мл; над пробой до крышки — воздух. Дно колодца
+// лежит на крышке Al торца (z = 41, стек торца от оператора).
 //
 // ПРОВЕРКА 1 (объём): вычисленный уровень должен лечь НИЖЕ крышки — иначе
 //   целевой объём в сосуд не помещается (печатается в ReportMasses).
-// ПРОВЕРКА 2 (эффективная толщина): подгонка f(мю*ро*d) к отношению
-//   эффективностей двух плотностей должна дать d = 26..31 мм (табличное
-//   значение ЛСРМ и Thick из .efa этого экземпляра).
+// ПРОВЕРКА 2 (эффективная толщина) — ЧТО ОНА НА САМОМ ДЕЛЕ ЗНАЧИТ.
+//   Подгонка f(мю*ро*d) к отношению эффективностей двух плотностей даёт
+//   d_эфф нашей модели. Сравнивать его с табличным ЛСРМ (26(2) мм) и с
+//   Thick из .efa (31(2) мм) МОЖНО, но это сверка двух ПОДГОНОЧНЫХ величин,
+//   а не проверка геометрии: у ЛСРМ d_эфф — толщина воображаемой пластинки
+//   в модели «точечный источник за поглотителем», и она «подбирается так,
+//   чтобы кривые эффективности при пересчёте на материал совпали» (§8.5.2).
+//   Что это параметр, а не размер, видно из их же таблиц: один и тот же
+//   сосуд при одних габаритах имеет d_эфф 17(2) мм в табл. 8-1 и 26(2) мм
+//   в табл. 8-2 — поменялась формула, не сосуд. Совпадение по d_эфф
+//   геометрию НЕ подтверждает; геометрию подтверждает чертёж.
 void G1SDetector::BuildVessel(G4LogicalVolume* w) {
   const VesselGeom& v = fVessel;
   // 41,0 = крышка Al 2 мм: стек торца Al2/воздух1/банка0,5/MgO6 (оператор)
@@ -277,6 +315,22 @@ VesselGeom VesselGeom::Preset(const G4String& n) {
   VesselGeom v;
   v.name = n;
   if (n == "marinelli") return v;          // значения по умолчанию
+
+  // Прежние габариты Маринелли, снятые с таблицы ЛСРМ «Прецизионные
+  // измерения», с. 11. Оставлены ОТДЕЛЬНЫМ пресетом, чтобы разницу с
+  // чертежом можно было измерить прогоном, а не рассуждением: на этих
+  // числах посчитано всё, что сделано в проекте до 08.08.2026.
+  // Оператор: «Мы брали размеры из статьи ЛСРМ Прецизионные измерения и
+  // там не понятно что.» Достоверность ниже чертежа изготовителя.
+  if (n == "marinelli_lsrm") {
+    v.outerR   = 75.00;    // таблица ЛСРМ: внешний Ø150
+    v.height   = 110.00;   // таблица ЛСРМ: H = 110
+    v.wall     = 2.00;     // ДОПУЩЕНИЕ
+    v.wellInR  = 40.00;    // Ø80 — ДОПУЩЕНИЕ «колодец по головке Ø78,3»
+    v.wellDepth = 74.00;   // ДОПУЩЕНИЕ «колодец садится на всю головку»
+    v.sampleCm3 = 1000.0;
+    return v;
+  }
 
   if (n == "denta") {
     v.outerR = 37.50;      // ЛСРМ табл.: Ø75
@@ -415,48 +469,118 @@ void G1SDetector::BuildHead(G4LogicalVolume* w) {
 }
 
 // ---------------------------------------------------------------------------
-// Экран-защита. Слои от полости наружу: Cu -> Cd -> Pb -> сталь.
+// Профили тел вращения защиты. Вынесены отдельно, потому что по ним И строится
+// геометрия, И считается масса для сверки с паспортом: держать два независимых
+// описания одной формы — верный способ разойтись после первой же правки.
+namespace {
+
+// Свинцовое тело без крышки, снизу вверх. lin — суммарная толщина вкладышей.
+int PbBodyProfile(const ShieldGeom& s, double* z, double* ri, double* ro) {
+  const double lin = s.cu + s.cd;
+  int n = 0;
+  auto add = [&](double zz, double a, double b) {
+    z[n] = zz; ri[n] = a; ro[n] = b; ++n;
+  };
+  add(s.zBottom,      s.rBore, s.rNeck2);
+  add(s.zLedge2,      s.rBore, s.rNeck2);
+  add(s.zLedge2,      s.rBore, s.rNeck1);
+  add(s.zLedge1,      s.rBore, s.rNeck1);
+  add(s.zLedge1,      s.rBore, s.rPbOut);
+  add(s.zFloor - lin, s.rBore, s.rPbOut);
+  add(s.zFloor - lin, s.rCav + lin, s.rPbOut);
+  add(s.zBlockTop,    s.rCav + lin, s.rPbOut);
+  return n;
+}
+
+// Крышка: пробка радиусом по полости плюс диск на всю ширину блока.
+int LidProfile(const ShieldGeom& s, double* z, double* ri, double* ro) {
+  const double lin = s.cu + s.cd;
+  int n = 0;
+  auto add = [&](double zz, double a, double b) {
+    z[n] = zz; ri[n] = a; ro[n] = b; ++n;
+  };
+  add(s.zCeil + lin, 0, s.rCav + lin);
+  add(s.zBlockTop,   0, s.rCav + lin);
+  add(s.zBlockTop,   0, s.rPbOut);
+  add(s.zLidTop,     0, s.rPbOut);
+  return n;
+}
+
+// Объём тела вращения, заданного профилем (мм³ -> см³).
+double ProfileCm3(int n, const double* z, const double* ri, const double* ro) {
+  double v = 0;
+  for (int i = 0; i + 1 < n; ++i) {
+    const double h = z[i + 1] - z[i];
+    if (h <= 0) continue;               // вертикальная ступень объёма не даёт
+    // Внутри сегмента радиусы постоянны (профиль ступенчатый).
+    v += CLHEP::pi * (ro[i] * ro[i] - ri[i] * ri[i]) * h;
+  }
+  return v / 1000.0;
+}
+
+G4LogicalVolume* Body(const G4String& nm, int n, const double* z,
+                      const double* ri, const double* ro, G4Material* m,
+                      G4LogicalVolume* mother, const G4Colour& col) {
+  std::vector<double> zz(n), a(n), b(n);
+  for (int i = 0; i < n; ++i) { zz[i] = z[i] * mm; a[i] = ri[i] * mm; b[i] = ro[i] * mm; }
+  auto* s = new G4Polycone(nm, 0, CLHEP::twopi, n, zz.data(), a.data(), b.data());
+  auto* lv = new G4LogicalVolume(s, m, nm);
+  auto* va = new G4VisAttributes(col);
+  va->SetForceSolid(true);
+  lv->SetVisAttributes(va);
+  new G4PVPlacement(nullptr, {}, lv, nm, mother, false, 0, true);
+  return lv;
+}
+
+}  // namespace
+
+// ---------------------------------------------------------------------------
+// Экран-защита по разрезу рисунка 1.1 РЭ. Слои от полости наружу:
+// Cu -> Cd -> Pb -> стальной кожух. Форма ступенчатая: широкий блок с полостью
+// под сосуд сверху, свинцовая шейка с каналом под головку снизу.
 void G1SDetector::BuildShield(G4LogicalVolume* w) {
   const ShieldGeom& s = fShield;
-
-  const double rCav = 0.5 * s.cavityDia;                  // 100
-  const double rCu = rCav + s.cu;                         // 101
-  const double rCd = rCu + s.cd;                          // 102
-  const double rPb = rCd + s.pb;                          // 152
-  const double rSt = rPb + s.steel;                       // 155
-  const double rBore = 0.5 * s.boreDia;                   // 41
-
-  const double z0 = s.floorFromCryCentre;                 // -45  днище полости
-  const double z1 = z0 + s.cavityH;                       // 145  потолок полости
-  const double zCu0 = z0 - s.cu,       zCu1 = z1 + s.cu;
-  const double zCd0 = zCu0 - s.cd,     zCd1 = zCu1 + s.cd;
-  const double zPb0 = zCd0 - s.pb,     zPb1 = zCd1 + s.pb;
-  const double zSt0 = zPb0 - s.steel,  zSt1 = zPb1 + s.steel;
+  const double lin = s.cu + s.cd;
+  const double rCu = s.rCav + s.cu;      // наружная граница меди
+  const double rCd = s.rCav + lin;       // наружная граница кадмия
 
   const G4Colour cCu(0.8, 0.5, 0.2), cCd(0.6, 0.6, 0.5), cPb(0.35, 0.35, 0.4),
       cSt(0.5, 0.55, 0.6);
 
-  // Медь
-  fCuLV = Ring("Cu_side", rCav, rCu, z0, z1, Mat("G4_Cu"), w, cCu);
-  Ring("Cu_bottom", rBore, rCu, zCu0, z0, Mat("G4_Cu"), w, cCu);
-  // Кадмий
-  fCdLV = Ring("Cd_side", rCu, rCd, zCu0, zCu1, Mat("G4_Cd"), w, cCd);
-  Ring("Cd_bottom", rBore, rCd, zCd0, zCu0, Mat("G4_Cd"), w, cCd);
-  // Свинец
-  fPbLV = Ring("Pb_side", rCd, rPb, zCd0, zCd1, Mat("G4_Pb"), w, cPb);
-  Ring("Pb_bottom", rBore, rPb, zPb0, zCd0, Mat("G4_Pb"), w, cPb);
-  // Сталь
-  fSteelLV = Ring("St_side", rPb, rSt, zPb0, zPb1, Mat("G4_STAINLESS-STEEL"),
-                  w, cSt);
-  Ring("St_bottom", rBore, rSt, zSt0, zPb0, Mat("G4_STAINLESS-STEEL"), w, cSt);
+  // Свинец: тело и крышка отдельными объёмами — крышка снимается.
+  double z[12], ri[12], ro[12];
+  int n = PbBodyProfile(s, z, ri, ro);
+  fPbLV = Body("Pb_body", n, z, ri, ro, Mat("G4_Pb"), w, cPb);
+
+  // Вкладыши полости: обечайка и дно. Стоят внутри свинца, а не съедают
+  // полость: радиус полости rCav снят с разреза по видимой стенке.
+  fCuLV = Ring("Cu_side", s.rCav, rCu, s.zFloor, s.zCeil, Mat("G4_Cu"), w, cCu);
+  fCdLV = Ring("Cd_side", rCu, rCd, s.zFloor, s.zCeil, Mat("G4_Cd"), w, cCd);
+  Ring("Cu_floor", s.rBore, rCd, s.zFloor - s.cu, s.zFloor, Mat("G4_Cu"), w, cCu);
+  Ring("Cd_floor", s.rBore, rCd, s.zFloor - lin, s.zFloor - s.cu, Mat("G4_Cd"),
+       w, cCd);
+
+  // Свинцовая пробка канала. Закрывает единственный путь в полость, не
+  // перекрытый свинцом: снизу канал открыт наружу, и без пробки фон входил бы
+  // прямо к хвосту устройства. Указана оператором, на разрезе видна как
+  // заштрихованный блок в канале у палубы.
+  Ring("Pb_plug", 0, s.rBore, s.zPlugTop - s.plugThick, s.zPlugTop,
+       Mat("G4_Pb"), w, cPb);
+
+  // Кожух — сталь по всей высоте, включая юбку ниже блока (на разрезе она
+  // пустая внутри: между шейкой и кожухом воздух).
+  fSteelLV = Ring("St_skin", s.rPbOut, s.rPbOut + s.steel, s.zBottom, s.zLidTop,
+                  Mat("G4_STAINLESS-STEEL"), w, cSt);
 
   // Крышка. Для точечной геометрии 25 см она открыта — так и записано в
   // фоновом файле набора ЛСРМ (background_bg_2016_open_lid_point25cm).
   if (s.lidClosed) {
-    Ring("Cu_top", 0, rCu, z1, zCu1, Mat("G4_Cu"), w, cCu);
-    Ring("Cd_top", 0, rCd, zCu1, zCd1, Mat("G4_Cd"), w, cCd);
-    Ring("Pb_top", 0, rPb, zCd1, zPb1, Mat("G4_Pb"), w, cPb);
-    Ring("St_top", 0, rSt, zPb1, zSt1, Mat("G4_STAINLESS-STEEL"), w, cSt);
+    n = LidProfile(s, z, ri, ro);
+    Body("Pb_lid", n, z, ri, ro, Mat("G4_Pb"), w, cPb);
+    Ring("Cu_top", 0, rCd, s.zCeil, s.zCeil + s.cu, Mat("G4_Cu"), w, cCu);
+    Ring("Cd_top", 0, rCd, s.zCeil + s.cu, s.zCeil + lin, Mat("G4_Cd"), w, cCd);
+    Ring("St_top", 0, s.rPbOut + s.steel, s.zLidTop, s.zLidTop + s.steel,
+         Mat("G4_STAINLESS-STEEL"), w, cSt);
   }
 }
 
@@ -468,20 +592,24 @@ void G1SDetector::BuildShield(G4LogicalVolume* w) {
 void G1SDetector::ReportMasses() const {
   const ShieldGeom& s = fShield;
   const HeadGeom& h = fHead;
-  const double rCav = 0.5 * s.cavityDia, rCu = rCav + s.cu, rCd = rCu + s.cd;
-  const double rPb = rCd + s.pb, rSt = rPb + s.steel, rBore = 0.5 * s.boreDia;
-  const double z0 = s.floorFromCryCentre, z1 = z0 + s.cavityH;
-  const double hCu = z1 - z0, hCd = hCu + 2 * s.cu, hPb = hCd + 2 * s.cd;
-  const double hSt = hPb + 2 * s.pb;
+  const double lin = s.cu + s.cd;
+  const double rCu = s.rCav + s.cu, rCd = s.rCav + lin;
 
-  const double vCu = CylCm3(rCav, rCu, hCu) + CylCm3(rBore, rCu, s.cu)
-                   + (s.lidClosed ? CylCm3(0, rCu, s.cu) : 0.0);
-  const double vCd = CylCm3(rCu, rCd, hCd) + CylCm3(rBore, rCd, s.cd)
+  double z[12], ri[12], ro[12];
+  int n = PbBodyProfile(s, z, ri, ro);
+  double vPb = ProfileCm3(n, z, ri, ro) + CylCm3(0, s.rBore, s.plugThick);
+  if (s.lidClosed) {
+    n = LidProfile(s, z, ri, ro);
+    vPb += ProfileCm3(n, z, ri, ro);
+  }
+
+  const double hCav = s.zCeil - s.zFloor;
+  const double vCu = CylCm3(s.rCav, rCu, hCav) + CylCm3(s.rBore, rCd, s.cu)
+                   + (s.lidClosed ? CylCm3(0, rCd, s.cu) : 0.0);
+  const double vCd = CylCm3(rCu, rCd, hCav) + CylCm3(s.rBore, rCd, s.cd)
                    + (s.lidClosed ? CylCm3(0, rCd, s.cd) : 0.0);
-  const double vPb = CylCm3(rCd, rPb, hPb) + CylCm3(rBore, rPb, s.pb)
-                   + (s.lidClosed ? CylCm3(0, rPb, s.pb) : 0.0);
-  const double vSt = CylCm3(rPb, rSt, hSt) + CylCm3(rBore, rSt, s.steel)
-                   + (s.lidClosed ? CylCm3(0, rSt, s.steel) : 0.0);
+  const double vSt = CylCm3(s.rPbOut, s.rPbOut + s.steel, s.zLidTop - s.zBottom)
+                   + (s.lidClosed ? CylCm3(0, s.rPbOut + s.steel, s.steel) : 0.0);
   const double vNaI = CylCm3(0, 0.5 * h.cryDia, h.cryLen);
 
   std::printf("\n--- массы построенных тел, кг (паспорт, «не менее») ---\n");
@@ -490,8 +618,9 @@ void G1SDetector::ReportMasses() const {
   std::printf("  кадмий   %8.2f   (1,2)\n", vCd * 8.65 / 1000);
   std::printf("  сталь    %8.1f   (-)\n", vSt * 8.0 / 1000);
   std::printf("  NaI(Tl)  %8.3f   объём %.1f см³\n", vNaI * 3.667 / 1000, vNaI);
-  std::printf("  полость  Ø%.0f x %.0f мм, крышка %s\n",
-              s.cavityDia, s.cavityH, s.lidClosed ? "закрыта" : "открыта");
+  std::printf("  полость  Ø%.1f x %.1f мм, канал Ø%.1f, крышка %s\n",
+              2 * s.rCav, hCav, 2 * s.rBore,
+              s.lidClosed ? "закрыта" : "открыта");
   if (fSampleVolumeCm3 > 0)
     std::printf("  проба    %8.1f см³  (цель %.0f, уровень %s)\n",
                 fSampleVolumeCm3, fVessel.sampleCm3,

@@ -103,8 +103,8 @@ def make_fill(d):
         "tlive":      lambda: rnum(d["meta"]["live_s"], 0) + " с",
         "treal":      lambda: rnum(d["meta"]["real_s"], 0) + " с",
         "sysf":       lambda: rpct(d["meta"]["sys_floor_pct"], 0),
-        "xr_lo":      lambda: rkev(d["meta"]["k_xray_lo_keV"]),
-        "xr_hi":      lambda: rkev(d["meta"]["k_xray_hi_keV"]),
+        "xr_lo":      lambda: rkev(d["meta"]["xray_span_lo_keV"]),
+        "xr_hi":      lambda: rkev(d["meta"]["xray_span_hi_keV"]),
 
         # --- закон ширины, снятый с этого же спектра ---------------------
         "fw_k":       lambda: rnum(fw["k"], 3),

@@ -40,8 +40,10 @@
     fwhmLaw: "lines", // закон ширины линии: lines (по спектру) | cs (цезий)
     lib: "fixed",     // состав библиотеки метода 2: fixed | full
     m2sort: "contrib",// сортировка таблицы метода 2: contrib | nuclide | energy
-    m1mode: "single", // разложение метода 1: single | leak (утечка торона, R56)
-    m2mode: "single", // разложение метода 2: single | leak (утечка торона, R56)
+    // Переключателя режима разложения больше нет (директива оператора
+    // 09.08.2026): гипотеза утечки торона измерением не подтвердилась, знак
+    // вышел обратный, и её разложение не показывается как равноправный вид.
+    // Сама проверка с выводом осталась отдельным разделом.
     cursorE: null,
   };
   D.nuclides.forEach(function (n) { ST.on[n.key] = true; });
@@ -53,21 +55,11 @@
   function M2()   {
     return ST.lib === "full" ? SRC().method2_full : SRC().method2;
   }
-  // stack_leak (R56) — вне SPEC(): подгонка утечки торона считается один
-  // раз на законе ширины «по линиям», тем же упрощением, что и leak_fit
-  // (см. export_data.py) — при законе цезия страница показывает этот же
-  // стек, не пересчитывает под другой закон.
-  function STACK1() {
-    return ST.m1mode === "leak" ? D.spectrum.stack_leak : SPEC().stack;
-  }
-  // stack2_leak(_full) — та же оговорка, что у stack_leak: вне SPEC(),
-  // посчитано один раз на законе «по линиям» (R56, уточнение оператора —
-  // утечка торона в ОБОИХ методах).
+  // Разложение — всегда с ОДНОЙ амплитудой. Стеки подгонки с утечкой
+  // (stack_leak, stack2_leak) остаются в данных, но на графике не
+  // показываются: гипотеза не подтвердилась (см. ST выше).
+  function STACK1() { return SPEC().stack; }
   function STACK2() {
-    if (ST.m2mode === "leak") {
-      return ST.lib === "full" ? D.spectrum.stack2_leak_full
-                                : D.spectrum.stack2_leak;
-    }
     return ST.lib === "full" ? SPEC().stack2_full : SPEC().stack2;
   }
   // R45: то же разложение метода 2, но по каналам взаимодействия, а не по
@@ -75,6 +67,16 @@
   // отклика по каналам взаимодействия".
   function STACK2CHAN() {
     return ST.lib === "full" ? SPEC().stack2_chan_full : SPEC().stack2_chan;
+  }
+  // Сторож статистики (R66): по каналу на нуклид — набран ли МК-шаблон
+  // настолько, чтобы доле нуклида в этом канале верить. Маска своя у каждого
+  // закона ширины линии: n_eff считается ПОСЛЕ свёртки, и при другой ширине
+  // те же отсчёты МК размазываются по другому числу каналов.
+  function TRUSTED() { return SPEC().trusted || D.spectrum.trusted || null; }
+  function TRUST_MASK(key) {
+    var t = TRUSTED();
+    var v = t && t[key];
+    return (v && v.length === D.spectrum.e_of_ch.length) ? v : null;
   }
 
   /* ── HiDPI-canvas ───────────────────────────────────────────── */
@@ -106,6 +108,9 @@
       faint: css("--faint", "#6a6558"),
       grid:  css("--grid",  "#dcd7c8"),
       paper: css("--paper", "#f5f2ea"),
+      // Суммарная кривая разложения (R79) — красным, отдельно от черноты
+      // измеренного спектра, с которым её и сравнивают.
+      sum:   css("--sum-line", "#d21f1f"),
     };
   }
 
@@ -240,37 +245,92 @@
     }
     order.sort(function (a, b) { return b.area - a.area; });
 
+    // Сторож статистики (R66). Долю нуклида в канале определяет его МК-шаблон;
+    // там, где шаблон набран единицами отсчётов, доля — пуассоновский шум, а не
+    // отклик детектора. Умноженная на большой полный отклик, она повторяет его
+    // форму, и на логарифмической шкале это читается как физические пики
+    // (тот же класс дефекта, что пойман в слое рентгена, R76). Поэтому ниже
+    // порога заливки нет — только тонкий пунктир: значение из данных не
+    // выброшено (сумма слоёв обязана сходиться с полным откликом, и суммарная
+    // кривая считается по всем каналам), но читателю видно, где числу верить.
+    //
+    // Отрезок по каналам берётся ПО ГРАНИЦАМ бинов, а не по их центрам: иначе
+    // одиночный достоверный канал вырождается в отрезок нулевой ширины и
+    // пропадает с рисунка совсем.
+    function edgeLo(i) {
+      return mapX(i > 0 ? (e[i - 1] + e[i]) / 2 : e[0], xLo, xHi, m.l, W - m.r);
+    }
+    function edgeHi(i) {
+      return mapX(i + 1 < e.length ? (e[i] + e[i + 1]) / 2 : e[e.length - 1],
+                  xLo, xHi, m.l, W - m.r);
+    }
+    // Разбиение канальной оси на отрезки постоянного статуса достоверности.
+    // Маски нет (старые данные без сторожа) — весь диапазон считается
+    // достоверным, страница ведёт себя как до R66.
+    function runs(msk, want) {
+      var out = [], i2 = 0, n2 = e.length;
+      while (i2 < n2) {
+        var ok = msk ? !!msk[i2] : true;
+        var j2 = i2;
+        while (j2 + 1 < n2 && (msk ? !!msk[j2 + 1] : true) === ok) j2++;
+        if (ok === want) out.push([i2, j2]);
+        i2 = j2 + 1;
+      }
+      return out;
+    }
+    function segPath(vec, a, b) {
+      g.beginPath();
+      for (var q = a; q <= b; q++) {
+        var x = mapX(e[q], xLo, xHi, m.l, W - m.r);
+        var y = Y.map(vec[q] > Y.lo ? vec[q] : Y.lo, m.t, H - m.b);
+        if (q === a) g.moveTo(edgeLo(a), y);
+        g.lineTo(x, y);
+        if (q === b) g.lineTo(edgeHi(b), y);
+      }
+    }
+
+    var yBase = Y.map(Y.lo, m.t, H - m.b);
+    function fillRuns(vec, rr, style) {
+      g.fillStyle = style;
+      for (var ri = 0; ri < rr.length; ri++) {
+        segPath(vec, rr[ri][0], rr[ri][1]);
+        g.lineTo(edgeHi(rr[ri][1]), yBase);
+        g.lineTo(edgeLo(rr[ri][0]), yBase);
+        g.closePath();
+        g.fill();
+      }
+    }
+    for (var oi = 0; oi < order.length; oi++) {
+      var kf = order[oi].nuc.key;
+      var vec = stk[kf];
+      var mf = TRUST_MASK(kf);
+      // Заливка ОДИНАКОВАЯ на всём слое (директива оператора 09.08.2026).
+      // Отметка сторожа R66 держится только на контуре: достоверный участок
+      // сплошной линией, недостоверный — пунктиром. Пробовали и разрыв
+      // заливки, и штриховку: разрыв читался как дефект отрисовки, штриховка
+      // на логарифмической шкале занимала треть картинки при вкладе в доли
+      // процента. Числовая мера недостоверности осталась в подсказке легенды.
+      fillRuns(vec, [[0, e.length - 1]], order[oi].nuc.color);
+    }
     // Контур каждого шаблона своим цветом ПОВЕРХ всех заливок: там, где
     // мелкий слой локально выше крупного, заливка крупного перекрыта, и
     // без контура его ход в этом месте не прочитать.
-    function bandPath(vec) {
-      g.beginPath();
-      var st0 = false;
-      for (var i2 = 0; i2 < e.length; i2++) {
-        if (e[i2] < xLo || e[i2] > xHi) continue;
-        var x = mapX(e[i2], xLo, xHi, m.l, W - m.r);
-        var y = Y.map(vec[i2] > Y.lo ? vec[i2] : Y.lo, m.t, H - m.b);
-        if (!st0) { g.moveTo(x, y); st0 = true; } else g.lineTo(x, y);
-      }
-      return st0;
-    }
-
-    for (var oi = 0; oi < order.length; oi++) {
-      var vec = stk[order[oi].nuc.key];
-      if (!bandPath(vec)) continue;
-      var xR = mapX(xHi, xLo, xHi, m.l, W - m.r);
-      var xL = mapX(xLo, xLo, xHi, m.l, W - m.r);
-      var yB = Y.map(Y.lo, m.t, H - m.b);
-      g.lineTo(xR, yB); g.lineTo(xL, yB);
-      g.closePath();
-      g.fillStyle = order[oi].nuc.color;
-      g.fill();
-    }
     for (var oj = 0; oj < order.length; oj++) {
-      if (!bandPath(stk[order[oj].nuc.key])) continue;
+      var ks = order[oj].nuc.key;
+      var vs = stk[ks];
+      var msk = TRUST_MASK(ks);
       g.strokeStyle = order[oj].nuc.color;
-      g.lineWidth = 1.2;
-      g.stroke();
+      var solid = runs(msk, true);
+      g.lineWidth = 1.2; g.setLineDash([]);
+      for (var sj = 0; sj < solid.length; sj++) {
+        segPath(vs, solid[sj][0], solid[sj][1]); g.stroke();
+      }
+      var noisy = runs(msk, false);
+      g.lineWidth = 0.8; g.setLineDash([2, 3]);
+      for (var nj = 0; nj < noisy.length; nj++) {
+        segPath(vs, noisy[nj][0], noisy[nj][1]); g.stroke();
+      }
+      g.setLineDash([]);
     }
 
     function trace(getV, color, width, dash) {
@@ -291,7 +351,10 @@
 
     // суммарный слой — верхняя граница стека отмеченных нуклидов
     if (ST.sum) {
-      trace(function (i) { return stackTotal(stk, i); }, p.ink, 1.6, [6, 3]);
+      // Считается по ВСЕМ каналам, включая помеченные сторожем (R66):
+      // сумма слоёв обязана сходиться с полным откликом, иначе кривая
+      // перестанет быть моделью, к которой велась подгонка.
+      trace(function (i) { return stackTotal(stk, i); }, p.sum, 1.8, [6, 3]);
     }
     (extra || []).forEach(function (ex) {
       if (!ex.arr) return;
@@ -314,6 +377,29 @@
   }
 
   /* ── легенда: флажки нуклидов + служебные слои ──────────────── */
+  // Сколько каналов шаблона набрано выше порога сторожа (R66). null — маски
+  // нет (данные посчитаны до введения сторожа), тогда легенда без пометок.
+  function nucOf(key) {
+    for (var i = 0; i < D.nuclides.length; i++)
+      if (D.nuclides[i].key === key) return D.nuclides[i];
+    return null;
+  }
+  // Доля ИНТЕГРАЛА слоя, лежащая в недостоверной области. Считать каналы
+  // нельзя: у нуклида с короткой шкалой (Pb-212 обрывается на 479 кэВ) почти
+  // все каналы пусты по физике, и счёт каналов объявил бы ненадёжными 89 %
+  // шаблона, надёжного на 99,7 % по вкладу. null — маски нет (данные
+  // посчитаны до введения сторожа), тогда легенда без пометок.
+  function noiseFrac(key) {
+    var nf = SPEC().noise_frac || D.spectrum.noise_frac;
+    if (!nf || !(key in nf)) return null;
+    return nf[key];
+  }
+  function guardHint(nf) {
+    return "шаблон набран статистикой МК: " + num(100 * (1 - nf), 1) + " %"
+      + " вклада слоя; остальное — области ниже "
+      + (D.spectrum.n_eff_min || 0) + " отсчётов МК на канал, там слой идёт "
+      + "пунктиром без заливки (доля нуклида определяется шумом шаблона)";
+  }
   function buildLegend(elId) {
     var el = document.getElementById(elId);
     if (!el || el.dataset.built) return;
@@ -328,9 +414,16 @@
       // не трогается, по умолчанию true, см. инициализацию ST.on) — без
       // переключателя, но и без потери из total/«сумма».
       if (nuc.key === "SECOND") return;
-      html += "<label class='chip' data-nuc='" + nuc.key + "'>"
+      // Сторож статистики (R66) в легенде. Шаблон, нигде не набранный до
+      // порога, помечается штриховкой вместо сплошного цвета: на графике
+      // такой слой идёт одним пунктиром, без единой заливки, и без метки в
+      // легенде читатель принял бы это за «нуклида просто мало».
+      var nf = noiseFrac(nuc.key);
+      var sw = nuc.color;
+      var hint = (nf === null) ? "" : " title='" + esc(guardHint(nf)) + "'";
+      html += "<label class='chip' data-nuc='" + nuc.key + "'" + hint + ">"
            + "<input type='checkbox' " + (ST.on[nuc.key] ? "checked" : "") + ">"
-           + "<span class='sw' style='background:" + nuc.color + "'></span>"
+           + "<span class='sw' style='background:" + sw + "'></span>"
            + "<span class='nm'>" + esc(nuc.label_ru) + "</span>"
            + "</label>";
     });
@@ -367,7 +460,15 @@
       var el = document.getElementById(id);
       if (!el || !el.dataset.built) return;
       el.querySelectorAll("label.chip[data-nuc]").forEach(function (lab) {
-        lab.querySelector("input").checked = !!ST.on[lab.getAttribute("data-nuc")];
+        var k = lab.getAttribute("data-nuc");
+        lab.querySelector("input").checked = !!ST.on[k];
+        // Пометка сторожа (R66) пересчитывается здесь, а не только при сборке
+        // легенды: маска своя у каждого закона ширины линии, и переключатель
+        // закона обязан её обновить — иначе штриховка останется от прежнего.
+        var nf = noiseFrac(k), nuc = nucOf(k);
+        if (nf === null || !nuc) return;
+        lab.querySelector(".sw").style.background = nuc.color;
+        lab.title = guardHint(nf);
       });
       el.querySelectorAll(".c-sum").forEach(function (i) { i.checked = ST.sum; });
       el.querySelectorAll(".c-log").forEach(function (i) { i.checked = ST.log; });
@@ -375,6 +476,7 @@
   }
 
   /* ── сводки методов ─────────────────────────────────────────── */
+  var PM = "±";
   function cell(lab, val, big) {
     return "<div><span class='lab'>" + lab + "</span><span class='val"
          + (big ? " big-num" : "") + "'>" + val + "</span></div>";
@@ -384,10 +486,16 @@
   // χ²(одна амплитуда ЭТОГО ЖЕ метода) минус χ²(с утечкой), положительное
   // число = утечка лучше. Знак не переворачивается нигде — одна точка
   // правды, чтобы не разъехались бэкенд и подпись.
-  function fillLeakCard(elId, lf) {
+  // single — подгонка ТОГО ЖЕ метода одной амплитудой. Передаётся обязательно:
+  // без её χ²/ν карточка показывала только «χ²/ν с утечкой 4,17» и «снижение
+  // χ² 496,6», и сравнить было не с чем — читателю приходилось искать
+  // исходное число в другой карточке (замечание оператора 09.08.2026).
+  function fillLeakCard(elId, lf, single) {
     var s = document.getElementById(elId);
     if (!s || !lf) return;
     var d = lf.delta_chi2_vs_single;
+    var c0 = single && typeof single.chi2_ndof === "number"
+             ? single.chi2_ndof : null;
     s.innerHTML =
       cell("до Rn-220 (" + lf.keys_before.length + " звена)",
            cnt(lf.A_before_Bq) + " Бк <em>± " + cnt(lf.dA_before_Bq)
@@ -395,19 +503,68 @@
       + cell("после Rn-220 (" + lf.keys_after.length + " звена)",
              cnt(lf.A_after_Bq) + " Бк <em>± " + cnt(lf.dA_after_Bq)
              + " Бк</em>", true)
-      + cell("утечка торона η", num(lf.eta_leak * 100, 2) + " % <em>± "
+      // Величина подписана НЕЙТРАЛЬНО, а не «утечкой торона». Утечка газа
+      // способна группу «после» только уменьшить; знак у подгонки вышел
+      // обратный (−11 %, то есть поздняя часть ряда ВЫШЕ ранней), и подпись
+      // «утечка η» выдавала бы опровержение гипотезы за её измерение
+      // (замечание оператора 09.08.2026). Что означает отрицательный знак —
+      // в выводе строкой ниже.
+      + cell("1 − A<sub>после</sub>/A<sub>до</sub>",
+             num(lf.eta_leak * 100, 2) + " % <em>± "
              + num(lf.d_eta * 100, 2) + " %</em>")
-      + cell("χ²/ν с утечкой", num(lf.chi2_ndof, 2))
+      + cell("χ²/ν: одна амплитуда → с утечкой",
+             (c0 === null ? "—" : num(c0, 2)) + " → " + num(lf.chi2_ndof, 2))
       + cell("снижение χ² (1 параметр)", num(d, 1)
              + (d >= 0 ? " (лучше)" : " (хуже)"))
-      + cell("вывод", d > 7.88
-             ? "статистически значимо (p<0,005 по Уилксу)"
-             : "статистически незначимо на этом уровне");
+      + cell("вывод", leakVerdict(lf.eta_leak, d));
   }
+  // Вывод по знаку И по значимости сразу. Одной значимости мало: улучшение
+  // χ² может быть бесспорным, а знак — отрицать саму проверяемую гипотезу.
+  function leakVerdict(eta, d) {
+    if (d <= 7.88) return "различие групп статистически незначимо";
+    return eta > 0
+      ? "утечка значима (p&lt;0,005 по Уилксу)"
+      : "значимо, но ЗНАК ОБРАТНЫЙ: поздние звенья выше ранних — "
+        + "утечкой торона это не объясняется";
+  }
+  // Подпись величины bg_amplitude. Это свободный множитель, на который
+  // подгонка домножает фоновую запись, УЖЕ приведённую к живому времени.
+  // Будь компонента чистым фоном, множитель обязан выйти 1,00; он выходит
+  // 1,5-1,7, то есть вбирает и континуум, которого модели не хватает (R44).
+  // Устоявшегося названия величины в словаре контура (523 записи, домен
+  // gamma-spec) не нашлось — искал по «фон», «множитель», «амплитуда».
+  // Поэтому здесь ОПИСАНИЕ, а не термин: чеканить имя понятию нельзя,
+  // вердикт «термина не существует» выносит Терминолог.
+  var BG_LAB = "фоновая запись, множитель подгонки";
+
+  // Сводка режима «с утечкой»: две амплитуды вместо одной, и обязательно
+  // базовое значение хи-квадрат рядом — иначе «стало 4,17» не с чем сравнить.
+  function leakSummary(lf, single, pass) {
+    return cell("до Rn-220 (" + lf.keys_before.length + " звена)",
+                cnt(lf.A_before_Bq) + " Бк <em>" + PM + " "
+                + cnt(lf.dA_before_Bq) + " Бк</em>", true)
+      + cell("после Rn-220 (" + lf.keys_after.length + " звена)",
+             cnt(lf.A_after_Bq) + " Бк <em>" + PM + " "
+             + cnt(lf.dA_after_Bq) + " Бк</em>", true)
+      + cell("против паспорта", num(lf.A_before_Bq / pass.A_Bq, 3) + " / "
+             + num(lf.A_after_Bq / pass.A_Bq, 3))
+      + cell("1 &minus; A<sub>после</sub>/A<sub>до</sub>",
+             num(100 * lf.eta_leak, 2) + " % <em>" + PM + " "
+             + num(100 * lf.d_eta, 2) + " %</em>")
+      + cell("&chi;&sup2;/&nu;: одна амплитуда &rarr; две",
+             num(single.chi2_ndof, 2) + " &rarr; " + num(lf.chi2_ndof, 2))
+      + cell(BG_LAB, num(lf.bg_amplitude, 2));
+  }
+
   function fillSummaries() {
     var m1 = M1(), m2 = M2(), pass = D.passport;
     var s1 = document.getElementById("sumM1");
     if (s1) {
+      // Карточка показывает числа ВЫБРАННОГО режима. Прежде она всегда брала
+      // подгонку одной амплитудой, и переключатель «с утечкой торона» менял
+      // только заливки на графике: активность, отношение к паспорту и хи-квадрат
+      // оставались прежними, из чего читатель заключил бы, что сдвиг
+      // равновесия на активность не влияет (замечание оператора 09.08.2026).
       s1.innerHTML =
         cell("активность ветви", cnt(m1.A_Bq) + " Бк <em>± "
              + cnt(m1.dA_Bq) + " Бк</em>", true)
@@ -417,10 +574,11 @@
         + cell("каналов в подгонке", cnt(m1.ndof))
         + cell("диапазон", num(m1.E_fit_lo, 0) + "–" + num(m1.E_fit_hi, 0)
                + " кэВ")
-        + cell("коэффициент фона", num(m1.bg_amplitude, 2));
+        + cell(BG_LAB, num(m1.bg_amplitude, 2));
     }
-    fillLeakCard("sumLeak", D.leak_fit);
-    fillLeakCard("sumLeak2", ST.lib === "full" ? D.leak_fit2_full : D.leak_fit2);
+    var lf2 = ST.lib === "full" ? D.leak_fit2_full : D.leak_fit2;
+    fillLeakCard("sumLeak", D.leak_fit, m1);
+    fillLeakCard("sumLeak2", lf2, m2);
     var s2 = document.getElementById("sumM2");
     if (s2) {
       s2.innerHTML =
@@ -432,7 +590,7 @@
         + cell("линий в модели", cnt(m2.n_lines) + " + " + cnt(m2.n_sum_peaks)
                + " сумм-пиков + K-рентген")
         + cell("каналов в подгонке", cnt(m2.n_channels_fit))
-        + cell("коэффициент фона", num(m2.bg_amplitude, 2));
+        + cell(BG_LAB, num(m2.bg_amplitude, 2));
     }
   }
 
@@ -440,7 +598,7 @@
   function buildM1() {
     var tbl = document.getElementById("tblM1");
     if (!tbl) return;
-    var m1 = M1(), lf = D.leak_fit, leak = ST.m1mode === "leak" && lf;
+    var m1 = M1(), lf = D.leak_fit, leak = false;   // режим утечки снят
     var stk = STACK1();
     var head = "<thead><tr><th>нуклид</th><th class='num'>амплитуда, Бк</th>"
              + "<th class='num'>к паспорту</th><th class='num'>доля в спектре</th>"
@@ -525,8 +683,7 @@
     // \u0420\u0435\u0436\u0438\u043c "\u0441 \u0443\u0442\u0435\u0447\u043a\u043e\u0439" (R56): \u043f\u0440\u0435\u0434\u0441\u043a\u0430\u0437\u0430\u043d\u043d\u0430\u044f \u043f\u043b\u043e\u0449\u0430\u0434\u044c \u043b\u0438\u043d\u0438\u0438 \u2014 \u0441\u0432\u043e\u0438\u043c
     // \u0433\u0440\u0443\u043f\u043f\u043e\u0432\u044b\u043c \u043a\u043e\u044d\u0444\u0444\u0438\u0446\u0438\u0435\u043d\u0442\u043e\u043c (\u0434\u043e/\u043f\u043e\u0441\u043b\u0435 Rn-220), \u043d\u0435 \u043e\u0431\u0449\u0435\u0439 A_ph. \u0418\u0441\u0442\u043e\u0447\u043d\u0438\u043a
     // \u0430\u043c\u043f\u043b\u0438\u0442\u0443\u0434 \u2014 leak_fit2(_full), \u0433\u0440\u0443\u043f\u043f\u0438\u0440\u043e\u0432\u043a\u0430 \u2014 \u0442\u0430 \u0436\u0435, \u0447\u0442\u043e \u0443 \u043c\u0435\u0442\u043e\u0434\u0430 1.
-    var leak2 = ST.m2mode === "leak"
-      && (ST.lib === "full" ? D.leak_fit2_full : D.leak_fit2);
+    var leak2 = false;                              // режим утечки снят
     function predicted(r) {
       if (!leak2) return r.predicted_net;
       var amp = leak2.keys_before.indexOf(r.nuclide) >= 0 ? leak2.A_before_Bq
@@ -544,7 +701,8 @@
     };
     var rows = M2().lines.slice().sort(sorters[ST.m2sort] || sorters.contrib);
     var head = "<thead><tr>"
-      + "<th>\u043b\u0438\u043d\u0438\u044f</th><th>\u043d\u0443\u043a\u043b\u0438\u0434</th><th class='num'>I<sub>\u03b3</sub></th>"
+      + "<th>\u043b\u0438\u043d\u0438\u044f</th><th>\u043d\u0443\u043a\u043b\u0438\u0434</th>"
+      + "<th class='num'>I<sub>\u03b3</sub> \u043d\u0430 \u0440\u0430\u0441\u043f\u0430\u0434 \u043d\u0443\u043a\u043b\u0438\u0434\u0430</th>"
       + "<th class='num'>\u03b5<sub>\u041f\u041f</sub></th>"
       + "<th class='num'>\u043f\u0440\u0435\u0434\u0441\u043a\u0430\u0437\u0430\u043d\u043e</th><th>\u043f\u0440\u0438\u043c\u0435\u0447\u0430\u043d\u0438\u0435</th></tr></thead>";
     var body = "<tbody>";
@@ -560,7 +718,15 @@
         iTxt = num(r.I_gamma_pct, 1) + " % \u043d\u0430 \u0440\u0430\u0441\u043f\u0430\u0434 \u0432\u0435\u0442\u0432\u0438";
       } else {
         lineTxt = num(r.E_keV, 1) + " \u043a\u044d\u0412";
+        // \u0412\u044b\u0445\u043e\u0434 \u043b\u0438\u043d\u0438\u0438 \u2014 \u041d\u0410 \u0420\u0410\u0421\u041f\u0410\u0414 \u0421\u0412\u041e\u0415\u0413\u041e \u041d\u0423\u041a\u041b\u0418\u0414\u0410, \u043a\u0430\u043a \u043e\u043d \u0441\u0442\u043e\u0438\u0442 \u0432 ENSDF:
+        // \u0447\u0438\u0442\u0430\u0442\u0435\u043b\u044c \u0441\u0432\u0435\u0440\u044f\u0435\u0442 \u043a\u043e\u043b\u043e\u043d\u043a\u0443 \u0441 \u0431\u0438\u0431\u043b\u0438\u043e\u0442\u0435\u043a\u043e\u0439. \u0412\u0435\u0442\u0432\u043b\u0435\u043d\u0438\u0435 \u043e\u0442 \u0440\u043e\u0434\u0438\u0442\u0435\u043b\u044f \u0440\u044f\u0434\u0430
+        // \u2014 \u043e\u0442\u0434\u0435\u043b\u044c\u043d\u044b\u0439 \u043c\u043d\u043e\u0436\u0438\u0442\u0435\u043b\u044c, \u0432 \u043c\u043e\u0434\u0435\u043b\u044c \u043e\u043d\u043e \u0432\u0445\u043e\u0434\u0438\u0442 (export_data.py,
+        // w = BR\u00b7I/100) \u0438 \u043f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0435\u0442\u0441\u044f \u0437\u0434\u0435\u0441\u044c \u0442\u0430\u043c, \u0433\u0434\u0435 \u043d\u0435 \u0440\u0430\u0432\u043d\u043e \u0435\u0434\u0438\u043d\u0438\u0446\u0435.
+        // \u0415\u0434\u0438\u043d\u0441\u0442\u0432\u0435\u043d\u043d\u044b\u0439 \u0442\u0430\u043a\u043e\u0439 \u043d\u0443\u043a\u043b\u0438\u0434 \u0432 \u0432\u0435\u0442\u0432\u0438 \u2014 Tl-208: \u043e\u043d \u043e\u0431\u0440\u0430\u0437\u0443\u0435\u0442\u0441\u044f \u043b\u0438\u0448\u044c \u0432
+        // \u03b1-\u0432\u0435\u0442\u043a\u0435 \u0440\u0430\u0441\u043f\u0430\u0434\u0430 Bi-212.
         iTxt = num(r.I_gamma_pct, r.I_gamma_pct < 0.1 ? 4 : 2) + " %";
+        if (typeof r.branch === "number" && r.branch < 0.999)
+          iTxt += " <em>\u00d7 " + num(100 * r.branch, 2) + " % \u0432\u0435\u0442\u0432\u044c</em>";
       }
       var tag = r.kind === "sum" ? " \u00b7 \u0441\u0443\u043c\u043c-\u043f\u0438\u043a"
               : (r.kind === "xray" ? " \u00b7 \u0440\u0435\u043d\u0442\u0433\u0435\u043d" : "");
@@ -659,6 +825,10 @@
   // Смена закона ширины или состава библиотеки меняет ВСЕ числа страницы,
   // а не только текущую вкладку: сводки и таблицы перестраиваются целиком.
   function refreshAll() {
+    // syncLegends здесь не ради флажков (их состояние не менялось), а ради
+    // пометок сторожа R66: маска достоверности своя у каждого закона ширины
+    // линии, и переключатель закона обязан её обновить в легенде.
+    syncLegends();
     fillSummaries();
     buildM1();
     buildM2();
@@ -1262,16 +1432,8 @@
         refreshAll();
       });
     });
-    document.querySelectorAll("#m1modeseg .btn").forEach(function (b) {
-      b.addEventListener("click", function () {
-        ST.m1mode = b.getAttribute("data-m1mode");
-        document.querySelectorAll("#m1modeseg .btn").forEach(function (o) {
-          o.setAttribute("aria-pressed",
-            o.getAttribute("data-m1mode") === ST.m1mode ? "true" : "false");
-        });
-        buildM1(); redraw();
-      });
-    });
+    // Обработчиков переключателя режима разложения больше нет: сам
+    // переключатель снят из разметки (директива оператора 09.08.2026).
     document.querySelectorAll("#libseg .btn").forEach(function (b) {
       b.addEventListener("click", function () {
         ST.lib = b.getAttribute("data-lib");
@@ -1280,16 +1442,6 @@
             o.getAttribute("data-lib") === ST.lib ? "true" : "false");
         });
         refreshAll();
-      });
-    });
-    document.querySelectorAll("#m2modeseg .btn").forEach(function (b) {
-      b.addEventListener("click", function () {
-        ST.m2mode = b.getAttribute("data-m2mode");
-        document.querySelectorAll("#m2modeseg .btn").forEach(function (o) {
-          o.setAttribute("aria-pressed",
-            o.getAttribute("data-m2mode") === ST.m2mode ? "true" : "false");
-        });
-        fillSummaries(); buildM2(); redraw();
       });
     });
     document.querySelectorAll("#m2sortseg .btn").forEach(function (b) {

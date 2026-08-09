@@ -403,6 +403,85 @@ def fwhm_kev(E):
     return FWHM_LAW["k"] * float(E) ** FWHM_LAW["p"]
 
 
+def tcs_report(templ_mc, shape_lib, e_of_ch, ch_edges):
+    """Измерить, чего методу 2 недостаёт по каскадному совпадению (R78).
+
+    Метод 1 строит шаблон полным МК-транспортом ЦЕПОЧКИ: два кванта одного
+    распада попадают в кристалл одним событием, и суммирование совпадений
+    учтено само собой — и уход из одиночных пиков, и приход в сумм-пик.
+
+    Метод 2 складывает отклики отдельных линий с их библиотечными выходами.
+    Приход учтён (список SUM_PEAKS), УХОД — нет: каждая линия входит с полным
+    выходом I, как если бы её квант всегда регистрировался в одиночку. Модель
+    поэтому завышает площади одиночных пиков, а подгонка одной амплитудой ко
+    всему спектру занижает активность.
+
+    Обе кривые здесь — НА РАСПАД РОДИТЕЛЯ, без подгонки, поэтому отношение
+    сравнимо напрямую. Приводится по полосам энергии: где отношение ниже
+    единицы, метод 2 «нарисовал» больше отсчётов, чем даёт полный транспорт.
+    """
+    e = np.asarray(e_of_ch, dtype=float)
+    mc = np.asarray(templ_mc, dtype=float)
+    lb = np.asarray(shape_lib, dtype=float)
+    bands = [(50, 150), (150, 350), (350, 600), (600, 1000),
+             (1000, 1800), (1800, 2900)]
+    print("   каскадное суммирование (R78): МК-цепочка / свёртка библиотеки, "
+          "на распад родителя", flush=True)
+    for lo, hi in bands:
+        m = (e >= lo) & (e < hi)
+        a, b = float(mc[m].sum()), float(lb[m].sum())
+        if b <= 0:
+            continue
+        print("      %4d-%4d кэВ: %6.3f" % (lo, hi, a / b), flush=True)
+    m = (e >= 50) & (e < 2900)
+    a, b = float(mc[m].sum()), float(lb[m].sum())
+    if b > 0:
+        print("      весь диапазон: %6.3f  (ниже 1 — метод 2 завышает "
+              "модель и потому занижает активность)" % (a / b), flush=True)
+
+
+def resolve_mask(mask, e_of_ch):
+    """Огрубить булеву маску до разрешения прибора (сторож R66).
+
+    Поканальное сравнение n_eff с порогом даёт рваную маску: n_eff — сумма
+    гауссиан от отдельных МК-отсчётов, и между ними она проседает. На графике
+    это выглядело как дыры, пробитые сквозь плотный слой (замечание
+    оператора 09.08.2026 по Tl-208 около 2500 кэВ) — при том что дыра уже
+    ПШПВ, то есть уже того, что прибор в принципе способен разрешить.
+
+    Поэтому провал или островок короче ПШПВ на этой энергии не считается
+    признаком: сначала закрываются короткие провалы, затем убираются короткие
+    островки. Оба порога — одна и та же ширина, так что операция не сдвигает
+    границы протяжённых участков, а только гасит колебание около порога.
+    """
+    m = np.asarray(mask, dtype=bool).copy()
+    n = m.size
+    e = np.asarray(e_of_ch, dtype=float)
+    # ширина ПШПВ в каналах на каждом канале
+    dE = np.gradient(e)
+    wch = np.maximum(1.0, np.array([fwhm_kev(max(x, 1.0)) for x in e]) / dE)
+
+    def runs_of(arr):
+        out, i = [], 0
+        while i < n:
+            j = i
+            while j + 1 < n and arr[j + 1] == arr[i]:
+                j += 1
+            out.append((i, j, bool(arr[i])))
+            i = j + 1
+        return out
+
+    for want in (False, True):          # сперва закрыть провалы, потом островки
+        for a, b, val in runs_of(m):
+            if val is not want:
+                continue
+            if a == 0 or b == n - 1:    # краевой участок не трогаем: он не
+                continue                # окружён противоположным значением
+            if (b - a + 1) < wch[(a + b) // 2]:
+                m[a:b + 1] = not want
+    return m.tolist()
+
+
 # ─── калибровка по ПШПВ: ширины пиков снимаются с самого спектра ───────────
 # Опорные линии — те же шесть, по которым разрешение снималось штатным ПО
 # прибора (detector_params.FWHM_MEASURED); здесь они переснимаются НАШИМ
@@ -1199,6 +1278,11 @@ def main():
             add(nuc_key, w, shp, chans)
             photon_lines.append({
                 "E_keV": E, "nuclide": nuc_key, "I_gamma_pct": I_pct,
+                # Выход линии дан НА РАСПАД СВОЕГО НУКЛИДА — так он и стоит в
+                # ENSDF. Ветвление от родителя ряда — отдельное число, и в
+                # модель оно входит множителем (BR_of выше). Складывать их в
+                # одно поле нельзя: читатель сверяет выход с библиотекой.
+                "branch": BR_of[nuc_key],
                 "note": note, "eps_peak": eps, "weight_per_branch": w * eps,
                 "kind": "line"})
 
@@ -1243,6 +1327,7 @@ def main():
             add(nuc_key, w, shp, chans)
             photon_lines.append({
                 "E_keV": Esum, "nuclide": nuc_key, "I_gamma_pct": None,
+                "branch": BR_of[nuc_key],
                 "note": note, "eps_peak": eps1 * eps2,
                 "weight_per_branch": BR_of[nuc_key] * (I1_pct / 100.0)
                                       * (I2_pct / 100.0) * eps1 * eps2,
@@ -1289,7 +1374,8 @@ def main():
             "ratio_to_passport": A_ph / PASSPORT_A_BQ,
             "d_ratio": float(dcoef[0]) / PASSPORT_A_BQ,
             "chan_names": CHAN_NAMES,
-        }, (shape_total * A_ph * T + bg_scaled * bg_amp), stack2, stack2_chan, by_nuc_w
+        }, (shape_total * A_ph * T + bg_scaled * bg_amp), stack2, stack2_chan, \
+            by_nuc_w, shape_total
 
     # ── четыре расчёта: {закон ширины: по линиям спектра, по цезию} ×
     #    {отобранная библиотека, полная} ─────────────────────────────────
@@ -1310,10 +1396,12 @@ def main():
         m1, model1 = run_method1(templ_total, by_nuc)
         resp = make_full_response(os.path.join(BUILD, "grid"), ch_edges,
                                    True, eps_peak)
-        m2, model2, stack2, stack2_chan, by_nuc_w2 = run_method2(
+        m2, model2, stack2, stack2_chan, by_nuc_w2, shape2 = run_method2(
             GAMMA_LIBRARY, SUM_PEAKS, resp, with_diag=True)
-        m2f, model2f, stack2f, stack2f_chan, by_nuc_w2f = run_method2(
+        m2f, model2f, stack2f, stack2f_chan, by_nuc_w2f, shape2f = run_method2(
             lib_full, SUM_PEAKS, resp, with_diag=False)
+        if tag == "lines":
+            tcs_report(templ_total, shape2f, e, ch_edges)
         stack = {k: (by_nuc[k] * m1["A_Bq"] * T).tolist() for k in keys}
         # Сторож статистики (R66/R76): порог доверия к доле нуклида в канале.
         # N_EFF_MIN = 4 отсчёта МК -> относительная пуассоновская погрешность
@@ -1321,18 +1409,27 @@ def main():
         # остаётся в данных (баланс Σ слоёв = сумме не рвётся), но читателю
         # видно, что это шум шаблона, а не структура отклика.
         N_EFF_MIN = 4.0
-        trusted = {k: (n_eff[k] >= N_EFF_MIN).tolist() for k in keys}
-        # Отчёт в консоль: какая доля интеграла слоя лежит ниже порога.
+        trusted = {k: resolve_mask(n_eff[k] >= N_EFF_MIN, e) for k in keys}
+        # Мера «сколько слоя ненадёжно» — доля ИНТЕГРАЛА ниже порога, а не
+        # доля каналов. Считать каналы нельзя: у нуклида с короткой шкалой
+        # (Pb-212 обрывается на 479 кэВ) почти все каналы пусты по физике, и
+        # счёт каналов объявил бы ненадёжными 89 % шаблона, надёжного на
+        # 99,7 % по вкладу. Ноль — не недостоверность, а отсутствие вклада.
+        noise_frac = {}
         for k in keys:
             v = by_nuc[k]
-            m = n_eff[k] < N_EFF_MIN
-            frac = float(v[m].sum() / max(v.sum(), 1e-30))
-            if frac > 0.01:
+            m = ~np.asarray(trusted[k], dtype=bool)   # ПОСЛЕ огрубления до
+            noise_frac[k] = float(v[m].sum()          # разрешения прибора,
+                                  / max(v.sum(), 1e-30))  # иначе метка в
+                                                      # легенде разойдётся с
+                                                      # тем, что на графике
+            if noise_frac[k] > 0.01:
                 print("   сторож статистики: %-6s %.1f %% интеграла слоя "
-                      "ниже %g отсчётов МК на канал" % (k, 100 * frac,
+                      "ниже %g отсчётов МК на канал" % (k, 100 * noise_frac[k],
                                                         N_EFF_MIN), flush=True)
         variants[tag] = {
             "trusted": trusted, "n_eff_min": N_EFF_MIN,
+            "noise_frac": noise_frac,
             "method1": m1, "method2": m2, "method2_full": m2f,
             "stack": stack, "stack2": stack2, "stack2_full": stack2f,
             "stack2_chan": stack2_chan, "stack2_chan_full": stack2f_chan,
@@ -1427,6 +1524,54 @@ def main():
     leak_fit2_full, stack2_leak_full = _leak_refit(
         V["by_nuc_w2f"], V["method2_full"])
 
+    # ── состав матрицы пробы: из ПОСТРОЕННОЙ геометрии ────────────────────
+    # Имя «ОИСН-16» состав не определяет: под ним в комплекте ходят две
+    # разные рецептуры (G1SDetector::MakeMatrix), и ни одна не подтверждена
+    # первичным документом. Значит на страницу идут не переписанные руками
+    # доли, а те, которыми прогон ДЕЙСТВИТЕЛЬНО посчитан — и снимаются они
+    # теми же аргументами запуска, что стоят в шапке шаблонов.
+    # Читается ФАЙЛ выгрузки, а не запускается exe: экспорт страницы не должен
+    # требовать окружения Geant4 (без него запуск падает с 0xC0000135 — DLL не
+    # найдены, и падение выглядит как ошибка данных, хотя дело в PATH).
+    def _run_args(path, what):
+        with open(path, encoding="utf-8") as fh:
+            for ln in fh:
+                if not ln.startswith("#"):
+                    break
+                if "run_args" in ln:
+                    return ln.split("=", 1)[1].split(";")[0].split()
+        raise SystemExit("в шапке %s нет run_args — %s" % (path, what))
+
+    tpl_args = _run_args(os.path.join(BUILD, "iso_Tl208.csv"),
+                         "перепрогнать шаблоны текущей сборкой")
+    dump_path = os.path.join(BUILD, "geom_dump.csv")
+    if not os.path.isfile(dump_path):
+        raise SystemExit(
+            "нет %s — состав матрицы взять неоткуда. Снять выгрузку тем же "
+            "запуском, что и шаблоны:\n"
+            "  $env:G1S_DUMP_GEOM='geom_dump.csv'; .\\g1s.exe vtest.mac %s"
+            % (dump_path, " ".join(tpl_args[1:])))
+    dump_args = _run_args(dump_path, "снять выгрузку текущей сборкой")
+    # Сверка ИМЕННО режима и материала: имя макроса у выгрузки своё (она
+    # снимается пустым прогоном), а всё остальное обязано совпасть — иначе
+    # страница назовёт состав, которым шаблоны не считались.
+    if dump_args[1:] != tpl_args[1:]:
+        raise SystemExit(
+            "выгрузка геометрии снята другими аргументами, чем шаблоны:\n"
+            "  шаблоны: %s\n  выгрузка: %s"
+            % (" ".join(tpl_args[1:]), " ".join(dump_args[1:])))
+    matrix_name = tpl_args[3] if len(tpl_args) > 3 else "?"
+    matrix_rho, matrix_els = None, []
+    with open(dump_path, encoding="utf-8") as fh:
+        for ln in fh:
+            p = ln.rstrip("\n").split(",")
+            if len(p) >= 5 and p[0] == "MAT" and p[1] == "Sample":
+                matrix_rho = float(p[2])
+                matrix_els.append((p[3], float(p[4])))
+    if matrix_rho is None:
+        raise SystemExit("в %s нет состава материала Sample" % dump_path)
+    matrix_els.sort(key=lambda t: -t[1])
+
     # ── упаковка JSON ─────────────────────────────────────────────────────
     CS = variants["cs"]
     data = {
@@ -1442,7 +1587,19 @@ def main():
             # Больше не окно отбора (снято в R69) — фактический диапазон
             # энергий, которые модель Geant4 разобрала как атомную релаксацию.
             "xray_span_lo_keV": XRAY_SPAN_LO, "xray_span_hi_keV": XRAY_SPAN_HI,
-            "template_source": "iso_*.csv (200 000 распадов на нуклид)",
+            # Число розыгрышей у звеньев РАЗНОЕ: слабым добавлено статистики
+            # (decay_th232_isotopes_hi.mac, R66), и писать общее «200 000»
+            # значило бы называть чужое число. Берётся из шапок самих файлов.
+            "template_source": "iso_*.csv, распадов на нуклид: "
+                               + ", ".join("%s %d" % (n[0], hist_iso[n[0]][1])
+                                           for n in NUCS),
+            # Состав матрицы — из ПОСТРОЕННОЙ геометрии, а не из текста
+            # шаблона: под именем «ОИСН-16» в комплекте ходят две разные
+            # рецептуры, и страница обязана называть ту, которой посчитано.
+            "matrix_name": matrix_name,
+            "matrix_density_g_cm3": matrix_rho,
+            "matrix_composition": [{"element": s, "mass_fraction": w}
+                                   for s, w in matrix_els],
             "sys_floor_pct": SYS_FLOOR * 100.0,
             # Калибровка энергии из XML: полином E(канал) = Σ c_i · канал^i.
             # Порядок и коэффициенты свои у образца и фона (разные записи).
@@ -1504,6 +1661,10 @@ def main():
             # с полным откликом.
             "trusted": V["trusted"],
             "n_eff_min": V["n_eff_min"],
+            # Доля ИНТЕГРАЛА слоя, попавшая в недостоверную область. Именно
+            # она идёт в легенду: доля КАНАЛОВ обманывает — у нуклида с
+            # короткой шкалой почти все каналы пусты по физике.
+            "noise_frac": V["noise_frac"],
             "stack_leak": stack_leak,
             "stack2": V["stack2"],
             "stack2_full": V["stack2_full"],
@@ -1522,6 +1683,14 @@ def main():
             "spectrum": {"model_counts": CS["model_counts"],
                          "model2_counts": CS["model2_counts"],
                          "model2_full_counts": CS["model2_full_counts"],
+                         # Своя маска сторожа, а не заимствованная у закона
+                         # «по линиям»: n_eff считается ПОСЛЕ свёртки, и при
+                         # другой ширине линии тот же набор отсчётов МК
+                         # размазывается по другому числу каналов — граница
+                         # доверия смещается вместе с законом.
+                         "trusted": CS["trusted"],
+                         "n_eff_min": CS["n_eff_min"],
+                         "noise_frac": CS["noise_frac"],
                          "stack": CS["stack"],
                          "stack2": CS["stack2"],
                          "stack2_full": CS["stack2_full"],

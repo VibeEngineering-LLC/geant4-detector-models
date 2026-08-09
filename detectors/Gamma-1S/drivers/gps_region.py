@@ -42,15 +42,11 @@ NOP = ("# Пустой макрос: задаёт режим позиционн�
        "/control/verbose 0\n/run/verbose 0\n")
 
 
-def sample_bounds(build, mode, args=(), exe="g1s.exe"):
-    """(rmax, zlo, zhi) тома пробы в мм для данного режима, по выгрузке.
-
-    Возвращает None, если тома `Sample` в этом режиме нет (bare/open/shield).
-    """
-    key = (build, mode, tuple(args))
+def _dump(build, mode, args=(), exe="g1s.exe"):
+    """Текст выгрузки построенной геометрии (кэш на ключ режим+аргументы)."""
+    key = ("dump", build, mode, tuple(args))
     if key in _CACHE:
         return _CACHE[key]
-
     tmp = tempfile.mkdtemp(prefix="g1sgeom")
     mac = os.path.join(tmp, "nop.mac")
     dump = os.path.join(tmp, "geom.csv")
@@ -64,24 +60,57 @@ def sample_bounds(build, mode, args=(), exe="g1s.exe"):
         raise SystemExit(
             "не удалось снять габарит пробы: %s %s -> код %d\n%s"
             % (exe, mode, r.returncode, (r.stderr or r.stdout or "")[-800:]))
-
-    rmax = zlo = zhi = None
     with open(dump, encoding="utf-8") as fh:
-        for ln in fh:
-            if not ln.startswith("Sample,"):
-                continue
-            p = ln.rstrip("\n").split(",")
-            if "?" in p[2:6]:
-                raise SystemExit("габарит пробы не снят: тело неизвестного "
-                                 "класса в выгрузке (%s)" % ln.strip())
-            ro, z0, z1 = float(p[3]), float(p[4]), float(p[5])
-            rmax = ro if rmax is None else max(rmax, ro)
-            zlo = z0 if zlo is None else min(zlo, z0)
-            zhi = z1 if zhi is None else max(zhi, z1)
+        text = fh.read()
+    _CACHE[key] = text
+    return text
 
-    out = None if rmax is None else (rmax, zlo, zhi)
-    _CACHE[key] = out
-    return out
+
+def sample_bounds(build, mode, args=(), exe="g1s.exe"):
+    """(rmax, zlo, zhi) тома пробы в мм для данного режима, по выгрузке.
+
+    Возвращает None, если тома `Sample` в этом режиме нет (bare/open/shield).
+    """
+    rmax = zlo = zhi = None
+    for ln in _dump(build, mode, args, exe).splitlines():
+        if not ln.startswith("Sample,"):
+            continue
+        p = ln.split(",")
+        if "?" in p[2:6]:
+            raise SystemExit("габарит пробы не снят: тело неизвестного "
+                             "класса в выгрузке (%s)" % ln.strip())
+        ro, z0, z1 = float(p[3]), float(p[4]), float(p[5])
+        rmax = ro if rmax is None else max(rmax, ro)
+        zlo = z0 if zlo is None else min(zlo, z0)
+        zhi = z1 if zhi is None else max(zhi, z1)
+    return None if rmax is None else (rmax, zlo, zhi)
+
+
+def material(build, mode, args=(), exe="g1s.exe", name="Sample"):
+    """Состав материала по МАССЕ из построенной геометрии.
+
+    Возвращает (плотность г/см³, [(символ элемента, массовая доля), ...]),
+    доли — в порядке убывания.
+
+    Нужно потому, что имя матрицы состава НЕ определяет: под именем
+    «ОИСН-16» в комплекте ходят две разные рецептуры (G1SDetector::MakeMatrix),
+    и публиковать надо ту, которой прогон реально посчитан. Переписанный руками
+    в шаблон страницы состав — ровно тот класс ошибки, из-за которого числа
+    расходятся с расчётом молча.
+    """
+    rho, els = None, []
+    for ln in _dump(build, mode, args, exe).splitlines():
+        if not ln.startswith("MAT,"):
+            continue
+        p = ln.split(",")
+        if len(p) < 5 or p[1] != name:
+            continue
+        rho = float(p[2])
+        els.append((p[3], float(p[4])))
+    if rho is None:
+        raise SystemExit("материала %s нет в выгрузке режима %s" % (name, mode))
+    els.sort(key=lambda t: -t[1])
+    return rho, els
 
 
 def sample_region(build, mode, args=(), exe="g1s.exe", margin=MARGIN):

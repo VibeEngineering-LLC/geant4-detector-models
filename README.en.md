@@ -49,6 +49,8 @@ materials/   shared sample matrices: OISN-16, RISN-379, water
 ```
 tools/       de-identification, pre-publication checks, data downloaders
 docs/        title page and the RadiaCode article
+skills/      operating procedures for AI agents working on this repository
+             (geant4-spectrum-pipeline — config-driven gamma-spectrum decomposition pipeline)
 ```
 
 **Computed spectra are not committed.** There are hundreds of files and tens

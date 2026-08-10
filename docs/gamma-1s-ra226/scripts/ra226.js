@@ -323,10 +323,26 @@
     el.appendChild(logChip);
   }
 
-  function cell(lab, val, big) {
-    return "<div><span class='lab'>" + lab + "</span><span class='val" +
+  function cell(lab, val, big, hint) {
+    return "<div" + (hint ? " title='" + hint + "'" : "") + "><span class='lab'>"
+         + lab + "</span><span class='val" +
       (big ? " big-num" : "") + "'>" + val + "</span></div>";
   }
+  // Подпись и справка величины bg_amplitude -- ПОРТ 1-в-1 с g1s-th232.js
+  // (находка R44, уже разобрана и исправлена там же): модель обоих
+  // методов -- не только нуклидные шаблоны/линии, но и измеренный фон
+  // той же геометрии как ВТОРОЙ, свободный столбец матрицы плана. Если
+  // бы нуклидная часть полностью объясняла континуум, множитель этого
+  // столбца выходил бы к единице. Он выходит заметно больше единицы --
+  // столбец работает заплаткой под ту часть комптоновского континуума,
+  // которую нуклидная часть модели не воспроизводит, а НЕ показывает
+  // кратность реального фона в кювете. Замечание оператора 11.08.2026
+  // (уже было на Th-232, здесь не подтянуто): подпись "амплитуда фона"
+  // вводит в заблуждение -- фон тут ни при чём, это поправка/заплатка.
+  var CONT_LAB = "поправка континуума, множитель";
+  var CONT_HINT = "коэффициент второго, не нуклидного столбца подгонки "
+                + "(приведённый фон); заметно больше единицы -- заплатка "
+                + "под континуум, а не кратность реального фона.";
 
   function fillSummary() {
     var el = document.getElementById("sumM2");
@@ -337,7 +353,7 @@
       cell("против паспорта", num(m2.A_Bq / pass.A_Bq, 3) + " (" + signedPct(m2.A_Bq / pass.A_Bq) + ")") +
       cell("χ²/ν", num(m2.chi2_ndof, 2)) +
       cell("линий в модели", cnt(m2.n_lines) + " + " + cnt(m2.n_sum_peaks) + " сумм-пиков") +
-      cell("амплитуда фона", num(m2.bg_amplitude, 2));
+      cell(CONT_LAB, num(m2.bg_amplitude, 2), false, CONT_HINT);
   }
   function signedPct(ratio) {
     var s = 100 * (ratio - 1);
@@ -353,7 +369,7 @@
       cell("против паспорта", num(m1.A_Bq / pass.A_Bq, 3) + " (" + signedPct(m1.A_Bq / pass.A_Bq) + ")") +
       cell("χ²/ν", num(m1.chi2_ndof, 2)) +
       cell("К-рентген дочерних", num(m1.xray_total_per_branch_pct, 3) + " % на распад ветви") +
-      cell("амплитуда фона", num(m1.bg_amplitude, 2));
+      cell(CONT_LAB, num(m1.bg_amplitude, 2), false, CONT_HINT);
   }
 
   function labelRu(key) {

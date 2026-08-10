@@ -3,7 +3,7 @@
 <meta name="theme-color" content="#e6e0d0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0e0c08" media="(prefers-color-scheme: dark)">
 <title>Разложение спектра радия-226 в маринелли: два метода</title>
-<link rel="stylesheet" href="styles/g1s-th232.css?v=20260811a">
+<link rel="stylesheet" href="styles/g1s-th232.css?v=20260811b">
 
 <div class="app">
 
@@ -26,13 +26,16 @@
       эпоксидка, отдельный Geant4-прогон 10.08.2026, не переиспользована
       от Th-232), переключатель сравнивает отобранные линии
       (I<sub>γ</sub>≥2%) и все известные в цепочке.</p>
-      <p class="ai-note">Библиотека линий метода 2 и пары суммирования —
-      IAEA Live Chart of Nuclides, без независимой перекрёстной проверки
-      LNHB, которую в своё время прошла страница Th-232. Уровень
-      проверки данных — 📗 (реквизиты и числа сняты с первоисточника,
-      второй источник не сверен), не ✅. МК-шаблоны метода 1 (10.08.2026)
-      — первый реальный прогон для этой цепочки, статистика слабых
-      звеньев (R66) ниже, чем у отлаженной за недели ветви Th-232.
+      <p class="ai-note">Библиотека линий метода 2 — IAEA Live Chart of
+      Nuclides (ENSDF), 13 отобранных линий (I<sub>γ</sub>≥2%) построчно
+      сверены независимой оценённой базой LNHB/DDEP «Table de
+      Radionucléides» (lnhb.fr/nuclides, PDF по Ra-226/Pb-214/Bi-214,
+      11.08.2026): расхождение по энергии ≤0,11 кэВ, по интенсивности
+      ≤0,91% (относительных), все 13 — ✅. Пары суммирования и полная
+      (непороговая) библиотека линий этой сверке НЕ подвергались —
+      там 📗, как и было. МК-шаблоны метода 1 (10.08.2026) — первый
+      реальный прогон для этой цепочки, статистика слабых звеньев (R66)
+      ниже, чем у отлаженной за недели ветви Th-232.
       Страница подготовлена с использованием ассистента на базе больших
       языковых моделей (Claude, Anthropic).</p>
     </div>
@@ -175,8 +178,8 @@
     configs/ra226.yaml, data/ensdf_ra226_chain_lines.csv,
     ../macros/decay_ra226_isotopes.mac).</p>
     <p class="rev-line">Публикация: 2026-08-11 · редакция <a
-    href="https://github.com/VibeEngineering-LLC/geant4-detector-models/commit/dcd230b"
-    target="_blank" rel="noopener"><code>dcd230b</code></a></p>
+    href="https://github.com/VibeEngineering-LLC/geant4-detector-models/commit/7f455f1"
+    target="_blank" rel="noopener"><code>7f455f1</code></a></p>
     <button type="button" data-pop="t-method" aria-expanded="false">как посчитано</button>
   </footer>
 </div>
@@ -241,5 +244,5 @@
   Th-232 — Ra-226 переиспользует ту же модель защиты, оговорка та же.</p>
 </template>
 
-<script src="data-ra226.js?v=20260811a"></script>
-<script src="scripts/ra226.js?v=20260811a"></script>
+<script src="data-ra226.js?v=20260811b"></script>
+<script src="scripts/ra226.js?v=20260811b"></script>

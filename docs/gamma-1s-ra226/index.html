@@ -3,7 +3,7 @@
 <meta name="theme-color" content="#e6e0d0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0e0c08" media="(prefers-color-scheme: dark)">
 <title>Разложение спектра радия-226 в маринелли: два метода</title>
-<link rel="stylesheet" href="styles/g1s-th232.css?v=20260810e">
+<link rel="stylesheet" href="styles/g1s-th232.css?v=20260810f">
 
 <div class="app">
 
@@ -115,7 +115,12 @@
         без пометки суммирования в библиотеке) — коэффициенты и невязка в
         таблице ниже. После поправки χ²/ν обоих методов улучшился, а
         оценки активности метода 1 и обеих версий метода 2 сошлись теснее
-        к паспорту.</p>
+        к паспорту. Основной вклад в невязку дают линии 1764 и 2204 кэВ;
+        взвешивание якорей по статистической точности и квадратичная
+        поправка проверены отдельно и обе ухудшают результат — разброс,
+        по-видимому, систематический (упрощённая линейная модель подложки
+        деконволюции на широких окнах высоких энергий), а не случайный;
+        гипотеза не проверена отдельно.</p>
         <div class="chartbox" id="calbox">
           <div class="ctrls" id="cal-ctrls">
             <label><span class="sw" style="background:#16140f"></span>
@@ -225,5 +230,5 @@
   Th-232 — Ra-226 переиспользует ту же модель защиты, оговорка та же.</p>
 </template>
 
-<script src="data-ra226.js?v=20260810e"></script>
-<script src="scripts/ra226.js?v=20260810e"></script>
+<script src="data-ra226.js?v=20260810f"></script>
+<script src="scripts/ra226.js?v=20260810f"></script>

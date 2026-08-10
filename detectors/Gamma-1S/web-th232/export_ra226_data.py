@@ -107,7 +107,8 @@ def run_method2(library, sums, resp, e, ch_edges, keys):
         add(nuc_key, w, shp)
         lines_out.append({"E_keV": E, "nuclide": nuc_key, "I_pct": I_pct,
                           "note": note, "kind": "line",
-                          "depleted_pct": depl_pct})
+                          "depleted_pct": depl_pct,
+                          "eps_peak": eps, "weight_per_branch": w * eps})
 
     n_sum_used = 0
     for E1, E2, nuc_key, I1_pct, I2_pct, note, fb_pct in sums:
@@ -122,7 +123,8 @@ def run_method2(library, sums, resp, e, ch_edges, keys):
         add(nuc_key, w, shp)
         lines_out.append({"E_keV": Esum, "nuclide": nuc_key, "I_pct": None,
                           "note": note, "kind": "sum",
-                          "E1_keV": E1, "E2_keV": E2})
+                          "E1_keV": E1, "E2_keV": E2,
+                          "eps_peak": eps_sum_node, "weight_per_branch": w * eps_sum_node})
         n_sum_used += 1
 
     return shape_total, by_nuc_w, lines_out, n_sum_used
@@ -383,7 +385,13 @@ def main():
             y_sel, [shape_total[sel] * T, bgm], ed.SYS_FLOOR)
         A_Bq, dA_Bq, bg_amp = float(coef[0]), float(dcoef[0]), float(coef[1])
         for ln in lines_out:
-            ln["predicted_net"] = ln.get("I_pct")  # placeholder, filled below if needed
+            # ИСПРАВЛЕНО 10.08.2026 (замечание оператора «сортировка по
+            # вкладу»): было ln.get("I_pct") -- копия интенсивности без
+            # смысла (не отсчёты, не Бк), заглушка так и осталась не
+            # заполненной. Настоящий предсказанный вклад строки в счёт
+            # спектра -- weight_per_branch (площадь отклика на распад
+            # ветви, из run_method2) x амплитуда x живое время.
+            ln["predicted_net"] = ln.get("weight_per_branch", 0.0) * A_Bq * T
         p = ed._CFG["passport"]
         decay_f = ed.decay_factor_years(p["half_life_years"], p["days_pass_to_meas"])
         A_pass = p["bq_per_kg"] * (p["mass_g"] / 1000.0) * decay_f

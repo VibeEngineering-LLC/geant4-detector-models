@@ -827,8 +827,8 @@ def _grid_main_csvs(grid_dir, pattern):
             if not f.endswith(SUFFIXES)]
 
 
-def load_eps_peak_grid(grid_dir):
-    files = sorted(_grid_main_csvs(grid_dir, "rho1.60_E*.csv"))
+def load_eps_peak_grid(grid_dir, pattern="rho1.60_E*.csv"):
+    files = sorted(_grid_main_csvs(grid_dir, pattern))
     if not files:
         raise SystemExit("Нет моно-сетки эффективности: " + grid_dir)
     Es, Eps = [], []
@@ -857,8 +857,8 @@ def load_eps_peak_grid(grid_dir):
     return np.asarray(Es)[order], np.asarray(Eps)[order]
 
 
-def make_eps_peak_interp(grid_dir):
-    Es, Eps = load_eps_peak_grid(grid_dir)
+def make_eps_peak_interp(grid_dir, pattern="rho1.60_E*.csv"):
+    Es, Eps = load_eps_peak_grid(grid_dir, pattern)
     logE, logEps = np.log(Es), np.log(Eps)
 
     def eps_peak(E):
@@ -992,7 +992,8 @@ def load_grid_nodes(grid_dir, pattern="rho1.60_E*.csv"):
     return nodes
 
 
-def make_full_response(grid_dir, ch_edges, broaden, eps_peak_interp):
+def make_full_response(grid_dir, ch_edges, broaden, eps_peak_interp,
+                       pattern="rho1.60_E*.csv"):
     """Полная матрица отклика R(E->i): для произвольной энергии линии E —
     ГОТОВАЯ форма на сетке каналов записи (пик + континуум + все вторичные
     процессы, не окно вокруг пика) и её разложение по 11 каналам
@@ -1008,7 +1009,7 @@ def make_full_response(grid_dir, ch_edges, broaden, eps_peak_interp):
     узлу 1764,5). Приближение первого порядка: континуум детектора меняется
     с энергией плавно, без изломов на масштабе одного шага сетки — тот же
     класс допущения, что уже стоит за eps_peak между узлами."""
-    nodes = load_grid_nodes(grid_dir)
+    nodes = load_grid_nodes(grid_dir, pattern)
     node_Es = np.array([n[0] for n in nodes])
 
     # ОДИН broaden_and_rebin на узел (не на линию библиотеки: 20-347 линий

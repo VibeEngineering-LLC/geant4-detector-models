@@ -28,8 +28,10 @@ os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 sys.path.insert(0, HERE)
 import export_data as ed  # noqa: E402
 
-SPECTRAVIBE_ROOT = (r"C:\Users\Дмитрий\Мой диск\Дозиметрия\ИИ\1 Скилы"
-                    r"\0_Work\gamma-spectrum-analysis")
+SPECTRAVIBE_ROOT = os.environ.get("SPECTRAVIBE_ROOT")
+if not SPECTRAVIBE_ROOT:
+    raise SystemExit("Задайте SPECTRAVIBE_ROOT -- путь к рабочему каталогу "
+                      "gamma-spectrum-analysis (см. README.md).")
 sys.path.insert(0, os.path.join(SPECTRAVIBE_ROOT, "scripts"))
 from gamma.io.lsrm_spe import read_lsrm_spe  # noqa: E402
 

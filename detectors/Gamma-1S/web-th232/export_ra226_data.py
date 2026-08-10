@@ -13,9 +13,15 @@ main(), не переиспользуемы напрямую), логика во
 
 Запуск:
     python export_ra226_data.py
-Переменные окружения: G4MODELS_BUILD_GAMMA_1S (сетка отклика, та же, что
-и у Th-232 -- тот же сосуд/матрица/детектор), G4MODELS_RA226_BG_SPE
-(приватный фон, в репозитории его нет).
+Переменные окружения: G4MODELS_BUILD_GAMMA_1S (сетка отклика), G4MODELS_
+RA226_BG_SPE (приватный фон, в репозитории его нет).
+
+Источник переведён 10.08.2026 на -18 (поверка 2016, оператор: "-19" в
+чёрный список, дефект): СВОЯ матрица/плотность, ОТДЕЛЬНАЯ от Th-232 --
+ОИСН-06 (насыпная эпоксидка, ро=0,60) вместо ОИСН-16 (ро=1,60). Сетка
+метода 2 и МК-шаблоны метода 1 поэтому СВОИ, не общие с Th-232 (см.
+GRID_TAG ниже) -- geometry/G1SDetector.cc, матрица "OISN06_epoxy",
+ra226-remarks.md §14/15.
 """
 import json
 import os
@@ -30,6 +36,15 @@ os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 
 sys.path.insert(0, HERE)
 import export_data as ed  # noqa: E402
+
+# Тег сетки метода 2 -- см. drivers/run_grid.py: tag = "<матрица><ро>",
+# т.е. для матрицы OISN06_epoxy при ро=0,60 файлы grid/OISN06_epoxy0.60_
+# E*.csv. НЕ "rho1.60" (умолчание модуля export_data.py) -- та сетка
+# посчитана под ОИСН-16 источника -19, для -18 не годится (другая
+# плотность и состав матрицы, см. докстринг модуля).
+GRID_MATRIX = "OISN06_epoxy"
+GRID_RHO = 0.60
+GRID_PATTERN = "%s%.2f_E*.csv" % (GRID_MATRIX, GRID_RHO)
 
 SPECTRAVIBE_ROOT = (r"C:\Users\Дмитрий\Мой диск\Дозиметрия\ИИ\1 Скилы"
                     r"\0_Work\gamma-spectrum-analysis")
@@ -243,8 +258,8 @@ def run_method1(e, ch_edges, T, y_sel, bgm, sel, NUCS):
     if missing:
         raise SystemExit(
             "Нет МК-шаблонов индивидуальных нуклидов Ra-226: %s\n"
-            "Запустить: cd %s && ./g1s.exe decay_ra226_isotopes.mac vessel 1.60 OISN16"
-            % (missing, ed.BUILD))
+            "Запустить: cd %s && ./g1s.exe decay_ra226_isotopes.mac vessel %.2f %s"
+            % (missing, ed.BUILD, GRID_RHO, GRID_MATRIX))
 
     xray_frac_of_branch = {}
     xray_dep = {}
@@ -415,9 +430,10 @@ def main():
           "k=%.4f p=%.4f (невязка аппроксимации %.2f%%), ПШПВ(662)=%.1f кэВ"
           % (fwhm_k, fwhm_p, fwhm_fit_rms_pct, fwhm_cal["fwhm662_law"]))
 
-    eps_peak = ed.make_eps_peak_interp(os.path.join(ed.BUILD, "grid"))
+    eps_peak = ed.make_eps_peak_interp(os.path.join(ed.BUILD, "grid"),
+                                       GRID_PATTERN)
     resp = ed.make_full_response(os.path.join(ed.BUILD, "grid"), ch_edges,
-                                 True, eps_peak)
+                                 True, eps_peak, GRID_PATTERN)
 
     sel = (e >= ed.E_FIT_LO) & (e <= ed.E_FIT_HI)
     y_sel = meas["counts"][sel].astype(float)

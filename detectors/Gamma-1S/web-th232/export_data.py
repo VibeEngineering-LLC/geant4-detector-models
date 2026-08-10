@@ -656,10 +656,21 @@ def fit_peak_multiplet(counts, e_of_ch, E0, library_E, half_win_fwhm=2.2):
     cm = _multiplet_chi2([sig0 - h, shift], *args)[0]
     H = (cp - 2.0 * chi2 + cm) / h ** 2
     d_sig = math.sqrt(2.0 / H) if H > 0 and np.isfinite(H) else float("nan")
+    # Погрешность сдвига (центроида) — та же кривизна вдоль shift при
+    # найденной σ. Нужна тем, кто использует shift/E_centroid как
+    # измерение (напр. энергетическая перекалибровка по якорям Ra-226,
+    # export_ra226_data.py) — чтобы взвешивать якоря по их реальной
+    # определённости, а не считать все точки равноточными.
+    h2 = max(0.01 * w0, 1e-3)
+    cp2 = _multiplet_chi2([sig0, shift + h2], *args)[0]
+    cm2 = _multiplet_chi2([sig0, shift - h2], *args)[0]
+    H2 = (cp2 - 2.0 * chi2 + cm2) / h2 ** 2
+    d_shift = math.sqrt(2.0 / H2) if H2 > 0 and np.isfinite(H2) else float("nan")
     amp_anchor = float(coef[lines.index(float(E0))])
     return {"fwhm_keV": 2.3548 * sig0,
             "d_fwhm_keV": 2.3548 * d_sig if np.isfinite(d_sig) else float("nan"),
             "shift_keV": shift, "E_centroid": float(E0) + shift,
+            "d_shift_keV": d_shift,
             "amp_anchor": amp_anchor, "n_lines_window": len(lines),
             "chi2_ndof": chi2 / max(1, m.sum() - len(lines) - 3)}
 
@@ -698,6 +709,7 @@ def fit_fwhm_calibration(counts, e_of_ch, anchors=FWHM_ANCHORS, n_pass=2):
                      "fwhm_keV": w, "d_fwhm_keV": dw,
                      "res_pct": 100.0 * w / r["E_centroid"],
                      "shift_keV": r["shift_keV"],
+                     "d_shift_keV": r["d_shift_keV"],
                      "n_lines_window": r["n_lines_window"],
                      "chi2_ndof": r["chi2_ndof"], "used": True, "reject": ""}
                 # Отбраковка — по признакам, что подогналось не то: якорь

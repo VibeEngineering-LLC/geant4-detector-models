@@ -303,6 +303,24 @@
       chip.appendChild(cb); chip.appendChild(sw); chip.appendChild(lb);
       el.appendChild(chip);
     });
+    // Переключатель лог/линейной шкалы -- портирован из референса Th-232
+    // (g1s-th232.js, chip class="c-log"), там был, здесь отсутствовал.
+    // Легенда перестраивается заново при каждом переключении вкладки
+    // (см. selectTab ниже) -- отдельный syncLegends(), как в референсе,
+    // не нужен: чекбокс всегда рисуется по актуальному ST.log.
+    var logChip = document.createElement("label");
+    logChip.className = "chip toggle";
+    var logCb = document.createElement("input");
+    logCb.type = "checkbox"; logCb.checked = ST.log;
+    logCb.addEventListener("change", function () {
+      ST.log = logCb.checked; cursorText(mode); drawSpectrum(mode);
+    });
+    var logSw = document.createElement("span");
+    logSw.className = "sw log";
+    var logLb = document.createElement("span");
+    logLb.className = "nm"; logLb.textContent = "лог";
+    logChip.appendChild(logCb); logChip.appendChild(logSw); logChip.appendChild(logLb);
+    el.appendChild(logChip);
   }
 
   function cell(lab, val, big) {

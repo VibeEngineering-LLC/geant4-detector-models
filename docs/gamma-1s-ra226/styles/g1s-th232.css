@@ -377,6 +377,8 @@ table.big thead th{font:800 10px/1.3 var(--sans); letter-spacing:.12em;
   position:sticky; top:0; z-index:3; background:var(--paper)}
 table.big tbody tr.sum th,table.big tbody tr.sum td{
   border-top:2px solid var(--rule); font-weight:800}
+table.big thead th.sortable{cursor:pointer; user-select:none}
+table.big thead th.sortable:hover{color:var(--accent, #b8860b)}
 table.big .sw{display:inline-block; width:.7rem; height:.7rem;
   border-radius:0; margin-right:.5rem; vertical-align:-.05em;
   background:var(--c)}

@@ -227,12 +227,12 @@
     var top = contribs.slice(0, 4).map(function (c) {
       return c.nd.label_ru + " " + cnt(c.v);
     }).join(" · ");
-    var txt = num(e[i], 0) + " кэВ — измерено (без фона) " + cnt(meas)
-            + ", модель " + cnt(stackTotal(stk, i));
+    var txt = "канал " + i + " · " + num(e[i], 1) + " кэВ — измерено (без фона) "
+            + cnt(meas) + ", модель " + cnt(stackTotal(stk, i));
     if (top) txt += " — " + top;
     el.textContent = txt;
     var tip = document.getElementById(TIP_ID(mode));
-    if (tip) tip.textContent = num(e[i], 0) + " кэВ · " + cnt(meas);
+    if (tip) tip.textContent = "канал " + i + " · " + num(e[i], 1) + " кэВ · " + cnt(meas);
   }
 
   var CURSOR_wired = {};
@@ -829,11 +829,11 @@
           if (dd < best) { best = dd; i = k; }
         }
         var smp = D.spectrum.counts[i], bgv2 = D.spectrum.bg_counts[i];
-        ro.textContent = num(e[i], 0) + " кэВ · образец " + cnt(smp)
-          + " · фон " + cnt(bgv2) + " · разность " + cnt(smp - bgv2);
+        ro.textContent = "канал " + i + " · " + num(e[i], 1) + " кэВ · образец "
+          + cnt(smp) + " · фон " + cnt(bgv2) + " · разность " + cnt(smp - bgv2);
         if (tip) {
           tip.hidden = false;
-          tip.textContent = num(e[i], 0) + " кэВ · " + cnt(smp);
+          tip.textContent = "канал " + i + " · " + num(e[i], 1) + " кэВ · " + cnt(smp);
           tip.style.left = x + "px";
           tip.style.top = Math.max(0, y) + "px";
         }

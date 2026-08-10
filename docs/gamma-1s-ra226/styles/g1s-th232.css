@@ -630,7 +630,7 @@ footer.bot button:hover{background:var(--accent-soft)}
 
 /* ── вкладка «калибровка» ─────────────────────────────────── */
 .cal-wrap{grid-column:1 / -1; padding:1.1rem 1.2rem 1.4rem}
-.cal-wrap .mono{font:600 12px/1.7 var(--mono); font-variant-numeric:tabular-nums}
+.cal-wrap .mono{font:600 12px/1.7 var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap; display:inline-block}
 .cal-wrap table.big td:first-child{min-width:16rem}
 
 /* Шапка со флажками + канвой; по образцу WT-20. */

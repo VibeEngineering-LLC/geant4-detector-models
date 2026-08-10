@@ -275,10 +275,65 @@ def run_method1(e, ch_edges, T, y_sel, bgm, sel, NUCS):
     }, stack, lines_out
 
 
+RA226_FWHM_ANCHORS = (186.211, 351.932, 609.321, 1764.491, 2204.100)
+
+
 def main():
     meas, bg = read_pair()
     e = meas["e_of_ch"]
     T = meas["live_s"]
+
+    # ── перекалибровка энергии по чистым линиям цепочки Ra-226 (замечание
+    # оператора 10.08.2026: сторонняя программа СпектраЛайн подсветила
+    # что-то похожее на линию Tl-208 2614,5 кэВ, что для Ra-226 физически
+    # невозможно -- «2614 на спектре нет»). Прямая проверка на самом .spe
+    # (см. сессию) нашла калибровку прибора РАБОТОСПОСОБНОЙ, но с
+    # остаточным смещением до -2,6 кэВ на чистых линиях. Кроме того,
+    # `ed.FWHM_ANCHORS` по умолчанию -- энергии ветви Th-232 (238,6; 583,2;
+    # 2614,5 и т.д.): для Ra-226 реальной линии там нет, деконволюция на
+    # этих точках подгоняла шум/континуум (не физику) -- худшая точка
+    # прежней таблицы ПШПВ, отклонение -35% на 860,6 кэВ, была именно этим
+    # артефактом, не свойством детектора. Свои чистые изолированные якоря
+    # (без пометки "+суммирование" в библиотеке): 186,211/351,932/609,321/
+    # 1764,491/2204,100 кэВ.
+    #
+    # ПРОБНЫЙ проход fit_fwhm_calibration на СЫРОЙ (заводской) калибровке
+    # даёт истинные центроиды этих линий; линейная поправка E=a+b·E_сырое
+    # по невязке (центроида минус номинал) применяется ко всему спектру
+    # ДО чего-либо ещё. Коэффициенты .spe (meta.cal_sample) остаются как
+    # есть -- это то, что реально хранит прибор; поправка -- отдельное
+    # поле meta.energy_correction, прозрачно, не подмешана молча.
+    probe = ed.fit_fwhm_calibration(meas["counts"], e, anchors=RA226_FWHM_ANCHORS)
+    used_anchors = [q for q in probe["points"] if q["used"]]
+    if len(used_anchors) < 3:
+        raise SystemExit(
+            "перекалибровка энергии: годных чистых якорей меньше трёх (%d "
+            "из %d) -- %s" % (len(used_anchors), len(probe["points"]),
+                             "; ".join("%.1f: %s" % (q["E_nominal"], q["reject"])
+                                       for q in probe["points"] if not q["used"])))
+    xm = np.array([q["E_centroid"] for q in used_anchors])
+    xt = np.array([q["E_nominal"] for q in used_anchors])
+    A_lin = np.vstack([np.ones_like(xm), xm]).T
+    corr_coef, _, _, _ = np.linalg.lstsq(A_lin, xt, rcond=None)
+    corr_a, corr_b = float(corr_coef[0]), float(corr_coef[1])
+    resid = xt - (corr_a + corr_b * xm)
+    energy_correction = {
+        "a": corr_a, "b": corr_b,
+        "n_anchors_used": len(used_anchors), "n_anchors_total": len(probe["points"]),
+        "rms_residual_keV": float(np.sqrt(np.mean(resid ** 2))),
+        "shift_at_609_keV": corr_a + corr_b * 609.321 - 609.321,
+        "shift_at_2204_keV": corr_a + corr_b * 2204.100 - 2204.100,
+        "anchors": [{"E_nominal": q["E_nominal"], "E_centroid_raw": q["E_centroid"]}
+                   for q in used_anchors],
+    }
+    print("перекалибровка энергии по %d чистым линиям: a=%.4f b=%.6f "
+          "(сдвиг на 609/2204 кэВ = %.3f/%.3f кэВ), СКО невязки %.3f кэВ"
+          % (len(used_anchors), corr_a, corr_b,
+             energy_correction["shift_at_609_keV"],
+             energy_correction["shift_at_2204_keV"],
+             energy_correction["rms_residual_keV"]))
+    e = corr_a + corr_b * e
+
     bg_on_meas = np.interp(e, bg["e_of_ch"], bg["counts"].astype(float),
                            left=0.0, right=0.0)
     bg_scale_time = T / bg["live_s"]
@@ -290,7 +345,7 @@ def main():
         [e[-1] + 0.5 * (e[-1] - e[-2])],
     ))
 
-    fwhm_cal = ed.fit_fwhm_calibration(meas["counts"], e)
+    fwhm_cal = ed.fit_fwhm_calibration(meas["counts"], e, anchors=RA226_FWHM_ANCHORS)
     ed.FWHM_LAW.update({"kind": "power", "k": fwhm_cal["k"], "p": fwhm_cal["p"]})
 
     eps_peak = ed.make_eps_peak_interp(os.path.join(ed.BUILD, "grid"))
@@ -469,6 +524,7 @@ def main():
                           "n_channels": meas["n_channels"]},
             "cal_bg": {"coefs": bg["coefs"], "order": len(bg["coefs"]) - 1,
                       "n_channels": bg["n_channels"]},
+            "energy_correction": energy_correction,
             "level_note": "Библиотека и сумм-пики -- IAEA Live Chart of "
                           "Nuclides (decay_rads), быстрый проход без "
                           "перекрёстной проверки LNHB, в отличие от "

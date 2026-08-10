@@ -3,7 +3,7 @@
 <meta name="theme-color" content="#e6e0d0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0e0c08" media="(prefers-color-scheme: dark)">
 <title>Разложение спектра радия-226 в маринелли: два метода</title>
-<link rel="stylesheet" href="styles/g1s-th232.css?v=20260810c">
+<link rel="stylesheet" href="styles/g1s-th232.css?v=20260810d">
 
 <div class="app">
 
@@ -107,6 +107,15 @@
         образца минус приведённый фон в каждом канале. Реперы —
         известные γ-линии цепочки Ra-226 (отобранная библиотека): подписаны
         нуклидом и энергией.</p>
+        <p class="method-lede">Заводская калибровка прибора (полином
+        E(канал) из шапки .spe) на нескольких чистых линиях цепочки давала
+        остаточное смещение до −2,6 кэВ. Применена линейная поправка
+        E = a + b·E<sub>заводская</sub>, снятая деконволюцией пяти
+        изолированных линий (186,211/351,932/609,321/1764,491/2204,100 кэВ,
+        без пометки суммирования в библиотеке) — коэффициенты и невязка в
+        таблице ниже. После поправки χ²/ν обоих методов улучшился, а
+        оценки активности метода 1 и обеих версий метода 2 сошлись теснее
+        к паспорту.</p>
         <div class="chartbox" id="calbox">
           <div class="ctrls" id="cal-ctrls">
             <label><span class="sw" style="background:#16140f"></span>
@@ -216,5 +225,5 @@
   Th-232 — Ra-226 переиспользует ту же модель защиты, оговорка та же.</p>
 </template>
 
-<script src="data-ra226.js?v=20260810c"></script>
-<script src="scripts/ra226.js?v=20260810c"></script>
+<script src="data-ra226.js?v=20260810d"></script>
+<script src="scripts/ra226.js?v=20260810d"></script>

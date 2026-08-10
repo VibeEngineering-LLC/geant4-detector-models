@@ -541,8 +541,19 @@
         + "<tr><td>коэффициенты</td><td>" + coefsHtml(m.cal_sample.coefs)
         + "</td><td>" + coefsHtml(m.cal_bg.coefs) + "</td></tr>"
         + "<tr><td>масштаб фона (t_обр / t_фон)</td>"
-        + "<td class='num' colspan='2'>" + num(m.bg_scale_time, 4) + "</td></tr>"
-        + "</tbody>";
+        + "<td class='num' colspan='2'>" + num(m.bg_scale_time, 4) + "</td></tr>";
+      if (m.energy_correction) {
+        var ecr = m.energy_correction;
+        body += "<tr class='row-dirty'><td>поправка энергии (по "
+          + ecr.n_anchors_used + " чистым линиям Ra-226)</td>"
+          + "<td class='num' colspan='2'>E = " + num(ecr.a, 3) + " + "
+          + num(ecr.b, 6) + "·E<sub>заводская</sub><br>сдвиг на 609/2204 кэВ: "
+          + (ecr.shift_at_609_keV >= 0 ? "+" : "") + num(ecr.shift_at_609_keV, 2)
+          + " / " + (ecr.shift_at_2204_keV >= 0 ? "+" : "")
+          + num(ecr.shift_at_2204_keV, 2) + " кэВ<br>СКО невязки якорей "
+          + num(ecr.rms_residual_keV, 2) + " кэВ</td></tr>";
+      }
+      body += "</tbody>";
       tbl.innerHTML = head + body;
     }
     var fw = D.fwhm_cal;

@@ -342,21 +342,57 @@
     return key;
   }
 
+  // Диапазон таблицы (замечание оператора «убери линии за диапазоном
+  // 30-3000») -- та же ось, что графики cvM1/cvM2/cvCal.
+  var TBL_E_LO = 30, TBL_E_HI = 3000;
+  // Сортировка кликом по заголовку (замечание оператора «сортировка по
+  // энергии, вкладу и нуклидам») -- порт логики ST.m2sort g1s-th232.js.
+  var M2SORT = { key: "energy", dir: 1 };
+  var M2SORT_CMP = {
+    energy: function (a, b) { return a.E_keV - b.E_keV; },
+    nuclide: function (a, b) {
+      var ai = D.nuclides.findIndex(function (n) { return n.key === a.nuclide; });
+      var bi = D.nuclides.findIndex(function (n) { return n.key === b.nuclide; });
+      return (ai - bi) || (a.E_keV - b.E_keV);
+    },
+    contrib: function (a, b) { return (a.predicted_net || 0) - (b.predicted_net || 0); },
+  };
+
   function fillTable() {
     var tbl = document.getElementById("tblM2");
     if (!tbl) return;
     var m2 = M2();
-    var rows = m2.lines.slice().sort(function (a, b) { return a.E_keV - b.E_keV; });
-    var html = "<thead><tr><th>E, кэВ</th><th>нуклид</th>" +
-      "<th>I<sub>γ</sub>, %</th><th>тип</th><th>примечание</th></tr></thead><tbody>";
+    var rows = m2.lines.filter(function (r) {
+      return r.E_keV >= TBL_E_LO && r.E_keV <= TBL_E_HI;
+    });
+    var cmp = M2SORT_CMP[M2SORT.key] || M2SORT_CMP.energy;
+    rows.sort(function (a, b) { return M2SORT.dir * cmp(a, b); });
+    function th(key, label) {
+      var arrow = M2SORT.key === key ? (M2SORT.dir > 0 ? " ▲" : " ▼") : "";
+      return "<th class='sortable' data-sort='" + key + "'>" + label + arrow + "</th>";
+    }
+    var html = "<thead><tr>" + th("energy", "E, кэВ") + th("nuclide", "нуклид")
+      + "<th>I<sub>γ</sub>, %</th>" + th("contrib", "вклад, отсч.")
+      + "<th>тип</th><th>примечание</th></tr></thead><tbody>";
     rows.forEach(function (r) {
       html += "<tr><td>" + num(r.E_keV, 3) + "</td><td>" + esc(labelRu(r.nuclide)) +
         "</td><td>" + (r.I_pct === null || r.I_pct === undefined ? "—" : num(r.I_pct, 3)) +
+        "</td><td class='num'>" + cnt(r.predicted_net || 0) +
         "</td><td>" + (r.kind === "sum" ? "сумма" : "линия") +
         "</td><td>" + esc(r.note || "") + "</td></tr>";
     });
     html += "</tbody>";
     tbl.innerHTML = html;
+    tbl.querySelectorAll("th.sortable").forEach(function (h) {
+      h.addEventListener("click", function () {
+        var key = h.dataset.sort;
+        if (M2SORT.key === key) M2SORT.dir = -M2SORT.dir;
+        // Первый клик по "вклад" -- крупнейшие сверху (естественное
+        // ожидание), по энергии/нуклиду -- по возрастанию.
+        else { M2SORT.key = key; M2SORT.dir = key === "contrib" ? -1 : 1; }
+        fillTable();
+      });
+    });
   }
 
   function fillTable1() {

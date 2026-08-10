@@ -54,7 +54,9 @@
   function mapX(v, lo, hi, x0, x1) { return x0 + (v - lo) / (hi - lo) * (x1 - x0); }
   function makeY(logY, lo, hi) {
     if (logY) {
-      lo = Math.max(0.5, lo); hi = Math.max(lo * 10, hi);
+      // Нижняя граница лог-шкалы — ровно 1 отсчёт (замечание оператора):
+      // подпись 10^0 должна стоять НА оси, а не висеть над её началом.
+      lo = Math.max(1, lo); hi = Math.max(lo * 10, hi);
       var l0 = Math.log10(lo), l1 = Math.log10(hi);
       return { lo: lo, hi: hi, log: true, map: function (v, y0, y1) {
         var t = (Math.log10(Math.max(v, lo)) - l0) / (l1 - l0);
@@ -108,7 +110,7 @@
       var v0 = Math.max(yy[i0], stackTotal(stk, i0));
       if (v0 > vMax) vMax = v0;
     }
-    var Y = makeY(ST.log, ST.log ? 0.5 : 0, vMax * (ST.log ? 2.0 : 1.1));
+    var Y = makeY(ST.log, ST.log ? 1 : 0, vMax * (ST.log ? 2.0 : 1.1));
 
     g.strokeStyle = p.grid; g.lineWidth = 1; g.beginPath();
     var xTicks = [250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2250,
@@ -639,7 +641,7 @@
         if (v > vMax) vMax = v;
       }
     });
-    var Y = makeY(CAL.log, CAL.log ? 0.5 : 0, vMax * (CAL.log ? 2 : 1.1));
+    var Y = makeY(CAL.log, CAL.log ? 1 : 0, vMax * (CAL.log ? 2 : 1.1));
     g.strokeStyle = p.grid; g.lineWidth = 1; g.beginPath();
     var xTicks = [250, 500, 750, 1000, 1250, 1500, 1750, 2000,
                   2250, 2500, 2750, 3000];

@@ -580,6 +580,9 @@
         + "<td class='num' colspan='2'>" + num(m.bg_scale_time, 4) + "</td></tr>";
       if (m.energy_correction) {
         var ecr = m.energy_correction;
+        var pctList = (ecr.anchors || []).map(function(a){
+          return num(a.E_nominal, 1) + " кэВ: " + num(a.resid_pct_fwhm, 1) + "%";
+        }).join(", ");
         body += "<tr class='row-dirty'><td>поправка энергии (по "
           + ecr.n_anchors_used + " чистым линиям Ra-226)</td>"
           + "<td class='num' colspan='2'>E = " + num(ecr.a, 3) + " + "
@@ -587,7 +590,8 @@
           + (ecr.shift_at_609_keV >= 0 ? "+" : "") + num(ecr.shift_at_609_keV, 2)
           + " / " + (ecr.shift_at_2204_keV >= 0 ? "+" : "")
           + num(ecr.shift_at_2204_keV, 2) + " кэВ<br>СКО невязки якорей "
-          + num(ecr.rms_residual_keV, 2) + " кэВ</td></tr>";
+          + num(ecr.rms_residual_keV, 2) + " кэВ<br>невязка в доле ПШПВ якоря: "
+          + pctList + "</td></tr>";
       }
       body += "</tbody>";
       tbl.innerHTML = head + body;

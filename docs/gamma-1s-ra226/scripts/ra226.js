@@ -877,38 +877,25 @@
     var tbl = document.getElementById("tblFwhm");
     if (!tbl || !D.fwhm_cal) return;
     var fw = D.fwhm_cal;
-    var head = "<thead><tr><th>линия, кэВ</th><th class='num'>центроида</th>"
-      + "<th class='num'>ПШПВ, кэВ</th><th class='num'>разрешение</th>"
-      + "<th class='num'>линий в окне</th><th class='num'>закон k·E<sup>p</sup></th>"
-      + "<th class='num'>отклонение</th><th>статус</th></tr></thead>";
+    var head = "<thead><tr><th>линия, кэВ</th>"
+      + "<th class='num'>ПШПВ заводская, кэВ</th>"
+      + "<th class='num'>аппроксимация k·E<sup>p</sup></th>"
+      + "<th class='num'>отклонение аппроксимации</th></tr></thead>";
     var body = "<tbody>";
-    fw.points.forEach(function (q) {
-      if (!q.used) {
-        body += "<tr class='row-dirty'><td>" + num(q.E_nominal, 1) + "</td>"
-          + "<td class='num'>—</td><td class='num'>—</td><td class='num'>—</td>"
-          + "<td class='num'>—</td><td class='num'>—</td><td class='num'>—</td>"
-          + "<td>отброшена: " + esc(q.reject) + "</td></tr>";
-        return;
-      }
-      body += "<tr><td>" + num(q.E_nominal, 1) + "</td>"
-        + "<td class='num'>" + num(q.E_centroid, 1) + "</td>"
-        + "<td class='num'>" + num(q.fwhm_keV, 2) + " ± "
-        + num(q.d_fwhm_keV, 2) + "</td>"
-        + "<td class='num'>" + num(q.res_pct, 2) + " %</td>"
-        + "<td class='num'>" + q.n_lines_window + "</td>"
-        + "<td class='num'>" + num(q.fwhm_model_keV, 2) + "</td>"
-        + "<td class='num'>" + (q.dev_pct >= 0 ? "+" : "−")
-        + num(Math.abs(q.dev_pct), 1) + " %</td>"
-        + "<td>в подгонке</td></tr>";
+    (fw.reference_points || []).forEach(function (r) {
+      var dev = 100 * (r.fwhm_power_law_keV / r.fwhm_factory_keV - 1);
+      body += "<tr><td>" + num(r.E_keV, 1) + "</td>"
+        + "<td class='num'>" + num(r.fwhm_factory_keV, 2) + "</td>"
+        + "<td class='num'>" + num(r.fwhm_power_law_keV, 2) + "</td>"
+        + "<td class='num'>" + (dev >= 0 ? "+" : "−")
+        + num(Math.abs(dev), 1) + " %</td></tr>";
     });
-    body += "<tr class='sum'><td>степенной закон</td>"
-      + "<td class='num' colspan='2'>ПШПВ = " + num(fw.k, 3) + "·E<sup>"
+    body += "<tr class='sum'><td>степенной закон (аппрокс.)</td>"
+      + "<td class='num'>ПШПВ = " + num(fw.k, 3) + "·E<sup>"
       + num(fw.p, 4) + "</sup></td>"
-      + "<td class='num'>" + num(fw.res662_pct, 2) + " % на 662</td>"
-      + "<td class='num'>" + fw.n_used + " из " + fw.n_anchors + "</td>"
-      + "<td class='num'>" + num(fw.fwhm662_law, 1) + " кэВ</td>"
-      + "<td class='num'>СКО " + num(fw.rms_dev_pct, 1) + " %</td>"
-      + "<td>по цезию комплекта " + num(fw.fwhm662_cs, 1) + " кэВ</td></tr>";
+      + "<td class='num'>СКО аппрокс. " + num(fw.fit_rms_pct, 1) + " %</td>"
+      + "<td class='num'>662 кэВ: " + num(fw.fwhm662_law, 1) + " кэВ ("
+      + num(fw.res662_pct, 2) + " %)</td></tr>";
     tbl.innerHTML = head + body + "</tbody>";
   }
 
@@ -920,11 +907,11 @@
     var f = fit(cv);
     var g = f.g, W = f.w, H = f.h;
     var m = { l: 62, r: 16, t: 14, b: 34 };
-    var used = fw.points.filter(function (q) { return q.used; });
-    if (!used.length) return;
+    var refPts = fw.reference_points || [];
+    if (!refPts.length) return;
     var xLo = 0, xHi = 2900;
     var vMax = 0;
-    used.forEach(function (q) { vMax = Math.max(vMax, q.fwhm_keV); });
+    refPts.forEach(function (r) { vMax = Math.max(vMax, r.fwhm_factory_keV); });
     vMax = Math.max(vMax, fw.k * Math.pow(xHi, fw.p)) * 1.15;
 
     g.strokeStyle = p.grid; g.lineWidth = 1; g.beginPath();
@@ -983,22 +970,18 @@
     g.setLineDash([]);
 
     g.fillStyle = "#c8541c"; g.strokeStyle = "#c8541c"; g.lineWidth = 1.5;
-    used.forEach(function (q) {
-      var x = mapX(q.E_centroid, xLo, xHi, m.l, W - m.r);
-      var y = yOf(q.fwhm_keV);
-      g.beginPath();
-      g.moveTo(x, yOf(q.fwhm_keV - q.d_fwhm_keV));
-      g.lineTo(x, yOf(q.fwhm_keV + q.d_fwhm_keV));
-      g.stroke();
+    refPts.forEach(function (r) {
+      var x = mapX(r.E_keV, xLo, xHi, m.l, W - m.r);
+      var y = yOf(r.fwhm_factory_keV);
       g.beginPath(); g.arc(x, y, 4, 0, 2 * Math.PI); g.fill();
     });
 
     g.font = "600 11px system-ui, sans-serif";
     g.textAlign = "left"; g.textBaseline = "top";
     g.fillStyle = "#c8541c";
-    g.fillText("снято с этого спектра", m.l + 10, m.t + 8);
+    g.fillText("заводская калибровка (реперные точки)", m.l + 10, m.t + 8);
     g.fillStyle = "#0f5aa8";
-    g.fillText("степенной закон k·E^p", m.l + 10, m.t + 24);
+    g.fillText("аппроксимация степенным законом k·E^p", m.l + 10, m.t + 24);
     g.fillStyle = p.faint;
     g.fillText("корневой закон по записи цезия", m.l + 10, m.t + 40);
   }

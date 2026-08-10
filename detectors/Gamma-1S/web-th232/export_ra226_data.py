@@ -49,17 +49,64 @@ def read_pair():
     b = read_lsrm_spe(bg_path)
     ch_s = np.arange(s.n_channels, dtype=float)
     ch_b = np.arange(b.n_channels, dtype=float)
+    sf = getattr(s, "stored_fwhm_calibration", None)
+    fwhm_coefs = (list(sf.coefficients) if sf is not None and sf.coefficients
+                 else None)
+    fwhm_model = sf.model if sf is not None else None
     return ({"counts": np.asarray(s.counts, dtype=np.int64),
              "e_of_ch": np.asarray(s.channel_to_energy(ch_s), dtype=float),
              "live_s": float(s.live_time), "real_s": float(s.real_time),
              "start": str(s.start_datetime),
              "coefs": [float(c) for c in s.energy_cal],
-             "n_channels": s.n_channels},
+             "n_channels": s.n_channels,
+             "fwhm_coefs": fwhm_coefs, "fwhm_model": fwhm_model},
             {"counts": np.asarray(b.counts, dtype=np.int64),
              "e_of_ch": np.asarray(b.channel_to_energy(ch_b), dtype=float),
              "live_s": float(b.live_time), "real_s": float(b.real_time),
              "coefs": [float(c) for c in b.energy_cal],
              "n_channels": b.n_channels})
+
+
+def factory_fwhm_keV(coefs, model, E_keV):
+    """ПШПВ(E) по ЗАВОДСКОЙ калибровке прибора (полином из шапки .spe),
+    без какой-либо собственной деконволюции/подгонки по измеренному
+    спектру -- директива оператора 10.08.2026 "сам не калибруй".
+
+    Формат `lsrm_fwhm_polynomial_in_E` (LSRM .spe) вопреки названию
+    берёт аргументом НЕ E, а z=sqrt(E) -- задокументированная особенность
+    формата (BUG-22 в SpectraVibe, LSRM «Алгоритмические основы» §8.3,
+    `gamma/io/lsrm_spe.py:46-58`; прямая подстановка E даёт отрицательные
+    ПШПВ). ПШПВ(E) = sum_k c_k * sqrt(E)^k.
+    """
+    if not coefs or model != "lsrm_fwhm_polynomial_in_E" or E_keV <= 0:
+        return None
+    z = float(E_keV) ** 0.5
+    val = sum(float(ck) * (z ** k) for k, ck in enumerate(coefs))
+    return float(val) if val > 0 else None
+
+
+def fit_power_law_to_factory_fwhm(coefs, model, e_lo=50.0, e_hi=3000.0, n=60):
+    """Аппроксимация заводской ПШПВ(E) степенным законом k*E^p -- НЕ
+    калибровка (данные не измеренные, а сама заводская функция,
+    посчитанная в n точках), а пересчёт формы под существующий
+    интерфейс `ed.FWHM_LAW`/`ed.fwhm_kev()` (используется в окнах
+    деконволюции К-рентгена, response-грид), который принимает только
+    степенной закон. МНК по логарифмам -- невязка (rms_fit_pct)
+    сохраняется в JSON как честная мера точности АППРОКСИМАЦИИ, не
+    точности самой заводской калибровки.
+    """
+    Es = np.geomspace(e_lo, e_hi, n)
+    vals = [factory_fwhm_keV(coefs, model, E) for E in Es]
+    ws = np.array([v if v is not None else float("nan") for v in vals])
+    ok = np.isfinite(ws) & (ws > 0)
+    Es, ws = Es[ok], ws[ok]
+    x = np.log(Es); y = np.log(ws)
+    A = np.vstack([np.ones_like(x), x]).T
+    coef, _, _, _ = np.linalg.lstsq(A, y, rcond=None)
+    k = float(np.exp(coef[0])); p = float(coef[1])
+    model_ws = k * Es ** p
+    rms_fit_pct = float(np.sqrt(np.mean((model_ws / ws - 1.0) ** 2)) * 100.0)
+    return k, p, rms_fit_pct
 
 
 def run_method2(library, sums, resp, e, ch_edges, keys):
@@ -277,9 +324,6 @@ def run_method1(e, ch_edges, T, y_sel, bgm, sel, NUCS):
     }, stack, lines_out
 
 
-RA226_FWHM_ANCHORS = (186.211, 351.932, 609.321, 1764.491, 2204.100)
-
-
 def main():
     meas, bg = read_pair()
     e = meas["e_of_ch"]
@@ -334,8 +378,42 @@ def main():
         [e[-1] + 0.5 * (e[-1] - e[-2])],
     ))
 
-    fwhm_cal = ed.fit_fwhm_calibration(meas["counts"], e, anchors=RA226_FWHM_ANCHORS)
-    ed.FWHM_LAW.update({"kind": "power", "k": fwhm_cal["k"], "p": fwhm_cal["p"]})
+    # ── ПШПВ(E): ЗАВОДСКАЯ калибровка прибора, не собственная деконволюция
+    # (директива оператора 10.08.2026 «сам не калибруй» -- та же логика,
+    # что и для энергетической шкалы выше: fit_peak_multiplet на широких
+    # NaI-пиках систематически смещает результат, см. историю оси E).
+    # `factory_fwhm_keV`/`fit_power_law_to_factory_fwhm` берут ГОТОВЫЙ
+    # полином из шапки .spe (LSRM «Алгоритмические основы» §8.3), никакой
+    # подгонки по измеренному спектру. Перевод в степенной закон k·E^p --
+    # чисто техническая аппроксимация ФОРМЫ под существующий интерфейс
+    # ed.FWHM_LAW, не калибровка: fit_power_law_rms_pct -- невязка этой
+    # аппроксимации к самой заводской функции (обычно <1%), НЕ невязка
+    # заводской калибровки к реальности.
+    if not meas.get("fwhm_coefs"):
+        raise SystemExit(
+            "в шапке .spe нет заводской ПШПВ-калибровки "
+            "(stored_fwhm_calibration пуст) -- посчитать нечем.")
+    fwhm_k, fwhm_p, fwhm_fit_rms_pct = fit_power_law_to_factory_fwhm(
+        meas["fwhm_coefs"], meas["fwhm_model"])
+    ed.FWHM_LAW.update({"kind": "power", "k": fwhm_k, "p": fwhm_p})
+    _ref_pts = (186.211, 351.932, 609.321, 661.657, 1764.491, 2204.100, 2447.7)
+    fwhm_cal = {
+        "source": "заводская (LSRM, полином в шапке .spe, z=sqrt(E))",
+        "coefs": meas["fwhm_coefs"], "model": meas["fwhm_model"],
+        "k": fwhm_k, "p": fwhm_p, "fit_rms_pct": fwhm_fit_rms_pct,
+        "fwhm662_law": fwhm_k * 661.657 ** fwhm_p,
+        "fwhm662_cs": ed.FWHM662,
+        "res662_pct": 100.0 * fwhm_k * 661.657 ** fwhm_p / 661.657,
+        "reference_points": [
+            {"E_keV": E,
+             "fwhm_factory_keV": factory_fwhm_keV(meas["fwhm_coefs"],
+                                                  meas["fwhm_model"], E),
+             "fwhm_power_law_keV": fwhm_k * E ** fwhm_p}
+            for E in _ref_pts],
+    }
+    print("ПШПВ: заводская калибровка, аппроксимация степенным законом "
+          "k=%.4f p=%.4f (невязка аппроксимации %.2f%%), ПШПВ(662)=%.1f кэВ"
+          % (fwhm_k, fwhm_p, fwhm_fit_rms_pct, fwhm_cal["fwhm662_law"]))
 
     eps_peak = ed.make_eps_peak_interp(os.path.join(ed.BUILD, "grid"))
     resp = ed.make_full_response(os.path.join(ed.BUILD, "grid"), ch_edges,

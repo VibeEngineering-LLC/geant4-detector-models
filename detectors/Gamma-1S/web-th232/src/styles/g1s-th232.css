@@ -537,6 +537,12 @@ footer.bot button:hover{background:var(--accent-soft)}
    не на самой table. table.big внутри несёт width:100% -- этого
    достаточно, чтобы заполнить обёртку, обёртку саму растягивает flex. */
 .grouprow > .grouptable-wrap{flex:1 1 20rem; min-width:20rem}
+/* Заголовок table.big несёt background:var(--paper) под sticky-скролл
+   (нужно длинным таблицам типа #tblM2) -- здесь таблица короткая
+   (4 строки), не скроллится, а белая плашка режет глаз на жёлтом фоне
+   .summary (замечание оператора 11.08.2026). Прозрачный фон только для
+   этого контекста, общее правило для scroll-таблиц не трогает. */
+.grouprow thead th{background:transparent}
 .grouprow > .summary{flex:0 0 auto; flex-direction:column; flex-wrap:nowrap;
   margin:0}
 /* Узкий экран: без принудительной колонки -- flex-wrap:wrap на .grouprow

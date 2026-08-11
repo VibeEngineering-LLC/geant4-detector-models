@@ -561,7 +561,13 @@ footer.bot button:hover{background:var(--accent-soft)}
    вес классов до 2 против 1 у исходного правила -- это и есть выигрыш. */
 .grouprow.grouprow thead th{background:var(--accent-soft)}
 .grouprow > .summary{flex:0 0 auto; flex-direction:column; flex-wrap:nowrap;
-  margin:0}
+  margin:0; border:none; box-shadow:none; background:transparent; padding:0}
+/* Внутренний .summary (χ²/ν-бокс) наследовал ПОЛНОЕ оформление панели
+   (рамка+тень+жёлтый фон) от базового правила .summary выше -- рамка в
+   рамке, тень внутри тени, скриншот оператора 11.08.2026 "жёлтую
+   панель делай так" показал плоскую единую заливку без вложенной
+   коробки. Снято явно, тут же (специфичность .grouprow>.summary выше
+   базового .summary, побеждает). */
 /* Узкий экран: без принудительной колонки -- flex-wrap:wrap на .grouprow
    уже переносит .summary под таблицу, когда ширины не хватает, этого
    достаточно (явный @media (max-width:640px){flex-direction:column} был

@@ -535,7 +535,13 @@ footer.bot button:hover{background:var(--accent-soft)}
    строку родительского flex целиком, дальше уже СВОЙ flex-row работает
    как задумано. */
 .summary > .grouprow{flex:1 1 100%; flex-direction:row; min-width:0; margin:0}
-.grouprow{display:flex; width:100%; gap:.7rem; align-items:center;
+/* align-items:stretch (замечание оператора 11.08.2026: "выровняй по
+   высоте строк таблицы") -- χ²/ν-бокс растягивается до высоты таблицы
+   слева, а не плавает короткой коробкой посередине пустого места
+   (center пробовался раньше и не подошёл). .summary внутри -- flex-
+   column, поэтому растянутая высота просто добавляет пустое место
+   СНИЗУ содержимого коробки, а не искажает сами ячейки. */
+.grouprow{display:flex; width:100%; gap:.7rem; align-items:stretch;
   flex-wrap:wrap}
 /* <table> как ПРЯМОЙ flex-item на flex-grow отзывается ненадёжно (свой
    табличный алгоритм разметки перебивает growth на некоторых движках) --

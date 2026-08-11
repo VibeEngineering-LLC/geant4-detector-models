@@ -561,13 +561,27 @@ footer.bot button:hover{background:var(--accent-soft)}
    вес классов до 2 против 1 у исходного правила -- это и есть выигрыш. */
 .grouprow.grouprow thead th{background:var(--accent-soft)}
 .grouprow > .summary{flex:0 0 auto; flex-direction:column; flex-wrap:nowrap;
-  margin:0; border:none; box-shadow:none; background:transparent; padding:0}
+  margin:2.55rem 0 0 0; border:none; box-shadow:none; background:transparent;
+  padding:0 0 0 .9rem; justify-content:space-between}
 /* Внутренний .summary (χ²/ν-бокс) наследовал ПОЛНОЕ оформление панели
    (рамка+тень+жёлтый фон) от базового правила .summary выше -- рамка в
    рамке, тень внутри тени, скриншот оператора 11.08.2026 "жёлтую
    панель делай так" показал плоскую единую заливку без вложенной
    коробки. Снято явно, тут же (специфичность .grouprow>.summary выше
-   базового .summary, побеждает). */
+   базового .summary, побеждает).
+   Второй заход (тот же день, "выровняй по высоте между чёрной и нижней
+   серой линиями, дай слева отступ от края чёрной линии"): align-items:
+   stretch на .grouprow растягивает бокс на ПОЛНУЮ высоту .grouptable-wrap
+   -- включая шапку таблицы, а не только тело. margin-top=2,55rem (=
+   измеренная высота зоны шапки -- thead.bottom-wrap.top) вычитается
+   flexbox'ом из stretch-высоты САМ (margin учитывается при расчёте
+   auto-размера stretch) -- верх бокса съезжает точно к чёрной линии-
+   разделителю под шапкой, низ остаётся на месте (=низ .grouptable-wrap
+   =последняя серая линия таблицы) без доп. правок. justify-content:
+   space-between разносит 2-3 строки статистики по всей этой высоте
+   вместо кучи у верха с пустым хвостом снизу. padding-left вернул отступ
+   текста от левого края (padding:0 после первого захода прижимал текст
+   впритык). */
 /* Узкий экран: без принудительной колонки -- flex-wrap:wrap на .grouprow
    уже переносит .summary под таблицу, когда ширины не хватает, этого
    достаточно (явный @media (max-width:640px){flex-direction:column} был

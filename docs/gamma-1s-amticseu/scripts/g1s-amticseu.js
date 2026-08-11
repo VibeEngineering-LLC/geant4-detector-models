@@ -458,7 +458,7 @@
     if (cv) {
       var p = pal();
       var f = fit(cv), g = f.g, W = f.w, H = f.h;
-      var m = { l: 26, r: 20, t: 18, b: 34 };
+      var m = { l: 26, r: 20, t: 24, b: 34 };
       var lo = Infinity, hi = -Infinity;
       items.forEach(function (it) {
         lo = Math.min(lo, it.A - it.dA);
@@ -503,14 +503,17 @@
         g.fillStyle = it.col;
         g.textAlign = "left"; g.textBaseline = "middle";
         g.font = "bold 12px system-ui, sans-serif";
-        g.fillText(it.lab, m.l + 6, yc - rowH * 0.28);
+        g.fillText(it.lab, m.l + 6, yc - rowH * 0.24);
         g.fillStyle = p.ink;
         g.font = "11px ui-monospace, Menlo, monospace";
         g.fillText(cnt(it.A) + " ± " + cnt(it.dA) + " Бк",
                    Math.min(xr + 8, W - m.r - 130), yc);
       }
       // Высота canvas растёт с числом строк -- 12 items тесно на height=200.
-      cv.style.height = Math.max(260, items.length * 26) + "px";
+      // Было 26 px/строка -- подпись первой строки задевала верхнюю рамку
+      // (замечание оператора 11.08.2026, "тут каша"); 32 px/строка +
+      // увеличенный верхний отступ (m.t 18->24) дают запас.
+      cv.style.height = Math.max(280, items.length * 32) + "px";
     }
     if (tbl) {
       var html = "<table class='big'><thead><tr><th>группа</th><th>оценка</th>"
@@ -522,11 +525,12 @@
         if (!pass) return;
         html += "<tr><td rowspan='3'><span class='sw' style='background:" + nd.color
           + "'></span>" + esc(nd.label_ru) + "</td><td>паспорт</td><td>"
-          + cnt(pass.A_Bq) + " ± " + cnt(pass.dA_Bq) + "</td><td>1,000</td></tr>";
+          + cnt(pass.A_Bq) + " ± " + cnt(pass.dA_Bq)
+          + "</td><td class='ratio-cell'>1,000</td></tr>";
         if (m1) html += "<tr><td>метод 1</td><td>" + cnt(m1.A_Bq) + " ± " + cnt(m1.dA_Bq)
-          + "</td><td>" + num(m1.A_over_passport, 3) + "</td></tr>";
+          + "</td><td class='ratio-cell'>" + num(m1.A_over_passport, 3) + "</td></tr>";
         if (m2) html += "<tr><td>метод 2</td><td>" + cnt(m2.A_Bq) + " ± " + cnt(m2.dA_Bq)
-          + "</td><td>" + num(m2.A_over_passport, 3) + "</td></tr>";
+          + "</td><td class='ratio-cell'>" + num(m2.A_over_passport, 3) + "</td></tr>";
       });
       html += "</tbody></table>";
       tbl.innerHTML = html;

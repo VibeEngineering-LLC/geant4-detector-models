@@ -27,8 +27,13 @@
 
   var X_LO = 30, X_HI = 1700; // диапазон графиков -- e_hi_kev=1500 конфига + запас
 
-  var ST = { on: {}, log: true, cursorE: null };
+  var ST = { on: {}, log: true, cursorE: null, lib: "sel" };
   D.nuclides.forEach(function (n) { ST.on[n.key] = true; });
+
+  // Восстановлено 11.08.2026 (замечание оператора №2) -- переключатель
+  // отобранная/полная библиотека, как на Th-232/Ra-226; было сознательно
+  // пропущено в первой версии, здесь исправлено.
+  function M2() { return ST.lib === "full" ? D.method2_full : D.method2_sel; }
 
   function fit(cv) {
     var dpr = window.devicePixelRatio || 1;
@@ -78,7 +83,7 @@
   }
 
   function STACK(mode) {
-    return mode === "m1" ? D.spectrum.stack1 : D.method2.stack;
+    return mode === "m1" ? D.spectrum.stack1 : M2().stack;
   }
   function CV_ID(mode) { return mode === "m1" ? "cvM1" : "cvM2"; }
   function TIP_ID(mode) { return mode === "m1" ? "m1-tip" : "m2-tip"; }
@@ -299,7 +304,7 @@
   // не одна ячейка амплитуды (главное отличие от ra226.js/g1s-th232.js --
   // здесь нет единой "активности ветви"). ──────────────────────────────
   function groupTable(kind) {
-    var res = kind === "m1" ? D.method1 : D.method2;
+    var res = kind === "m1" ? D.method1 : M2();
     var html = "<table class='big'><thead><tr><th>группа</th>"
       + "<th class='num'>A, Бк</th><th class='num'>± Бк</th>"
       + "<th class='num'>против паспорта</th></tr></thead><tbody>";
@@ -318,7 +323,7 @@
   function fillSummary() {
     var el = document.getElementById("sumM2");
     if (!el) return;
-    var m2 = D.method2;
+    var m2 = M2();
     el.innerHTML = groupTable("m2") + "<div class='summary'>"
       + cell("χ²/ν (совместный фит)", num(m2.chi2_ndof, 2))
       + cell("линий в модели", cnt(m2.n_lines) + " + " + cnt(m2.n_sum_peaks) + " сумм-пиков")
@@ -361,7 +366,7 @@
   function fillTable() {
     var tbl = document.getElementById("tblM2");
     if (!tbl) return;
-    var m2 = D.method2;
+    var m2 = M2();
     var rows = m2.lines.filter(function (r) {
       return r.E_keV >= TBL_E_LO && r.E_keV <= TBL_E_HI;
     });
@@ -434,7 +439,7 @@
     D.nuclides.forEach(function (nd) {
       var pass = D.passport[nd.key];
       var m1 = D.method1.groups[nd.key];
-      var m2 = D.method2.groups[nd.key];
+      var m2 = M2().groups[nd.key];
       if (!pass) return;
       items.push({ lab: nd.label_ru + " — паспорт", A: pass.A_Bq, dA: pass.dA_Bq, col: "#6a6558" });
       if (m1) items.push({ lab: nd.label_ru + " — метод 1", A: m1.A_Bq, dA: m1.dA_Bq, col: nd.color });
@@ -503,7 +508,7 @@
       D.nuclides.forEach(function (nd) {
         var pass = D.passport[nd.key];
         var m1 = D.method1.groups[nd.key];
-        var m2 = D.method2.groups[nd.key];
+        var m2 = M2().groups[nd.key];
         if (!pass) return;
         html += "<tr><td rowspan='3'><span class='sw' style='background:" + nd.color
           + "'></span>" + esc(nd.label_ru) + "</td><td>паспорт</td><td>"
@@ -645,8 +650,16 @@
     g.strokeRect(m.l, m.t, W - m.r - m.l, H - m.b - m.t);
 
     if (CAL.anch && D.reference_lines) {
+      // ИСПРАВЛЕНО 11.08.2026 (замечание оператора №1 "неудачная
+      // калибровка"): reference_lines несёт КОРОТКИЙ КЛЮЧ нуклида
+      // ("Ti44chain"), не label_ru ("Ti-44 → Sc-44") -- словарь цветов
+      // строился по label_ru, ключ не совпадал НИ РАЗУ, все реперы
+      // рисовались одним блёклым p.faint вместо цвета своего нуклида.
+      // Тот же баг унаследован из g1s-th232.js/ra226.js (тот же
+      // паттерн nucCol[n.label_ru] против reference_lines с key) --
+      // здесь исправлен, там -- не трогал (вне области этой правки).
       var nucCol = {};
-      D.nuclides.forEach(function (n) { nucCol[n.label_ru] = n.color; });
+      D.nuclides.forEach(function (n) { nucCol[n.key] = n.color; });
       D.reference_lines.forEach(function (r) {
         var E = r[0], nuc = r[1];
         if (E < xLo || E > xHi) return;
@@ -769,7 +782,7 @@
         CAL.cursorE = calEfromX(x, r.width);
         var ref = calRefLineAt(x, y, r.width);
         if (ref) {
-          var refTxt = ref[1] + " · " + num(ref[0], 1) + " кэВ";
+          var refTxt = labelRu(ref[1]) + " · " + num(ref[0], 1) + " кэВ";
           ro.textContent = refTxt;
           if (tip) {
             tip.hidden = false;
@@ -980,6 +993,15 @@
 
   document.querySelectorAll("#tabs .tab").forEach(function (b) {
     b.addEventListener("click", function () { switchTab(b.dataset.tab); });
+  });
+  document.querySelectorAll("#libseg .btn").forEach(function (b) {
+    b.addEventListener("click", function () {
+      ST.lib = b.dataset.lib;
+      document.querySelectorAll("#libseg .btn").forEach(function (x) {
+        x.setAttribute("aria-pressed", String(x === b));
+      });
+      fillSummary(); fillTable(); cursorText("m2"); drawSpectrum("m2");
+    });
   });
 
   function openPop(id) {

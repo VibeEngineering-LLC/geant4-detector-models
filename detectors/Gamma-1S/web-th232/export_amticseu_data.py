@@ -247,48 +247,61 @@ def main():
     # ── метод 2: F_B/TCS-библиотека, ОДНА амплитуда НА ГРУППУ (не общая
     # для всех групп сразу -- та же логика, что в методе 1: run_method2
     # даёт by_nuc_w с формой НА ЕДИНИЦУ амплитуды каждого нуклида,
-    # фитируем 4 независимых столбца вместо одного shape_total) ─────────
-    shape_total, by_nuc_w, lines_out, n_sum = erd.run_method2(
-        ed.GAMMA_LIBRARY, ed.SUM_PEAKS, resp, e, ch_edges, keys)
+    # фитируем 4 независимых столбца вместо одного shape_total). ДВА
+    # варианта библиотеки, как у Th-232/Ra-226 (замечание оператора
+    # №2, 11.08.2026 -- вариант "все известные линии" был сознательно
+    # пропущен как упрощение по времени, здесь восстановлен): "sel" --
+    # отобранная (порог 1,3%, ed.GAMMA_LIBRARY), "full" -- ВСЕ известные
+    # линии из ensdf_amticseu_chain_lines.csv (287 строк, тот же файл,
+    # что уже использует _sum_peaks_with_fb, путь строится САМ по
+    # source.id конфига -- ed.load_full_library без явного path). ─────
+    def run_method2_variant(library):
+        shape_total, by_nuc_w, lines_out, n_sum = erd.run_method2(
+            library, ed.SUM_PEAKS, resp, e, ch_edges, keys)
+        cols = [by_nuc_w[k][sel] * T for k in keys] + [bgm]
+        coef, dcoef, chi2, ndof, model = ed.fit_amplitudes(
+            y_sel, cols, ed.SYS_FLOOR)
+        groups_out = {}
+        for i, key in enumerate(keys):
+            A_Bq, dA_Bq = float(coef[i]), float(dcoef[i])
+            A_pass = passport_by_group[key]["A_Bq"]
+            groups_out[key] = {"A_Bq": A_Bq, "dA_Bq": dA_Bq,
+                               "A_over_passport": A_Bq / A_pass}
+        bg_amp, d_bg_amp = float(coef[-1]), float(dcoef[-1])
+        # predicted_net на строку -- сумма ПО ГРУППАМ (её собственная
+        # амплитуда), не одна общая амплитуда, как в Th-232/Ra-226.
+        for ln in lines_out:
+            A_Bq = groups_out[ln["nuclide"]]["A_Bq"]
+            ln["predicted_net"] = ln.get("weight_per_branch", 0.0) * A_Bq * T
+        stack = {k: (by_nuc_w[k] * groups_out[k]["A_Bq"] * T).tolist() for k in keys}
+        return {
+            "groups": groups_out, "bg_amplitude": bg_amp, "d_bg_amplitude": d_bg_amp,
+            "chi2": chi2, "ndof": ndof, "chi2_ndof": chi2 / ndof,
+            "n_lines": len(library), "n_sum_peaks": n_sum,
+            "n_sum_peaks_total": len(ed.SUM_PEAKS),
+            "lines": lines_out, "stack": stack,
+        }
 
-    cols2 = [by_nuc_w[k][sel] * T for k in keys] + [bgm]
-    coef2, dcoef2, chi2_2, ndof_2, model_2 = ed.fit_amplitudes(
-        y_sel, cols2, ed.SYS_FLOOR)
+    method2_sel = run_method2_variant(ed.GAMMA_LIBRARY)
+    lib_full, full_skip = ed.load_full_library(nuc_keys=set(keys))
+    method2_full = run_method2_variant(lib_full)
+    print("библиотека 'все известные линии': %d строк (пропущено: рентген=%d, "
+          "без интенсивности=%d, чужой нуклид=%d)"
+          % (len(lib_full), full_skip["xray"], full_skip["no_intensity"],
+             full_skip["other_nuclide"]))
 
-    m2_groups = {}
-    for i, key in enumerate(keys):
-        A_Bq, dA_Bq = float(coef2[i]), float(dcoef2[i])
-        A_pass = passport_by_group[key]["A_Bq"]
-        m2_groups[key] = {"A_Bq": A_Bq, "dA_Bq": dA_Bq,
-                          "A_over_passport": A_Bq / A_pass}
-    bg_amp2, d_bg_amp2 = float(coef2[-1]), float(dcoef2[-1])
-
-    # predicted_net на строку -- сумма ПО ГРУППАМ (её собственная
-    # амплитуда), не одна общая амплитуда, как в Th-232/Ra-226.
-    for ln in lines_out:
-        A_Bq = m2_groups[ln["nuclide"]]["A_Bq"]
-        ln["predicted_net"] = ln.get("weight_per_branch", 0.0) * A_Bq * T
-
-    stack2 = {k: (by_nuc_w[k] * m2_groups[k]["A_Bq"] * T).tolist() for k in keys}
-
-    method2 = {
-        "groups": m2_groups, "bg_amplitude": bg_amp2, "d_bg_amplitude": d_bg_amp2,
-        "chi2": chi2_2, "ndof": ndof_2, "chi2_ndof": chi2_2 / ndof_2,
-        "n_lines": len(ed.GAMMA_LIBRARY), "n_sum_peaks": n_sum,
-        "n_sum_peaks_total": len(ed.SUM_PEAKS),
-        "lines": lines_out, "stack": stack2,
-    }
-    print("метод 2 (F_B/TCS, 4 независимые амплитуды): chi2/ndof=%.2f  "
-          "линий=%d сумм=%d/%d"
-          % (method2["chi2_ndof"], method2["n_lines"], method2["n_sum_peaks"],
-             method2["n_sum_peaks_total"]))
-    for key in keys:
-        g = m2_groups[key]
-        print("  %-12s A=%.1f+-%.1f Бк  ratio=%.3f"
-              % (key, g["A_Bq"], g["dA_Bq"], g["A_over_passport"]))
+    for tag, method2 in (("sel", method2_sel), ("full", method2_full)):
+        print("метод 2 (%s, F_B/TCS, 4 независимые амплитуды): chi2/ndof=%.2f  "
+              "линий=%d сумм=%d/%d"
+              % (tag, method2["chi2_ndof"], method2["n_lines"],
+                 method2["n_sum_peaks"], method2["n_sum_peaks_total"]))
+        for key in keys:
+            g = method2["groups"][key]
+            print("  %-12s A=%.1f+-%.1f Бк  ratio=%.3f"
+                  % (key, g["A_Bq"], g["dA_Bq"], g["A_over_passport"]))
 
     reference_lines = [[ln["E_keV"], ln["nuclide"]]
-                      for ln in lines_out if ln["kind"] == "line"]
+                      for ln in method2_sel["lines"] if ln["kind"] == "line"]
 
     palette = {n["key"]: n["color"] for n in ed._CFG["nuclides"]}
     label_ru = {n["key"]: n["label_ru"] for n in ed._CFG["nuclides"]}
@@ -315,17 +328,16 @@ def main():
             "energy_correction": energy_correction,
             "level_note": "Библиотека линий -- IAEA Live Chart of "
                           "Nuclides (decay_rads), ✅ ПОЛНОСТЬЮ сверена "
-                          "построчно с LNHB/DDEP (20/20 строк, макс. "
-                          "расхождение 1,94%%, 11.08.2026). Только "
-                          "отобранная библиотека (порог 1,3%%) -- "
-                          "вариант полной непороговой библиотеки, в "
-                          "отличие от Th-232/Ra-226, для этого источника "
-                          "не строился (упрощение по времени, 4 "
-                          "независимых нуклида делают полную картину "
-                          "видимой уже из совпадения методов 1 и 2). "
+                          "построчно с LNHB/DDEP (20/20 строк отобранной "
+                          "библиотеки, макс. расхождение 1,94%%, "
+                          "11.08.2026); полная (непороговая) библиотека "
+                          "(%d линий, добавлена 11.08.2026 по замечанию "
+                          "оператора, как на Th-232/Ra-226) LNHB-сверке "
+                          "НЕ подвергалась -- там 📗, как и было. "
                           "К-рентген дочерних не выделен отдельной "
                           "сущностью (физика в шаблонах есть целиком, "
-                          "отдельная разбивка -- только наглядность).",
+                          "отдельная разбивка -- только наглядность)."
+                          % len(lib_full),
         },
         "fwhm_cal": fwhm_cal,
         "passport": passport_by_group,
@@ -339,7 +351,8 @@ def main():
         },
         "method1": m1_result,
         "method1_meta": m1_meta,
-        "method2": method2,
+        "method2_sel": method2_sel,
+        "method2_full": method2_full,
         "reference_lines": reference_lines,
     }
 

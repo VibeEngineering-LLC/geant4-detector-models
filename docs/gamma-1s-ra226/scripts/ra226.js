@@ -754,7 +754,7 @@
 
     if (CAL.anch && D.reference_lines) {
       var nucCol = {};
-      D.nuclides.forEach(function (n) { nucCol[n.label_ru] = n.color; });
+      D.nuclides.forEach(function (n) { nucCol[n.key] = n.color; });
       D.reference_lines.forEach(function (r) {
         var E = r[0], nuc = r[1];
         if (E < xLo || E > xHi) return;
@@ -881,7 +881,7 @@
         CAL.cursorE = calEfromX(x, r.width);
         var ref = calRefLineAt(x, y, r.width);
         if (ref) {
-          var refTxt = ref[1] + " · " + num(ref[0], 1) + " кэВ";
+          var refTxt = labelRu(ref[1]) + " · " + num(ref[0], 1) + " кэВ";
           ro.textContent = refTxt;
           if (tip) {
             tip.hidden = false;

@@ -218,6 +218,12 @@ canvas{display:block; width:100%; max-width:100%; touch-action:none}
   margin-top:-.6rem;
 }
 .chart-tip[hidden]{display:none}
+/* Кнопка сброса приближения (метод 1/2 -- навигация окном шаблона,
+   замечание оператора 11.08.2026, тот же приём, что "весь диапазон" на
+   вкладке «калибровка», только там кнопка в общей панели чекбоксов, а
+   тут поверх canvas -- нет отдельной панели контролов). */
+.spec-reset{position:absolute; top:.4rem; right:.4rem; z-index:5;
+  font-size:11px; padding:.3rem .55rem}
 .plot-foot{
   display:flex; gap:.4rem 1.3rem; flex-wrap:wrap; align-items:center;
   padding:.5rem .8rem .55rem; font:600 11px/1.5 var(--sans); color:var(--dim);
@@ -355,6 +361,15 @@ table.big th,table.big td{padding:.5rem .65rem; text-align:right;
 table.big th:first-child,table.big td:first-child{text-align:left;
   font:600 12.5px/1.4 var(--sans); padding-left:0}
 table.big td:last-child{text-align:left}
+/* Столбец "отношение к паспорту" (cmpTable) -- число, не примечание,
+   базовый td:last-child{text-align:left} для него неуместен (замечание
+   оператора 11.08.2026: значение прижато к левому краю широкой колонки,
+   просил по центру). Класс конкретнее правила last-child -- выигрывает. */
+table.big td.ratio-cell{text-align:center}
+/* Столбец "примечание" (#tblM2, библиотека линий метода 2) -- та же
+   просьба (11.08.2026), по центру широкой колонки. ID конкретнее
+   класса .big -- выигрывает без нового класса в JS. */
+#tblM2 td:last-child{text-align:center}
 table.big th:last-child{text-align:center}
 /* Короткие атомарные метки — нуклид (свотч+«Th-232») — никогда не
    переносятся мид-слова: колонка «линия» метода 2 (первая, тоже со
@@ -493,6 +508,72 @@ footer.bot button:hover{background:var(--accent-soft)}
 .summary .val{font:700 14px/1.25 var(--mono); font-variant-numeric:tabular-nums}
 .summary .big-num{font-size:19px}
 .summary em{font:600 12px/1 var(--mono); font-style:normal; color:#3c360d}
+
+/* Сводка метода 1/2 у источников с НЕСКОЛЬКИМИ независимыми группами
+   (AmTiCsEu) -- таблица групп широкая, .summary рядом с ней узкая:
+   раньше .summary шла ПОД таблицей во всю ширину и пустовала, площадь
+   использовалась неэффективно (замечание оператора 11.08.2026).
+   .grouprow ставит их В ОДИН РЯД: таблица растягивается, .summary --
+   узкая колонка справа фиксированной ширины. Не трогает базовый
+   .summary (используется САМ ПО СЕБЕ на Th-232/Ra-226 без .grouprow). */
+/* НАСТОЯЩАЯ причина (найдено 11.08.2026 на ЖИВОМ рендере оператора,
+   ДВЕ моих предыдущих попытки диагноза были мимо -- сперва решил, что
+   дело в закэшированном лэйауте browser-tool панели, потом что не хватало
+   flex-basis): #sumM1/#sumM2 сами несут класс .summary, а `.summary >
+   div{flex-direction:column; min-width:8.5rem}` (правило для простых
+   карточек-ячеек χ²/ν и т.п.) ПОПАДАЕТ и в .grouprow -- он тоже прямой
+   div-потомок .summary. specificity .summary>.grouprow (0,2,0) выше
+   .summary>div (0,1,1), побеждает -- но я не переопределял flex-direction
+   в этом правиле явно, только flex/margin, column так и просачивался.
+   Ниже -- та же переопределяющая строка, с явным flex-direction:row.
+   #sumM1/#sumM2 (родитель .grouprow) сами несут класс .summary, а
+   .summary УЖЕ flex-контейнер (display:flex, см. правило выше). Значит
+   .grouprow -- flex-item ЧУЖОГО контейнера, и без явного flex-basis
+   съёживается к контенту (initial flex:0 1 auto), а mои width:100%
+   внутри НЕГО самого роли не играли -- ширину задаёт РОДИТЕЛЬСКИЙ flex,
+   не собственная. .summary > .grouprow ниже это чинит: занимает всю
+   строку родительского flex целиком, дальше уже СВОЙ flex-row работает
+   как задумано. */
+.summary > .grouprow{flex:1 1 100%; flex-direction:row; min-width:0; margin:0}
+/* align-items:stretch (замечание оператора 11.08.2026: "выровняй по
+   высоте строк таблицы") -- χ²/ν-бокс растягивается до высоты таблицы
+   слева, а не плавает короткой коробкой посередине пустого места
+   (center пробовался раньше и не подошёл). .summary внутри -- flex-
+   column, поэтому растянутая высота просто добавляет пустое место
+   СНИЗУ содержимого коробки, а не искажает сами ячейки. */
+.grouprow{display:flex; width:100%; gap:.7rem; align-items:stretch;
+  flex-wrap:wrap}
+/* <table> как ПРЯМОЙ flex-item на flex-grow отзывается ненадёжно (свой
+   табличный алгоритм разметки перебивает growth на некоторых движках) --
+   таблица обёрнута в .grouptable-wrap (div), flex-правила -- на обёртке,
+   не на самой table. table.big внутри несёт width:100% -- этого
+   достаточно, чтобы заполнить обёртку, обёртку саму растягивает flex. */
+.grouprow > .grouptable-wrap{flex:1 1 20rem; min-width:20rem}
+/* Заголовок table.big несёt background:var(--paper) под sticky-скролл
+   (нужно длинным таблицам типа #tblM2) -- здесь таблица короткая
+   (4 строки), не скроллится, а белая плашка режет глаз на жёлтом фоне
+   .summary (замечание оператора 11.08.2026, второй заход -- первая
+   попытка проиграла по специфичности: table.big thead th считает 3
+   type-селектора (table+thead+th) против моих 2, побеждает несмотря на
+   более позднее место в файле). Явный жёлтый (--accent-soft, тот же,
+   что у .summary), не прозрачный -- понадёжнее, да и оператор попросил
+   именно цветом, не прозрачностью. .grouprow ДВАЖДЫ в селекторе поднимает
+   вес классов до 2 против 1 у исходного правила -- это и есть выигрыш. */
+.grouprow.grouprow thead th{background:var(--accent-soft)}
+.grouprow > .summary{flex:0 0 auto; flex-direction:column; flex-wrap:nowrap;
+  margin:0; border:none; box-shadow:none; background:transparent; padding:0}
+/* Внутренний .summary (χ²/ν-бокс) наследовал ПОЛНОЕ оформление панели
+   (рамка+тень+жёлтый фон) от базового правила .summary выше -- рамка в
+   рамке, тень внутри тени, скриншот оператора 11.08.2026 "жёлтую
+   панель делай так" показал плоскую единую заливку без вложенной
+   коробки. Снято явно, тут же (специфичность .grouprow>.summary выше
+   базового .summary, побеждает). */
+/* Узкий экран: без принудительной колонки -- flex-wrap:wrap на .grouprow
+   уже переносит .summary под таблицу, когда ширины не хватает, этого
+   достаточно (явный @media (max-width:640px){flex-direction:column} был
+   здесь и снят -- в проверке рендерился как активный даже при ширине
+   1280px, движковая нестыковка с matchMedia; не разбирались специально,
+   проще убрать несущественное правило, чем гнаться за причиной). */
 
 /* --- Метод 2: боковая колонка «подгонка» --- */
 .m2-facts{padding:.6rem 0 .8rem; display:flex; flex-direction:column; gap:.85rem}

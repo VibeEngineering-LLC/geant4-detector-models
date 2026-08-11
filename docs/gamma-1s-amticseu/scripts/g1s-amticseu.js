@@ -332,11 +332,12 @@
     var el = document.getElementById("sumM2");
     if (!el) return;
     var m2 = M2();
-    el.innerHTML = groupTable("m2") + "<div class='summary'>"
+    el.innerHTML = "<div class='grouprow'><div class='grouptable-wrap'>"
+      + groupTable("m2") + "</div><div class='summary'>"
       + cell("χ²/ν (совместный фит)", num(m2.chi2_ndof, 2))
       + cell("линий в модели", cnt(m2.n_lines) + " + " + cnt(m2.n_sum_peaks) + " сумм-пиков")
       + cell(CONT_LAB, num(m2.bg_amplitude, 2), false, CONT_HINT)
-      + "</div>";
+      + "</div></div>";
   }
   function signedPct(ratio) {
     var s = 100 * (ratio - 1);
@@ -347,10 +348,11 @@
     var el = document.getElementById("sumM1");
     if (!el || !D.method1) return;
     var m1 = D.method1;
-    el.innerHTML = groupTable("m1") + "<div class='summary'>"
+    el.innerHTML = "<div class='grouprow'><div class='grouptable-wrap'>"
+      + groupTable("m1") + "</div><div class='summary'>"
       + cell("χ²/ν (совместный фит)", num(m1.chi2_ndof, 2))
       + cell(CONT_LAB, num(m1.bg_amplitude, 2), false, CONT_HINT)
-      + "</div>";
+      + "</div></div>";
   }
 
   function labelRu(key) {

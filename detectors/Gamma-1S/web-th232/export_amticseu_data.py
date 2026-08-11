@@ -237,7 +237,27 @@ def main():
                    float(np.polyval(meas["coefs"][::-1], _AM241_BLEND_HI))),
     }
 
-    bg_on_meas = np.interp(e, bg["e_of_ch"], bg["counts"].astype(float),
+    # ── энергетическая шкала ФОНА -- поправка нуля по K-40 (11.08.2026,
+    # замечание оператора «фон не откалиброван»). Заводская калибровка
+    # фона (bg["coefs"], линейная, 2 коэффициента) отдельная от образца
+    # и НЕ затронута поправкой Am-241 выше (та была scoped к образцу).
+    # Якорь -- K-40 1460,822 кэВ, универсальная природная линия,
+    # практически всегда видна в фоновом счёте (13 ч набора, статистика
+    # хорошая: 4043 чистых отсчёта в пике после вычета линейной
+    # подложки по краям окна -- воспроизводимо: analysis/
+    # bg_k40_anchor_check.py). Взвешенный центроид по СОБСТВЕННОЙ
+    # (некорректированной) шкале фона: 1444,46 кэВ, дельта к табличной
+    # 1460,822 -- минус 16,36 кэВ. Линейная калибровка (2 параметра) не
+    # даёт вторую степень свободы под ОДИН якорь -- тот же случай, что
+    # у фона Ra-226 (apply_xray_anchor_correction_bg,
+    # ra226-remarks.md §16): сдвигаем ТОЛЬКО нуль (c0), наклон (кэВ/канал)
+    # заводским и оставляем -- физически это смещение нуля АЦП/усилителя,
+    # не ошибка коэффициента усиления, самое экономное объяснение одной
+    # точкой. Сдвиг КОНСТАНТНЫЙ по всему диапазону.
+    _BG_K40_SHIFT_KEV = 1460.822 - 1444.46
+    bg_e_corrected = bg["e_of_ch"] + _BG_K40_SHIFT_KEV
+
+    bg_on_meas = np.interp(e, bg_e_corrected, bg["counts"].astype(float),
                            left=0.0, right=0.0)
     bg_scale_time = T / bg["live_s"]
     bg_scaled = bg_on_meas * bg_scale_time
@@ -397,6 +417,18 @@ def main():
             "cal_bg": {"coefs": bg["coefs"], "order": len(bg["coefs"]) - 1,
                       "n_channels": bg["n_channels"]},
             "energy_correction": energy_correction,
+            "bg_energy_correction": {
+                "applied": True,
+                "method": "k40_zero_shift",
+                "anchor_kev": 1460.822,
+                "measured_centroid_kev": 1444.46,
+                "shift_kev": _BG_K40_SHIFT_KEV,
+                "note": "Поправка нуля (не наклона) заводской линейной "
+                        "калибровки фона по K-40 (1460,822 кэВ, взвешенный "
+                        "центроид 1444,46 -- analysis/bg_k40_anchor_check.py). "
+                        "Тот же приём, что apply_xray_anchor_correction_bg у "
+                        "Ra-226. Подробности -- amticseu-remarks.md §13.",
+            },
             "level_note": "Библиотека линий -- IAEA Live Chart of "
                           "Nuclides (decay_rads), ✅ ПОЛНОСТЬЮ сверена "
                           "построчно с LNHB/DDEP (20/20 строк отобранной "

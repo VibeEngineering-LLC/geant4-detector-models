@@ -409,7 +409,7 @@
       if (!g) return;
       html += "<tr><td><span class='sw' style='background:" + nd.color + "'></span>"
         + esc(nd.label_ru) + "</td><td class='num'>" + cnt(g.A_Bq)
-        + "</td><td class='num'>" + cnt(g.dA_Bq) + "</td><td class='num'>"
+        + "</td><td class='num'>" + cnt(g.dA_Bq) + "</td><td class='num ratio-cell'>"
         + num(g.A_over_passport, 3) + " (" + signedPct(g.A_over_passport) + ")</td></tr>";
     });
     html += "</tbody></table>";

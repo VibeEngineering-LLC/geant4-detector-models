@@ -546,9 +546,14 @@ footer.bot button:hover{background:var(--accent-soft)}
 /* Заголовок table.big несёt background:var(--paper) под sticky-скролл
    (нужно длинным таблицам типа #tblM2) -- здесь таблица короткая
    (4 строки), не скроллится, а белая плашка режет глаз на жёлтом фоне
-   .summary (замечание оператора 11.08.2026). Прозрачный фон только для
-   этого контекста, общее правило для scroll-таблиц не трогает. */
-.grouprow thead th{background:transparent}
+   .summary (замечание оператора 11.08.2026, второй заход -- первая
+   попытка проиграла по специфичности: table.big thead th считает 3
+   type-селектора (table+thead+th) против моих 2, побеждает несмотря на
+   более позднее место в файле). Явный жёлтый (--accent-soft, тот же,
+   что у .summary), не прозрачный -- понадёжнее, да и оператор попросил
+   именно цветом, не прозрачностью. .grouprow ДВАЖДЫ в селекторе поднимает
+   вес классов до 2 против 1 у исходного правила -- это и есть выигрыш. */
+.grouprow.grouprow thead th{background:var(--accent-soft)}
 .grouprow > .summary{flex:0 0 auto; flex-direction:column; flex-wrap:nowrap;
   margin:0}
 /* Узкий экран: без принудительной колонки -- flex-wrap:wrap на .grouprow

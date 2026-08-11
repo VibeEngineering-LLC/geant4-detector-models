@@ -200,7 +200,8 @@
     }
     g.stroke(); g.globalAlpha = 1;
 
-    if (ST.cursorE !== null && !SPEC_dragging && ST.cursorE >= xLo && ST.cursorE <= xHi) {
+    var draggingHere = SPEC_dragging && SPEC_drag && SPEC_drag.mode === mode;
+    if (ST.cursorE !== null && !draggingHere && ST.cursorE >= xLo && ST.cursorE <= xHi) {
       var xCur = mapX(ST.cursorE, xLo, xHi, x0, x1);
       g.strokeStyle = p.rule; g.lineWidth = 1; g.setLineDash([4, 3]);
       g.globalAlpha = 0.7;
@@ -209,8 +210,10 @@
     }
 
     // Выделение при протяжке (навигация окном шаблона) -- та же заливка,
-    // что wireCal()/drawCal() на вкладке «калибровка».
-    if (SPEC_dragging && SPEC_drag) {
+    // что wireCal()/drawCal() на вкладке «калибровка». mode-guard (см.
+    // attachCursor выше) -- иначе прямоугольник протяжки рисовался бы и
+    // на ЧУЖОЙ вкладке, раз SPEC_drag/SPEC_dragging общие.
+    if (draggingHere) {
       var xa2 = Math.min(SPEC_drag.x0, SPEC_drag.x1);
       var xb2 = Math.max(SPEC_drag.x0, SPEC_drag.x1);
       g.fillStyle = "rgba(246,211,28,.22)";
@@ -285,11 +288,20 @@
       if (x < m.l || x > r.width - m.r) return;
       ev.preventDefault();
       SPEC_dragging = true;
-      SPEC_drag = { x0: x, x1: x };
+      // mode ЗАПОМНЕН в самом SPEC_drag (найдено 11.08.2026, "навигация
+      // сломана в методе 2"): SPEC_drag/SPEC_dragging общие на m1/m2, а
+      // attachCursor вешает СВОЙ document-level "mouseup" на КАЖДЫЙ режим
+      // -- какой из двух слушателей сработает первым, тот и брал СВОЙ cv
+      // для getBoundingClientRect(), а не тот canvas, где реально тянули.
+      // На разных по ширине canvas (m1/m2 не всегда идентичной ширины)
+      // это давало мусорные границы диапазона. Guard mode===SPEC_drag.mode
+      // ниже гарантирует: обрабатывает событие только тот слушатель, чей
+      // canvas реально начал протяжку.
+      SPEC_drag = { x0: x, x1: x, mode: mode };
       drawSpectrum(mode);
     });
     document.addEventListener("mouseup", function () {
-      if (!SPEC_dragging) return;
+      if (!SPEC_dragging || !SPEC_drag || SPEC_drag.mode !== mode) return;
       SPEC_dragging = false;
       var r = cv.getBoundingClientRect();
       var x0 = SPEC_drag.x0, x1 = SPEC_drag.x1;
@@ -304,11 +316,12 @@
     cv.addEventListener("pointermove", function (ev) {
       var r = cv.getBoundingClientRect();
       var x = ev.clientX - r.left, y = ev.clientY - r.top;
-      if (SPEC_dragging) {
+      if (SPEC_dragging && SPEC_drag && SPEC_drag.mode === mode) {
         SPEC_drag.x1 = Math.max(m.l, Math.min(r.width - m.r, x));
         drawSpectrum(mode);
         return;
       }
+      if (SPEC_dragging) return; // тянут на ДРУГОЙ вкладке -- не мешаем
       var xLo = ST.zoom ? ST.zoom.xLo : X_LO, xHi = ST.zoom ? ST.zoom.xHi : X_HI;
       if (x < m.l || x > r.width - m.r) ST.cursorE = null;
       else ST.cursorE = xLo + ((x - m.l) / (r.width - m.r - m.l)) * (xHi - xLo);
@@ -544,7 +557,19 @@
       cv.style.height = Math.max(280, items.length * 32) + "px";
       var p = pal();
       var f = fit(cv), g = f.g, W = f.w, H = f.h;
-      var m = { l: 26, r: 20, t: 24, b: 34 };
+      // Левое поле под ПОДПИСИ (замечание оператора 11.08.2026: "отступи
+      // от столбца названий... масштаб по активности уменьши") -- раньше
+      // m.l=26 давал место только рамке графика, а подписи рисовались
+      // ПОВЕРХ баров (m.l+6), тексту вроде "Ti-44 → Sc-44 — метод 2"
+      // некуда было деться, кроме как лечь на сам бар. Ширина мерится
+      // по САМОЙ ДЛИННОЙ подписи (measureText, тем же шрифтом, что ниже
+      // рисуется), не захардкожена -- переживёт смену меток без правки.
+      g.font = "bold 12px system-ui, sans-serif";
+      var labelW = 0;
+      items.forEach(function (it) {
+        labelW = Math.max(labelW, g.measureText(it.lab).width);
+      });
+      var m = { l: Math.round(labelW) + 16, r: 20, t: 24, b: 34 };
       var lo = Infinity, hi = -Infinity;
       items.forEach(function (it) {
         lo = Math.min(lo, it.A - it.dA);
@@ -589,7 +614,7 @@
         g.fillStyle = it.col;
         g.textAlign = "left"; g.textBaseline = "middle";
         g.font = "bold 12px system-ui, sans-serif";
-        g.fillText(it.lab, m.l + 6, yc - rowH * 0.24);
+        g.fillText(it.lab, 6, yc - rowH * 0.24);
         g.fillStyle = p.ink;
         g.font = "11px ui-monospace, Menlo, monospace";
         g.fillText(cnt(it.A) + " ± " + cnt(it.dA) + " Бк",

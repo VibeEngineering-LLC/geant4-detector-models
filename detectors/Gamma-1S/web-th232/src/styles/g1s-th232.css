@@ -494,6 +494,30 @@ footer.bot button:hover{background:var(--accent-soft)}
 .summary .big-num{font-size:19px}
 .summary em{font:600 12px/1 var(--mono); font-style:normal; color:#3c360d}
 
+/* Сводка метода 1/2 у источников с НЕСКОЛЬКИМИ независимыми группами
+   (AmTiCsEu) -- таблица групп широкая, .summary рядом с ней узкая:
+   раньше .summary шла ПОД таблицей во всю ширину и пустовала, площадь
+   использовалась неэффективно (замечание оператора 11.08.2026).
+   .grouprow ставит их В ОДИН РЯД: таблица растягивается, .summary --
+   узкая колонка справа фиксированной ширины. Не трогает базовый
+   .summary (используется САМ ПО СЕБЕ на Th-232/Ra-226 без .grouprow). */
+.grouprow{display:flex; width:100%; gap:.7rem; align-items:flex-start;
+  flex-wrap:wrap}
+/* <table> как ПРЯМОЙ flex-item на flex-grow отзывается ненадёжно (свой
+   табличный алгоритм разметки перебивает growth на некоторых движках) --
+   таблица обёрнута в .grouptable-wrap (div), flex-правила -- на обёртке,
+   не на самой table. table.big внутри несёт width:100% -- этого
+   достаточно, чтобы заполнить обёртку, обёртку саму растягивает flex. */
+.grouprow > .grouptable-wrap{flex:1 1 20rem; min-width:20rem}
+.grouprow > .summary{flex:0 0 auto; flex-direction:column; flex-wrap:nowrap;
+  margin:0}
+/* Узкий экран: без принудительной колонки -- flex-wrap:wrap на .grouprow
+   уже переносит .summary под таблицу, когда ширины не хватает, этого
+   достаточно (явный @media (max-width:640px){flex-direction:column} был
+   здесь и снят -- в проверке рендерился как активный даже при ширине
+   1280px, движковая нестыковка с matchMedia; не разбирались специально,
+   проще убрать несущественное правило, чем гнаться за причиной). */
+
 /* --- Метод 2: боковая колонка «подгонка» --- */
 .m2-facts{padding:.6rem 0 .8rem; display:flex; flex-direction:column; gap:.85rem}
 .m2-facts > div{display:flex; flex-direction:column; gap:.15rem}

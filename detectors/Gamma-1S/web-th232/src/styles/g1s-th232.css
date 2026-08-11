@@ -218,6 +218,12 @@ canvas{display:block; width:100%; max-width:100%; touch-action:none}
   margin-top:-.6rem;
 }
 .chart-tip[hidden]{display:none}
+/* Кнопка сброса приближения (метод 1/2 -- навигация окном шаблона,
+   замечание оператора 11.08.2026, тот же приём, что "весь диапазон" на
+   вкладке «калибровка», только там кнопка в общей панели чекбоксов, а
+   тут поверх canvas -- нет отдельной панели контролов). */
+.spec-reset{position:absolute; top:.4rem; right:.4rem; z-index:5;
+  font-size:11px; padding:.3rem .55rem}
 .plot-foot{
   display:flex; gap:.4rem 1.3rem; flex-wrap:wrap; align-items:center;
   padding:.5rem .8rem .55rem; font:600 11px/1.5 var(--sans); color:var(--dim);

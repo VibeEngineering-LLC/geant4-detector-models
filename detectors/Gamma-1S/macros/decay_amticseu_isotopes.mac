@@ -1,0 +1,49 @@
+# Отдельные прогоны каждого γ-испускающего звена ветви распада источника amticseu.
+# СГЕНЕРИРОВАНО: tools/generate_isotope_macro.py из web-th232/configs/amticseu.yaml (geant4.isotope_runs).
+# Руками не редактировать -- правки потеряются при следующей генерации; менять n_events/состав в конфиге.
+#
+# Ключ разделения: nucleusLimits в Geant4 ограничивает диапазон (A_min,A_max,
+# Z_min,Z_max) распадающихся ядер. Задавая один нуклид на прогон, получаем
+# ТОЛЬКО его собственный вклад -- цепочка ниже не пойдёт, ничего к нему не
+# примешается. n_events выбран по каждому звену отдельно (не «побольше
+# всем») -- слабая гамма-ветвь требует на порядки больше распадов на тот же
+# отсчёт в кристалле (см. комментарий в конфиге, R66).
+/run/initialize
+/control/verbose 0
+/run/verbose 0
+/process/had/rdm/verbose 0
+/process/had/rdm/thresholdForVeryLongDecayTime 1.0e+30 ns
+
+/gps/particle ion
+/gps/energy 0 keV
+/gps/pos/type Volume
+/gps/pos/shape Cylinder
+/gps/pos/centre 0 0 16 mm
+/gps/pos/radius 90 mm
+/gps/pos/halfz 60 mm
+/gps/pos/confine Sample
+/gps/ang/type iso
+
+# --- Am241 (Z=95, A=241) ---
+/process/had/rdm/nucleusLimits 241 241 95 95
+/gps/ion 95 241 0 0
+/g1s/outFile iso_Am241.csv
+/run/beamOn 1000000
+
+# --- Ti44chain (Z=22, A=44, Z_range=20-22) ---
+/process/had/rdm/nucleusLimits 44 44 20 22
+/gps/ion 22 44 0 0
+/g1s/outFile iso_Ti44chain.csv
+/run/beamOn 1000000
+
+# --- Cs137chain (Z=56, A=137, E*=661.659 кэВ) ---
+/process/had/rdm/nucleusLimits 137 137 56 56
+/gps/ion 56 137 0 661.659
+/g1s/outFile iso_Cs137chain.csv
+/run/beamOn 500000
+
+# --- Eu152 (Z=63, A=152) ---
+/process/had/rdm/nucleusLimits 152 152 63 63
+/gps/ion 63 152 0 0
+/g1s/outFile iso_Eu152.csv
+/run/beamOn 2000000

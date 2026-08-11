@@ -33,8 +33,9 @@
 [reference/device/](reference/device/). Экспорт модели в формат
 EffCalcMC/NuclideMaster (ЛСРМ) — в [nuclidemaster/](nuclidemaster/).
 Публичная интерактивная страница разложения спектра источника (Th-232,
-Ra-226; два метода, поправка на каскадное суммирование) — в
-[web-th232/](web-th232/), методология обобщена в
+Ra-226, Mix AmTiCsEu — смесевой калибровочный источник, 4 независимых
+нуклида без цепочки равновесия; два метода, поправка на каскадное
+суммирование) — в [web-th232/](web-th232/), методология обобщена в
 [../../skills/geant4-spectrum-pipeline/SKILL.md](../../skills/geant4-spectrum-pipeline/SKILL.md).
 
 ## Состояние

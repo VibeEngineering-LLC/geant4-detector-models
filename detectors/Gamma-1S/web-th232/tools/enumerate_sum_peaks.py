@@ -31,6 +31,9 @@ DEFAULT_CSV = os.path.join(HERE, "..", "data", "ensdf_th232_chain_lines.csv")
 DEFAULT_CONFIG = os.path.join(HERE, "..", "configs", "th232.yaml")
 DEFAULT_CC_CSV = os.path.join(HERE, "..", "data",
                               "conversion_coeff_sum_peak_levels.csv")
+DEFAULT_BP_CSV = os.path.join(HERE, "..", "data",
+                              "beta_plus_feeds_sum_peak_levels.csv")
+ANNIHILATION_KEV = 511.0
 
 LEVEL_TOL = 0.02   # кэВ -- совпадение уровней (тот же допуск, что в export_data.py)
 MIN_SCORE = 0.5    # порог I1*I2/F_B (%^2/%), ниже -- шум, не показывается вовсе
@@ -101,6 +104,59 @@ def depopulation(transitions, nuclide, level, cc_of, tol=LEVEL_TOL):
             cc = 0.0
         fb += ip * (1.0 + cc)
     return fb, all_have_cc
+
+
+def load_beta_plus_feeds(bp_csv_path):
+    """[(nuclide, level_kev, intensity_beta_plus_pct)] -- уровни, заселяемые
+    β⁺-ветвью (fetch_beta_plus_feeds.py). Пусто, если файла нет (нуклиды
+    источника не имеют β⁺-ветви -- законное отсутствие, не ошибка)."""
+    out = []
+    if not os.path.isfile(bp_csv_path):
+        return out
+    with open(bp_csv_path, encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(ln for ln in f if not ln.startswith("#")):
+            try:
+                out.append((row["nuclide"], float(row["daughter_level_kev"]),
+                           float(row["intensity_beta_plus_pct"])))
+            except (ValueError, KeyError):
+                continue
+    return out
+
+
+def enumerate_annihilation_pairs(transitions, bp_feeds, cc_of):
+    """Кандидаты суммирования С УЧАСТИЕМ аннигиляционного кванта (511 кэВ).
+
+    Структурно НЕ находится enumerate_pairs() (см. докстринг модуля и
+    fetch_beta_plus_feeds.py) -- аннигиляция не несёт ядерного уровня,
+    критерий «конец A = начало B» к ней неприменим. Здесь уровень паре
+    задаёт САМА β⁺-ветвь (daughter_level_kev из fetch_beta_plus_feeds.py),
+    а не соседний гамма-переход: 511 кэВ считается совпадающим с ЛЮБЫМ
+    гамма-переходом, начинающимся на этом уровне (тот же уровень, что
+    заселён β⁺-распадом непосредственно перед аннигиляцией).
+
+    score = I_beta+ * I_gamma / F_B(level) -- та же формула и тот же
+    смысл, что у enumerate_pairs(), F_B -- полная депопуляция уровня
+    (гамма+конверсия), не только рассматриваемый гамма-переход."""
+    out = []
+    for nuc, level, i_bp in bp_feeds:
+        nuc_ts = [t for t in transitions if t[0] == nuc]
+        fb, all_have_cc = depopulation(nuc_ts, nuc, level, cc_of)
+        if fb <= 0:
+            continue
+        for n, e, ip, s, end in nuc_ts:
+            if abs(s - level) >= LEVEL_TOL:
+                continue
+            score = i_bp * ip / fb
+            suspicious = (not all_have_cc) and abs(fb - ip) < 0.01
+            out.append({
+                "nuclide": nuc, "e1_kev": ANNIHILATION_KEV, "e2_kev": e,
+                "i1_pct": i_bp, "i2_pct": ip, "level_kev": level,
+                "fb_pct": fb, "score": score,
+                "cc_incomplete": not all_have_cc, "suspicious": suspicious,
+                "annihilation": True,
+            })
+    out.sort(key=lambda r: -r["score"])
+    return out
 
 
 def enumerate_pairs(transitions, cc_of):
@@ -231,11 +287,13 @@ def main():
     ap.add_argument("--config", default=DEFAULT_CONFIG)
     ap.add_argument("--csv", default=DEFAULT_CSV)
     ap.add_argument("--cc-csv", default=DEFAULT_CC_CSV)
+    ap.add_argument("--bp-csv", default=DEFAULT_BP_CSV)
     ap.add_argument("--min-score", type=float, default=MIN_SCORE)
     args = ap.parse_args()
 
     transitions = load_transitions(args.csv)
     cc_of = load_cc(args.cc_csv)
+    bp_feeds = load_beta_plus_feeds(args.bp_csv)
     with open(args.config, encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
     known = known_pairs(cfg)
@@ -301,6 +359,30 @@ def main():
         if len(two_hop_new) > 40:
             print("  ... ещё %d, обрезано (не молча — см. это сообщение)"
                   % (len(two_hop_new) - 40))
+
+    # П.9 ТЗ Цензора (11.08.2026): аннигиляция структурно невидима прямому
+    # перебору (нет уровня) -- отдельная функция, отдельный источник данных
+    # (fetch_beta_plus_feeds.py, rad_types=bp). Пусто, если у нуклидов
+    # источника нет β⁺-ветви -- не ошибка, просто нечего искать.
+    if bp_feeds:
+        ann = enumerate_annihilation_pairs(transitions, bp_feeds, cc_of)
+        ann_matched = [c for c in ann
+                       if (c["nuclide"], round(min(c["e1_kev"], c["e2_kev"]), 3),
+                           round(max(c["e1_kev"], c["e2_kev"]), 3)) in known]
+        ann_new = [c for c in ann
+                   if (c["nuclide"], round(min(c["e1_kev"], c["e2_kev"]), 3),
+                       round(max(c["e1_kev"], c["e2_kev"]), 3)) not in known
+                   and c["score"] >= args.min_score]
+        print("\n=== С АННИГИЛЯЦИОННЫМ КВАНТОМ (511 кэВ), %d β+-ветвей "
+              "в data/beta_plus_feeds_sum_peak_levels.csv ===" % len(bp_feeds))
+        print("--- уже в конфиге ---")
+        for c in ann_matched:
+            print(fmt(c))
+        print("--- новые кандидаты ---")
+        for c in ann_new:
+            print(fmt(c))
+        if not ann_matched and not ann_new:
+            print("  (кандидатов выше порога score>=%.2f нет)" % args.min_score)
 
 
 if __name__ == "__main__":

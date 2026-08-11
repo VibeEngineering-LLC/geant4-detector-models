@@ -355,6 +355,11 @@ table.big th,table.big td{padding:.5rem .65rem; text-align:right;
 table.big th:first-child,table.big td:first-child{text-align:left;
   font:600 12.5px/1.4 var(--sans); padding-left:0}
 table.big td:last-child{text-align:left}
+/* Столбец "отношение к паспорту" (cmpTable) -- число, не примечание,
+   базовый td:last-child{text-align:left} для него неуместен (замечание
+   оператора 11.08.2026: значение прижато к левому краю широкой колонки,
+   просил по центру). Класс конкретнее правила last-child -- выигрывает. */
+table.big td.ratio-cell{text-align:center}
 table.big th:last-child{text-align:center}
 /* Короткие атомарные метки — нуклид (свотч+«Th-232») — никогда не
    переносятся мид-слова: колонка «линия» метода 2 (первая, тоже со
@@ -501,6 +506,18 @@ footer.bot button:hover{background:var(--accent-soft)}
    .grouprow ставит их В ОДИН РЯД: таблица растягивается, .summary --
    узкая колонка справа фиксированной ширины. Не трогает базовый
    .summary (используется САМ ПО СЕБЕ на Th-232/Ra-226 без .grouprow). */
+/* НАСТОЯЩАЯ причина, почему .grouprow не растягивался (найдено 11.08.2026
+   по живому рендеру -- моя проверка через browser-tool ошибочно решила,
+   что дело в закэшированном лэйауте панели, реальный баг был в CSS):
+   #sumM1/#sumM2 (родитель .grouprow) сами несут класс .summary, а
+   .summary УЖЕ flex-контейнер (display:flex, см. правило выше). Значит
+   .grouprow -- flex-item ЧУЖОГО контейнера, и без явного flex-basis
+   съёживается к контенту (initial flex:0 1 auto), а mои width:100%
+   внутри НЕГО самого роли не играли -- ширину задаёт РОДИТЕЛЬСКИЙ flex,
+   не собственная. .summary > .grouprow ниже это чинит: занимает всю
+   строку родительского flex целиком, дальше уже СВОЙ flex-row работает
+   как задумано. */
+.summary > .grouprow{flex:1 1 100%; margin:0}
 .grouprow{display:flex; width:100%; gap:.7rem; align-items:flex-start;
   flex-wrap:wrap}
 /* <table> как ПРЯМОЙ flex-item на flex-grow отзывается ненадёжно (свой

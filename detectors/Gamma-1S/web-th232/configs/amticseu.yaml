@@ -166,7 +166,23 @@ fit:
 # пределах погрешности).
 library:
   intensity_threshold_pct: 1.3
+  # ✅ Характеристический рентген нуклидов (IAEA Live Chart of Nuclides,
+  # decay_rads, rad_types=x, curl, 11.08.2026, дописано по директиве
+  # оператора "рентгеновские линии нуклидов всегда включай в шаблон
+  # нуклида" -- ранее (rad_types=g) рентген вовсе не запрашивался).
+  # Am-241 (L-рентген Np, 17,136 кэВ, I=36,6%) и Ti-44/Sc-44 (K-рентген
+  # Ti/Sc, 4,1-4,5 кэВ) -- НИЖЕ практического порога NaI (см. note у
+  # линии 26,34 кэВ, тот же класс исключения), не включены. Eu-152 и
+  # Cs-137 -- в диапазоне 32-46 кэВ, значимая интенсивность, включены.
   lines:
+    - {e_kev: 39.522,  i_pct: 20.87,   nuclide: Eu152, note: "K-рентген Sm/Gd, Kα2 (IAEA decay_rads rad_types=x)"}
+    - {e_kev: 40.117,  i_pct: 37.8,    nuclide: Eu152, note: "K-рентген Sm/Gd, Kα1 -- сильнейшая рентген-линия набора"}
+    - {e_kev: 45.523,  i_pct: 11.81,   nuclide: Eu152, note: "K-рентген Sm/Gd, Kβ1"}
+    - {e_kev: 45.998,  i_pct: 14.85,   nuclide: Eu152, note: "K-рентген Sm/Gd, Kβ (суммарная)"}
+    - {e_kev: 46.575,  i_pct: 3.05,    nuclide: Eu152, note: "K-рентген Sm/Gd, Kβ2"}
+    - {e_kev: 31.816,  i_pct: 1.990,   nuclide: Cs137chain, note: "K-рентген Ba, Kα2"}
+    - {e_kev: 32.193,  i_pct: 3.667,   nuclide: Cs137chain, note: "K-рентген Ba, Kα1"}
+    - {e_kev: 36.827,  i_pct: 1.350,   nuclide: Cs137chain, note: "K-рентген Ba, Kβ (суммарная), у порога библиотеки"}
     - {e_kev: 59.541,  i_pct: 35.9,    nuclide: Am241, note: "главная линия Am-241"}
     - {e_kev: 67.868,  i_pct: 93.0,    nuclide: Ti44chain, note: "Ti-44, сильно блендирована с Am-241 59,5 и К-рентгеном Pb защиты"}
     - {e_kev: 78.323,  i_pct: 96.8,    nuclide: Ti44chain, note: "Ti-44, та же блендированная область"}

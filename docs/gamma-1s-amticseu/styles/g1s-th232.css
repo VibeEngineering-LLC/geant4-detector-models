@@ -506,9 +506,16 @@ footer.bot button:hover{background:var(--accent-soft)}
    .grouprow ставит их В ОДИН РЯД: таблица растягивается, .summary --
    узкая колонка справа фиксированной ширины. Не трогает базовый
    .summary (используется САМ ПО СЕБЕ на Th-232/Ra-226 без .grouprow). */
-/* НАСТОЯЩАЯ причина, почему .grouprow не растягивался (найдено 11.08.2026
-   по живому рендеру -- моя проверка через browser-tool ошибочно решила,
-   что дело в закэшированном лэйауте панели, реальный баг был в CSS):
+/* НАСТОЯЩАЯ причина (найдено 11.08.2026 на ЖИВОМ рендере оператора,
+   ДВЕ моих предыдущих попытки диагноза были мимо -- сперва решил, что
+   дело в закэшированном лэйауте browser-tool панели, потом что не хватало
+   flex-basis): #sumM1/#sumM2 сами несут класс .summary, а `.summary >
+   div{flex-direction:column; min-width:8.5rem}` (правило для простых
+   карточек-ячеек χ²/ν и т.п.) ПОПАДАЕТ и в .grouprow -- он тоже прямой
+   div-потомок .summary. specificity .summary>.grouprow (0,2,0) выше
+   .summary>div (0,1,1), побеждает -- но я не переопределял flex-direction
+   в этом правиле явно, только flex/margin, column так и просачивался.
+   Ниже -- та же переопределяющая строка, с явным flex-direction:row.
    #sumM1/#sumM2 (родитель .grouprow) сами несут класс .summary, а
    .summary УЖЕ flex-контейнер (display:flex, см. правило выше). Значит
    .grouprow -- flex-item ЧУЖОГО контейнера, и без явного flex-basis
@@ -517,7 +524,7 @@ footer.bot button:hover{background:var(--accent-soft)}
    не собственная. .summary > .grouprow ниже это чинит: занимает всю
    строку родительского flex целиком, дальше уже СВОЙ flex-row работает
    как задумано. */
-.summary > .grouprow{flex:1 1 100%; margin:0}
+.summary > .grouprow{flex:1 1 100%; flex-direction:row; min-width:0; margin:0}
 .grouprow{display:flex; width:100%; gap:.7rem; align-items:flex-start;
   flex-wrap:wrap}
 /* <table> как ПРЯМОЙ flex-item на flex-grow отзывается ненадёжно (свой

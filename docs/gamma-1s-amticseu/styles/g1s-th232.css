@@ -1,0 +1,664 @@
+/* Гамма-1С · спектр Th-232 в маринелли: два метода.
+   Оформление — «плакат» из ветки ASN16: толстые линейки 3px, чёрный
+   тяжёлый заголовок, единственный акцент — жёлтая маркерная плашка.
+   Три «мясных» цвета для метода 1, метода 2 и паспорта — из палитры
+   ниже (--acc-blue/orange/gray), никаких доп. акцентов. */
+
+:root{
+  color-scheme: light dark;
+
+  /* Тёплая небелёная бумага; чернота вместо серых. Жёлтая плашка --accent-soft
+     работает подложкой активного состояния, --accent остаётся чернотой:
+     цветной текст на плакате не используется. */
+  --paper:#f5f2ea; --panel:#f5f2ea; --sunk:#ebe7dc;
+  --ink:#16140f; --dim:#4c493f; --faint:#6a6558;
+  --rule:#16140f; --rule-soft:#c9c4b4; --accent:#16140f; --accent-soft:#f6d31c;
+  --grid:#dcd7c8; --grid-soft:#e8e4d7;
+  --shadow:7px 7px 0 #16140f;
+
+  --ch-photo:#2d5fa8;
+  --ch-compt_full:#3f7ab8;
+  --ch-pair_full:#5a8cbe;
+  --ch-compt_esc1:#a9660f;
+  --ch-compt_escN:#bd7f1c;
+  --ch-pair_esc1:#1f7345;
+  --ch-pair_esc2:#2d9462;
+  --ch-brems_esc:#8f2f2f;
+  --ch-xray_esc:#c23a36;
+  --ch-external:#6a6674;
+  --ch-other:#9b96a5;
+
+  --serif:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,"DejaVu Sans Mono",monospace;
+
+  /* Три цвета «мяса»: паспорт / метод 1 / метод 2. Одинаковые в двух темах:
+     синий и оранжевый выбраны так, что читаются и на бумаге, и на черноте. */
+  --acc-blue:#0f5aa8;    /* метод 1: по чистой линии */
+  --acc-orange:#c8541c;  /* метод 2: полный спектр */
+  --acc-gray:#7d7768;    /* фон подгонки */
+
+  /* Суммарная кривая разложения (R79). Красный, а не чернота: сумма
+     отмеченных шаблонов — единственная кривая, которую читатель сравнивает
+     с измеренным спектром, а измеренный рисуется чернотой. Ни один нуклид
+     палитры в красный не окрашен, поэтому пересечения смысла нет. */
+  --sum-line:#d21f1f;
+}
+
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#161511; --panel:#161511; --sunk:#1f1d17;
+    --ink:#f0ede3; --dim:#b5b0a1; --faint:#847f70;
+    --rule:#f0ede3; --rule-soft:#3a382e; --accent:#f0ede3; --accent-soft:#c8a80e;
+    --grid:#2c2a22; --grid-soft:#211f19;
+    --shadow:7px 7px 0 #000000;
+    --ch-photo:#6ea6e8; --ch-compt_full:#8cc0f0; --ch-pair_full:#b3d6f7;
+    --ch-compt_esc1:#e0952f; --ch-compt_escN:#f0bd72;
+    --ch-pair_esc1:#4fbe84; --ch-pair_esc2:#86dfae;
+    --ch-brems_esc:#e0736d; --ch-xray_esc:#ef9d97;
+    --ch-external:#a49fae; --ch-other:#7c7688;
+    --sum-line:#ff6a5e;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#161511; --panel:#161511; --sunk:#1f1d17;
+  --ink:#f0ede3; --dim:#b5b0a1; --faint:#847f70;
+  --rule:#f0ede3; --rule-soft:#3a382e; --accent:#f0ede3; --accent-soft:#c8a80e;
+  --grid:#2c2a22; --grid-soft:#211f19;
+  --shadow:7px 7px 0 #000000;
+  --ch-photo:#6ea6e8; --ch-compt_full:#8cc0f0; --ch-pair_full:#b3d6f7;
+  --ch-compt_esc1:#e0952f; --ch-compt_escN:#f0bd72;
+  --ch-pair_esc1:#4fbe84; --ch-pair_esc2:#86dfae;
+  --ch-brems_esc:#e0736d; --ch-xray_esc:#ef9d97;
+  --ch-external:#a49fae; --ch-other:#7c7688;
+  --sum-line:#ff6a5e;
+}
+:root[data-theme="light"]{
+  --paper:#f5f2ea; --panel:#f5f2ea; --sunk:#ebe7dc;
+  --ink:#16140f; --dim:#4c493f; --faint:#6a6558;
+  --rule:#16140f; --rule-soft:#c9c4b4; --accent:#16140f; --accent-soft:#f6d31c;
+  --grid:#dcd7c8; --grid-soft:#e8e4d7;
+  --shadow:7px 7px 0 #16140f;
+  --ch-photo:#2d5fa8; --ch-compt_full:#3f7ab8; --ch-pair_full:#5a8cbe;
+  --ch-compt_esc1:#a9660f; --ch-compt_escN:#bd7f1c;
+  --ch-pair_esc1:#1f7345; --ch-pair_esc2:#2d9462;
+  --ch-brems_esc:#8f2f2f; --ch-xray_esc:#c23a36;
+  --ch-external:#6a6674; --ch-other:#9b96a5;
+  --sum-line:#d21f1f;
+}
+
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font:15px/1.55 var(--sans); -webkit-text-size-adjust:100%;
+  touch-action:manipulation; -webkit-tap-highlight-color:rgba(246,211,28,.4);
+  padding:1.4rem 1.6rem 2rem;   /* внешнее поле «стены» вокруг плаката */
+}
+/* Директива оператора 08.08.2026, ПОСТОЯННОЕ правило: весь прозаический
+   текст — по ширине, не рваным правым краем. text-wrap:pretty (где
+   браузер поддерживает) не даёт короткой "сиротской" строке в конце
+   абзаца — ровно то, от чего предостерегал оператор. */
+p{margin:0 0 .9em; text-align:justify; text-wrap:pretty}
+p:last-child{margin-bottom:0}
+a{color:var(--ink); text-decoration-thickness:2px; text-underline-offset:2px}
+a:hover{background:var(--accent-soft)}
+h1,h2,h3{text-wrap:balance; font-weight:normal; margin:0}
+
+/* ── каркас: плакат на стене ──
+   Одна общая рама 3 px вокруг всего листа, тень 7×7 без размытия.
+   Ширина шире прежнего 100 rem (оператор: «увеличь ширину окна»).
+   Скролл вертикальный включён — страницу разрешено листать. */
+.app{
+  max-width:84rem; margin:0 auto;
+  padding:1.6rem 1.9rem 1.4rem;
+  display:flex; flex-direction:column; gap:1.1rem;
+  background:var(--paper);
+  border:3px solid var(--rule);
+  box-shadow:var(--shadow);
+  position:relative;
+}
+
+/* Шапка-афиша: тяжёлый заголовок слева, полоса состава в раме справа,
+   толстая линейка снизу. */
+.top{display:flex; align-items:flex-end; gap:2.6rem; flex-wrap:wrap;
+  border-bottom:3px solid var(--rule); padding-bottom:.95rem}
+.title{flex:1 1 26rem; min-width:19rem}
+.title h1{
+  font-size:clamp(1.9rem, 3vw, 2.7rem); line-height:.98;
+  letter-spacing:-.032em; font-weight:800;
+}
+.title .eyebrow{
+  font:800 11px/1.4 var(--sans); letter-spacing:.13em; text-transform:uppercase;
+  color:var(--ink); margin:0 0 .7em;
+}
+.title{flex:1 1 100%}
+.title .stand{
+  font-size:14px; line-height:1.55; color:var(--dim);
+  max-width:none; margin:.7rem 0 0; text-wrap:pretty; font-weight:500;
+}
+.title .ai-note{
+  font-size:11.5px; line-height:1.5; color:var(--dim); opacity:.8;
+  max-width:none; margin:.55rem 0 0; font-weight:500;
+}
+.top-actions{display:flex; gap:.5rem; flex-wrap:wrap; margin-left:auto}
+
+.hero{position:relative; flex:1 1 26rem; min-width:18rem}
+.hero canvas{display:block; width:100%; max-width:100%; height:92px;
+  border:2px solid var(--rule); border-radius:0;
+  background:var(--sunk); touch-action:none; cursor:crosshair}
+.hero-cap{font:600 11px/1.45 var(--sans); color:var(--dim); margin-top:.45rem}
+
+/* ── кнопки: блоки с рамками, активное — на жёлтой плашке ── */
+button{font:inherit}
+.btn{
+  appearance:none; cursor:pointer; font:800 12px/1 var(--sans);
+  letter-spacing:.05em; text-transform:uppercase;
+  background:none; color:var(--ink); text-decoration:none;
+  border:2px solid transparent; border-radius:0; padding:.5rem .6rem;
+  display:inline-flex; align-items:center; gap:.4rem;
+}
+.btn:hover{border-color:var(--rule)}
+.btn[aria-expanded="true"]{background:var(--accent-soft);
+  border-color:var(--rule); color:#16140f}
+:focus-visible{outline:3px solid var(--accent-soft); outline-offset:1px}
+
+.seg{display:inline-flex; border:2px solid var(--rule); border-radius:0;
+  overflow:hidden}
+.seg .btn{border:none; border-radius:0}
+.seg .btn+.btn{border-left:2px solid var(--rule)}
+.seg .btn[aria-pressed="true"]{background:var(--accent-soft); color:#16140f}
+
+/* ── приборная панель: рама 3px, график внутри ── */
+.panel{
+  background:none; border:3px solid var(--rule); border-radius:0;
+  box-shadow:none; overflow:hidden;
+  display:flex; flex-direction:column; flex:1 1 auto; min-height:0;
+}
+.toolbar{
+  display:flex; align-items:center; gap:.9rem; flex-wrap:wrap;
+  padding:.5rem .8rem; border-bottom:3px solid var(--rule); background:none;
+}
+.toolbar .sp{flex:1}
+/* Энергии узлов — блочные табы: активный залит жёлтым. */
+.tabs{display:flex; gap:.4rem; flex-wrap:wrap}
+.tabs .btn{
+  background:none; border:2px solid var(--rule); color:var(--ink);
+  font:800 13px/1 var(--mono); font-variant-numeric:tabular-nums;
+  letter-spacing:.02em; text-transform:none; padding:.55rem .7rem}
+.tabs .btn:hover{background:var(--sunk)}
+.tabs .btn[aria-selected="true"]{background:var(--accent-soft); color:#16140f}
+
+.stage{display:grid; grid-template-columns:minmax(0,1fr) 21.5rem; gap:0}
+.stage[hidden]{display:none}
+@media (max-width:1080px){ .stage{grid-template-columns:minmax(0,1fr)} }
+
+.stage-map{overflow-y:auto; padding:1rem .8rem}
+.stage-map[hidden]{display:none}
+
+/* Спектр меньше по высоте (оператор: «уменьши спектр по высоте»); высота
+   в единицах области просмотра — тогда график остаётся читаемым и не
+   вытягивается в лист А0 при широком окне. */
+.plotwrap{position:relative; padding:.7rem .8rem .3rem; min-width:0;
+  height:clamp(28rem, 62vh, 44rem); overflow:hidden}
+canvas{display:block; width:100%; max-width:100%; touch-action:none}
+.plotbox{position:absolute; inset:.7rem .8rem .3rem}
+.plotbox canvas{width:100%; height:100%}
+#cv{cursor:crosshair}
+
+/* Оверлей значений под курсором — следует за указателем прямо на
+   графике, а не только строкой под канвой (там текст остаётся как
+   более подробная развёртка). */
+.chart-tip{
+  position:absolute; pointer-events:none; z-index:6;
+  background:var(--paper); border:2px solid var(--rule);
+  padding:.3rem .55rem; font:700 12px/1.4 var(--mono);
+  font-variant-numeric:tabular-nums; white-space:nowrap;
+  box-shadow:var(--shadow); transform:translate(-50%, -100%);
+  margin-top:-.6rem;
+}
+.chart-tip[hidden]{display:none}
+.plot-foot{
+  display:flex; gap:.4rem 1.3rem; flex-wrap:wrap; align-items:center;
+  padding:.5rem .8rem .55rem; font:600 11px/1.5 var(--sans); color:var(--dim);
+  border-top:2px solid var(--rule);
+}
+.plot-foot .sp{flex:1}
+.elems{display:flex; gap:.45rem; flex-wrap:wrap}
+.elems button{
+  appearance:none; cursor:pointer; font:700 11px/1 var(--sans);
+  background:none; color:var(--ink); border:1.5px solid var(--rule);
+  border-radius:0; padding:.34rem .5rem;
+}
+.elems button:hover{background:var(--accent-soft); color:#16140f}
+
+/* ── легенда каналов ──
+   Колонка процента фиксирована, а не `auto`: иначе она разрешается раньше
+   гибкой и отнимает ширину у подписи, ломая её на три строки. */
+.side{
+  border-left:3px solid var(--rule); background:none;
+  display:flex; flex-direction:column; min-height:0; padding:0 .8rem;
+}
+@media (max-width:1080px){
+  .side{border-left:none; border-top:3px solid var(--rule)}
+}
+.side-head{
+  padding:.75rem 0 .5rem; font:800 11px/1.3 var(--sans);
+  letter-spacing:.13em; text-transform:uppercase; color:var(--ink);
+  display:flex; align-items:center; gap:.8rem;
+  border-bottom:2px solid var(--rule);
+}
+.side-head .sp{flex:1}
+.side-head button{
+  font:700 10.5px/1 var(--sans); background:none;
+  border:1.5px solid var(--rule); border-radius:0; color:var(--ink);
+  padding:.26rem .4rem; cursor:pointer; letter-spacing:.05em;
+  text-transform:uppercase}
+.side-head button:hover{background:var(--accent-soft); color:#16140f}
+.legend{overflow-y:auto; padding:.1rem 0 .7rem; flex:1 1 auto; min-height:0}
+
+.ch{
+  display:grid; grid-template-columns:auto auto minmax(0,1fr) 4.25rem auto;
+  align-items:center; gap:.55rem; padding:.44rem 0;
+  border-radius:0; cursor:pointer; font:600 12.5px/1.3 var(--sans);
+  border-bottom:1.5px solid var(--rule-soft);
+}
+.ch:hover{background:var(--sunk)}
+.ch input{margin:0; accent-color:var(--ink); cursor:pointer;
+  width:.9rem; height:.9rem}
+.ch .sw{width:.95rem; height:.95rem; border-radius:0; background:var(--c)}
+.ch .nm{min-width:0}
+.ch.off .nm,.ch.off .pc{opacity:.35}
+.ch.off .sw{opacity:.2}
+.ch .pc{font:700 12px/1 var(--mono); font-variant-numeric:tabular-nums;
+  color:var(--ink); text-align:right; min-width:0}
+.ch .go{
+  appearance:none; background:none; border:1.5px solid var(--rule);
+  border-radius:0; width:1.15rem; height:1.15rem; line-height:1;
+  color:var(--ink); font:700 10.5px/1 var(--sans); cursor:pointer; padding:0}
+.ch .go:hover{background:var(--accent-soft); color:#16140f}
+.ch.total{border-bottom:2px solid var(--rule)}
+.ch.total .sw{background:var(--ink)}
+.ch.total .nm{font-weight:800}
+
+/* ── всплывающая подсказка под курсором: жёсткая тень, без размытий ── */
+.readout{
+  position:absolute; pointer-events:none; opacity:0; transition:opacity .1s;
+  background:var(--paper); border:2px solid var(--rule); border-radius:0;
+  padding:.55rem .7rem; font:12px/1.6 var(--mono);
+  font-variant-numeric:tabular-nums;
+  box-shadow:var(--shadow); max-width:24rem; z-index:6; color:var(--ink);
+}
+.readout b{display:block; font-weight:800; margin-bottom:.35em;
+  border-bottom:2px solid var(--rule); padding-bottom:.35em}
+.readout i{display:inline-block; width:.7em; height:.7em; border-radius:0;
+  background:var(--c); margin-right:.5em}
+.readout span{display:block; white-space:nowrap}
+.readout .v{float:right; margin-left:1.4em; color:var(--dim)}
+
+/* ── всплывающие пояснения ── */
+.pop{
+  position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
+  z-index:40; overscroll-behavior:contain;
+  width:min(33rem, calc(100vw - 3rem));
+  max-height:min(36rem, calc(100vh - 3rem)); overflow:auto;
+  background:var(--paper); border:3px solid var(--rule); border-radius:0;
+  box-shadow:var(--shadow); padding:1.6rem 1.8rem 1.8rem;
+  font:14.5px/1.65 var(--sans);
+}
+.pop[hidden]{display:none}
+.pop.wide{width:min(58rem, calc(100vw - 3rem))}
+.pop h2{font:800 1.35rem/1.12 var(--sans); letter-spacing:-.022em;
+  margin:0 0 .7em; padding-right:2rem}
+.pop .key{font:700 10.5px/1.4 var(--mono); letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ink); display:block;
+  margin-bottom:.8em; background:var(--accent-soft); padding:.2em .45em;
+  width:fit-content}
+.pop .close{
+  position:absolute; top:.7rem; right:.8rem; width:1.7rem; height:1.7rem;
+  border-radius:0; border:2px solid var(--rule); background:var(--paper);
+  color:var(--ink); cursor:pointer; font:700 13px/1 var(--sans)}
+.pop .close:hover{background:var(--accent-soft); color:#16140f}
+.pop h3{font:800 11px/1.4 var(--sans); letter-spacing:.13em;
+  text-transform:uppercase; color:var(--ink); margin:1.9em 0 .6em;
+  border-top:2px solid var(--rule); padding-top:.8em}
+.pop h3:first-of-type{margin-top:1.3em}
+.pop ol{padding-left:1.4rem; margin:.3em 0 1em}
+.pop ol li{margin-bottom:.42em}
+.scrim{position:fixed; inset:0; background:#16140f; opacity:.28; z-index:30}
+.scrim[hidden]{display:none}
+
+.mini{width:100%; border-collapse:collapse; margin:.3em 0 1.1em;
+  font:12px/1 var(--mono); font-variant-numeric:tabular-nums}
+.mini th,.mini td{padding:.42rem .4rem; text-align:right;
+  border-bottom:1.5px solid var(--rule-soft)}
+.mini th:first-child,.mini td:first-child{text-align:left}
+.mini thead th{font:800 10px/1.3 var(--sans); letter-spacing:.11em;
+  text-transform:uppercase; color:var(--ink)}
+.mini td.bar-cell{position:relative}
+.mini td.bar-cell::before{
+  content:""; position:absolute; left:0; bottom:1px; height:3px;
+  width:calc(var(--w) * 1%); background:var(--c)}
+
+table.big{border-collapse:collapse; font:12.5px/1.4 var(--mono);
+  font-variant-numeric:tabular-nums; width:100%}
+/* Перенос разрешён во ВСЕХ колонках — не только «примечание»: у метода 2
+   «линия» на сумм-пиках тоже длинная строка («510,8+583,2 = 1093,9 кэВ»).
+   БЕЗ word-break — он ломает и короткие атомарные токены («Th-232» на
+   узкой колонке рвётся в «Th-» / «232», проверено на живом рендере,
+   R40): естественный перенос по пробелам достаточен для примечаний
+   (в тексте они есть через каждые несколько слов), а короткие метки
+   нуклида/энергии одиночной линии ниже явно заперты в nowrap — им
+   переноситься вообще некуда, они однословные. */
+table.big th,table.big td{padding:.5rem .65rem; text-align:right;
+  border-bottom:1.5px solid var(--rule-soft); white-space:normal}
+table.big th:first-child,table.big td:first-child{text-align:left;
+  font:600 12.5px/1.4 var(--sans); padding-left:0}
+table.big td:last-child{text-align:left}
+table.big th:last-child{text-align:center}
+/* Короткие атомарные метки — нуклид (свотч+«Th-232») — никогда не
+   переносятся мид-слова: колонка «линия» метода 2 (первая, тоже со
+   свотчем) НЕ входит сюда специально — там бывает длинная строка
+   сумм-пика, ей перенос нужен. */
+#tblM1 td:first-child{white-space:nowrap}
+#tblM2 td:nth-child(2){white-space:nowrap}
+/* ε_ПП в экспоненциальной записи («6,818e−2») — узкая колонка рвала
+   экспоненту на вторую строку (R48). Число атомарное, переносить
+   некуда, как и меткам нуклида выше. */
+#tblM2 td:nth-child(4){white-space:nowrap}
+/* z-index обязателен. Прилипший заголовок создаёт свой контекст наложения,
+   но БЕЗ z-index рисуется в порядке документа — то есть строки тела,
+   идущие ниже по разметке, проезжают ПОВЕРХ него, и подписи столбцов
+   читаются сквозь числа (замечание оператора 09.08.2026). Фон здесь
+   непрозрачный, дело было не в нём. */
+table.big thead th{font:800 10px/1.3 var(--sans); letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ink);
+  border-bottom:2px solid var(--rule);
+  position:sticky; top:0; z-index:3; background:var(--paper)}
+table.big tbody tr.sum th,table.big tbody tr.sum td{
+  border-top:2px solid var(--rule); font-weight:800}
+table.big thead th.sortable{cursor:pointer; user-select:none}
+table.big thead th.sortable:hover{color:var(--accent, #b8860b)}
+table.big .sw{display:inline-block; width:.7rem; height:.7rem;
+  border-radius:0; margin-right:.5rem; vertical-align:-.05em;
+  background:var(--c)}
+table.big td.num{position:relative}
+table.big td.num::before{
+  content:""; position:absolute; left:.3rem; right:.65rem; bottom:2px;
+  height:3px; background:var(--c);
+  transform:scaleX(calc(var(--w) / 100)); transform-origin:left}
+.scroll{overflow-x:auto}
+/* Список линий метода 2 (20-46+ строк библиотеки) без ограничения высоты
+   растягивал страницу «полотенцем» (R54). Окно с вертикальной прокруткой,
+   высота — по естественной высоте таблицы метода 1 (8-9 нуклидов, ~436px
+   на живом рендере), чтобы обе вкладки держали одну и ту же высоту блока
+   независимо от того, сколько строк несёт активная библиотека. Sticky-
+   заголовок (table.big thead th выше) держит подписи столбцов при
+   прокрутке. */
+/* Рамка (R54) вплотную к первой колонке — первая колонка сама сидит на
+   padding-left:0 (общее правило table.big, рассчитанное на страницу БЕЗ
+   рамки). Отступ — на самом контейнере, симметрично с обеих сторон. */
+#viewM2 .scroll{max-height:436px; overflow-y:auto;
+  border:1.5px solid var(--rule-soft); padding:0 .65rem}
+
+.specs{display:grid; grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));
+  gap:0; margin:.5rem 0 1.3rem; border-top:2px solid var(--rule)}
+.specs div{padding:.65rem .9rem .65rem 0;
+  border-bottom:1.5px solid var(--rule-soft)}
+.specs dt{font:800 10px/1.4 var(--sans); letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ink); margin:0 0 .35em}
+.specs dd{margin:0; font:600 12.5px/1.45 var(--mono);
+  font-variant-numeric:tabular-nums}
+
+.note{border:none; background:var(--accent-soft);
+  padding:.85rem 1rem; margin:1.5em 0 0; border-radius:0;
+  font-size:13.5px; color:#16140f}
+.note b{color:#16140f}
+.formula{font:700 14.5px/1.7 var(--mono); background:none;
+  border:2px solid var(--rule); border-radius:0;
+  padding:.8rem .9rem; margin:1em 0 1.1em; overflow-x:auto; white-space:nowrap}
+.formula em{font-style:normal; color:var(--dim); font-size:12px;
+  font-weight:400}
+
+footer.bot{
+  font:600 11px/1.6 var(--sans); color:var(--dim);
+  display:flex; gap:.4rem 1.8rem; flex-wrap:wrap; align-items:baseline;
+  border-top:3px solid var(--rule); padding-top:.65rem;
+}
+footer.bot code{font:700 11px/1.45 var(--mono); color:var(--ink)}
+footer.bot button{
+  appearance:none; background:none; border:none; padding:0; cursor:pointer;
+  color:var(--ink); font:inherit; font-weight:700;
+  text-decoration:underline; text-decoration-thickness:2px;
+  text-underline-offset:2px}
+footer.bot button:hover{background:var(--accent-soft)}
+
+@media (max-width:640px){
+  .app{padding:.9rem .8rem .8rem}
+  .title h1{font-size:1.65rem}
+  .plotwrap{padding:.5rem .5rem .2rem; min-height:17rem}
+  .plotbox{inset:.5rem .5rem .2rem}
+  .toolbar{padding:.45rem .5rem}
+  .side{padding:0 .5rem}
+  .pop{padding:1.2rem 1.1rem 1.3rem}
+  .legend{max-height:15rem}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important; transition-duration:.01ms !important}
+}
+
+/* ── специфические селекторы страницы Th-232 ─────────────────── */
+
+/* Универсальное: [hidden] должно скрывать даже кнопки .btn (issue из
+   аудита-3 в ASN16 — тот же приём переносим сюда). */
+[hidden]{display:none !important}
+
+/* Приложение относительно позиционировано — для оверлеев */
+.app{position:relative}
+
+/* Панель без внутренней сетки: у нас нет боковой легенды каналов на
+   вкладках m1/cmp, только на spec/m2. Даём резервный одноколоночный вид. */
+.stage.solo{grid-template-columns:minmax(0,1fr)}
+
+/* method-lede — вводный абзац метода */
+.method-lede{
+  font:15px/1.55 var(--sans); color:var(--dim);
+  margin:.4rem 0 1.2rem; max-width:none
+}
+
+/* --- Метод 1: обёртка и таблица линий --- */
+.m1-wrap{grid-column:1 / -1; padding:1.1rem 1.2rem 1.4rem}
+.m1-wrap table.big{margin:.4rem 0 1.1rem}
+.m1-wrap table.big td:first-child{font:700 13px/1.4 var(--mono);
+  font-variant-numeric:tabular-nums}
+.m1-wrap tr.row-clean{background:transparent}
+.m1-wrap tr.row-dirty td{color:var(--faint)}
+.m1-wrap tr.row-dirty td b{color:var(--faint)}
+
+/* Сводка метода 1 (взвешенное среднее): жёлтая плашка */
+/* Компактнее прежнего (R42): было 4 колонки/2 строки с большими зазорами —
+   6 меток почти всегда влезают в один ряд при узком min-width и меньшем
+   gap, а уменьшенные внутренние отступы и шрифт значения сами по себе
+   снижают высоту блока без потери читаемости (метка/значение — то же
+   соотношение размеров, просто плотнее). */
+.summary{
+  display:flex; flex-wrap:wrap; gap:.55rem 1.5rem;
+  background:var(--accent-soft); color:#16140f;
+  padding:.6rem .9rem; border:2px solid var(--rule);
+  box-shadow:var(--shadow); margin:0 0 .4rem
+}
+.summary > div{display:flex; flex-direction:column; gap:.15rem; min-width:8.5rem}
+.summary .lab{font:800 9.5px/1.2 var(--sans); letter-spacing:.1em;
+  text-transform:uppercase; color:#16140f}
+.summary .val{font:700 14px/1.25 var(--mono); font-variant-numeric:tabular-nums}
+.summary .big-num{font-size:19px}
+.summary em{font:600 12px/1 var(--mono); font-style:normal; color:#3c360d}
+
+/* --- Метод 2: боковая колонка «подгонка» --- */
+.m2-facts{padding:.6rem 0 .8rem; display:flex; flex-direction:column; gap:.85rem}
+.m2-facts > div{display:flex; flex-direction:column; gap:.15rem}
+.m2-facts .lab{font:800 10px/1.2 var(--sans); letter-spacing:.11em;
+  text-transform:uppercase; color:var(--faint)}
+.m2-facts .val{font:600 14px/1.3 var(--mono); font-variant-numeric:tabular-nums;
+  color:var(--ink)}
+.m2-facts .big-num{font-size:20px; font-weight:800}
+.m2-facts em{font:600 12px/1 var(--mono); font-style:normal; color:var(--dim)}
+
+/* --- Сравнение: три полосы с интервалами --- */
+.cmp-wrap{grid-column:1 / -1; padding:1.1rem 1.2rem 1.4rem}
+.cmp-wrap canvas{width:100%; height:200px; display:block; margin:.4rem 0 1rem}
+.cmp-table{display:flex; flex-direction:column; gap:0;
+  border-top:2px solid var(--rule)}
+.cmp-row{
+  display:grid; grid-template-columns:minmax(14rem,20rem) minmax(11rem,16rem) 1fr;
+  gap:.6rem 1.4rem; align-items:baseline;
+  padding:.75rem 0; border-bottom:1.5px solid var(--rule-soft)
+}
+.cmp-row .cmp-lab{font:800 12px/1.3 var(--sans); letter-spacing:.06em}
+.cmp-row .cmp-val{font:700 15px/1.3 var(--mono);
+  font-variant-numeric:tabular-nums}
+.cmp-row .cmp-val em{font:600 13px/1 var(--mono); font-style:normal;
+  color:var(--dim)}
+.cmp-row .cmp-note{font:400 13px/1.5 var(--sans); color:var(--dim)}
+.cmp-pass .cmp-lab{color:var(--ink); border-left:6px solid var(--ink);
+  padding-left:.6rem}
+.cmp-m1  .cmp-lab{color:var(--acc-blue);   border-left:6px solid var(--acc-blue);
+  padding-left:.6rem}
+.cmp-m2  .cmp-lab{color:var(--acc-orange); border-left:6px solid var(--acc-orange);
+  padding-left:.6rem}
+
+/* --- Легенда «цепочка» на вкладке спектра --- */
+.legend{padding:.7rem .2rem 0}
+.ch-row{
+  display:grid;
+  grid-template-columns:.8rem 4.5rem 1fr;
+  gap:.5rem; align-items:center;
+  padding:.35rem 0; border-bottom:1px dashed var(--rule-soft)
+}
+.ch-sw{width:.8rem; height:.8rem; display:block}
+.ch-nm{font:800 13px/1.2 var(--sans); color:var(--ink)}
+.ch-en{font:600 11.5px/1.3 var(--mono); font-variant-numeric:tabular-nums;
+  color:var(--dim)}
+.ch-foot{font:400 11.5px/1.4 var(--sans); color:var(--faint);
+  margin:.8rem 0 0}
+
+/* Readout на канвах — компактный chip */
+.readout{
+  position:absolute; top:.6rem; right:.8rem;
+  background:var(--paper); border:2px solid var(--rule);
+  padding:.35rem .55rem; font:600 12px/1.3 var(--mono);
+  font-variant-numeric:tabular-nums; color:var(--ink);
+  pointer-events:none; display:none
+}
+.readout.on{display:block}
+
+/* Мобильная раскладка */
+@media (max-width:900px){
+  .cmp-row{grid-template-columns:1fr}
+  .cmp-row .cmp-note{grid-column:1}
+}
+
+/* Полоса легенды: горизонтальная лента пилюль-флажков по нуклидам.
+   На узком экране переносится. */
+.legendbar{
+  display:flex; flex-wrap:wrap; gap:.4rem .6rem;
+  padding:.55rem .7rem; border-bottom:2px solid var(--rule);
+  background:var(--sunk);
+}
+.chip{
+  display:inline-flex; align-items:center; gap:.4rem;
+  padding:.28rem .55rem .28rem .35rem;
+  border:2px solid var(--rule); border-radius:0;
+  background:var(--paper); cursor:pointer;
+  font:800 12px/1 var(--sans); letter-spacing:.02em;
+  user-select:none;
+}
+.chip:hover{background:var(--accent-soft)}
+.chip input{margin:0; accent-color:var(--ink); cursor:pointer;
+  width:.9rem; height:.9rem}
+.chip .sw{width:.9rem; height:.9rem; display:inline-block}
+.chip .sw.log{background:repeating-linear-gradient(-45deg,
+  var(--ink) 0 2px, transparent 2px 4px); border:1.5px solid var(--rule)}
+.chip .sw.sum{
+  background-image:repeating-linear-gradient(to right,
+    var(--sum-line) 0 3px, transparent 3px 6px);
+  background-size:100% 2px; background-position:center; background-repeat:no-repeat;
+  border:1.5px solid var(--rule);
+}
+.chip .nm{white-space:nowrap}
+.chip.toggle{margin-left:auto}
+
+/* Курсорная строка «метод 1» под графиком. */
+.cursor-line{
+  padding:.5rem .8rem; border-top:2px solid var(--rule);
+  font:600 13px/1.3 var(--mono); font-variant-numeric:tabular-nums;
+  color:var(--ink); background:var(--sunk); min-height:2.3rem;
+}
+
+/* ── графики разложения внутри вкладок методов ──────────────
+   Разложение спектра в рамке-карточке под сводкой: у методов разные
+   модели, и график каждого показывается рядом с его же числами. Высота
+   меньше обзорной — под графиком ещё таблица, вкладка должна оставаться
+   листаемой. */
+.m1-wrap .legendbar{
+  border:2px solid var(--rule); border-bottom:none; margin:1rem 0 0}
+.m1-wrap .plotwrap{
+  height:clamp(20rem, 44vh, 32rem); padding:.7rem 0 .3rem;
+  border-left:2px solid var(--rule); border-right:2px solid var(--rule)}
+.m1-wrap .plotbox{inset:.7rem .6rem .3rem}
+.m1-wrap .cursor-line{
+  border:2px solid var(--rule); border-top-width:2px; margin:0 0 .55rem}
+
+/* Пояснение сторожа статистики (R66) под графиком разложения: почему часть
+   слоя идёт пунктиром без заливки. Без этой строки пунктир читается как
+   оформительский приём, а не как отметка о недостоверности. */
+.guard-note{
+  margin:0 0 1.2rem; font:13px/1.5 var(--serif); color:var(--dim);
+  text-align:justify; text-wrap:pretty}
+
+/* Переключатель состава библиотеки — отдельной строкой над сводкой. */
+#libseg{margin:0 0 .9rem}
+
+/* Заголовок раздела внутри вкладки. */
+.sec-h{
+  font:800 1.05rem/1.2 var(--sans); letter-spacing:-.01em;
+  text-transform:uppercase; margin:2.2rem 0 .6rem;
+  border-top:3px solid var(--rule); padding-top:.9rem}
+
+/* Кривая разрешения — ниже и уже основного спектра. */
+#fwbox canvas{height:clamp(15rem, 30vh, 22rem)}
+
+/* ── вкладка «калибровка» ─────────────────────────────────── */
+.cal-wrap{grid-column:1 / -1; padding:1.1rem 1.2rem 1.4rem}
+.cal-wrap .mono{font:600 12px/1.7 var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap; display:inline-block}
+.cal-wrap table.big td:first-child{min-width:16rem}
+
+/* Шапка со флажками + канвой; по образцу WT-20. */
+.chartbox{border:2px solid var(--rule); background:var(--paper);
+  margin:1rem 0; position:relative;
+  display:flex; flex-direction:column}
+.chartbox .ctrls{
+  display:flex; flex-wrap:wrap; gap:.5rem 1.1rem; align-items:center;
+  padding:.55rem .7rem; border-bottom:2px solid var(--rule);
+  background:var(--sunk);
+  font:600 12px/1.2 var(--sans);
+}
+.chartbox .ctrls label{
+  display:inline-flex; align-items:center; gap:.35rem; cursor:pointer;
+  user-select:none;
+}
+.chartbox .ctrls .sw{
+  display:inline-block; width:.9rem; height:.9rem;
+  border:1.5px solid var(--rule);
+}
+.chartbox .ctrls input{margin:0; accent-color:var(--ink); cursor:pointer;
+  width:.9rem; height:.9rem}
+.chartbox canvas{
+  width:100%; display:block;
+  height:clamp(24rem, 52vh, 38rem);
+}
+.chartbox .readout{
+  border-top:2px solid var(--rule); padding:.4rem .7rem;
+  font:600 12px/1.3 var(--mono); font-variant-numeric:tabular-nums;
+  min-height:1.9rem; background:var(--sunk); color:var(--ink);
+}

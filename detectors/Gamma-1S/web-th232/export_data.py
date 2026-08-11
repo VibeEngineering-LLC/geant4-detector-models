@@ -506,6 +506,37 @@ def fwhm_kev(E):
     return FWHM_LAW["k"] * float(E) ** FWHM_LAW["p"]
 
 
+def assert_anchor_window_ok(window_half_kev, E_kev, max_mult=0.7, label=""):
+    """Guard для ЛЮБОГО якоря калибровки (argmax/центроид/пик) — падает
+    громко, если полуширина окна поиска ШИРЕ разрешённого множителя ПШПВ
+    прибора на этой энергии.
+
+    Зачем (ТЗ внешнего аудита -- Цензор, ретроспектива Теста 3 AmTiCsEu,
+    п.6, 11.08.2026): наивно широкое окно центроида/argmax систематически
+    смещает якорь в сторону соседней структуры континуума -- этот класс
+    ошибки в ЭТОЙ ЖЕ сессии ловился МИНИМУМ ТРИ раза (образец, 964,057 кэВ,
+    ±10 кэВ дало ложные −12,7 кэВ; фон, K-40, окно 1350-1560 кэВ дало
+    ложные −16,36 кэВ; отклонённая одноточечная поправка фона, коммит
+    58cdb67 -- прежде чем попасть в прод) — правило «окно ≤~0,6-0,7×ПШПВ»
+    было прозой в SKILL.md, агент забывал её применять КАЖДЫЙ раз заново.
+    Теперь — код, не память.
+
+    `max_mult=0.7` — с запасом над практически используемым 0,6× (см.
+    bg_seven_line_anchor_check.py), чтобы не падать на пограничных, но
+    оправданных случаях; ужесточать по факту, не расширять втихую."""
+    fwhm = fwhm_kev(E_kev)
+    limit = max_mult * fwhm
+    if window_half_kev > limit:
+        raise SystemExit(
+            "guard anchor_window: окно %s±%.2f кэВ на E=%.3f кэВ ШИРЕ "
+            "%.1f×ПШПВ(%.2f)=%.2f кэВ -- систематический риск смещения "
+            "якоря в сторону соседнего континуума (см. докстринг "
+            "assert_anchor_window_ok). Сузить окно или явно обосновать "
+            "превышение в комментарии рядом с вызовом, не увеличивать "
+            "max_mult молча."
+            % (label or "якорь", window_half_kev, E_kev, max_mult, fwhm, limit))
+
+
 def tcs_report(templ_mc, shape_lib, e_of_ch, ch_edges):
     """Измерить, чего методу 2 недостаёт по каскадному совпадению (R78).
 
@@ -1063,11 +1094,18 @@ def make_full_response(grid_dir, ch_edges, broaden, eps_peak_interp,
 
 # ─── общая процедура подгонки амплитуд ─────────────────────────────────────
 
-def fit_amplitudes(y, cols, sys_floor=SYS_FLOOR):
+def fit_amplitudes(y, cols, sys_floor=SYS_FLOOR, _sig_out=None):
     """Двухпроходный NNLS: сперва пуассоновские веса, затем с систематическим
     полом по модели первого прохода.
 
     `cols` — столбцы матрицы плана, каждый уже в отсчётах измерения.
+    `_sig_out` — опциональный list; если передан, в него добавляется ТОТ
+    ЖЕ массив σ, что использован для итогового chi2 (заморожен ПОСЛЕ
+    первого прохода, до финального NNLS -- см. chi2_by_energy_bands()
+    ниже, зачем это важно: реконструировать σ снаружи по финальной
+    модели даёт БЛИЗКОЕ, но не побитово равное число). Не меняет
+    сигнатуру возврата -- существующие вызовы (`coef, d, chi2, n, m = ...`)
+    не ломаются.
     Возвращает (coef, d_coef, chi2, ndof, model).
     """
     A = np.stack(cols, axis=1)
@@ -1075,6 +1113,8 @@ def fit_amplitudes(y, cols, sys_floor=SYS_FLOOR):
     coef, _ = nnls(A / sig[:, None], y / sig)
     model = A @ coef
     sig = np.sqrt(np.maximum(y, 1.0) + (sys_floor * model) ** 2)
+    if _sig_out is not None:
+        _sig_out.append(sig)
     coef, _ = nnls(A / sig[:, None], y / sig)
     model = A @ coef
     chi2 = float((((y - model) / sig) ** 2).sum())
@@ -1086,6 +1126,78 @@ def fit_amplitudes(y, cols, sys_floor=SYS_FLOOR):
     except np.linalg.LinAlgError:
         d_coef = np.full(A.shape[1], float("nan"))
     return coef, d_coef, chi2, ndof, model
+
+
+def chi2_by_energy_bands(y, cols, coef, sig, e_of_ch_sel, bands):
+    """χ² по энергетическим полосам, ПОБИТОВО согласованный с итоговым χ²
+    fit_amplitudes() -- принимает готовый `sig` (тот же массив, что
+    fit_amplitudes(..., _sig_out=box) положил в box[0]), НЕ реконструирует
+    его заново по финальной модели: реконструкция по финальной модели
+    даёт БЛИЗКОЕ, но не тождественное число (σ в fit_amplitudes заморожен
+    ПОСЛЕ первого прохода NNLS, до финального -- IRLS-приём, финальная
+    модель после ВТОРОГО прохода уже другая; проверено численно при
+    разработке этой функции -- разница ~6e-6 относительных, достаточная,
+    чтобы self-test ниже падал при наивной реконструкции).
+
+    Зачем (ТЗ внешнего аудита -- Цензор, ретроспектива Теста 3 AmTiCsEu,
+    п.3, 11.08.2026). Диагностика «какая полоса даёт основной вклад в χ²»
+    делалась ad-hoc внутри сессии (не персистентным кодом) и содержала
+    математическую ошибку -- смешение σ ПЕРВОГО прохода (чистый пуассон,
+    без систематического пола) и σ ВТОРОГО (итогового, с полом) -- давшую
+    заявленное число на два порядка меньше реального (24700 вместо 477425)
+    и ложный вывод «остальные нуклиды не затронуты». Найдено ТОЛЬКО
+    внешним адверсариальным аудитом, не своей проверкой (amticseu-
+    remarks.md §12, находка Б1). Эта функция -- персистентная, ЕДИНСТВЕННАЯ
+    точка формулы (не копия внутри разового скрипта), плюс автотест ниже
+    проверяет самосогласованность механически при каждом запуске, не
+    полагаясь на то, что кто-то заметит расхождение вручную.
+
+    `e_of_ch_sel` -- энергии КАНАЛОВ, что вошли в подгонку (та же длина,
+    что y/sig), `bands` -- [(e_lo, e_hi, label), ...].
+    Возвращает [{"label", "e_lo", "e_hi", "chi2", "n_channels", "share"}].
+    """
+    A = np.stack(cols, axis=1)
+    model = A @ coef
+    resid2 = ((y - model) / sig) ** 2
+    chi2_total = float(resid2.sum())
+    out = []
+    for e_lo, e_hi, label in bands:
+        m = (e_of_ch_sel >= e_lo) & (e_of_ch_sel < e_hi)
+        band_chi2 = float(resid2[m].sum())
+        out.append({
+            "label": label, "e_lo": e_lo, "e_hi": e_hi,
+            "chi2": band_chi2, "n_channels": int(m.sum()),
+            "share": (band_chi2 / chi2_total) if chi2_total > 0 else 0.0,
+        })
+    return out, chi2_total
+
+
+def _self_test_chi2_by_energy_bands():
+    """Механическая проверка (не полагаться на ручную сверку аудитора
+    заново при следующем источнике): сумма χ² по ИСЧЕРПЫВАЮЩЕМУ набору
+    полос обязана СОВПАСТЬ с итоговым χ² из fit_amplitudes() на тех же
+    данных, побитово (та же формула, тот же массив). Синтетические
+    данные -- не нужен реальный спектр, важна только самосогласованность
+    формулы. Вызывается из analysis/test_chi2_bands_match_json.py и
+    из __main__ этого файла при `python export_data.py --selftest`."""
+    rng = np.random.default_rng(0)
+    n = 200
+    e = np.linspace(40.0, 2000.0, n)
+    cols = [rng.uniform(0, 5, n), rng.uniform(0, 3, n)]
+    y = 2.0 * cols[0] + 1.5 * cols[1] + rng.poisson(3.0, n).astype(float)
+    sig_box = []
+    coef, dcoef, chi2, ndof, model = fit_amplitudes(y, cols, _sig_out=sig_box)
+    bands = [(0, 500, "низ"), (500, 1200, "середина"), (1200, 3000, "верх")]
+    band_rows, chi2_from_bands = chi2_by_energy_bands(
+        y, cols, coef, sig_box[0], e, bands)
+    if abs(chi2_from_bands - chi2) > 1e-9 * max(1.0, abs(chi2)):
+        raise SystemExit(
+            "self-test chi2_by_energy_bands: сумма по полосам %.6f != "
+            "итоговый chi2 fit_amplitudes() %.6f -- формула разошлась, "
+            "НЕ публиковать разбор по полосам, пока не починено."
+            % (chi2_from_bands, chi2))
+    print("self-test chi2_by_energy_bands: OK (%.6f == %.6f)"
+          % (chi2_from_bands, chi2), file=sys.stderr)
 
 
 # ─── главная процедура ─────────────────────────────────────────────────────
@@ -1925,4 +2037,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if "--selftest" in sys.argv:
+        _self_test_chi2_by_energy_bands()
+    else:
+        main()

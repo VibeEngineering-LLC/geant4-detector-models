@@ -25,7 +25,14 @@
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
-  var X_LO = 30, X_HI = 1700; // диапазон графиков -- e_hi_kev=1500 конфига + запас
+  // ИСПРАВЛЕНО 11.08.2026 (замечание оператора №7 "не обрезай спектр",
+  // по скриншоту оригинала SpectraLine с полным видом до 3000 кэВ и
+  // заметным пиком ~1900-2000 кэВ): диапазон ПОКАЗА -- НЕ то же самое,
+  // что диапазон ПОДГОНКИ (e_hi_kev=1500 в конфиге); та же ошибка,
+  // которую Th-232/Ra-226 не совершали (у них xHi=3000 всегда, при
+  // e_hi_kev=2900/2300 соответственно) -- здесь была допущена и теперь
+  // исправлена по тому же образцу.
+  var X_LO = 30, X_HI = 3000;
 
   var ST = { on: {}, log: true, cursorE: null, lib: "sel" };
   D.nuclides.forEach(function (n) { ST.on[n.key] = true; });
@@ -110,7 +117,8 @@
     var Y = makeY(ST.log, ST.log ? 1 : 0, vMax * (ST.log ? 2.0 : 1.1));
 
     g.strokeStyle = p.grid; g.lineWidth = 1; g.beginPath();
-    var xTicks = [200, 400, 600, 800, 1000, 1200, 1400, 1600];
+    var xTicks = [250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2250,
+                  2500, 2750, 3000];
     xTicks.forEach(function (tv) {
       var x = mapX(tv, xLo, xHi, m.l, W - m.r);
       g.moveTo(x, m.t); g.lineTo(x, H - m.b);
@@ -610,7 +618,8 @@
     });
     var Y = makeY(CAL.log, CAL.log ? 1 : 0, vMax * (CAL.log ? 2 : 1.1));
     g.strokeStyle = p.grid; g.lineWidth = 1; g.beginPath();
-    var xTicks = [200, 400, 600, 800, 1000, 1200, 1400, 1600];
+    var xTicks = [250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2250,
+                  2500, 2750, 3000];
     for (var xi = 0; xi < xTicks.length; xi++) {
       if (xTicks[xi] > xHi) break;
       var xx = mapX(xTicks[xi], xLo, xHi, m.l, W - m.r);
@@ -886,12 +895,12 @@
     vMax = Math.max(vMax, fw.k * Math.pow(xHi, fw.p)) * 1.15;
 
     g.strokeStyle = p.grid; g.lineWidth = 1; g.beginPath();
-    var xTicks = [300, 600, 900, 1200, 1500];
+    var xTicks = [500, 1000, 1500, 2000, 2500, 3000];
     xTicks.forEach(function (t) {
       var x = mapX(t, xLo, xHi, m.l, W - m.r);
       g.moveTo(x, m.t); g.lineTo(x, H - m.b);
     });
-    var yTicks = [10, 20, 30, 40, 50, 60];
+    var yTicks = [20, 40, 60, 80, 100, 120];
     yTicks.forEach(function (t) {
       if (t > vMax) return;
       var y = m.t + (1 - t / vMax) * (H - m.b - m.t);

@@ -34,7 +34,11 @@
   // исправлена по тому же образцу.
   var X_LO = 30, X_HI = 3000;
 
-  var ST = { on: {}, log: true, cursorE: null, lib: "sel" };
+  // zoom -- общий для обеих вкладок (метод 1/2 используют одну drawSpectrum,
+  // навигация окном шаблона -- замечание оператора 11.08.2026), тот же
+  // приём drag+dblclick, что на вкладке «калибровка» (CAL.zoom).
+  var ST = { on: {}, log: true, cursorE: null, lib: "sel", zoom: null };
+  var SPEC_drag = null, SPEC_dragging = false;
   D.nuclides.forEach(function (n) { ST.on[n.key] = true; });
 
   // Восстановлено 11.08.2026 (замечание оператора №2) -- переключатель
@@ -66,6 +70,18 @@
     };
   }
   function mapX(v, lo, hi, x0, x1) { return x0 + (v - lo) / (hi - lo) * (x1 - x0); }
+  // "Круглый" шаг засечек оси (степень 10, 4-5 засечек в диапазоне) --
+  // тот же приём, что fillCompare() ниже использует для оси активности,
+  // здесь нужен вкладке метод 1/2 при приближении (см. drawSpectrum).
+  function niceTicksFor(xLo, xHi) {
+    var range = xHi - xLo;
+    if (range <= 0) return [];
+    var stp = Math.pow(10, Math.floor(Math.log10(range / 4)));
+    var s = Math.max(stp, Math.ceil(range / 5 / stp) * stp);
+    var out = [];
+    for (var v = Math.ceil(xLo / s) * s; v <= xHi; v += s) out.push(Math.round(v));
+    return out;
+  }
   function makeY(logY, lo, hi) {
     if (logY) {
       lo = Math.max(1, lo); hi = Math.max(lo * 10, hi);
@@ -106,7 +122,10 @@
       return c - D.spectrum.bg_counts[i];
     });
     var stk = STACK(mode);
-    var xLo = X_LO, xHi = X_HI;
+    // Навигация окном шаблона (замечание оператора 11.08.2026): протяжка
+    // мышью -- приближение (wireSpecZoom ниже), двойной клик или кнопка
+    // "весь диапазон" -- сброс. ST.zoom общий на обе вкладки (метод 1/2).
+    var xLo = ST.zoom ? ST.zoom.xLo : X_LO, xHi = ST.zoom ? ST.zoom.xHi : X_HI;
 
     var vMax = 1;
     for (var i0 = 0; i0 < e.length; i0++) {
@@ -117,8 +136,10 @@
     var Y = makeY(ST.log, ST.log ? 1 : 0, vMax * (ST.log ? 2.0 : 1.1));
 
     g.strokeStyle = p.grid; g.lineWidth = 1; g.beginPath();
-    var xTicks = [250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2250,
-                  2500, 2750, 3000];
+    // Приближённый диапазон -- засечки "на глаз" (шаг степени 10),
+    // фиксированный набор [250,...,3000] годится только на весь диапазон.
+    var xTicks = ST.zoom ? niceTicksFor(xLo, xHi)
+      : [250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, 3000];
     xTicks.forEach(function (tv) {
       var x = mapX(tv, xLo, xHi, m.l, W - m.r);
       g.moveTo(x, m.t); g.lineTo(x, H - m.b);
@@ -179,12 +200,24 @@
     }
     g.stroke(); g.globalAlpha = 1;
 
-    if (ST.cursorE !== null && ST.cursorE >= xLo && ST.cursorE <= xHi) {
+    if (ST.cursorE !== null && !SPEC_dragging && ST.cursorE >= xLo && ST.cursorE <= xHi) {
       var xCur = mapX(ST.cursorE, xLo, xHi, x0, x1);
       g.strokeStyle = p.rule; g.lineWidth = 1; g.setLineDash([4, 3]);
       g.globalAlpha = 0.7;
       g.beginPath(); g.moveTo(xCur, y0); g.lineTo(xCur, y1); g.stroke();
       g.setLineDash([]); g.globalAlpha = 1;
+    }
+
+    // Выделение при протяжке (навигация окном шаблона) -- та же заливка,
+    // что wireCal()/drawCal() на вкладке «калибровка».
+    if (SPEC_dragging && SPEC_drag) {
+      var xa2 = Math.min(SPEC_drag.x0, SPEC_drag.x1);
+      var xb2 = Math.max(SPEC_drag.x0, SPEC_drag.x1);
+      g.fillStyle = "rgba(246,211,28,.22)";
+      g.fillRect(xa2, y0, xb2 - xa2, y1 - y0);
+      g.strokeStyle = "#16140f"; g.lineWidth = 1.5; g.setLineDash([4, 4]);
+      g.strokeRect(xa2, y0, xb2 - xa2, y1 - y0);
+      g.setLineDash([]);
     }
 
     g.strokeStyle = p.rule; g.lineWidth = 1.2;
@@ -225,17 +258,58 @@
   }
 
   var CURSOR_wired = {};
+  var SPEC_MARGIN = { l: 60, r: 14 };
+  function specEfromX(x, rectWidth) {
+    var xLo = ST.zoom ? ST.zoom.xLo : X_LO, xHi = ST.zoom ? ST.zoom.xHi : X_HI;
+    var m = SPEC_MARGIN;
+    return xLo + ((x - m.l) / (rectWidth - m.r - m.l)) * (xHi - xLo);
+  }
+  function resetSpecZoom(mode) { ST.zoom = null; cursorText(mode); drawSpectrum(mode); }
+
   function attachCursor(mode) {
     if (CURSOR_wired[mode]) return;
     CURSOR_wired[mode] = true;
     var cv = document.getElementById(CV_ID(mode));
     var tip = document.getElementById(TIP_ID(mode));
     if (!cv) return;
+    var m = SPEC_MARGIN;
+    // Навигация окном шаблона (замечание оператора 11.08.2026) -- протяжка
+    // мышью приближает диапазон, двойной клик/кнопка сбрасывают, тот же
+    // приём, что wireCal()/CAL.zoom на вкладке «калибровка».
+    var resetBtn = document.getElementById("spec-reset-" + mode);
+    if (resetBtn) resetBtn.addEventListener("click", function () { resetSpecZoom(mode); });
+    cv.addEventListener("dblclick", function () { resetSpecZoom(mode); });
+    cv.addEventListener("mousedown", function (ev) {
+      var r = cv.getBoundingClientRect();
+      var x = ev.clientX - r.left;
+      if (x < m.l || x > r.width - m.r) return;
+      ev.preventDefault();
+      SPEC_dragging = true;
+      SPEC_drag = { x0: x, x1: x };
+      drawSpectrum(mode);
+    });
+    document.addEventListener("mouseup", function () {
+      if (!SPEC_dragging) return;
+      SPEC_dragging = false;
+      var r = cv.getBoundingClientRect();
+      var x0 = SPEC_drag.x0, x1 = SPEC_drag.x1;
+      SPEC_drag = null;
+      if (Math.abs(x1 - x0) < 6) { drawSpectrum(mode); return; }
+      var xLo = ST.zoom ? ST.zoom.xLo : X_LO, xHi = ST.zoom ? ST.zoom.xHi : X_HI;
+      var eLo = Math.max(xLo, specEfromX(Math.min(x0, x1), r.width));
+      var eHi = Math.min(xHi, specEfromX(Math.max(x0, x1), r.width));
+      ST.zoom = { xLo: eLo, xHi: eHi };
+      cursorText(mode); drawSpectrum(mode);
+    });
     cv.addEventListener("pointermove", function (ev) {
       var r = cv.getBoundingClientRect();
       var x = ev.clientX - r.left, y = ev.clientY - r.top;
-      var m = { l: 60, r: 14 };
-      var xLo = X_LO, xHi = X_HI;
+      if (SPEC_dragging) {
+        SPEC_drag.x1 = Math.max(m.l, Math.min(r.width - m.r, x));
+        drawSpectrum(mode);
+        return;
+      }
+      var xLo = ST.zoom ? ST.zoom.xLo : X_LO, xHi = ST.zoom ? ST.zoom.xHi : X_HI;
       if (x < m.l || x > r.width - m.r) ST.cursorE = null;
       else ST.cursorE = xLo + ((x - m.l) / (r.width - m.r - m.l)) * (xHi - xLo);
       cursorText(mode); drawSpectrum(mode);
@@ -249,6 +323,7 @@
       }
     });
     cv.addEventListener("pointerleave", function () {
+      if (SPEC_dragging) return;
       ST.cursorE = null; cursorText(mode); drawSpectrum(mode);
       if (tip) tip.hidden = true;
     });

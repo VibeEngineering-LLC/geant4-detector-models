@@ -445,7 +445,8 @@ void RCDetector::BuildVessel(G4LogicalVolume* world) {
 G4VPhysicalVolume* RCDetector::Construct() {
   DefineMaterials();
 
-  auto* worldS = new G4Box("world", 150. * mm, 150. * mm, 200. * mm);
+  auto* worldS = new G4Box("world", fWorldHalfXY * mm, fWorldHalfXY * mm,
+                           fWorldHalfZ * mm);
   auto* worldLV = new G4LogicalVolume(worldS, Mat("G4_AIR"), "world");
   worldLV->SetVisAttributes(G4VisAttributes::GetInvisible());
   auto* worldPV =

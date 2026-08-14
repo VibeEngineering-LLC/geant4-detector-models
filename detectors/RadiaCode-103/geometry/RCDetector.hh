@@ -138,7 +138,17 @@ public:
                            double len);
   static double CapOriginFromTip(double hy, double len) { return 0.5 * (len + hy); }
 
-private:
+  // Полуразмеры мира, мм. Умолчания — исторические (мир 300 x 300 x 400),
+  // при них геометрия побитово та же, что до введения этих полей.
+  // Свинцовая защита наружу выходит далеко за прибор, и наследнику нужен мир
+  // больше; менять их надо ДО Construct().
+  double fWorldHalfXY = 150.0;
+  double fWorldHalfZ  = 200.0;
+
+protected:
+  // Открыты наследнику (RCShieldDetector): защита строится вокруг ТОГО ЖЕ
+  // прибора и сосуда. Дублировать их размещение в другом файле нельзя — это
+  // второй источник истины для геометрии.
   void DefineMaterials();
   void BuildDevice(G4LogicalVolume* world);
   void BuildVessel(G4LogicalVolume* world);

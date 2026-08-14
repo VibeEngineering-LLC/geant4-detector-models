@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#faf8fb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)">
+<title>Свинцовая защита RadiaCode: докуда толщина окупается</title>
+<style>
+:root{
+  --bg:#faf8fb; --fg:#1b1a1f; --sub:#5c5a66; --line:#dcd8e4; --panel:#ffffff;
+  --accent:#7a4fd1; --room:#c77b30; --k40:#3b7bd6; --cs:#c23b5a; --mu:#5c9e5c;
+  --win:#e8dcf5;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0f1117; --fg:#eae8f0; --sub:#a29fb0; --line:#332f42; --panel:#181722;
+         --accent:#a486e8; --room:#e0985a; --k40:#6fa2e8; --cs:#e0708a; --mu:#83c483;
+         --win:#2c2440; }
+}
+:root[data-theme="dark"]{ --bg:#0f1117; --fg:#eae8f0; --sub:#a29fb0; --line:#332f42;
+  --panel:#181722; --accent:#a486e8; --room:#e0985a; --k40:#6fa2e8; --cs:#e0708a;
+  --mu:#83c483; --win:#2c2440; }
+:root[data-theme="light"]{ --bg:#faf8fb; --fg:#1b1a1f; --sub:#5c5a66; --line:#dcd8e4;
+  --panel:#ffffff; --accent:#7a4fd1; --room:#c77b30; --k40:#3b7bd6; --cs:#c23b5a;
+  --mu:#5c9e5c; --win:#e8dcf5; }
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);
+  font:15px/1.55 -apple-system,Segoe UI,Roboto,sans-serif;overflow-x:hidden}
+.wrap{max-width:1080px;margin:0 auto;padding:24px 20px 60px}
+h1{font-size:1.5rem;margin:.2em 0 .1em}
+h2{font-size:1.05rem;margin:0 0 .6em;color:var(--fg)}
+p{text-align:justify;text-wrap:pretty;color:var(--sub);max-width:74ch}
+p.lead{color:var(--fg)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:18px 20px;margin:16px 0}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px 24px}
+.ctrl label{display:flex;justify-content:space-between;font-size:.85rem;color:var(--sub);margin-bottom:4px}
+.ctrl output{color:var(--fg);font-variant-numeric:tabular-nums;font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.warn{color:var(--cs);font-size:.8rem;margin-top:4px;display:none}
+.warn.show{display:block}
+canvas{width:100%;display:block}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px 18px;margin-top:14px}
+.readout .num{font-size:1.35rem;font-weight:700;font-variant-numeric:tabular-nums}
+.readout .cap{font-size:.78rem;color:var(--sub)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem;color:var(--sub);margin-top:8px}
+.sw{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+table{border-collapse:collapse;width:100%;font-size:.85rem}
+td,th{padding:4px 8px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+.na{color:var(--sub);font-style:italic}
+footer.bot{margin-top:28px;font-size:.78rem;color:var(--sub);border-top:1px solid var(--line);padding-top:12px}
+footer.bot code{background:var(--win);padding:1px 5px;border-radius:4px}
+.caveat{background:var(--win);border-radius:10px;padding:12px 16px;margin:14px 0;font-size:.88rem}
+.caveat b{color:var(--cs)}
+.badge{display:inline-block;font-size:.72rem;padding:1px 7px;border-radius:8px;background:var(--win);color:var(--accent);margin-left:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Свинцовая защита RadiaCode-101/103: докуда толщина окупается</h1>
+<p class="lead">Интерактивная модель зависимости фона и минимально детектируемой активности
+(МДА) цезия-137 от толщины свинцовой защиты. Расчёт — Geant4 11.2.1, полная цепочка от
+поля естественной радиоактивности помещения (K-40, ряды Ra-226/Th-232, подобраны по
+линиям к реальному 7-суточному измерению RadiaCode-103) и космического мюонного фона
+до энерговыделения в кристалле CsI(Tl) через реальную геометрию прибора и авторского
+сосуда Маринелли 200&nbsp;мл.</p>
+
+<div class="panel">
+  <h2>Короткий ответ</h2>
+  <p style="margin:.2em 0 .6em">Свинец окупается на всём исследованном диапазоне —
+  насыщения на 30–40&nbsp;мм, вопреки первоначальной оценке, нет. Каждый шаг по сетке
+  улучшает МДА на 9–17&nbsp;%, а удвоение с 50 до 100&nbsp;мм — сразу на 28&nbsp;%.
+  Упирается защита не в толщину, а в две компоненты, которые свинцом не давятся:</p>
+  <ul style="margin:.2em 0 .6em;padding-left:1.2em">
+    <li>космический мюонный фон — при 100&nbsp;мм это уже <b>68&nbsp;%</b> счёта в окне
+    662&nbsp;кэВ;</li>
+    <li>собственный K-40 пробы (250&nbsp;Бк/кг) — ещё <b>26&nbsp;%</b>.</li>
+  </ul>
+  <p style="margin:.2em 0 0">Итого при 100&nbsp;мм фон на 94&nbsp;% непонижаемый: до
+  предела, задаваемого мюонами и калием пробы, остаётся 6&nbsp;%. Сам предел —
+  <b>2,8&nbsp;Бк/кг за 7 суток</b> и 1,35&nbsp;Бк/кг за 30 суток. Цена стомиллиметровой
+  стенки — <b>289&nbsp;кг</b> свинца против 84&nbsp;кг у пятидесятимиллиметровой, и это
+  проектное ограничение наравне с МДА.</p>
+</div>
+
+<div class="panel">
+  <h2>Параметры</h2>
+  <div class="controls">
+    <div class="ctrl">
+      <label>Толщина свинца <output id="oPb"></output></label>
+      <input type="range" id="sPb" min="0" max="8" step="1" value="3">
+    </div>
+    <div class="ctrl">
+      <label>Активность Cs-137 в пробе <output id="oCs"></output></label>
+      <input type="range" id="sCs" min="0" max="1000" step="1" value="500">
+    </div>
+    <div class="ctrl">
+      <label>Время набора <output id="oT"></output></label>
+      <input type="range" id="sT" min="0" max="1000" step="1" value="500">
+      <div class="warn" id="wT">N в окне 662 кэВ ниже надёжного порога — МДА при этом
+        времени набора статистически недостоверна (гауссово приближение Пуассона
+        не держится на малом числе отсчётов). Увеличьте время набора.</div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Спектр в полости защиты <span class="badge">лог. шкала</span></h2>
+  <canvas id="cvSpec" height="320"></canvas>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--room)"></i>фон помещения (гамма ЕРН + мюон) сквозь защиту</span>
+    <span><i class="sw" style="background:var(--k40)"></i>K-40 пробы (250 Бк/кг, фиксировано)</span>
+    <span><i class="sw" style="background:var(--cs)"></i>добавленный Cs-137 (движок)</span>
+    <span><i class="sw" style="background:var(--win)"></i>окно 662±1,25σ</span>
+  </div>
+  <p>Свёрнуто с приборным разрешением RadiaCode-103 (8,4&nbsp;% FWHM на 662&nbsp;кэВ,
+  ход по энергии ~√E). Три компоненты складываются (линейность гамма-переноса и
+  собственной активности пробы), окно, по которому считается МДА, подсвечено отдельно.</p>
+</div>
+
+<div class="panel">
+  <h2>МДА по Cs-137 и масса свинца от толщины</h2>
+  <canvas id="cvMda" height="260"></canvas>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--cs)"></i>МДА при текущем времени набора, Бк/кг (левая ось)</span>
+    <span><i class="sw" style="background:var(--sub)"></i>масса свинца, кг (правая ось)</span>
+  </div>
+  <div class="readout">
+    <div><div class="num" id="rMda">—</div><div class="cap">МДА, Бк/кг (текущие pb, t)</div></div>
+    <div><div class="num" id="rN">—</div><div class="cap">отсчётов в окне за это время</div></div>
+    <div><div class="num" id="rMass">—</div><div class="cap">масса свинца, кг</div></div>
+    <div><div class="num" id="rBg">—</div><div class="cap">фон в окне, имп/с</div></div>
+  </div>
+</div>
+
+<div class="caveat">
+  <b>Границы модели — не скрыты, читайте перед тем, как доверять числам.</b>
+  <ul style="margin:.4em 0 0;padding-left:1.2em">
+    <li>Фон помещения (гамма ЕРН) систематически занижен на ~25-35&nbsp;% относительно
+    измерения — причина не доследована (радон в воздухе вне равновесия со стеной?
+    K-40 вне стены? более широкий космический континуум?). МДА здесь ОПТИМИСТИЧНЕЕ
+    реальности.</li>
+    <li>Мюонная компонента подобрана по измеренному фону выше 2,7&nbsp;МэВ, где линий
+    естественной радиоактивности уже нет. Восстановленная плотность потока
+    0,0205&nbsp;см⁻²·с⁻¹ согласуется с ориентиром PDG (~1&nbsp;см⁻²·мин⁻¹) в пределах
+    23&nbsp;%. Остаётся расхождение с измерением в свинцовом домике: там проникающая
+    компонента при экранировании падает примерно в 1,6&nbsp;раза, а модель даёт
+    постоянную — вероятная причина (не проверена расчётом) в том, что модель не
+    содержит вторичных, рождённых мюонами ВНЕ сборки, в перекрытии здания.</li>
+    <li>σ в формуле МДА — только пуассоновская счётная статистика. Дрейф усиления/
+    разрешения прибора на многосуточном наборе и нестационарность фона помещения за
+    неделю (радон, температура) не смоделированы — реальная МДА может быть хуже
+    показанной.</li>
+    <li>Сетка толщины — 9&nbsp;точек (5…100&nbsp;мм), без вкладышей Cd/Cu (роль
+    рентгеновской флуоресценции свинца ещё не посчитана) и без 2D-развёртки —
+    в разработке.</li>
+    <li>Между узлами сетки спектр интерполируется линейно по log(cps) — толщина
+    свинца физически не непрерывна в расчёте, только 9 реально посчитанных точек.</li>
+  </ul>
+</div>
+
+<footer class="bot">
+  <span id="fStamp"></span>
+</footer>
+
+</div>
+
+<script src="data.js"></script>
+<script>
+"use strict";
+const D = SHIELD_DATA;
+const NODES = D.nodes;               // отсортированы по pb при экспорте
+const NCH = D.nch, BIN = D.bin_kev;
+const ENERGIES = Array.from({length: NCH}, (_, i) => (i + 0.5) * BIN);
+const WIN = D.cs_window;              // [632.2, 691.2]
+const K_95 = 1.6449;
+
+function fmt(x, d){ return x.toLocaleString('ru', {minimumFractionDigits:d, maximumFractionDigits:d}); }
+
+// ---- узел сетки: слайдер Pb индексирует NODES напрямую (дискретно, честно
+// про то, что толщина не непрерывна физически в расчёте) ----
+const sPb = document.getElementById('sPb'), oPb = document.getElementById('oPb');
+sPb.max = NODES.length - 1;
+function pbNode(){ return NODES[+sPb.value]; }
+
+// ---- активность Cs-137: непрерывный множитель (отклик линеен по
+// построению — s_Cs137_per_bqkg уже "на 1 Бк/кг") ----
+const sCs = document.getElementById('sCs'), oCs = document.getElementById('oCs');
+// Верх диапазона — 5000 Бк/кг: указание оператора 12.08.2026, реальная
+// удельная активность цезия в чернике может доходить до этой величины
+// (измеренная проба дала 3340 Бк/кг, см. «Опорные числа» плана).
+const CS_MAX_BQKG = 5000;
+function csActivity(){
+  // лог-шкала: положение слайдера 0 -> 0, далее экспоненциально до CS_MAX
+  const v = +sCs.value;
+  if (v === 0) return 0;
+  return Math.exp(Math.log(CS_MAX_BQKG) * v / 1000);
+}
+
+// ---- время набора: лог-шкала 60с (1мин) .. 2 592 000с (30сут) ----
+const sT = document.getElementById('sT'), oT = document.getElementById('oT');
+const T_LO = 60, T_HI = 2592000;
+function countTime(){
+  const v = +sT.value / 1000;
+  return T_LO * Math.exp(Math.log(T_HI / T_LO) * v);
+}
+function fmtTime(s){
+  if (s < 3600) return (s/60).toFixed(0) + " мин";
+  if (s < 86400) return (s/3600).toFixed(1) + " ч";
+  return (s/86400).toFixed(1) + " сут";
+}
+
+function windowSum(arr){
+  let s = 0;
+  for (let i = 0; i < NCH; i++){
+    const e = ENERGIES[i];
+    if (e >= WIN[0] && e < WIN[1]) s += arr[i];
+  }
+  return s;
+}
+
+function detectionLimit(gross, bg, eps, I, m, t){
+  if (eps <= 0 || I <= 0 || m <= 0 || t <= 0) return null;
+  const sigma0 = Math.sqrt(Math.max(0,gross) + Math.max(0,bg)) / (eps*I*m*t);
+  return 2 * K_95 * sigma0;   // k_a=k_b=K_95 (KTA), см. mda_shield.py
+}
+
+// ---- отрисовка спектра ----
+const cvSpec = document.getElementById('cvSpec');
+function drawSpec(){
+  const node = pbNode();
+  const cs = csActivity();
+  const dpr = window.devicePixelRatio || 1;
+  const W = cvSpec.clientWidth, H = 320;
+  cvSpec.width = W*dpr; cvSpec.height = H*dpr;
+  const ctx = cvSpec.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+
+  const room = node.gamma.map((v,i)=>v + node.mu[i]);
+  const k40 = node.k40_per_bqkg.map(v => v * D.k_baseline_bqkg);
+  const csS = node.cs137_per_bqkg.map(v => v * cs);
+  const total = room.map((v,i)=>v + k40[i] + csS[i]);
+
+  const yMax = Math.max(...total, 1e-9) * 2;
+  const yMin = Math.max(yMax * 1e-6, 1e-9);
+  const pad = {l:52,r:14,t:10,b:28};
+  const pw = W-pad.l-pad.r, ph = H-pad.t-pad.b;
+  const xOf = e => pad.l + pw * e / (NCH*BIN);
+  const yOf = v => pad.t + ph * (1 - (Math.log10(Math.max(v,yMin)) - Math.log10(yMin)) / (Math.log10(yMax)-Math.log10(yMin)));
+
+  // окно 662
+  ctx.fillStyle = getCss('--win');
+  ctx.fillRect(xOf(WIN[0]), pad.t, xOf(WIN[1])-xOf(WIN[0]), ph);
+
+  // сетка Y (декады)
+  ctx.strokeStyle = getCss('--line'); ctx.fillStyle = getCss('--sub');
+  ctx.font = '11px sans-serif'; ctx.textAlign='right';
+  for (let e10 = Math.ceil(Math.log10(yMin)); e10 <= Math.floor(Math.log10(yMax)); e10++){
+    const y = yOf(Math.pow(10,e10));
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+    ctx.fillText('1e'+e10, pad.l-6, y+3);
+  }
+  ctx.textAlign='center';
+  for (let e = 0; e <= NCH*BIN; e += 500){
+    ctx.fillText(e, xOf(e), H-pad.b+14);
+  }
+
+  function stack(arr, color, alpha){
+    ctx.beginPath();
+    ctx.moveTo(xOf(0), yOf(yMin));
+    for (let i=0;i<NCH;i++) ctx.lineTo(xOf(ENERGIES[i]), yOf(arr[i]));
+    ctx.lineTo(xOf(NCH*BIN), yOf(yMin));
+    ctx.closePath();
+    ctx.globalAlpha = alpha; ctx.fillStyle = color; ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  stack(total, getCss('--cs'), 0.85);
+  stack(k40.map((v,i)=>v+room[i]), getCss('--k40'), 0.85);
+  stack(room, getCss('--room'), 0.9);
+
+  ctx.strokeStyle = getCss('--fg'); ctx.lineWidth = 1;
+  ctx.strokeRect(pad.l,pad.t,pw,ph);
+}
+function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+// ---- отрисовка МДА(pb) при текущем t + масса ----
+const cvMda = document.getElementById('cvMda');
+function drawMda(){
+  const t = countTime();
+  // Активность Cs-137 в фон окна 662 НЕ входит, и это не упущение:
+  // комптоновский край самого Cs-137 равен 2E²/(511+2E) = 477,6 кэВ, то есть
+  // лежит НИЖЕ окна 632-691 кэВ. В окно цезий даёт только собственный
+  // фотопик — искомый сигнал, а не фон. Класть искомый сигнал в фон при
+  // расчёте предела обнаружения нельзя (ISO 11929: фон = всё, кроме
+  // определяемой величины). Комптон K-40 (край 1243,6 кэВ) окно накрывает и
+  // потому учитывается. Формулировка плана «фон включает комптон самого
+  // цезия» в этом пункте неточна — проверено 13.08.2026.
+  const dpr = window.devicePixelRatio || 1;
+  const W = cvMda.clientWidth, H = 260;
+  cvMda.width = W*dpr; cvMda.height = H*dpr;
+  const ctx = cvMda.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+
+  const rows = NODES.map(n=>{
+    const room = windowSum(n.gamma) + windowSum(n.mu);
+    const k40 = windowSum(n.k40_per_bqkg) * D.k_baseline_bqkg;
+    const bg = room + k40;
+    const N = bg * t;
+    const ok = N >= D.n_min;
+    const mda = ok ? detectionLimit(N, N, D.eps_p_662, D.i_cs137, D.mass_kg_sample, t) : null;
+    return {pb: n.pb, mass: n.mass_kg, bg, N, ok, mda};
+  });
+
+  const pad = {l:56,r:56,t:14,b:28};
+  const pw = W-pad.l-pad.r, ph = H-pad.t-pad.b;
+  const pbMax = NODES[NODES.length-1].pb;
+  const xOf = pb => pad.l + pw*pb/pbMax;
+
+  const mdaVals = rows.filter(r=>r.ok).map(r=>r.mda);
+  const mdaMax = Math.max(...mdaVals, 10) * 1.15;
+  const yMda = v => pad.t + ph*(1 - v/mdaMax);
+  const massMax = Math.max(...rows.map(r=>r.mass)) * 1.1;
+  const yMass = v => pad.t + ph*(1 - v/massMax);
+
+  ctx.strokeStyle = getCss('--line');
+  ctx.fillStyle = getCss('--sub'); ctx.font='11px sans-serif'; ctx.textAlign='right';
+  for (let k=0;k<=4;k++){
+    const v = mdaMax*k/4, y = yMda(v);
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+    ctx.fillText(v.toFixed(0), pad.l-6, y+3);
+  }
+  ctx.textAlign='left';
+  for (let k=0;k<=4;k++){
+    const v = massMax*k/4;
+    ctx.fillText(v.toFixed(0), W-pad.r+6, yMass(v)+3);
+  }
+  ctx.textAlign='center';
+  NODES.forEach(n=>ctx.fillText(n.pb, xOf(n.pb), H-pad.b+14));
+
+  // масса — серая линия
+  ctx.beginPath();
+  rows.forEach((r,i)=>{ const x=xOf(r.pb), y=yMass(r.mass); i? ctx.lineTo(x,y): ctx.moveTo(x,y); });
+  ctx.strokeStyle = getCss('--sub'); ctx.lineWidth = 1.5; ctx.stroke();
+
+  // МДА — сплошная там, где N>=n_min, пунктир там где нет
+  ctx.lineWidth = 2.2; ctx.strokeStyle = getCss('--cs');
+  ctx.beginPath();
+  let started = false;
+  rows.forEach((r,i)=>{
+    if (!r.ok){ started=false; return; }
+    const x=xOf(r.pb), y=yMda(r.mda);
+    if (!started){ ctx.moveTo(x,y); started=true; } else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  rows.forEach(r=>{
+    if (!r.ok) return;
+    ctx.beginPath(); ctx.arc(xOf(r.pb), yMda(r.mda), 3, 0, 7); ctx.fillStyle=getCss('--cs'); ctx.fill();
+  });
+  // недостоверные узлы — маленький серый крестик
+  rows.forEach(r=>{
+    if (r.ok) return;
+    const x=xOf(r.pb), y=pad.t+ph-6;
+    ctx.strokeStyle=getCss('--sub'); ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(x-4,y-4); ctx.lineTo(x+4,y+4); ctx.moveTo(x-4,y+4); ctx.lineTo(x+4,y-4); ctx.stroke();
+  });
+
+  ctx.strokeStyle = getCss('--fg'); ctx.lineWidth=1;
+  ctx.strokeRect(pad.l,pad.t,pw,ph);
+
+  // числовая сводка для текущего pb
+  const cur = rows[+sPb.value];
+  document.getElementById('rMda').textContent = cur.ok ? fmt(cur.mda,1) : '—';
+  document.getElementById('rMda').className = 'num' + (cur.ok?'':' na');
+  document.getElementById('rN').textContent = fmt(cur.N,1) + (cur.ok?'':' (< '+D.n_min+')');
+  document.getElementById('rMass').textContent = fmt(cur.mass,2);
+  document.getElementById('rBg').textContent = cur.bg.toExponential(3);
+  document.getElementById('wT').classList.toggle('show', !cur.ok);
+}
+
+function redraw(){
+  oPb.textContent = pbNode().pb + ' мм';
+  const cs = csActivity();
+  oCs.textContent = cs < 1 ? cs.toFixed(2)+' Бк/кг' : cs.toFixed(0)+' Бк/кг';
+  oT.textContent = fmtTime(countTime());
+  drawSpec();
+  drawMda();
+}
+[sPb, sCs, sT].forEach(s => s.addEventListener('input', redraw));
+window.addEventListener('resize', redraw);
+redraw();
+
+// футер: дата экспорта + ревизия (задача-стандарт web-revision-footer)
+document.getElementById('fStamp').innerHTML =
+  'Экспорт данных <code>' + D.generated + '</code>, ревизия <code>' + D.git + '</code>. ' +
+  'Geant4 11.2.1, RadiaCode-103, сосуд m200. Сетка толщины: ' + NODES.map(n=>n.pb).join(', ') + ' мм.';
+</script>
+</body>
+</html>

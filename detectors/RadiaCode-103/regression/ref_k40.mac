@@ -1,0 +1,17 @@
+/run/verbose 0
+/event/verbose 0
+/tracking/verbose 0
+/run/printProgress 0
+
+/gps/particle gamma
+/gps/pos/type Plane
+/gps/pos/shape Square
+/gps/pos/halfx 4.9 mm
+/gps/pos/halfy 4.9 mm
+/gps/pos/centre 0 0 -40 mm
+/gps/ang/type planar
+/gps/direction 0 0 1
+
+/gps/ene/mono 1460.8 keV
+/rc/outFile D:/g4work/regression/ref_k40.csv
+/run/beamOn 30000

@@ -1,0 +1,11 @@
+# разложение отклика по каналам, канал ставится по истории процессов события
+# src_sha1 = 7de2c887d65b
+# git_describe = asn16-2026-08-06-response-127-g8df2a12-dirty-untracked
+# particle = gamma
+# E_prim_keV = nan
+# N_primaries = 30000000
+# N_with_signal = 0
+# matrix = -
+# bin_keV = 1.000
+# правило приоритета: пары -> вылет первичного после комптона -> рентген -> тормозное -> без вылета
+E_keV,photo,compt_full,compt_esc1,compt_escN,xray_esc,brems_esc,pair_full,pair_esc1,pair_esc2,external,other

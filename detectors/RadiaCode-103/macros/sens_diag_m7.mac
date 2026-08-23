@@ -1,0 +1,31 @@
+# #SHIELD-16 диагностика: sens_cs137, diag=7 (всё -> воздух, голый кристалл).
+/run/verbose 0
+/event/verbose 0
+/tracking/verbose 0
+/run/printProgress 0
+
+/gps/particle gamma
+/gps/ene/type Mono
+/gps/ene/mono 0.662 MeV
+/gps/pos/type Plane
+/gps/pos/shape Circle
+/gps/pos/radius 40 mm
+
+/gps/pos/rot1 1 0 0
+/gps/pos/rot2 0 0 1
+/gps/pos/centre 0 -100 0 mm
+/gps/direction 0 1 0
+/rc/outFile sens_diag_m7_front.csv
+/run/beamOn 400000
+
+/gps/pos/centre 0 100 0 mm
+/gps/direction 0 -1 0
+/rc/outFile sens_diag_m7_back.csv
+/run/beamOn 400000
+
+/gps/pos/rot1 1 0 0
+/gps/pos/rot2 0 1 0
+/gps/pos/centre 0 0 -100 mm
+/gps/direction 0 0 1
+/rc/outFile sens_diag_m7_nose.csv
+/run/beamOn 400000

@@ -158,12 +158,25 @@ void RCDetector::DefineMaterials() {
   abs->AddElement(H, 0.081);
   abs->AddElement(N, 0.068);
 
-  // Белая отражающая чашка: полимер с наполнителем TiO2 (ДОПУЩЕНИЕ по виду)
-  auto* refl = new G4Material("Reflector", 1.45 * g / cm3, 4);
-  refl->AddElement(C, 0.55);
-  refl->AddElement(H, 0.06);
-  refl->AddElement(O, 0.29);
-  refl->AddElement(Ti, 0.10);
+  // Отражатель кристалла — плёнка 3M ESR (Enhanced Specular Reflector).
+  // ИСТОЧНИК: оператор 20.08.2026 («кристалл обёрнут 3M ESR»; тефлон/ФУМ-лента
+  // на teardown-фото и видео — СТАРАЯ ревизия прибора, не измеренный экземпляр).
+  // ПАСПОРТ 3M (multimedia.3m.com/mws/media/2111087O/, дублируется Mouser
+  // SS2-792806): толщина 65 мкм, specific gravity 1.29, «multi-layer polymer,
+  // non-metallic thin film construction, contains no metal» — металла нет.
+  // Состав взят как PET (C10H8O4) — основа многослойной оптической плёнки.
+  //
+  // ЧТО БЫЛО ДО 20.08 и почему это дефект (#SHIELD-27): здесь стоял
+  // «Reflector» 1.45 г/см³ с 10 % Ti по массе, толщиной 1.25 мм — ДОПУЩЕНИЕ
+  // «по виду белой чашки» на фото. Массовая толщина на пути фотона к кристаллу
+  // была 1.45 * 0.125 = 0.181 г/см² против реальных 1.29 * 0.0065 = 0.0084,
+  // то есть ЗАВЫШЕНА В 21.6 РАЗА, плюс титан (Z=22) давал фотоэффект на мягких
+  // фотонах, которого в ESR нет вовсе. Оба фактора глушили счёт в 50-150 кэВ —
+  // в ту же сторону, что наблюдаемый дефицит (#SHIELD-24, #SHIELD-20).
+  auto* refl = new G4Material("Reflector", 1.29 * g / cm3, 3);
+  refl->AddElement(C, 10);
+  refl->AddElement(H, 8);
+  refl->AddElement(O, 4);
 
   auto* pla = new G4Material("PLA", 1.24 * g / cm3, 3);   // C3H4O2
   pla->AddElement(C, 3);
@@ -309,11 +322,40 @@ void RCDetector::BuildDevice(G4LogicalVolume* world) {
   const double noseTip = -d.crystalZ0;             // -12.00, кристалл в нуле
   const double cryY = -(hy - d.crystalToFace);     // -0.55
 
+  // #SHIELD-16 диагностика: fDiagMask==0 -> побитово то же поведение, что было.
+  const auto matOrAir = [&](const G4String& nm, unsigned bit) {
+    return (fDiagMask & bit) ? Mat("G4_AIR") : Mat(nm);
+  };
+
   // корпус
   auto* caseS = Capsule("case", hx, hy, d.caseEdgeR, d.caseZ);
   const double caseOZ = noseTip + CapOriginFromTip(hy, d.caseZ);
-  auto* caseLV = Put(caseS, Mat("ABS"), "case", world, G4ThreeVector(0, 0, caseOZ),
-                     G4Colour(0.25, 0.25, 0.28, 0.30));
+
+  // P-008: горизонтальная посадка. Поворот на −90° вокруг X переводит
+  // собственную ось прибора (+Z, к хвосту) в −Y мировой системы, а ось −Y
+  // прибора (сторона дисплея/SiPM, к которой кристалл ближе на 0,55 мм) — в
+  // −Z мира, то есть «кристаллом вниз», как и лежал прибор у оператора.
+  // fLiftMm поднимает по Z НАЧАЛО ОБЪЁМА "case", то есть середину корпуса по
+  // толщине. Кристалл при этом оказывается на 0,55 мм НИЖЕ (cryY = -(hy -
+  // crystalToFace)), а не ровно на fLiftMm — прежняя редакция этого
+  // комментария обещала «центр кристалла на fLiftMm» и была неверна;
+  // расхождение поймано замером построенной геометрии (P-013, shieldrun.cc).
+  // Пересчёт «физический зазор -> fLiftMm» живёт в shieldrun.cc и опирается
+  // именно на caseY/2, а не на crystalToFace.
+  G4RotationMatrix* caseRot = nullptr;
+  G4ThreeVector casePos(0, 0, caseOZ);
+  if (fHorizontal) {
+    caseRot = new G4RotationMatrix();
+    caseRot->rotateX(-90. * deg);
+    // После поворота собственная +Z прибора смотрит в −Y мира: то, что было
+    // смещением вдоль оси корпуса, становится смещением по Y; подъём над полом
+    // задаётся по Z и к оси корпуса отношения не имеет.
+    casePos = G4ThreeVector(0, -caseOZ, fLiftMm);
+  } else if (fLiftMm != 0.0) {
+    casePos = G4ThreeVector(0, 0, caseOZ + fLiftMm);
+  }
+  auto* caseLV = Put(caseS, matOrAir("ABS", 1), "case", world, casePos,
+                     G4Colour(0.25, 0.25, 0.28, 0.30), caseRot);
 
   // внутренняя полость
   const double ihx = hx - d.wallSide, ihy = hy - d.wallFace;
@@ -328,15 +370,20 @@ void RCDetector::BuildDevice(G4LogicalVolume* world) {
   // мировые координаты -> система полости
   const auto inAir = [&](double y, double z) { return G4ThreeVector(0, y, z - airOZ); };
 
-  // Белая отражающая чашка: закрывает кристалл со всех сторон, кроме -Y, где
-  // оставлено окно под фотоприёмник (моделируется плёнкой 0.05 мм).
+  // Отражающая обёртка (3M ESR): закрывает кристалл со всех сторон, кроме -Y,
+  // где оставлено окно под фотоприёмник.
+  // ПОСЛЕ #SHIELD-27 обёртка 0.065 мм и окно 0.05 мм почти равны по толщине —
+  // это НЕ ошибка: реальная плёнка тонкая, и разница «есть плёнка / окно» на
+  // массовой толщине даёт 0.0084 против 0.0065 г/см², то есть физически
+  // пренебрежима. Раздельные ryLo/ryHi сохранены, чтобы не менять геометрию
+  // построения (кристалл по-прежнему вложен в reflLV без пересечений).
   const double win = 0.05;
   const double hc = 0.5 * d.crystal;
   const double rx = hc + d.reflector;              // по X и Z
   const double ryLo = hc + win, ryHi = hc + d.reflector;   // по -Y и +Y
   const double reflYc = cryY + 0.5 * (ryHi - ryLo);
   auto* reflLV = Put(new G4Box("reflector", rx, 0.5 * (ryLo + ryHi), rx),
-                     Mat("Reflector"), "reflector", airLV, inAir(reflYc, 0.0),
+                     matOrAir("Reflector", 2), "reflector", airLV, inAir(reflYc, 0.0),
                      G4Colour(0.97, 0.97, 0.95, 0.55));
   fCrystalLV = Put(new G4Box("crystal", hc, hc, hc), Mat("G4_CESIUM_IODIDE"), "crystal",
                    reflLV, G4ThreeVector(0, cryY - reflYc, 0),
@@ -346,24 +393,24 @@ void RCDetector::BuildDevice(G4LogicalVolume* world) {
   const double yWin = cryY - ryLo;                 // наружная плоскость окна
   auto* rotY = new G4RotationMatrix();
   rotY->rotateX(90. * deg);                        // ось диска -> вдоль Y
-  Put(new G4Box("sipm", 0.5 * d.sipmSide, 0.5 * d.sipm, 0.5 * d.sipmSide), Mat("G4_Si"),
+  Put(new G4Box("sipm", 0.5 * d.sipmSide, 0.5 * d.sipm, 0.5 * d.sipmSide), matOrAir("G4_Si", 4),
       "sipm", airLV, inAir(yWin - 0.5 * d.sipm, 0.0), G4Colour(0.9, 0.7, 0.2));
-  Put(new G4Tubs("sipmPcb", 0., 0.5 * d.subDia, 0.5 * d.subT, 0., twopi), Mat("FR4"),
+  Put(new G4Tubs("sipmPcb", 0., 0.5 * d.subDia, 0.5 * d.subT, 0., twopi), matOrAir("FR4", 4),
       "sipmPcb", airLV, inAir(yWin - d.sipm - 0.5 * d.subT, 0.0),
       G4Colour(0.95, 0.95, 0.9), rotY);
 
   // Со стороны -Y к хвосту: дисплей у стенки, за ним основная плата.
   // Ширины дисплея и платы ограничены скруглением полости корпуса.
   const double yDisp = -ihy + 0.25 + 0.5 * d.dispT;
-  Put(Slab("display", d.dispX, d.dispT, d.dispZ0, d.dispZ1), Mat("G4_GLASS_PLATE"),
+  Put(Slab("display", d.dispX, d.dispT, d.dispZ0, d.dispZ1), matOrAir("G4_GLASS_PLATE", 4),
       "display", airLV, inAir(yDisp, 0.5 * (d.dispZ0 + d.dispZ1)),
       G4Colour(0.15, 0.15, 0.18, 0.7));
-  Put(Slab("pcb", d.pcbX, d.pcbT, d.pcbZ0, d.pcbZ1), Mat("FR4"), "pcb", airLV,
+  Put(Slab("pcb", d.pcbX, d.pcbT, d.pcbZ0, d.pcbZ1), matOrAir("FR4", 4), "pcb", airLV,
       inAir(yDisp + 0.5 * d.dispT + 0.5 * d.pcbT, 0.5 * (d.pcbZ0 + d.pcbZ1)),
       G4Colour(0.1, 0.45, 0.2));
 
   // Аккумулятор — в задней крышке, со стороны +Y.
-  Put(Slab("batt", d.battX, d.battT, d.battZ0, d.battZ1), Mat("LiPo"), "batt", airLV,
+  Put(Slab("batt", d.battX, d.battT, d.battZ0, d.battZ1), matOrAir("LiPo", 4), "batt", airLV,
       inAir(ihy - 0.50 - 0.5 * d.battT, 0.5 * (d.battZ0 + d.battZ1)),
       G4Colour(0.75, 0.7, 0.35));
 }

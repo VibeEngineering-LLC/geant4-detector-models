@@ -29,7 +29,8 @@ GRID_DIR = os.path.join(BUILD, "shield_grid")
 OUT_JS = os.path.join(HERE, "data.js")
 
 PB_NODES = [5, 10, 15, 20, 25, 30, 40, 50, 100]
-RCAV, HZCAV = 50.0, 90.0            # ShieldGeom defaults, PbShield.hh
+HXCAV, HYCAV, HZCAV = 75.0, 75.0, 192.5   # полость домика, мм (короб 150×150×385)
+WITH_LID = False                    # верх домика открыт — свинца сверху НЕТ
 PB_DENSITY_G_CM3 = 11.35            # G4_Pb NIST, сверено с логом shieldrun geom
                                      # (pb=20 -> 22.3926 кг = 1972.92 см³ × 11.35)
 K_BASELINE_BQKG = 250.0             # чистая ягода, постановка задачи
@@ -62,12 +63,19 @@ def read_csv(path):
 
 
 def pb_mass_kg(pb):
-    """Масса свинца, Cd=Cu=0 — та же формула, что PbShield.cc BuildShield
-    (аналитическая разность объёмов двух цилиндров), сверено с логом
-    shieldrun geom pb=20 -> 22.3926 кг."""
-    r_out, hz_out = (RCAV + pb) / 10.0, (HZCAV + pb) / 10.0   # см
-    r_cav, hz_cav = RCAV / 10.0, HZCAV / 10.0
-    v_cm3 = 2 * math.pi * (r_out ** 2 * hz_out - r_cav ** 2 * hz_cav)
+    """Масса свинца, Cd=Cu=0 — та же формула, что PbShield.cc BuildShield:
+    разность объёмов наружного габарита и полости, но КОРОБ, не цилиндр.
+
+    Вверх габарит растёт только при крышке (WITH_LID) — у открытого домика
+    стенки кончаются вровень с полостью. Сверено с логом shieldrun geom:
+    pb=50 nolid -> 18525 см³ -> 210,259 кг при NIST-плотности 11,35.
+    """
+    hx, hy = (HXCAV + pb) / 10.0, (HYCAV + pb) / 10.0          # см
+    hz_cav = HZCAV / 10.0
+    pb_cm = pb / 10.0
+    # полная высота наружного габарита: вниз всегда, вверх — только с крышкой
+    h_out = 2 * hz_cav + pb_cm + (pb_cm if WITH_LID else 0.0)
+    v_cm3 = 4 * hx * hy * h_out - 8 * (HXCAV / 10.0) * (HYCAV / 10.0) * hz_cav
     return v_cm3 * PB_DENSITY_G_CM3 / 1000.0
 
 

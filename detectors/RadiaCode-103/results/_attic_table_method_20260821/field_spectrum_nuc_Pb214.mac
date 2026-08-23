@@ -1,0 +1,38 @@
+# Единичный (1 Бк/кг) отклик серии nuc_Pb214, wallfield.exe
+/gps/particle gamma
+/gps/ene/type Arb
+/gps/hist/type arb
+/gps/hist/point 0.035000 4.342045e-05
+/gps/hist/point 0.045000 3.145397e-04
+/gps/hist/point 0.055000 9.519067e-04
+/gps/hist/point 0.065000 1.815881e-03
+/gps/hist/point 0.075000 1.880031e-03
+/gps/hist/point 0.085000 1.915106e-03
+/gps/hist/point 0.095000 1.935128e-03
+/gps/hist/point 0.105000 1.774102e-03
+/gps/hist/point 0.115000 1.457187e-03
+/gps/hist/point 0.125000 1.500937e-03
+/gps/hist/point 0.135000 1.460477e-03
+/gps/hist/point 0.145000 1.240921e-03
+/gps/hist/point 0.155000 1.214232e-03
+/gps/hist/point 0.165000 1.041022e-03
+/gps/hist/point 0.175000 7.580109e-04
+/gps/hist/point 0.185000 7.448478e-04
+/gps/hist/point 0.195000 6.558924e-04
+/gps/hist/point 0.205000 6.069296e-04
+/gps/hist/point 0.215000 5.736922e-04
+/gps/hist/point 0.225000 5.881761e-04
+/gps/hist/point 0.235000 5.017932e-04
+/gps/hist/point 0.245000 1.022521e-03
+/gps/hist/point 0.255000 4.790835e-04
+/gps/hist/point 0.265000 4.646177e-04
+/gps/hist/point 0.275000 3.892470e-04
+/gps/hist/point 0.285000 3.596736e-04
+/gps/hist/point 0.295000 1.998765e-03
+/gps/hist/point 0.305000 2.554048e-04
+/gps/hist/point 0.315000 1.735910e-04
+/gps/hist/point 0.325000 1.727748e-04
+/gps/hist/point 0.335000 2.157972e-04
+/gps/hist/point 0.345000 2.433746e-04
+/gps/hist/point 0.355000 3.811992e-03
+/gps/hist/inter Lin

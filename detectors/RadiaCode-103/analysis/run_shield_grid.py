@@ -25,6 +25,7 @@ rate = fluence_total(wallfield, S) * area_shield_outer(t) / 4, но площад
 """
 import math
 import os
+import re
 import subprocess
 import sys
 import time
@@ -50,6 +51,18 @@ GRID_DIR = os.path.join(BUILD, "shield_grid")
 
 NPRIM = 100_000
 IMPSTEP = 2.2
+# Геометрия домика — ЯВНО, а не из умолчаний ShieldGeom (PbShield.hh):
+# короб 150×150 в плане, 385 мм высотой, ОТКРЫТЫЙ сверху, сборка стоит на
+# дне полости. Правка умолчания в .hh иначе молча переопределяла бы уже
+# посчитанную сетку, а имена файлов остались бы прежними.
+HXCAV, HYCAV, HZCAV = 75.0, 75.0, 192.5
+# Верх домика. По умолчанию ОТКРЫТ — так стоит домик у оператора. Переключается
+# переменной окружения RC_SHIELD_LID=1, чтобы сравнительный прогон «а что даст
+# крышка» не требовал правки исходника (и не остался бы в нём по забывчивости).
+# На розыгрыш источника наличие крышки НЕ влияет — выпуклая оболочка замкнута в
+# любом случае; влияет на массу свинца и на канал сверху, см. PbShield.cc.
+WITH_LID = os.environ.get("RC_SHIELD_LID", "0") not in ("0", "", "no", "off")
+SEAT_FLOOR = 1
 # толщина/слой держим примерно постоянной (~6,25 мм/слой, как в
 # провалидированном pb=100/nshell=16 прогоне из задачи №2) — НЕ фиксированные
 # 16 слоёв на любую толщину: при pb=20 непрерывный спектр поля (много мягких
@@ -85,6 +98,32 @@ def bias_params(pb):
     return True, nshell, IMPSTEP
 
 
+def geom_args(pb, horiz=False, gap_mm=None, with_vessel=True):
+    """Ключи геометрии домика для shieldrun — один список на все режимы.
+
+    Собран в одном месте намеренно: trans и sample обязаны видеть ОДНУ и ту
+    же защиту, иначе отклик пробы считается сквозь одну геометрию, а фон —
+    сквозь другую, и разъезд ничем себя не проявит.
+
+    Умолчания аргументов воспроизводят прежнее поведение ПОБИТОВО (прибор
+    стоит вертикально на дне, сосуд m200 на месте): сетка толщин и отклик
+    пробы считались именно так. Посадку под конкретное измерение задаёт
+    вызывающий драйвер, см. run_bg_shield.py. gap_mm — ФИЗИЧЕСКИЙ зазор
+    дно полости -> низ корпуса (P-013), не внутренняя координата lift.
+    """
+    a = ["pb=%.2f" % pb, "hxcav=%.2f" % HXCAV, "hycav=%.2f" % HYCAV,
+         "hzcav=%.2f" % HZCAV, "seatfloor=%d" % SEAT_FLOOR]
+    if not WITH_LID:
+        a.append("nolid")
+    if horiz:
+        a.append("horiz=1")
+    if gap_mm is not None:
+        a.append("gap=%.2f" % gap_mm)
+    if not with_vessel:
+        a.append("novessel")
+    return a
+
+
 def trans_path(pb, s):
     return os.path.join(GRID_DIR, "trans_%s_pb%.0f.csv" % (s, pb))
 
@@ -111,8 +150,9 @@ def ensure_grid(pb_list):
                 raise SystemExit("нет %s — сначала fit_room_field.py gen" % specmac)
             if not os.path.exists(tp):
                 do_bias, nshell, impstep = bias_params(pb)
-                args = ["trans", "pb=%.2f" % pb, "nprim=%d" % NPRIM,
-                       "specmac=%s" % specmac, "out=%s" % tp]
+                args = (["trans"] + geom_args(pb)
+                        + ["nprim=%d" % NPRIM, "specmac=%s" % specmac,
+                           "out=%s" % tp])
                 if do_bias:
                     args += ["bias", "impstep=%.2f" % impstep, "nshell=%d" % nshell]
                 t0 = time.time()
@@ -130,8 +170,14 @@ def ensure_grid(pb_list):
                 # на pb=100 даёт 1461 независимую выборку вместо 2 сырых при
                 # той же ожидаемой сумме — не смещает среднее, снижает шум.
                 t0 = time.time()
-                rc = run(["replay", "in=%s" % tp, "bias", "crystep=%.2f" % CRYSTEP,
-                         "out=%s" % rp], rp + ".log")
+                # geom_args обязателен и здесь: стадия 2 воспроизводит записи
+                # стадии 1 ВНУТРИ защиты, и если она построит другой домик
+                # (например с крышкой, как велят умолчания ShieldGeom), то
+                # точки старта окажутся не там, где были записаны, — молча,
+                # без единой диагностики.
+                rc = run(["replay"] + geom_args(pb)
+                         + ["in=%s" % tp, "bias", "crystep=%.2f" % CRYSTEP,
+                            "out=%s" % rp], rp + ".log")
                 print("[replay] %s pb=%.0f  rc=%d  %.1fс" % (s, pb, rc, time.time() - t0),
                       flush=True)
                 if rc != 0:
@@ -161,9 +207,25 @@ def ensure_grid(pb_list):
 # всей статистике спектра), а не поканально: даже при 10⁷ первичных в окне
 # 632-691 кэВ набирается порядка 19 отсчётов.
 MU_GRID_DIR = os.path.join(BUILD, "musat2", "grid")
-MU_R_DISK_MM = 700.0
-A_MU = 315.2          # мюонов/с через диск R=700 мм, ± 44,5 (14 %)
-A_MU_SD = 44.5
+# ПЕРЕСМОТРЕНО 15.08.2026 на коробчатом домике (#SHIELD-8, #SHIELD-9).
+#
+# Радиус. Развёртка по 4e6 первичных на точку дала X = pi*R^2*eff:
+#   R=700 -> 2,013 (4,4 %) | R=1000 -> 2,498 (5,6 %) | R=1400 -> 2,448 (7,9 %)
+# То есть полка лежит между 1000 и 1400 (разница 0,050 +- 0,239), а прежние
+# 700 мм ЗАНИЖАЛИ отклик на 19 % (2,9 sigma). Насыщение проверялось раньше на
+# цилиндрическом домике, чей габарит был вдвое меньше нынешнего.
+MU_R_DISK_MM = 1000.0
+# Амплитуда. Прежние A_MU=315,2 +- 44,5 ПОДБИРАЛИСЬ под измеренный открытый
+# фон, причём при неверном розыгрыше углов (#SHIELD-9: разыгрывалась
+# интенсивность cos^2, а нужен поток через горизонтальную площадку, cos^3) —
+# то есть подгонка впитала в себя ошибку розыгрыша. Оба основания отпали, и
+# амплитуда взята АПРИОРНОЙ, ровно как концентрации бетона по UNSCEAR:
+# интегральный поток мюонов на горизонтальную поверхность на уровне моря
+# ~1 мюон/(см^2*мин) = 0,0167 см^-2 c^-1 (PDG). Свободных параметров в
+# мюонной компоненте больше нет.
+J_MU_PDG = 0.0167     # мюон/(см^2 * с), горизонтальная поверхность, уровень моря
+A_MU = J_MU_PDG * math.pi * (MU_R_DISK_MM / 10.0) ** 2   # мюонов/с через диск
+A_MU_SD = 0.0        # априорное число: своей статистической ошибки не имеет
 
 
 def muon_path(pb):
@@ -196,8 +258,9 @@ def ensure_sample_grid(pb_list):
             if os.path.exists(sp):
                 continue
             t0 = time.time()
-            rc = run(["sample", "pb=%.2f" % pb, "nuc=%s" % nuc,
-                     "nprim=%d" % NPRIM_SAMPLE, "out=%s" % sp], sp + ".log")
+            rc = run(["sample"] + geom_args(pb)
+                     + ["nuc=%s" % nuc, "nprim=%d" % NPRIM_SAMPLE,
+                        "out=%s" % sp], sp + ".log")
             print("[sample] %s pb=%.0f  rc=%d  %.1fс" % (nuc, pb, rc, time.time() - t0),
                   flush=True)
             if rc != 0:
@@ -215,13 +278,26 @@ def s_cps_per_bqkg(pb, nuc):
 
 
 def read_trans_header(path):
+    """Все пары key=value из шапки trans, включая многоключевые строки.
+
+    Шапка пишет и одиночные пары («# src_sha1 = …», «# N_primaries_stage1=…»),
+    и строку сразу с десятью ключами (pb/cu/cd/e_in_keV/hxOut/hyOut/hzOut/
+    zCav/S_mm2/lid). Прежний разбор резал строку по ПЕРВОМУ «=» и клал в
+    meta мусор вида {"pb": "50.00 cu=0.00 cd=0.00 …"}: всё, кроме первого
+    ключа строки, было недоступно — из-за чего площадь и приходилось
+    пересчитывать здесь своей копией формулы.
+    """
     meta = {}
     for line in open(path, encoding="utf-8"):
         if not line.startswith("#"):
             break
-        if "=" in line:
-            k, v = line[1:].split("=", 1)
-            meta[k.strip()] = v.strip()
+        body = re.sub(r"\s*=\s*", "=", line[1:].strip())
+        for tok in body.split():
+            if "=" not in tok:
+                continue
+            k, v = tok.split("=", 1)
+            if k and v:
+                meta[k] = v
     return meta
 
 
@@ -229,13 +305,18 @@ def b_room_gamma_cps(pb, amps):
     """-> (энергия[1 кэВ каналы], cps) — взвешенная сумма K+Ra+Th сквозь
     защиту толщиной pb (Cd=Cu=0), в имп/с на канал кристалла.
 
-    rOut/hzOut НЕ читаются из шапки trans (там одна строка с несколькими
-    key=value через пробел, read_trans_header их не разбирает) — пересчитаны
-    напрямую из ShieldGeom по умолчанию (PbShield.hh: rCav=50, hzCav=90;
-    при cd=cu=0 внешний габарит = rCav+pb, hzCav+pb — та же арифметика
-    стыка слоёв, что в PbShield.cc BuildShield()).
+    Площадь наружной поверхности защиты берётся ГОТОВОЙ из шапки trans
+    (ключ S_mm2) — единственный знаменатель для Ф=4N/S. Своей копии формулы
+    здесь больше нет: у короба наружный габарит несимметричен по осям и
+    зависит от того, строилась ли верхняя крышка, так что дубликат формулы
+    разъезжается с C++ молча. Прежний пересчёт по (rCav+pb) описывал
+    цилиндр и на коробчатом домике даёт заведомо неверный знаменатель.
+
+    Площадь берётся ПОЛНОГО замкнутого габарита и при открытом верхе тоже:
+    тождество Коши Ф=4N/S требует выпуклой охватывающей поверхности, а
+    выпуклая оболочка защиты остаётся замкнутым параллелепипедом
+    независимо от наличия свинцовой крышки (см. shieldrun.cc, BoxSurfaceGun).
     """
-    RCAV, HZCAV = 50.0, 90.0
     n_ch = 3201
     total = np.zeros(n_ch)
     for s in SERIES:
@@ -247,10 +328,20 @@ def b_room_gamma_cps(pb, amps):
         n_stage1 = float(meta_t.get("N_primaries_stage1", NPRIM))
         _meta_r, hist_r = rcspec.read_spec(rp)   # взвешенный (Σw) отклик кристалла
 
+        if "S_mm2" not in meta_t:
+            raise SystemExit(
+                "в шапке %s нет ключа S_mm2 — файл посчитан старым shieldrun "
+                "(цилиндрическая защита). Удалите его и пересчитайте: молча "
+                "подставить площадь короба к цилиндрическому прогону нельзя."
+                % tp)
+        if meta_t.get("lid", "on") != ("on" if WITH_LID else "off"):
+            raise SystemExit(
+                "%s посчитан с lid=%s, а сетка настроена на lid=%s — это "
+                "РАЗНЫЕ домики (масса свинца и канал сверху), смешивать "
+                "нельзя" % (tp, meta_t.get("lid"), "on" if WITH_LID else "off"))
         e_flu, flu = frf.read_wallfield(frf.wf_csv_path(s))
         fluence_total = flu.sum()
-        r_cm, hz_cm = (RCAV + pb) / 10.0, (HZCAV + pb) / 10.0
-        area = 2 * math.pi * r_cm * (r_cm + 2 * hz_cm)
+        area = float(meta_t["S_mm2"]) / 100.0   # мм² -> см², как fluence [см^-2]
         rate = fluence_total * area / 4.0   # первичных/с на ГРАНИЦЕ защиты (stage 1)
         t_run = n_stage1 / rate             # с, эквивалент N_primaries_stage1 первичных
 

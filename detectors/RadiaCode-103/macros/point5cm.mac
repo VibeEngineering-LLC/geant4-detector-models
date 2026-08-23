@@ -1,0 +1,28 @@
+# Точечный источник Cs-137 на 5 см — сверка с коэффициентом BecqMoni
+# «Point source 5 cm» = 5539 Бк/(имп/с) в окне 562-762 кэВ.
+# Геометрия простейшая: ни сосуда, ни пробы, ни самопоглощения.
+# Источник изотропный, гамма 662 кэВ; на распад Cs-137 их 0,851 —
+# пересчёт делает разбор, здесь считаем НА КВАНТ.
+# Расстояние отсчитывается двояко (от центра кристалла и от корпуса),
+# поэтому считаем оба варианта и смотрим, какой даёт 5539.
+# Запуск:  rc_curves point5cm.mac bare
+/run/verbose 0
+/event/verbose 0
+/tracking/verbose 0
+/run/printProgress 0
+
+/gps/particle gamma
+/gps/ene/type Mono
+/gps/ene/mono 0.662 MeV
+/gps/pos/type Point
+/gps/ang/type iso
+
+# --- 50 мм от ЦЕНТРА КРИСТАЛЛА (кристалл в начале координат) ---
+/gps/pos/centre 0 -50 0 mm
+/rc/outFile pt5_fromcrystal.csv
+/run/beamOn 20000000
+
+# --- 50 мм от ГРАНИ КОРПУСА со стороны дисплея (грань в y = -8.75) ---
+/gps/pos/centre 0 -58.75 0 mm
+/rc/outFile pt5_fromcase.csv
+/run/beamOn 20000000

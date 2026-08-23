@@ -4,8 +4,12 @@ project(rc_curves CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# find_package(Geant4) недоступен: в prebuilt-сборке CERN нет Geant4Config.cmake,
-# линкуем напрямую по сгенерированным import-библиотекам (см. скилл geant4-win-native).
+# Линкуемся напрямую списком import-библиотек, а не через find_package(Geant4).
+# ПРИЧИНА НЕ В ТОМ, что конфига нет: в prebuilt CERN 11.2.1 (WIN32-VC17.7.6-10)
+# и .lib, и lib/cmake/Geant4/Geant4Config.cmake на месте — прежний комментарий
+# здесь утверждал обратное и был неверен (проверено 15.08.2026). Прямая
+# линковка оставлена намеренно: она не зависит от того, полный архив у
+# собирающего или урезанный, и требует от него ровно одного — GEANT4_ROOT.
 if(DEFINED ENV{GEANT4_ROOT} AND NOT DEFINED G4ROOT)
   set(G4ROOT "$ENV{GEANT4_ROOT}" CACHE PATH "Geant4 root")
 endif()
@@ -163,3 +167,24 @@ foreach(m ${RC_MACROS})
   get_filename_component(n ${m} NAME)
   configure_file(${m} ${CMAKE_BINARY_DIR}/${n} COPYONLY)
 endforeach()
+
+add_executable(cosmicem cosmicem.cc RCDetector.cc)
+target_include_directories(cosmicem PRIVATE "${CMAKE_BINARY_DIR}")
+target_include_directories(cosmicem PRIVATE "${G4ROOT}/include/Geant4")
+target_link_libraries(cosmicem PRIVATE ${G4_IMPORT_LIBS})
+target_compile_definitions(cosmicem PRIVATE G4LIB_BUILD_DLL WIN32 NOMINMAX _USE_MATH_DEFINES)
+if(MSVC)
+  target_compile_options(cosmicem PRIVATE /EHsc /MD /bigobj /utf-8)
+endif()
+
+# #FIT-1 D-006 Stage-1 (22.08.2026): проверка light-collection tailing. Своя
+# минимальная геометрия, RCDetector.cc НЕ линкуется (не переиспользует боевую
+# геометрию намеренно - см. _spec_opticalcheck.md).
+add_executable(opticalcheck opticalcheck.cc)
+target_include_directories(opticalcheck PRIVATE "${CMAKE_BINARY_DIR}")
+target_include_directories(opticalcheck PRIVATE "${G4ROOT}/include/Geant4")
+target_link_libraries(opticalcheck PRIVATE ${G4_IMPORT_LIBS})
+target_compile_definitions(opticalcheck PRIVATE G4LIB_BUILD_DLL WIN32 NOMINMAX _USE_MATH_DEFINES)
+if(MSVC)
+  target_compile_options(opticalcheck PRIVATE /EHsc /MD /bigobj /utf-8)
+endif()

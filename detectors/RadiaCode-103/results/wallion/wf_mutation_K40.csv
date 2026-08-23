@@ -1,0 +1,10 @@
+# поле ЕРН в помещении: флюенс в воздушной полости
+# src_sha1 = cf06b8931f7f
+# git_describe = asn16-2026-08-06-response-127-g8df2a12-dirty-untracked
+# build = Aug 21 2026 16:05:39
+# nuclide = K40, 1 Bq/kg parent, rho 2.30 (nuclide template, pipeline method 1)
+# R_wall_cm = 80.0  R_cav_cm = 20.0
+# N = 50000
+# Sv_total_per_cm3_s = 2.300000e-03
+# fluence_total_cm2_s = 0.000000e+00
+E_keV,fluence_cm2_s

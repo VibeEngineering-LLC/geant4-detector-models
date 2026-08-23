@@ -65,6 +65,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 #include <vector>
 
 namespace {
@@ -118,7 +119,11 @@ double SampleEnergyGeV() {
 // ~40 мм по CYL_M200 из fit_room_field.py, здесь R_DISK шире вдвое ради
 // косых треков при не самом малом угле).
 const double Z_DISK = 130.0;   // мм, выше хвоста прибора (111 мм)
-const double R_DISK = 70.0;    // мм
+// 20.08.2026: не const — переопределяется ключом rdisk=<мм> (argv[3]).
+// R=70 обрезает наклонные треки (до кристалла долетают только <~28° от
+// вертикали): форма континуума 700-2400 занижена на 16-27 % против диска
+// R=1000 (сверено по musat_box). Дефолт 70 — прежнее поведение.
+double R_DISK = 70.0;          // мм
 
 class MuGun : public G4VUserPrimaryGeneratorAction {
   G4ParticleGun fGun{1};
@@ -133,8 +138,16 @@ public:
     fGun.SetParticlePosition(
         G4ThreeVector(r * std::cos(ph), r * std::sin(ph), Z_DISK * mm));
 
-    // угол: cosT = u^(1/3) -> P(cosT) ~ cosT^2 (см. разбор в шапке файла)
-    const double cosT = std::cbrt(G4UniformRand());
+    // Угол — для ПОТОКА ЧЕРЕЗ ГОРИЗОНТАЛЬНЫЙ ДИСК, не для интенсивности.
+    // I(θ) ~ cos²θ задана на площадку, перпендикулярную треку; пересекающих
+    // горизонтальную площадку приходится dN ~ I(θ)·cosθ·dΩ ~ cos³θ·sinθ·dθ,
+    // то есть p(cosθ) ~ cos³θ и cosθ = u^(1/4). До 15.08.2026 здесь стояло
+    // cbrt(u) (p ~ cos²θ) — мюоны стартовали наклоннее реальных, а наклонный
+    // мюон проходит больше вещества и оставляет больший депозит, так что
+    // искажалась и ФОРМА континуума, которую NNLS-подгонка амплитуды не
+    // исправляет. Тот же розыгрыш в shieldrun.cc MuGun — правлены оба, иначе
+    // открытый фон и фон сквозь защиту считались бы разными источниками.
+    const double cosT = std::pow(G4UniformRand(), 0.25);   // p(cosT) ~ cosT^3
     const double sinT = std::sqrt(std::max(0.0, 1.0 - cosT * cosT));
     const double phd = twopi * G4UniformRand();
     // вниз: -z
@@ -217,6 +230,14 @@ public:
 int main(int argc, char** argv) {
   BuildEnergyTable();
   const long n = (argc > 1) ? std::atol(argv[1]) : 2000000;
+  // rdisk=<мм> — радиус диска источника (см. комментарий у R_DISK);
+  // seed=<n> — зерно ГСЧ: без него ПАРАЛЛЕЛЬНЫЕ прогоны идентичны побайтно
+  // (поймано 20.08: 8 процессов дали по 14141 попаданий — один поток чисел).
+  for (int i = 3; i < argc; ++i) {
+    const std::string a = argv[i];
+    if (a.rfind("rdisk=", 0) == 0) R_DISK = std::atof(a.c_str() + 6);
+    else if (a.rfind("seed=", 0) == 0) G4Random::setTheSeed(std::atol(a.c_str() + 5));
+  }
 
   // FTFP_BERT — не EmStandardPhysics: мюону нужны ионизация+тормозное+пары
   // (доминируют в депозите) и мюон-ядерные (второстепенно), FTFP_BERT

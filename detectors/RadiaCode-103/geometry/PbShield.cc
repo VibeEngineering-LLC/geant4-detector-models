@@ -1,4 +1,4 @@
-// Реализация цилиндрической свинцовой защиты. Разбор решений — в PbShield.hh.
+// Реализация ПРЯМОУГОЛЬНОЙ свинцовой защиты. Разбор решений — в PbShield.hh.
 #include "PbShield.hh"
 
 #include "G4Box.hh"
@@ -59,9 +59,28 @@ RCShieldDetector::RCShieldDetector(bool withVessel, bool withShield,
       fWithDevice(withDevice) {}
 
 // ---------------------------------------------------------------------------
+// Единственное место, где живёт формула посадки полости на дно. И Construct(),
+// и внешний код (мюонный блок shieldrun.cc) обязаны спрашивать её здесь, а не
+// повторять у себя: расхождение двух копий такой формулы не упало бы ошибкой,
+// а тихо сместило бы источник относительно геометрии.
+double RCShieldDetector::PlannedZCav() const {
+  if (!fSh.seatOnFloor || !fWithDevice) return fSh.zCav;
+  const Extent as = AssemblyExtent(fDev, fVes, fWithVessel);
+  return as.zLo + fSh.hzCav;
+}
+
+double RCShieldDetector::PlannedOuterR() const {
+  const double hx = PlannedOuterHx(), hy = PlannedOuterHy();
+  return std::sqrt(hx * hx + hy * hy);
+}
+
+// ---------------------------------------------------------------------------
 void RCShieldDetector::BuildShield(G4LogicalVolume* world) {
   const ShieldGeom& s = fSh;
 
+  // Посадка полости на дно (seatOnFloor) уже сделана в Construct() — там она
+  // нужна раньше, чтобы по правильному zCav посчитать размеры мира.
+  //
   // --- проверка вместимости: отказ, а не молчаливо усечённая геометрия ------
   // Для стадии 1 (fWithDevice=false) полость пуста по построению — проверять
   // нечего, а AssemblyExtent на голом DeviceGeom дала бы ложный отказ.
@@ -69,12 +88,22 @@ void RCShieldDetector::BuildShield(G4LogicalVolume* world) {
   Extent ex{0, zLoCav, zHiCav};
   if (fWithDevice) {
     ex = AssemblyExtent(fDev, fVes, fWithVessel);
-    if (ex.r > s.rCav || ex.zLo < zLoCav || ex.zHi > zHiCav) {
+    // Сборка в плане КРУГЛАЯ (радиус ex.r), полость ПРЯМОУГОЛЬНАЯ: круг
+    // вписывается, если радиус не больше меньшей полуширины.
+    const double rFit = std::min(s.hxCav, s.hyCav);
+    // Допуск. При seatOnFloor пол полости ВЫЧИСЛЯЕТСЯ как (zLo + hzCav) - hzCav,
+    // а такая пара операций в double не возвращает zLo побитово. Без допуска
+    // геометрия, где сборка стоит ровно на дне — то есть штатная, — падала бы
+    // с SHIELD_TOO_SMALL на последнем бите мантиссы. 1 нм заведомо меньше любого
+    // физически осмысленного зазора и заведомо больше ошибки округления на
+    // числах порядка сотен миллиметров.
+    const double eps = 1e-6;   // мм
+    if (ex.r > rFit + eps || ex.zLo < zLoCav - eps || ex.zHi > zHiCav + eps) {
       std::ostringstream m;
       m << "прибор с сосудом не помещается в полость защиты. "
         << "занято: r до " << ex.r << ", z от " << ex.zLo << " до " << ex.zHi
-        << " мм; полость: r " << s.rCav << ", z от " << zLoCav << " до "
-        << zHiCav << " мм";
+        << " мм; полость: " << 2 * s.hxCav << " x " << 2 * s.hyCav
+        << " мм в плане, z от " << zLoCav << " до " << zHiCav << " мм";
       G4Exception("RCShieldDetector::BuildShield", "SHIELD_TOO_SMALL",
                   FatalException, m.str().c_str());
     }
@@ -94,36 +123,64 @@ void RCShieldDetector::BuildShield(G4LogicalVolume* world) {
       layers.push_back({d, Nist("G4_Pb"), 'p', G4Colour(0.35, 0.35, 0.40)});
   }
 
-  double r = s.rCav, h = s.hzCav;
+  // Границы слоя по оси ведём отдельными координатами, а не полувысотой.
+  // ПОЧЕМУ. Наращивать h += d с каждым слоем правильно только для ЗАМКНУТОЙ
+  // оболочки. При открытом верхе расти вверх нечему: у реального домика
+  // стенки кончаются вровень с полостью, сверху ничего нет. Полувысота дала бы
+  // симметричный рост в обе стороны, и стенки поднялись бы над полостью на
+  // полную толщину свинца — модель выросла бы до 485 мм наружной высоты и
+  // 221 кг вместо 435 мм и 210 кг. Поймано сверкой с массой, названной
+  // оператором.
+  double hx = s.hxCav, hy = s.hyCav;
+  double zLo = s.zCav - s.hzCav;      // низ полости, растёт ВНИЗ с каждым слоем
+  double zHi = s.zCav + s.hzCav;      // верх: растёт вверх ТОЛЬКО при крышке
   double vPb = 0, vCd = 0, vCu = 0;   // см³, считаются по построенным телам
-  double vLidSkipped = 0;             // см³ непостроенных крышек (fWithLid=false)
 
   for (size_t k = 0; k < layers.size(); ++k) {
     const Layer& L = layers[k];
-    const double rOut = r + L.d, hOut = h + L.d;
+    const double d = L.d;
+    const double hxOut = hx + d, hyOut = hy + d;
+    const double zLoOut = zLo - d;
+    const double zHiOut = fWithLid ? (zHi + d) : zHi;
+    // Стенки занимают по оси РОВНО [zLo, zHi] — высоту полости этого слоя.
+    // Дно ложится снаружи снизу, крышка снаружи сверху, поэтому тянуть стенку
+    // до zHiOut нельзя: она перекроется с крышкой (поймано самопроверкой
+    // объёма на закрытой геометрии — 21900 см³ по телам против 21650
+    // аналитических; на открытой ошибка не проявлялась, крышки-то нет).
+    const double zc = 0.5 * (zLo + zHi);
+    const double h = 0.5 * (zHi - zLo);
     const int depth = static_cast<int>(k);
 
-    auto place = [&](G4VSolid* sol, const G4String& nm, double z) {
+    auto place = [&](G4VSolid* sol, const G4String& nm, const G4ThreeVector& p) {
       auto* lv = new G4LogicalVolume(sol, L.mat, nm);
       lv->SetVisAttributes(new G4VisAttributes(L.col));
-      auto* pv = new G4PVPlacement(nullptr, G4ThreeVector(0, 0, z * mm), lv, nm,
-                                   world, false, 0, true);
+      auto* pv = new G4PVPlacement(nullptr, p, lv, nm, world, false, 0, true);
       fLayerPV.push_back(pv);
       fLayerDepth.push_back(depth);
       return sol->GetCubicVolume() / cm3;
     };
 
     const char* tag = (L.tag == 'p') ? "Pb" : (L.tag == 'd' ? "Cd" : "Cu");
-    std::ostringstream side, bot, top;
-    side << "sh" << k << "_" << tag << "_side";
-    bot  << "sh" << k << "_" << tag << "_bot";
-    top  << "sh" << k << "_" << tag << "_top";
+    auto nm = [&](const char* part) {
+      std::ostringstream o;
+      o << "sh" << k << "_" << tag << "_" << part;
+      return o.str();
+    };
 
+    // Стенки по X берутся во всю ширину слоя (hy + d), стенки по Y — только по
+    // внутренней (hx): углы тогда закрыты ровно один раз. Симметрию по знаку
+    // разворачиваем циклом, чтобы четыре тела не разошлись опечаткой.
     double v = 0;
-    v += place(new G4Tubs(side.str(), r * mm, rOut * mm, h * mm, 0., twopi),
-               side.str(), s.zCav);
-    v += place(new G4Tubs(bot.str(), 0., rOut * mm, 0.5 * L.d * mm, 0., twopi),
-               bot.str(), s.zCav - h - 0.5 * L.d);
+    for (int sgn = -1; sgn <= 1; sgn += 2) {
+      const char* px = (sgn > 0) ? "xhi" : "xlo";
+      const char* py = (sgn > 0) ? "yhi" : "ylo";
+      v += place(new G4Box(nm(px), 0.5 * d * mm, hyOut * mm, h * mm), nm(px),
+                 G4ThreeVector(sgn * (hx + 0.5 * d) * mm, 0, zc * mm));
+      v += place(new G4Box(nm(py), hx * mm, 0.5 * d * mm, h * mm), nm(py),
+                 G4ThreeVector(0, sgn * (hy + 0.5 * d) * mm, zc * mm));
+    }
+    v += place(new G4Box(nm("bot"), hxOut * mm, hyOut * mm, 0.5 * d * mm),
+               nm("bot"), G4ThreeVector(0, 0, (zLo - 0.5 * d) * mm));
     // Крышка — опционально. Реальный домик оператора собран БЕЗ КРЫШКИ
     // (сообщено 13.08.2026), и это не мелочь: поле помещения входит в полость
     // сверху, не проходя свинец, а космические мюоны и так идут
@@ -132,22 +189,27 @@ void RCShieldDetector::BuildShield(G4LogicalVolume* world) {
     // проверка всей цепочки (измерение «Фон домик 23 дня») относится именно
     // к открытой сверху геометрии, поэтому её надо уметь построить.
     if (fWithLid) {
-      v += place(new G4Tubs(top.str(), 0., rOut * mm, 0.5 * L.d * mm, 0., twopi),
-                 top.str(), s.zCav + h + 0.5 * L.d);
-    } else {
-      vLidSkipped += pi * rOut * rOut * L.d / 1000.0;   // мм³ -> см³
+      v += place(new G4Box(nm("top"), hxOut * mm, hyOut * mm, 0.5 * d * mm),
+                 nm("top"), G4ThreeVector(0, 0, (zHi + 0.5 * d) * mm));
     }
 
     if (L.tag == 'p') vPb += v;
     else if (L.tag == 'd') vCd += v;
     else vCu += v;
 
-    r = rOut;
-    h = hOut;
+    hx = hxOut;
+    hy = hyOut;
+    zLo = zLoOut;
+    zHi = zHiOut;
   }
 
-  fOuterR = r;
-  fOuterHz = h;
+  fOuterHx = hx;
+  fOuterHy = hy;
+  fOuterHz = 0.5 * (zHi - zLo);
+  fOuterZc = 0.5 * (zHi + zLo);   // центр наружного габарита, НЕ центр полости
+  // Описанная окружность — по ней ставится мюонный диск и полуразмер мира.
+  // Полуширины здесь НЕДОСТАТОЧНО: углы короба выходят за неё в sqrt(2) раз.
+  fOuterR = std::sqrt(hx * hx + hy * hy);
   fNDepth = static_cast<int>(layers.size());
 
   // Массы — по плотностям материалов Geant4, не по справочным числам
@@ -155,16 +217,17 @@ void RCShieldDetector::BuildShield(G4LogicalVolume* world) {
   fMassCd = vCd * (Nist("G4_Cd")->GetDensity() / (g / cm3)) / 1000.0;
   fMassCu = vCu * (Nist("G4_Cu")->GetDensity() / (g / cm3)) / 1000.0;
 
-  // САМОПРОВЕРКА ОБЪЁМА. Сумма трёх кусков каждого слоя обязана совпасть с
-  // разностью объёмов двух цилиндров — иначе где-то щель или перекрытие.
-  // Проверка дешёвая и ловит именно ту ошибку, которую легче всего сделать
-  // в арифметике стыков.
+  // САМОПРОВЕРКА ОБЪЁМА. Сумма кусков всех слоёв обязана совпасть с разностью
+  // объёмов двух коробов — иначе где-то щель или перекрытие. Проверка дешёвая
+  // и ловит именно ту ошибку, которую легче всего сделать в арифметике стыков,
+  // а на коробе таких стыков вдвое больше, чем было на цилиндре.
   const double vTotSolid = vPb + vCd + vCu;
-  // Без крышки из аналитического кольца вычитается объём непостроенных
-  // крышек — иначе проверка даёт ложный отказ на открытой геометрии.
+  // Наружный габарит уже учитывает открытый верх (вверх слои не росли), а
+  // полость вычитается как есть. Отдельной поправки «на непостроенные крышки»
+  // больше не нужно — и это правильнее: раньше она латала следствие того, что
+  // габарит считался по замкнутой оболочке.
   const double vTotAnal =
-      (pi * r * r * 2 * h - pi * s.rCav * s.rCav * 2 * s.hzCav) / 1000.0
-      - vLidSkipped;
+      (4 * hx * hy * (zHi - zLo) - 8 * s.hxCav * s.hyCav * s.hzCav) / 1000.0;
   const double rel = (vTotAnal > 0) ? std::abs(vTotSolid / vTotAnal - 1) : 0;
   if (rel > 1e-9) {
     std::ostringstream m;
@@ -175,14 +238,18 @@ void RCShieldDetector::BuildShield(G4LogicalVolume* world) {
   }
 
   G4cout << "=== защита ===" << G4endl;
-  G4cout << "  полость: r " << s.rCav << ", z " << zLoCav << ".." << zHiCav
-         << " мм (занято прибором: r до " << ex.r << ", z " << ex.zLo << ".."
+  G4cout << "  полость: " << 2 * s.hxCav << " x " << 2 * s.hyCav << " мм в плане, z "
+         << zLoCav << ".." << zHiCav << " мм (высота " << 2 * s.hzCav
+         << "; занято прибором: r до " << ex.r << ", z " << ex.zLo << ".."
          << ex.zHi << ")" << G4endl;
+  G4cout << "  верх: " << (fWithLid ? "закрыт крышкой" : "ОТКРЫТ") << G4endl;
   G4cout << "  слои от полости наружу: Cu " << s.cu << " + Cd " << s.cd
          << " + Pb " << s.pb << " мм (свинец нарезан на " << s.nShellPb
          << " слоёв), полная стенка " << (s.cu + s.cd + s.pb) << " мм" << G4endl;
-  G4cout << "  наружный габарит: r " << fOuterR << ", полувысота " << fOuterHz
-         << " мм" << G4endl;
+  G4cout << "  наружный габарит: " << 2 * fOuterHx << " x " << 2 * fOuterHy
+         << " мм в плане, высота " << 2 * fOuterHz << " мм, z "
+         << (fOuterZc - fOuterHz) << ".." << (fOuterZc + fOuterHz)
+         << " (описанная окружность r " << fOuterR << ")" << G4endl;
   G4cout << "  МАССЫ: Pb " << fMassPb << " кг, Cd " << fMassCd << " кг, Cu "
          << fMassCu << " кг" << G4endl;
   G4cout << "  объём защиты: " << vTotSolid << " см³ (аналитически "
@@ -194,10 +261,22 @@ G4VPhysicalVolume* RCShieldDetector::Construct() {
   // Мир обязан вместить защиту и поверхность розыгрыша снаружи неё.
   // Запас 30 мм: поверхность источника ставится вплотную к габариту защиты,
   // и ей нужно место, чтобы не совпасть с гранью мира.
+  // Посадка полости на дно — ДО расчёта мира: при seatOnFloor центр полости
+  // уезжает вверх на сотни миллиметров, и мир, посчитанный по старому zCav,
+  // оказался бы уже самой защиты. Формула — в PlannedZCav(), не здесь.
+  fSh.zCav = PlannedZCav();
+
   if (fWithShield) {
     const double wall = fSh.cu + fSh.cd + fSh.pb;
-    fWorldHalfXY = fSh.rCav + wall + 30.0;
-    fWorldHalfZ  = std::abs(fSh.zCav) + fSh.hzCav + wall + 30.0;
+    // Мир квадратный в плане, защита тоже — хватает полуширины, углы короба
+    // внутрь мира попадают автоматически.
+    fWorldHalfXY = std::max(fSh.hxCav, fSh.hyCav) + wall + 30.0;
+    // По оси мир симметричен нулю (центру кристалла), а защита — нет. Значит
+    // полуразмер надо брать по ДАЛЬШЕЙ из двух её границ, а не по «центр плюс
+    // половина»: при посадке на дно защита уходит вверх на ~400 мм и вниз лишь
+    // на ~87, и симметричная оценка от центра габарита обрезала бы верх.
+    fWorldHalfZ = std::max(std::abs(PlannedOuterZLo()),
+                           std::abs(PlannedOuterZHi())) + 30.0;
   }
   // Мир не может быть УЖЕ поверхности розыгрыша (см. fWorldMinHalfXY в .hh):
   // иначе часть источника молча оказывается снаружи мира.
@@ -219,10 +298,11 @@ G4VPhysicalVolume* RCShieldDetector::Construct() {
     if (fWithVessel) BuildVessel(worldLV);
   } else {
     // Именованная "cavity" — см. разбор в .hh. Воздух, точно тех же
-    // размеров, что полость (r=rCav, halfz=hzCav, центр zCav); касается
-    // внутренней грани sh0 (rmin=rCav) вплотную, не перекрывается —
-    // тот же паттерн стыка, что у слоёв самой защиты.
-    auto* cavS = new G4Tubs("cavity", 0., fSh.rCav * mm, fSh.hzCav * mm, 0., twopi);
+    // размеров, что полость (hxCav x hyCav x hzCav, центр zCav); касается
+    // внутренних граней стенок sh0 вплотную, не перекрывается — тот же
+    // паттерн стыка, что у слоёв самой защиты.
+    auto* cavS = new G4Box("cavity", fSh.hxCav * mm, fSh.hyCav * mm,
+                           fSh.hzCav * mm);
     auto* cavLV = new G4LogicalVolume(cavS, Nist("G4_AIR"), "cavity");
     cavLV->SetVisAttributes(G4VisAttributes::GetInvisible());
     fCavityPV = new G4PVPlacement(nullptr, G4ThreeVector(0, 0, fSh.zCav * mm),

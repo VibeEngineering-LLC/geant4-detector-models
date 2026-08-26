@@ -1,0 +1,19 @@
+# RC110 CADMesh — CMake fragment
+# git clone https://github.com/christopherpoole/CADMesh
+# add_subdirectory(path/to/CADMesh)
+
+cmake_minimum_required(VERSION 3.16)
+project(RC110CADMesh LANGUAGES CXX)
+
+find_package(Geant4 REQUIRED ui_all vis_all)
+
+add_library(rc110_cadmesh STATIC
+  RC110CADMeshCase.cc
+)
+target_include_directories(rc110_cadmesh PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(rc110_cadmesh PUBLIC ${Geant4_LIBRARIES} CADMesh::CADMesh)
+target_compile_features(rc110_cadmesh PUBLIC cxx_std_17)
+
+# Optional example binary (wire into your main if preferred):
+# add_executable(rc110_hybrid_example RC110HybridExample.cc)
+# target_link_libraries(rc110_hybrid_example PRIVATE rc110_cadmesh ${Geant4_LIBRARIES})

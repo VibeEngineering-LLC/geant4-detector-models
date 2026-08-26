@@ -19,10 +19,22 @@
     <position name="p_sipm_carrier" x="0" y="0" z="-5.55" unit="mm"/>
     <position name="p_pcb"      x="6.5" y="0" z="-4.5" unit="mm"/>
     <position name="p_battery"  x="15.0" y="0" z="3.5" unit="mm"/>
-    <position name="p_emi"      x="-33.0" y="0" z="7.15" unit="mm"/>
-    <position name="p_disp_win" x="-14.0" y="0" z="-8.4" unit="mm"/>
-    <position name="p_disp_lcd" x="-14.0" y="0" z="-7.15" unit="mm"/>
-    <position name="p_usb"      x="58.0" y="0" z="-3.0" unit="mm"/>
+    <!-- P-004 (26.08.2026): 4 позиции ниже сдвинуты внутрь Case_cavity (полость
+         120×31×14.5, half x=60/y=15.5/z=7.25 мм) с запасом ~0,10 мм на сторону.
+         Прежние значения (EMI z=7.15, disp_win z=-8.4, disp_lcd z=-7.15,
+         usb x=58.0) визуально проходили рендер/CheckOverlaps() (тот даёт лишь
+         WARNING), но РЕАЛЬНЫЙ BeamOn фатально падал: G4SmartVoxelHeader::
+         BuildNodes() PANIC "pv_display_window is entirely outside mother
+         logical volume Case_interior_log" — воспроизведено, задокументировано
+         в audit/project-incidents.md P-004. Минимальный сдвиг внутрь — а не
+         вырез в Case_shell/расширение каверны — выбран как наименее инвазивная
+         правка, сохраняющая остальную геометрию; USB при этом физически уже не
+         торчит наружу через (несмоделированный) вырез корпуса, это компромисс,
+         не идеальная копия месторасположения разъёма. -->
+    <position name="p_emi"      x="-33.0" y="0" z="7.00" unit="mm"/>
+    <position name="p_disp_win" x="-14.0" y="0" z="-7.00" unit="mm"/>
+    <position name="p_disp_lcd" x="-14.0" y="0" z="-6.45" unit="mm"/>
+    <position name="p_usb"      x="56.15" y="0" z="-3.0" unit="mm"/>
     <position name="p_esr_px"   x="5.0325"  y="0"       z="0" unit="mm"/>
     <position name="p_esr_nx"   x="-5.0325" y="0"       z="0" unit="mm"/>
     <position name="p_esr_py"   x="0"       y="5.0325"  z="0" unit="mm"/>

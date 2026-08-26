@@ -38,3 +38,16 @@ if(MSVC)
   target_compile_options(gdml_vis PRIVATE /EHsc /MD /bigobj /utf-8
                          /wd4005 /wd4267 /wd4244)
 endif()
+
+# gdml_multiview — тот же рецепт, что gdml_vis выше (GDML-заголовки Xerces-C++
+# нужны обоим): загрузка GDML из gdml_vis.cc + 4-видовая командная
+# последовательность из detectors/RadiaCode-110/geant4/geometry/vis_multiview.cc,
+# общий инструмент для любого детектора.
+add_executable(gdml_multiview gdml_multiview.cc)
+target_include_directories(gdml_multiview PRIVATE "${G4ROOT}/include/Geant4" "${XERCESC_ROOT}/include")
+target_link_libraries(gdml_multiview PRIVATE ${G4_IMPORT_LIBS} ${XERCESC_IMPORT_LIBS})
+target_compile_definitions(gdml_multiview PRIVATE G4LIB_BUILD_DLL WIN32 NOMINMAX _USE_MATH_DEFINES)
+if(MSVC)
+  target_compile_options(gdml_multiview PRIVATE /EHsc /MD /bigobj /utf-8
+                         /wd4005 /wd4267 /wd4244)
+endif()

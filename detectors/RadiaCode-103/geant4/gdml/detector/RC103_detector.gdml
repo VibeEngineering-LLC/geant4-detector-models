@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!--
+  RadiaCode-103 — внутренности + параметрический корпус-envelope (Geant4 GDML)
+  Источник: scripts/rc103_coords.py, RC103-2_model.blend (internals bbox verify),
+            verify/blender_bbox_rc103-2.json
+
+  Якорь: центр корпуса (0,0,0). USB → +X. Лицо → −Z.
+  Корпус: полая ABS-оболочка 123×34×17.5 мм (stadium → bbox-box), стенка 1.5 мм.
+  Кристалл CsI(Tl) 10³ @ (−49.5, 0, −0.55); SiPM на грани −Z.
+  Capsule_body: rounded-square 16×16×13 → box shell (fillet/niche не моделируются).
+-->
+<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd">
+
+  <define>
+    <position name="p_origin"   x="0" y="0" z="0" unit="mm"/>
+    <position name="p_detector" x="-49.5" y="0" z="-0.55" unit="mm"/>
+    <position name="p_sipm"     x="0" y="0" z="-5.4" unit="mm"/>
+    <position name="p_sipm_carrier" x="0" y="0" z="-5.55" unit="mm"/>
+    <position name="p_pcb"      x="6.5" y="0" z="-4.5" unit="mm"/>
+    <position name="p_battery"  x="15.0" y="0" z="3.5" unit="mm"/>
+    <position name="p_emi"      x="-33.0" y="0" z="7.15" unit="mm"/>
+    <position name="p_disp_win" x="-14.0" y="0" z="-8.4" unit="mm"/>
+    <position name="p_disp_lcd" x="-14.0" y="0" z="-7.15" unit="mm"/>
+    <position name="p_usb"      x="58.0" y="0" z="-3.0" unit="mm"/>
+    <position name="p_esr_px"   x="5.0325"  y="0"       z="0" unit="mm"/>
+    <position name="p_esr_nx"   x="-5.0325" y="0"       z="0" unit="mm"/>
+    <position name="p_esr_py"   x="0"       y="5.0325"  z="0" unit="mm"/>
+    <position name="p_esr_ny"   x="0"       y="-5.0325" z="0" unit="mm"/>
+    <position name="p_esr_pz"   x="0"       y="0"       z="5.0325" unit="mm"/>
+  </define>
+
+  <materials>
+    <material Z="1"  name="G4_AIR" state="gas">
+      <D unit="g/cm3" value="0.00120479"/>
+      <fraction n="0.75527" ref="G4_N"/>
+      <fraction n="0.231781" ref="G4_O"/>
+      <fraction n="0.012827" ref="G4_Ar"/>
+    </material>
+    <!-- G4_Si: локальное переопределение НЕ нужно и было убрано (P-002,
+         идентично P-001 в RC-110) — самоссылающийся <fraction ref="G4_Si"/>
+         крашил G4GDMLParser (0xC0000005). materialref="G4_Si" резолвится
+         через NIST-фоллбэк G4GDMLReadMaterials::GetMaterial(), проверено
+         по исходнику Geant4 при разборе P-001. -->
+    <material Z="55" name="G4_CESIUM_IODIDE" state="solid">
+      <D unit="g/cm3" value="4.51"/>
+      <fraction n="0.5" ref="G4_Cs"/>
+      <fraction n="0.5" ref="G4_I"/>
+    </material>
+    <material Z="6" name="ESR_foil" state="solid">
+      <D unit="g/cm3" value="1.38"/>
+      <fraction n="0.333" ref="G4_C"/>
+      <fraction n="0.333" ref="G4_H"/>
+      <fraction n="0.333" ref="G4_O"/>
+    </material>
+    <material Z="6" name="Case_ABS" state="solid">
+      <D unit="g/cm3" value="1.05"/>
+      <fraction n="0.85" ref="G4_C"/>
+      <fraction n="0.08" ref="G4_H"/>
+      <fraction n="0.07" ref="G4_N"/>
+    </material>
+    <material name="PCB_FR4" state="solid">
+      <D unit="g/cm3" value="1.85"/>
+      <fraction n="0.40" ref="G4_C"/>
+      <fraction n="0.15" ref="G4_O"/>
+      <fraction n="0.10" ref="G4_H"/>
+      <fraction n="0.35" ref="G4_Cu"/>
+    </material>
+    <material name="LiPo_602560" state="solid">
+      <D unit="g/cm3" value="1.90"/>
+      <fraction n="0.40" ref="G4_C"/>
+      <fraction n="0.08" ref="G4_H"/>
+      <fraction n="0.22" ref="G4_O"/>
+      <fraction n="0.10" ref="G4_F"/>
+      <fraction n="0.05" ref="G4_Li"/>
+      <fraction n="0.15" ref="G4_Al"/>
+    </material>
+    <material name="LCD_stack" state="solid">
+      <D unit="g/cm3" value="2.20"/>
+      <fraction n="0.50" ref="G4_Si"/>
+      <fraction n="0.30" ref="G4_O"/>
+      <fraction n="0.20" ref="G4_C"/>
+    </material>
+    <material name="Display_window_PC" state="solid">
+      <D unit="g/cm3" value="1.20"/>
+      <fraction n="0.75" ref="G4_C"/>
+      <fraction n="0.10" ref="G4_H"/>
+      <fraction n="0.15" ref="G4_O"/>
+    </material>
+    <material name="USB_connector" state="solid">
+      <D unit="g/cm3" value="8.50"/>
+      <fraction n="0.70" ref="G4_Cu"/>
+      <fraction n="0.30" ref="G4_C"/>
+    </material>
+    <material name="EMI_ESD_fabric" state="solid">
+      <D unit="g/cm3" value="1.10"/>
+      <fraction n="0.45" ref="G4_C"/>
+      <fraction n="0.10" ref="G4_H"/>
+      <fraction n="0.15" ref="G4_O"/>
+      <fraction n="0.30" ref="G4_Cu"/>
+    </material>
+    <material name="SiPM_carrier" state="solid">
+      <D unit="g/cm3" value="1.85"/>
+      <fraction n="0.40" ref="G4_C"/>
+      <fraction n="0.15" ref="G4_O"/>
+      <fraction n="0.10" ref="G4_H"/>
+      <fraction n="0.35" ref="G4_Cu"/>
+    </material>
+  </materials>
+
+  <solids>
+    <box lunit="mm" name="WorldBox" x="400" y="400" z="400"/>
+
+    <!-- Case envelope: stadium 123×34×17.5 → axis-aligned bbox (scripts/rc103_coords.py:9) -->
+    <box lunit="mm" name="Case_outer" x="123.0" y="34.0" z="17.5"/>
+    <box lunit="mm" name="Case_inner" x="120.0" y="31.0" z="14.5"/>
+    <subtraction name="Case_shell">
+      <first ref="Case_outer"/>
+      <second ref="Case_inner"/>
+    </subtraction>
+    <box lunit="mm" name="Case_cavity" x="120.0" y="31.0" z="14.5"/>
+
+    <box lunit="mm" name="PCB_solid" x="102.0" y="28.0" z="1.0"/>
+    <box lunit="mm" name="Battery_solid" x="60.0" y="25.0" z="6.0"/>
+    <box lunit="mm" name="EMI_solid" x="52.0" y="29.0" z="0.3"/>
+    <box lunit="mm" name="Display_window_solid" x="36.0" y="14.0" z="0.3"/>
+    <box lunit="mm" name="Display_LCD_solid" x="34.0" y="13.0" z="1.4"/>
+    <box lunit="mm" name="USB_solid" x="7.5" y="8.9" z="3.2"/>
+
+    <box lunit="mm" name="CrystalSolid" x="10" y="10" z="10"/>
+    <box lunit="mm" name="SiPMSolid" x="6" y="6" z="0.8"/>
+    <box lunit="mm" name="SiPM_carrier_solid" x="10.4" y="10.4" z="0.55"/>
+    <box lunit="mm" name="Capsule_outer" x="16" y="16" z="13"/>
+    <box lunit="mm" name="Capsule_inner" x="10.8" y="10.8" z="10.8"/>
+    <subtraction name="Capsule_shell">
+      <first ref="Capsule_outer"/>
+      <second ref="Capsule_inner"/>
+    </subtraction>
+    <box lunit="mm" name="Capsule_cavity" x="10.8" y="10.8" z="10.8"/>
+    <box lunit="mm" name="ESR_slab_x" x="0.065" y="10.13" z="10.13"/>
+    <box lunit="mm" name="ESR_slab_y" x="10.13" y="0.065" z="10.13"/>
+    <box lunit="mm" name="ESR_slab_z" x="10.13" y="10.13" z="0.065"/>
+  </solids>
+
+  <structure>
+    <volume name="PCB_log">
+      <materialref ref="PCB_FR4"/>
+      <solidref ref="PCB_solid"/>
+    </volume>
+    <volume name="Battery_log">
+      <materialref ref="LiPo_602560"/>
+      <solidref ref="Battery_solid"/>
+    </volume>
+    <volume name="EMI_log">
+      <materialref ref="EMI_ESD_fabric"/>
+      <solidref ref="EMI_solid"/>
+    </volume>
+    <volume name="Display_window_log">
+      <materialref ref="Display_window_PC"/>
+      <solidref ref="Display_window_solid"/>
+    </volume>
+    <volume name="Display_LCD_log">
+      <materialref ref="LCD_stack"/>
+      <solidref ref="Display_LCD_solid"/>
+    </volume>
+    <volume name="USB_log">
+      <materialref ref="USB_connector"/>
+      <solidref ref="USB_solid"/>
+    </volume>
+    <volume name="SiPM_carrier_log">
+      <materialref ref="SiPM_carrier"/>
+      <solidref ref="SiPM_carrier_solid"/>
+    </volume>
+
+    <volume name="Crystal_log">
+      <materialref ref="G4_CESIUM_IODIDE"/>
+      <solidref ref="CrystalSolid"/>
+    </volume>
+    <volume name="SiPM_log">
+      <materialref ref="G4_Si"/>
+      <solidref ref="SiPMSolid"/>
+    </volume>
+    <volume name="ESR_x_log">
+      <materialref ref="ESR_foil"/>
+      <solidref ref="ESR_slab_x"/>
+    </volume>
+    <volume name="ESR_y_log">
+      <materialref ref="ESR_foil"/>
+      <solidref ref="ESR_slab_y"/>
+    </volume>
+    <volume name="ESR_z_log">
+      <materialref ref="ESR_foil"/>
+      <solidref ref="ESR_slab_z"/>
+    </volume>
+    <volume name="Capsule_shell_log">
+      <materialref ref="Case_ABS"/>
+      <solidref ref="Capsule_shell"/>
+    </volume>
+    <volume name="Capsule_cavity_log">
+      <materialref ref="G4_AIR"/>
+      <solidref ref="Capsule_cavity"/>
+      <physvol name="pv_crystal">
+        <volumeref ref="Crystal_log"/>
+        <positionref ref="p_origin"/>
+      </physvol>
+      <physvol name="pv_sipm">
+        <volumeref ref="SiPM_log"/>
+        <positionref ref="p_sipm"/>
+      </physvol>
+      <physvol name="pv_esr_px">
+        <volumeref ref="ESR_x_log"/>
+        <positionref ref="p_esr_px"/>
+      </physvol>
+      <physvol name="pv_esr_nx">
+        <volumeref ref="ESR_x_log"/>
+        <positionref ref="p_esr_nx"/>
+      </physvol>
+      <physvol name="pv_esr_py">
+        <volumeref ref="ESR_y_log"/>
+        <positionref ref="p_esr_py"/>
+      </physvol>
+      <physvol name="pv_esr_ny">
+        <volumeref ref="ESR_y_log"/>
+        <positionref ref="p_esr_ny"/>
+      </physvol>
+      <physvol name="pv_esr_pz">
+        <volumeref ref="ESR_z_log"/>
+        <positionref ref="p_esr_pz"/>
+      </physvol>
+    </volume>
+    <volume name="DetectorModule_log">
+      <materialref ref="G4_AIR"/>
+      <solidref ref="Capsule_outer"/>
+      <physvol name="pv_capsule_shell">
+        <volumeref ref="Capsule_shell_log"/>
+        <positionref ref="p_origin"/>
+      </physvol>
+      <physvol name="pv_capsule_cavity">
+        <volumeref ref="Capsule_cavity_log"/>
+        <positionref ref="p_origin"/>
+      </physvol>
+      <physvol name="pv_sipm_carrier">
+        <volumeref ref="SiPM_carrier_log"/>
+        <positionref ref="p_sipm_carrier"/>
+      </physvol>
+    </volume>
+
+    <volume name="Case_shell_log">
+      <materialref ref="Case_ABS"/>
+      <solidref ref="Case_shell"/>
+    </volume>
+    <volume name="Case_interior_log">
+      <materialref ref="G4_AIR"/>
+      <solidref ref="Case_cavity"/>
+      <physvol name="pv_pcb">
+        <volumeref ref="PCB_log"/>
+        <positionref ref="p_pcb"/>
+      </physvol>
+      <physvol name="pv_battery">
+        <volumeref ref="Battery_log"/>
+        <positionref ref="p_battery"/>
+      </physvol>
+      <physvol name="pv_emi">
+        <volumeref ref="EMI_log"/>
+        <positionref ref="p_emi"/>
+      </physvol>
+      <physvol name="pv_display_window">
+        <volumeref ref="Display_window_log"/>
+        <positionref ref="p_disp_win"/>
+      </physvol>
+      <physvol name="pv_display_lcd">
+        <volumeref ref="Display_LCD_log"/>
+        <positionref ref="p_disp_lcd"/>
+      </physvol>
+      <physvol name="pv_usb">
+        <volumeref ref="USB_log"/>
+        <positionref ref="p_usb"/>
+      </physvol>
+      <physvol name="pv_detector">
+        <volumeref ref="DetectorModule_log"/>
+        <positionref ref="p_detector"/>
+      </physvol>
+    </volume>
+    <volume name="RC103_device_log">
+      <materialref ref="G4_AIR"/>
+      <solidref ref="Case_outer"/>
+      <physvol name="pv_case_shell">
+        <volumeref ref="Case_shell_log"/>
+        <positionref ref="p_origin"/>
+      </physvol>
+      <physvol name="pv_case_interior">
+        <volumeref ref="Case_interior_log"/>
+        <positionref ref="p_origin"/>
+      </physvol>
+    </volume>
+
+    <volume name="World">
+      <materialref ref="G4_AIR"/>
+      <solidref ref="WorldBox"/>
+      <physvol name="pv_rc103">
+        <volumeref ref="RC103_device_log"/>
+        <positionref ref="p_origin"/>
+      </physvol>
+    </volume>
+  </structure>
+
+  <setup name="Default" version="1.0">
+    <world ref="World"/>
+  </setup>
+
+</gdml>

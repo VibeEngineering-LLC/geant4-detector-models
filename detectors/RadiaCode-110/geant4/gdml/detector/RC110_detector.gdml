@@ -12,19 +12,38 @@
 
   <define>
     <position name="p_origin"   x="0" y="0" z="0" unit="mm"/>
-    <position name="p_detector" x="-50.25" y="0" z="0" unit="mm"/>
-    <position name="p_capsule"  x="0.35" y="0" z="0" unit="mm"/>
-    <position name="p_sipm"     x="0" y="0" z="-7.4" unit="mm"/>
+    <!-- z=-0.325: капсула опущена, чтобы полость 15 мм охватила сборку
+     кристалл+ESR+SiPM (по Z она 14.865 мм, вниз её растягивает SiPM).
+     Значение зажато двумя условиями (расчёт 2026-08-26):
+       сборка внутри полости капсулы -> Zc in [-0.435, -0.300]
+       капсула внутри полости корпуса -> Zc in [-0.350, +0.350]
+     пересечение [-0.350,-0.300], взята середина. Зазоры: снизу до SiPM
+     0.025, сверху до ESR 0.110, капсула до стенки корпуса снизу 0.025. -->
+    <position name="p_detector" x="-49.9" y="0" z="-0.325" unit="mm"/>
+    <position name="p_capsule"  x="0" y="0" z="0" unit="mm"/>
+    <!-- узел (кристалл+ESR+SiPM) смещён внутри капсулы на -0.35 мм по X:
+         замер RC110_model.blend 2026-08-26 — содержимое на -50.25,
+         капсула на -49.9. Прежде это смещение ошибочно задавалось
+         сдвигом САМОЙ капсулы, из-за чего она выходила за границу
+         DetectorModule_log на 0.35 мм. -->
+    <position name="p_node"     x="-0.35" y="0" z="0.325" unit="mm"/>
+    <position name="p_sipm"     x="-0.35" y="0" z="-7.075" unit="mm"/>
     <position name="p_pcb"      x="9.85" y="0" z="-5.45" unit="mm"/>
     <position name="p_battery"  x="23.8" y="0" z="4.55" unit="mm"/>
     <position name="p_disp_win" x="-19.25" y="0" z="-8.95" unit="mm"/>
     <position name="p_disp_lcd" x="-19.25" y="0" z="-7.35" unit="mm"/>
     <position name="p_usb"      x="58.75" y="0" z="-4.0" unit="mm"/>
-    <position name="p_esr_px"   x="7.0325"  y="0"       z="0" unit="mm"/>
-    <position name="p_esr_nx"   x="-7.0325" y="0"       z="0" unit="mm"/>
-    <position name="p_esr_py"   x="0"       y="7.0325"  z="0" unit="mm"/>
-    <position name="p_esr_ny"   x="0"       y="-7.0325" z="0" unit="mm"/>
-    <position name="p_esr_pz"   x="0"       y="0"       z="7.0325" unit="mm"/>
+    <position name="p_esr_px"   x="6.6825"  y="0"       z="0.325" unit="mm"/>
+    <position name="p_esr_nx"   x="-7.3825" y="0"       z="0.325" unit="mm"/>
+    <position name="p_esr_py"   x="-0.35"   y="7.0325"  z="0.325" unit="mm"/>
+    <position name="p_esr_ny"   x="-0.35"   y="-7.0325" z="0.325" unit="mm"/>
+    <position name="p_esr_pz"   x="-0.35"   y="0"       z="7.3575" unit="mm"/>
+    <!-- -Z: грань SiPM. Плата ESR с вырезом 6.4x6.4 под SiPM (было: грани
+     -Z не было вовсе, "окно" во всю грань 14.13x14.13 - найдено 2026-08-26
+     сверкой с RC110_model.blend, объект Window/ESR_window_cutter). Центр
+     по Z: -Z грань кристалла (0.325-7=-6.675) минус полутолщина ESR
+     (0.0325) = -6.7075. -->
+    <position name="p_esr_nz"   x="-0.35"   y="0"       z="-6.7075" unit="mm"/>
   </define>
 
   <materials>
@@ -119,6 +138,12 @@
     <box lunit="mm" name="ESR_slab_x" x="0.065" y="14.13" z="14.13"/>
     <box lunit="mm" name="ESR_slab_y" x="14.13" y="0.065" z="14.13"/>
     <box lunit="mm" name="ESR_slab_z" x="14.13" y="14.13" z="0.065"/>
+    <!-- вырез под SiPM 6.4x6.4 (SiPM 6x6 + зазор 0.2 мм на сторону) -->
+    <box lunit="mm" name="ESR_nz_window_cutter" x="6.4" y="6.4" z="1.0"/>
+    <subtraction name="ESR_slab_nz">
+      <first ref="ESR_slab_z"/>
+      <second ref="ESR_nz_window_cutter"/>
+    </subtraction>
   </solids>
 
   <structure>
@@ -163,6 +188,10 @@
       <materialref ref="ESR_foil"/>
       <solidref ref="ESR_slab_z"/>
     </volume>
+    <volume name="ESR_nz_log">
+      <materialref ref="ESR_foil"/>
+      <solidref ref="ESR_slab_nz"/>
+    </volume>
     <volume name="Capsule_shell_log">
       <materialref ref="Case_ABS"/>
       <solidref ref="Capsule_shell"/>
@@ -172,7 +201,7 @@
       <solidref ref="Capsule_cavity"/>
       <physvol name="pv_crystal">
         <volumeref ref="Crystal_log"/>
-        <positionref ref="p_origin"/>
+        <positionref ref="p_node"/>
       </physvol>
       <physvol name="pv_sipm">
         <volumeref ref="SiPM_log"/>
@@ -197,6 +226,10 @@
       <physvol name="pv_esr_pz">
         <volumeref ref="ESR_z_log"/>
         <positionref ref="p_esr_pz"/>
+      </physvol>
+      <physvol name="pv_esr_nz">
+        <volumeref ref="ESR_nz_log"/>
+        <positionref ref="p_esr_nz"/>
       </physvol>
     </volume>
     <volume name="DetectorModule_log">

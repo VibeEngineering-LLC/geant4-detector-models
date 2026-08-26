@@ -1,0 +1,43 @@
+// Example: RC110 STL case (CADMesh) + full internals from GDML.
+// Paths relative to RC110/geant4/cadmesh/:
+//   stl:  ../../Rc-110.stl
+//   gdml: ../gdml/detector/RC110_detector.gdml
+//
+// For MC physics prefer RC110_detector.gdml alone (hollow box case).
+// Do NOT duplicate case: either CADMesh STL *or* GDML Case_shell, not both.
+#include "RC110CADMeshCase.hh"
+
+#include "G4GDMLParser.hh"
+#include "G4NistManager.hh"
+#include "G4PVPlacement.hh"
+#include "G4SystemOfUnits.hh"
+
+G4VPhysicalVolume* BuildRC110Hybrid(const G4String& stlPath,
+                                    const G4String& detectorGdmlPath)
+{
+  auto* nist = G4NistManager::Instance();
+  auto* worldMat = nist->FindOrBuildMaterial("G4_AIR");
+  auto* absMat = nist->FindOrBuildMaterial("G4_POLYCARBONATE");  // or custom ABS
+
+  auto* worldBox = new G4Box("WorldBox", 200 * mm, 200 * mm, 200 * mm);
+  auto* worldLog = new G4LogicalVolume(worldBox, worldMat, "World");
+  auto* worldPV = new G4PVPlacement(nullptr, G4ThreeVector(), worldLog, "World", nullptr,
+                                    false, 0);
+
+  // 1) Case from STL (110666 triangles) — physics solid via CADMesh
+  auto* caseLog = RC110CADMeshCase::BuildLogicalVolume(stlPath, absMat);
+  new G4PVPlacement(nullptr, G4ThreeVector(), caseLog, "Case_STL", worldLog, false, 0);
+
+  // 2) Detector primitives from GDML (fast to iterate)
+  G4GDMLParser parser;
+  parser.Read(detectorGdmlPath);
+  auto* gdmlWorld = parser.GetWorldVolume();
+  if (gdmlWorld && gdmlWorld->GetLogicalVolume()) {
+    // Import only DetectorModule_log if exported as separate world — or Read partial.
+    // Typical pattern: detector GDML world is a small box; place at origin.
+    new G4PVPlacement(nullptr, G4ThreeVector(), gdmlWorld->GetLogicalVolume(),
+                      "RC110_detector_gdml", worldLog, false, 1);
+  }
+
+  return worldPV;
+}

@@ -15,8 +15,17 @@ EMI-ткань, дисплей), детекторный узел (CsI(Tl) 10³ +
 | C++ загрузчик STL через CADMesh | `cadmesh/` |
 | Рендер Geant4 в 4 вида (спереди/сбоку/разрез/три четверти) — через общий инструмент `common/tools/gdml_multiview.cc` (грузит GDML напрямую, C++-дублирование геометрии не потребовалось) | `verify/RC103_view_{front,side,section,iso}.png`, монтаж `RC103_multiview.png`, сборщик `geometry/assemble_multiview.py` |
 | Разрез с размерными линиями (matplotlib, не рендер) | `scripts/dimensioned_section.py` → `verify/RC103_dimensioned_section.png` |
-| Обмер по рентгену и Blender bbox (кросс-проверка координат) | `verify/xray_measure.json`, `verify/blender_bbox_rc103-2.json` |
 | Журнал инцидентов этой ветки (GDML-валидация) | `audit/project-incidents.md` |
+
+**Намеренно убрано из `verify/`** (было скопировано из референсной папки без проверки,
+не мои артефакты этой сессии — оператор явно попросил оставить в репозитории только
+рендер/чертёж, сделанные и проверенные в этой сессии): `RC103_align_check.png`
+(скрипт `verify_align.py` содержит реальный баг — легенда matplotlib непрозрачным
+блоком перекрывает правую часть 2D-разреза, а USB и EMI-ткань не рисуются вовсе,
+хотя есть в `rc103_coords.py`), `xray_annotated.png`/`xray_profiles.png`/
+`xray_measure.json` (обмер по рентген-фото) и `blender_bbox_rc103-2.json` (Blender
+bbox) — все три остаются в референсной папке оператора, в репозиторий не переносить
+без отдельной проверки/починки.
 
 **Намеренно НЕ в репозитории** (восстанавливается из исходников):
 

@@ -26,3 +26,17 @@ if(MSVC)
   target_compile_options(rc110_vis_render PRIVATE /EHsc /MD /bigobj /utf-8
                          /wd4005 /wd4267 /wd4244)
 endif()
+
+# rc110_vis_multiview — 4 вида (спереди/сбоку/разрез/три четверти) одним
+# прогоном, см. шапку vis_multiview.cc. Та же геометрия RC110Detector.cc,
+# второй executable в этом же CMakeLists (проще интегрировать, чем отдельный
+# подкаталог — донор паттерна: сам этот файл, второй add_executable).
+add_executable(rc110_vis_multiview RC110Detector.cc vis_multiview.cc)
+target_include_directories(rc110_vis_multiview PRIVATE "${CMAKE_BINARY_DIR}")
+target_include_directories(rc110_vis_multiview PRIVATE "${G4ROOT}/include/Geant4")
+target_link_libraries(rc110_vis_multiview PRIVATE ${G4_IMPORT_LIBS})
+target_compile_definitions(rc110_vis_multiview PRIVATE G4LIB_BUILD_DLL WIN32 NOMINMAX _USE_MATH_DEFINES)
+if(MSVC)
+  target_compile_options(rc110_vis_multiview PRIVATE /EHsc /MD /bigobj /utf-8
+                         /wd4005 /wd4267 /wd4244)
+endif()

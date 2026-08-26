@@ -16,6 +16,8 @@ STL-корпус, электроника (плата, LiPo, дисплей, USB)
 | C++ загрузчик STL через CADMesh | `geant4/cadmesh/` |
 | Та же геометрия напрямую в C++ (для рендера без GDML) | `geant4/geometry/RC110Detector.{hh,cc}` + `vis_render.cc` |
 | Рендер Geant4 (TOOLSSG_OFFSCREEN, не Blender/matplotlib) | `geant4/verify/RC110_align_check.png` |
+| 4 вида одним прогоном (спереди/сбоку/разрез/три четверти) + монтаж | `geant4/geometry/vis_multiview.cc`, `geant4/verify/RC110_view_{front,side,section,iso}.png`, `RC110_multiview.png` |
+| Разрез с размерными линиями (matplotlib, не рендер) | `geant4/scripts/dimensioned_section.py` → `geant4/verify/RC110_dimensioned_section.png` |
 
 **Намеренно НЕ в репозитории** (восстанавливается из исходников, суммарно ~56 МБ):
 

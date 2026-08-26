@@ -14,7 +14,8 @@ STL-корпус, электроника (плата, LiPo, дисплей, USB)
 | SSOT-геометрия (все внутренности + корпус-примитив) | `geant4/gdml/detector/RC110_detector.gdml` |
 | Генератор тесселированных GDML из STL | `geant4/scripts/stl_to_gdml.py` |
 | C++ загрузчик STL через CADMesh | `geant4/cadmesh/` |
-| Картинка совмещения корпус/внутренности | `geant4/verify/RC110_align_check.png` |
+| Та же геометрия напрямую в C++ (для рендера без GDML) | `geant4/geometry/RC110Detector.{hh,cc}` + `vis_render.cc` |
+| Рендер Geant4 (TOOLSSG_OFFSCREEN, не Blender/matplotlib) | `geant4/verify/RC110_align_check.png` |
 
 **Намеренно НЕ в репозитории** (восстанавливается из исходников, суммарно ~56 МБ):
 

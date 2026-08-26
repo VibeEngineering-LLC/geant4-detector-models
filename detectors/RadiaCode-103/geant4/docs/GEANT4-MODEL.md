@@ -1,0 +1,198 @@
+# Geant4-модель RadiaCode-103
+
+Полный комплект геометрии RC-103 для Monte Carlo (Geant4): корпус-envelope, электроника, детектор.
+
+**Источники:** `RC103_model.blend` (internals), `scripts/rc103_coords.py`, `docs/case_removed_log.md`, рентген `Фото/`.
+
+**Обновлено:** 2026-08-26 — корпус `Case_STL` удалён из blend; GDML использует параметрический envelope 123×34×17.5 мм.
+
+**Обновлено 2026-08-26 (вечер):** GDML впервые провалидирован штатным парсером Geant4
+(`C:\geant4-gdml`, GDML-модуль появился в проекте в этот же день). Найден и исправлен
+самоссылающийся материал `G4_Si` (P-001, `../audit/project-incidents.md`) — до этой
+правки файл ни разу не проходил штатный парсер. После фикса прогнан
+`G4PVPlacement::CheckOverlaps()` по всем physvol — результат и точные величины
+протрузий см. «Ограничения модели» ниже и `../audit/project-incidents.md`.
+
+---
+
+## Структура каталогов
+
+```
+geant4/
+├── docs/
+│   └── GEANT4-MODEL.md          ← этот файл
+├── gdml/
+│   ├── detector/
+│   │   └── RC103_detector.gdml  ← SSOT: внутренности + полый bbox-envelope
+│   ├── full/
+│   │   └── RC103_full.gdml      ← генерируется: STL-корпус + внутренности
+│   └── case_mesh/
+│       └── RC103_case_mesh.gdml ← генерируется: только STL корпус
+├── cadmesh/
+│   ├── RC103CADMeshCase.hh/.cc  ← загрузчик STL (без remap осей)
+│   ├── RC103HybridExample.cc
+│   └── CMakeLists.example.txt
+├── geometry/
+│   └── assemble_multiview.py    ← монтаж 4 кадров gdml_multiview в 2×2, подписи
+├── scripts/
+│   ├── stl_to_gdml.py           ← STL → case_mesh + full
+│   ├── validate_gdml.py
+│   ├── verify_align.py          ← PNG-проверка совмещения
+│   ├── xray_measure.py          ← обмер по рентгену
+│   └── dimensioned_section.py   ← разрез Y=0 с размерными линиями (matplotlib)
+├── audit/
+│   └── project-incidents.md     ← P-NNN этой ветки (GDML-валидация), СВОЯ нумерация
+└── verify/
+    ├── RC103_align_check.png
+    ├── RC103_view_{front,side,section,iso}.png  ← рендер Geant4 (TSG_OFFSCREEN, common/tools/gdml_multiview.exe)
+    ├── RC103_multiview.png                       ← монтаж 2×2 из четырёх видов выше
+    ├── RC103_dimensioned_section.png             ← разрез с размерами
+    ├── xray_annotated.png / xray_profiles.png / xray_measure.json
+    └── blender_bbox_rc103-2.json
+```
+
+Общий (не привязанный к детектору) рендер-инструмент — `common/tools/gdml_multiview.cc`
+(грузит ЛЮБОЙ `.gdml` напрямую через `G4GDMLParser`, GDML-модуль в проекте с 26.08.2026;
+детекторо-специфичного C++ дублирования геометрии, как у RC-110, здесь НЕ потребовалось).
+
+**В корне RC103** (не в `geant4/`):
+
+| Файл | Назначение |
+|---|---|
+| `Rc-103.stl.bak` | Архив mesh корpуса (2792 tri); `Case_STL` удалён из blend |
+| `RC103_model.blend` | Blender: только внутренности + Display_* + Case_bezel |
+
+---
+
+## Система координат
+
+| Ось | Направление |
+|---|---|
+| **X** | Длина прибора; **USB → +X** |
+| **Y** | Ширина |
+| **Z** | Толщина; **−Z = лицевая** (дисплей) |
+
+**Якорь:** центр корпуса `(0, 0, 0)` — `scripts/rc103_coords.py:2-3`.
+
+**Remap STL → device:** **не нужен**. RC-103 STL экспортирован из Blender уже в мм с центром в нуле (`cadmesh/RC103CADMeshCase.hh:7-10`).
+
+---
+
+## Три варианта корпуса
+
+| Вариант | Файл / код | Корпус | Когда использовать |
+|---|---|---|---|
+| **A. Примитив** | `gdml/detector/RC103_detector.gdml` | Полая ABS-оболочка (bbox stadium 123×34×17.5), стенка 1.5 мм | **Физика MC** — нет перекрытий, быстро |
+| **B. STL в GDML** | `gdml/full/RC103_full.gdml` | ~2792 треугольника из `Rc-103.stl.bak` | Vis / детальная форма; STL сплошной |
+| **C. CADMesh** | `cadmesh/RC103CADMeshCase.*` | Тот же STL, загрузка в C++ | Гибрид: STL-vis + GDML-примитивы |
+
+---
+
+## Внутренние узлы (SSOT: `scripts/rc103_coords.py`)
+
+| Узел | Размер, мм | Центр (X, Y, Z) | Материал (GDML) | Строка coords |
+|---|---|---|---|---|
+| Кристалл CsI(Tl) | 10³ | (−49.5, 0, −0.55) | `G4_CESIUM_IODIDE` | :10 |
+| SiPM | 6 × 6 × 0.8 | (−49.5, 0, −5.95) | `G4_Si` | :11 |
+| SiPM_carrier | 10.4² × 0.55 | (−49.5, 0, −6.1) | `SiPM_carrier` | :12 |
+| Капсула (box) | 16×16×13 (НЕ куб), стенка X/Y 2.6, Z 1.1 | @ −49.5 | ABS | :13-19 |
+| Плата FR4 | 102 × 28 × 1.0 | (6.5, 0, −4.5) | `PCB_FR4` | :21-27 |
+| LiPo 602560 | 60 × 25 × 6 | (15, 0, 3.5) | `LiPo_602560` | :28 |
+| EMI/ESD ткань | 52 × 29 × 0.3 | (−33, 0, 7.15) | `EMI_ESD_fabric` | :29 |
+| Окно дисплея | 36 × 14 × 0.3 | (−14, 0, −8.4) | `Display_window_PC` | :30 |
+| LCD | 34 × 13 × 1.4 | (−14, 0, −7.15) | `LCD_stack` | :31 |
+| USB Type-C | 7.5 × 8.9 × 3.2 | (58, 0, −3) | `USB_connector` | :32 |
+
+**Не моделируется:** U-вырез платы, fillet капсулы R≈5, ниша SiPM Ø11, SMD, `Case_bezel` (есть в blend, нет в coords).
+
+**ESR 3M:** 5 граней вокруг кристалла 10 мм (как RC-110, масштабировано).
+
+---
+
+## Иерархия GDML
+
+```
+World
+ └── RC103_device_log
+      ├── Case_shell (123×34×17.5 − 120×31×14.5)
+      └── Case_interior_log
+           ├── PCB_log
+           ├── Battery_log
+           ├── EMI_log
+           ├── Display_window_log / Display_LCD_log
+           ├── USB_log
+           └── DetectorModule_log @ (−49.5, 0, −0.55)
+                └── капсула → кристалл + SiPM + ESR + SiPM_carrier
+```
+
+---
+
+## Сборка и проверка
+
+```powershell
+cd "D:\GoogleDrive\Дозиметрия\Спектры\RC103\geant4\scripts"
+python verify_align.py     # PNG → ../verify/RC103_align_check.png
+python stl_to_gdml.py      # опционально, если есть Rc-103.stl(.bak)
+```
+
+**Требования:** Python 3, `matplotlib` (для verify).
+
+---
+
+## Geant4 на этой машине
+
+- Установка: `C:\geant4` 11.2.1; **GDML OFF** в prebuilt — см. RC-110 GEANT4-MODEL.
+- Рабочая папка MC: `C:\g4work`.
+
+### Рекомендации по MC
+
+1. **Self-absorption / спектрометрия:** `gdml/detector/RC103_detector.gdml`.
+2. **Визуализация формы корпуса:** восстановить STL из `.bak` → `stl_to_gdml.py` или CADMesh.
+3. **Не дублировать корпус:** CADMesh STL *или* GDML `Case_shell`, не оба в transport.
+
+---
+
+## Ограничения модели
+
+Количественно подтверждено `G4PVPlacement::CheckOverlaps()` 26.08.2026 (после фикса
+P-001) — величина протрузии для каждого пункта, не только качественное описание:
+
+- Корпус-envelope: stadium → axis-aligned bbox; без USB-выреза (`USB_log` протыкает
+  `Case_interior_log` на **1.75 мм** по +X), без окна в ABS (`Display_window_log`
+  протыкает на **1.3 мм**, `Display_LCD_log` — на **600 мкм**, обе по −Z: узлы дисплея
+  физически лежат в толще передней стенки, вырез не смоделирован).
+- Капсула: box вместо rounded-square 16×16 fillet R≈5; ниша SiPM Ø11×2.2мм не
+  смоделирована → `SiPM_log` протыкает капсульную полость на **400 мкм**, `SiPM_carrier_log`
+  протыкает стенку капсулы на **425 мкм** (оба — прямое следствие отсутствия ниши).
+- PCB: монолитный бокс без U-cutout (как RC-110) → пересекается с капсульным узлом на
+  **485 мкм**.
+- USB: помимо протрузии за внутреннюю полость (1.75 мм выше), разъём выходит и за
+  НАРУЖНУЮ грань корпуса — на **250 мкм** (`USB_log` край X=61.75 мм против
+  `Case_outer` half=61.5 мм). Физически ожидаемо (разъём торчит наружу устройства),
+  но в модели это просто пересечение объёмов (вырез в ABS не смоделирован), а не
+  геометрический зазор через настоящее отверстие.
+- EMI fabric: nominal box из coords (z=7.15±0.15) даёт край **50 мкм** за границу полости;
+  blend-mesh bbox той же ткани (`../verify/blender_bbox_rc103-2.json`) даёт край 7.275 —
+  тоже за границей (на схожую величину), то есть не опечатка одного источника, а мелкое
+  реальное превышение в обоих; coords приоритетнее для MC (решение сохранено).
+- ESR-плёнка (5 граней, каждая на 0.065 мм шире грани кристалла — умышленный нахлёст под
+  light-tightness) слегка перекрывается сама с собой в углах куба: **12-32 мкм**.
+- Материалы LiPo/LCD/USB/EMI — упрощённые смеси.
+
+Все величины и полная таблица классификации (фон/малый артефакт) — `../audit/project-incidents.md`,
+раздел «Overlap-валидация». Ни одна протрузия не потребовала правки координат: все либо
+прямое следствие уже перечисленных упрощений примитивов, либо суб-100-микронный артефакт
+построения ESR/EMI.
+
+---
+
+## Провенанс
+
+| Утверждение | Источник |
+|---|---|
+| Корпус 123×34×17.5 | `rc103_coords.py:9`, `build_case_stl.py:17-19` |
+| Кристалл (−49.5, 0, −0.55) | `rc103_coords.py:10` |
+| SiPM на −Z, z=−5.95 | `rc103_coords.py:11` |
+| Wall 1.5 mm | `build_case_stl.py:20` |
+| Blender bbox кристалла/SiPM | MCP read 2026-08-26 — совпадает с coords |
+| Case_STL удалён | `docs/case_removed_log.md` |

@@ -1,0 +1,35 @@
+{
+  "geometry_hash": "596e6da8dd03",
+  "overall": "OK",
+  "checked_at": "2026-08-24 00:13:52",
+  "details": [
+    {
+      "name": "e0060",
+      "e_kev": 60.0,
+      "hits": 27373,
+      "status": "OK",
+      "error": null
+    },
+    {
+      "name": "e0662",
+      "e_kev": 661.7,
+      "hits": 8079,
+      "status": "OK",
+      "error": null
+    },
+    {
+      "name": "e1461",
+      "e_kev": 1460.8,
+      "hits": 5678,
+      "status": "OK",
+      "error": null
+    },
+    {
+      "name": "e2614",
+      "e_kev": 2614.5,
+      "hits": 4721,
+      "status": "OK",
+      "error": null
+    }
+  ]
+}

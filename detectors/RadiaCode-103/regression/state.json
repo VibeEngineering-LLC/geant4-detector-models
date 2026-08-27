@@ -1,0 +1,20 @@
+{
+  "checked_at": "2026-08-23 22:09:18",
+  "overall": "OK",
+  "details": [
+    {
+      "name": "cs137_662",
+      "baseline_hits": 8116,
+      "new_hits": 8116,
+      "tolerance": 270,
+      "status": "OK"
+    },
+    {
+      "name": "k40_1461",
+      "baseline_hits": 5407,
+      "new_hits": 5407,
+      "tolerance": 221,
+      "status": "OK"
+    }
+  ]
+}

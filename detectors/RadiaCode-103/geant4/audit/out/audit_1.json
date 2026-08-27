@@ -1,0 +1,23 @@
+{
+  "found_issues": true,
+  "issues": [
+    {
+      "file": "geant4/run_field/Rc103FieldPrimaryGeneratorAction.cc",
+      "severity": "critical",
+      "description": "Неверное распределение точек на сфере. Используется метод, который создаёт неравномерное распределение по углу theta (сгущение у полюсов), так как cos(theta) равномерно распределён, а не cos^2(theta).",
+      "suggested_fix": "Использовать метод, где cos(theta) = 2*U - 1, а затем вычислять sin(theta) = sqrt(1 - cos^2(theta)), что обеспечит равномерное распределение по площади сферы."
+    },
+    {
+      "file": "geant4/run_field/Rc103FieldPrimaryGeneratorAction.cc",
+      "severity": "critical",
+      "description": "Направление разыгрывается не внутрь сферы, а наружу. Вектор e3 = -n — это внешняя нормаль, и направление должно быть противоположно ей для падения частиц внутрь.",
+      "suggested_fix": "Изменить строку `const G4ThreeVector e3 = -n;` на `const G4ThreeVector e3 = n;` или изменить формулу направления так, чтобы она учитывала внутреннюю нормаль."
+    },
+    {
+      "file": "geant4/run_muon/Rc103MuonPrimaryGeneratorAction.cc",
+      "severity": "critical",
+      "description": "Угловое распределение не соответствует заявленной степени косинуса. Заявлено cos^3, но реализовано cos^(1/4). Это приведёт к искажению спектра мюонов.",
+      "suggested_fix": "Изменить показатель степени в строке `const double cosT = std::pow(G4UniformRand(), 0.25);` на `const double cosT = std::pow(G4UniformRand(), 1.0/4.0);` или изменить комментарий, чтобы он соответствовал коду."
+    }
+  ]
+}

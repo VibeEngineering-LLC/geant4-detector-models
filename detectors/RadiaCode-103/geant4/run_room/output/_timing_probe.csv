@@ -1,0 +1,9 @@
+metric,value
+n_events,100000
+n_hits_in_crystal,0
+eff_crystal_per_event,0
+wall_emission_rate_photon_per_s,876857
+predicted_crystal_count_rate_cps,0
+low_statistics_warning,1
+
+bin_keV,counts

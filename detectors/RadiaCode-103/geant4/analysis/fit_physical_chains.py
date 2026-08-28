@@ -107,12 +107,23 @@ def bands_by_component(cps, var, f_rn, r_th, f_tn, amp, e_meas, cnt, live):
     print("=== ВКЛАД КОМПОНЕНТ ПО ПОЛОСАМ, с^-1 ===")
     print("полоса,кэВ  | измерено |" + "|".join("%11s" % n for n in names)
           + "|      сумма |   м/и")
-    for lo, hi in ftc.BANDS:
+    # Полосы можно переопределить: G4M_BANDS="1500:2830:50" — окна по 50 кэВ.
+    # Нужно, чтобы увидеть СТРУКТУРУ расхождения внутри широкой полосы:
+    # ровный сдвиг означает нехватку масштаба компоненты, локальный выброс —
+    # дефект линии или функции отклика.
+    spec = os.environ.get("G4M_BANDS")
+    if spec:
+        _lo, _hi, _w = (float(x) for x in spec.split(":"))
+        bands = [(_lo + i * _w, _lo + (i + 1) * _w)
+                 for i in range(int(round((_hi - _lo) / _w)))]
+    else:
+        bands = list(ftc.BANDS)
+    for lo, hi in bands:
         s = (e_meas >= lo) & (e_meas < hi)
         m = cnt[s].sum() / live
         parts = [amp[k] * A[s, k].sum() / live for k in range(len(names))]
         tot = sum(parts)
-        print("%4d-%4d   | %8.5f |" % (lo, hi, m)
+        print("%4d-%4d   | %8.5f |" % (int(lo), int(hi), m)
               + "|".join("%11.5f" % v for v in parts)
               + "| %10.5f | %6.3f" % (tot, tot / m if m else float("nan")))
 

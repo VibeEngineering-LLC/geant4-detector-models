@@ -12,13 +12,27 @@ TEMPLATE_FMT = "rc103_field_room_%s.csv"   # действующая модель
 TL208_BRANCH = 0.3594
 NUCS = ["K40", "Ra226", "Pb214", "Bi214", "Pb212", "Ac228", "Bi212", "Tl208"]
 
-GRID_F_RN = np.linspace(0.0, 0.50, 26)   # эманирование радона; литература 3-24%, среднее 8-12%
+# Режим задаётся окружением, чтобы не плодить копии скрипта (умолчания
+# воспроизводят прежнее поведение):
+#   G4M_NO_MUON=1     — убрать мюонный шаблон из базиса;
+#   G4M_FIX_RTH=1.0   — зафиксировать r_Th вместо сканирования;
+#   G4M_FIX_FTN=0.0   — зафиксировать f_Tn;
+#   G4M_FRN_LO/HI/N   — границы и число узлов сетки по f_Rn.
+NO_MUON = os.environ.get("G4M_NO_MUON", "") == "1"
+_FIX_RTH = os.environ.get("G4M_FIX_RTH")
+_FIX_FTN = os.environ.get("G4M_FIX_FTN")
+
+GRID_F_RN = np.linspace(float(os.environ.get("G4M_FRN_LO", 0.0)),
+                        float(os.environ.get("G4M_FRN_HI", 0.50)),
+                        int(os.environ.get("G4M_FRN_N", 26)))
 # Сдвиг равновесия Th-228/Ra-228. Верхняя граница поднята с 2.00 до 4.00
 # (2026-08-27): на прежней сетке оптимум ложился РОВНО на край, то есть предел
 # ставила сетка, а не данные, и отличить настоящий оптимум от упора в границу
 # было невозможно. Шаг сохранён прежний, 0.05.
-GRID_R_TH = np.linspace(0.50, 4.00, 71)
-GRID_F_TN = np.linspace(0.0, 0.20, 11)   # эманирование торона; физически мало
+GRID_R_TH = (np.array([float(_FIX_RTH)]) if _FIX_RTH
+             else np.linspace(0.50, 4.00, 71))
+GRID_F_TN = (np.array([float(_FIX_FTN)]) if _FIX_FTN
+             else np.linspace(0.0, 0.20, 11))   # эманирование торона; физически мало
 
 def load_all():
     cps = {}
@@ -32,9 +46,10 @@ def load_all():
             sys.exit(1)
         cps[nuc] = ftc.rcspec.fold(arr, "103")
         var[nuc] = ftc.template_variance(cnt_mc, float(meta.get("t_run_s", 0.0)))
-    meta_mu, arr_mu, cnt_mu = ftc.read_template(ftc.MUON_CSV)
-    cps["mu"] = ftc.rcspec.fold(arr_mu, "103")
-    var["mu"] = ftc.template_variance(cnt_mu, float(meta_mu.get("n_events", 0.0)))
+    if not NO_MUON:
+        meta_mu, arr_mu, cnt_mu = ftc.read_template(ftc.MUON_CSV)
+        cps["mu"] = ftc.rcspec.fold(arr_mu, "103")
+        var["mu"] = ftc.template_variance(cnt_mu, float(meta_mu.get("n_events", 0.0)))
     return cps, var
 
 def build_columns(cps, var, f_rn, r_th, f_tn):
@@ -63,9 +78,13 @@ def build_columns(cps, var, f_rn, r_th, f_tn):
     col_Th_chain = A_Th + r_th * (1 - f_tn) * (A_Pb212 + A_Bi212 + TL208_BRANCH * A_Tl208)
     var_Th_chain = var_Th + r_th**2 * (1 - f_tn)**2 * (var_Pb212 + var_Bi212 + TL208_BRANCH**2 * var_Tl208)
 
-    names = ["K40", "Ra226_chain", "Th232_chain", "mu"]
-    cols = [cps["K40"], col_Ra_chain, col_Th_chain, cps["mu"]]
-    vars_ = [var["K40"], var_Ra_chain, var_Th_chain, var["mu"]]
+    names = ["K40", "Ra226_chain", "Th232_chain"]
+    cols = [cps["K40"], col_Ra_chain, col_Th_chain]
+    vars_ = [var["K40"], var_Ra_chain, var_Th_chain]
+    if not NO_MUON:
+        names.append("mu")
+        cols.append(cps["mu"])
+        vars_.append(var["mu"])
 
     return names, cols, vars_
 
@@ -135,7 +154,11 @@ def main():
              title="Лучший узел по критерию A (цепочки связаны физикой)")
 
     print("\n=== ВОССТАНОВЛЕННЫЕ АКТИВНОСТИ ===")
-    A_K, A_Ra, A_Th, A_mu = amp_A
+    if NO_MUON:
+        A_K, A_Ra, A_Th = amp_A
+        A_mu = float("nan")
+    else:
+        A_K, A_Ra, A_Th, A_mu = amp_A
     A_Pb214 = A_Bi214 = A_Ra * (1 - f_rn_A)
     A_Pb212 = A_Bi212 = A_Th * r_th_A * (1 - f_tn_A)
     A_Tl208 = TL208_BRANCH * A_Bi212

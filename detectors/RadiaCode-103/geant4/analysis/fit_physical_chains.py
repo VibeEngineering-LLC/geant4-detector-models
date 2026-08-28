@@ -93,6 +93,30 @@ def build_columns(cps, var, f_rn, r_th, f_tn):
 
     return names, cols, vars_
 
+def bands_by_component(cps, var, f_rn, r_th, f_tn, amp, e_meas, cnt, live):
+    """Вклад КАЖДОГО столбца по полосам (диагностика #MU-1, 2026-08-28).
+
+    bands_report печатает только суммарную модель, поэтому по нему нельзя
+    сказать, КТО именно перебирает в полосе. Включается G4M_BANDS_PARTS=1.
+    """
+    names, cols, _ = build_columns(cps, var, f_rn, r_th, f_tn)
+    A = np.zeros((len(e_meas), len(cols)))
+    for k, c in enumerate(cols):
+        A[:, k] = ftc.fl.rebin_model_to_meas(np.arange(len(c)) + 0.5, c, e_meas) * live
+    print()
+    print("=== ВКЛАД КОМПОНЕНТ ПО ПОЛОСАМ, с^-1 ===")
+    print("полоса,кэВ  | измерено |" + "|".join("%11s" % n for n in names)
+          + "|      сумма |   м/и")
+    for lo, hi in ftc.BANDS:
+        s = (e_meas >= lo) & (e_meas < hi)
+        m = cnt[s].sum() / live
+        parts = [amp[k] * A[s, k].sum() / live for k in range(len(names))]
+        tot = sum(parts)
+        print("%4d-%4d   | %8.5f |" % (lo, hi, m)
+              + "|".join("%11.5f" % v for v in parts)
+              + "| %10.5f | %6.3f" % (tot, tot / m if m else float("nan")))
+
+
 def main():
     # Чтение измерения
     try:
@@ -179,6 +203,9 @@ def main():
 
     _sel = (e_meas >= ftc.E_LO) & (e_meas < ftc.E_HI)
     ftc.bands_report(pred_A, cnt[_sel], e_meas[_sel], live)
+    if os.environ.get("G4M_BANDS_PARTS") == "1":
+        bands_by_component(cps, var, f_rn_A, r_th_A, f_tn_A, amp_A,
+                           e_meas[_sel], cnt[_sel], live)
 
     print("\n=== ПРОВЕРКА ФИЗИЧНОСТИ ===")
     if A_Pb214 <= A_Ra:

@@ -131,9 +131,16 @@ def main():
     bands = []
     for lo, hi in ftc.BANDS:
         m = (e >= lo) & (e < hi)
+        _meas = float(y[m].sum() / live)
+        _model = float(pred_c[m].sum() / live)
+        # Отношение считаем ДО округления и пишем отдельным полем: в жёстких
+        # полосах счёт мал (тысячные доли с^-1), и деление уже округлённых
+        # значений давало ошибку до 1 % — страница показывала 1,000 там, где
+        # 0,997, и 0,968 вместо 0,973 (найдено 2026-08-28 сверкой с прогоном).
         bands.append({"lo": lo, "hi": hi,
-                      "meas": round(float(y[m].sum() / live), 4),
-                      "model": round(float(pred_c[m].sum() / live), 4)})
+                      "meas": round(_meas, 5),
+                      "model": round(_model, 5),
+                      "ratio": round(_model / _meas, 4) if _meas else None})
 
     # Вырожденность считаем ТЕМ ЖЕ способом, что degeneracy_report в
     # fit_two_criteria.py:164-166: нормировка столбцов на евклидову норму, мера

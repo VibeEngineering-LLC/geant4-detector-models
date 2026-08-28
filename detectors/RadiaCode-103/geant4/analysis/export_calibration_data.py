@@ -39,7 +39,8 @@ LINES = [
     ("bg7",   911.20, "Ac-228"), ("bg7",  1120.29, "Bi-214"),
     ("bg7",  1460.82, "K-40"),   ("bg7",  1764.49, "Bi-214"),
     ("bg7",  2614.51, "Tl-208"),
-    ("cs137",  32.19, "Ba K-alpha"), ("cs137", 661.66, "Cs-137"),
+    # Проба с Cs-137 исключена 28.08.2026 по указанию оператора: калибровка
+    # ведётся по реперам самого фона.
 ]
 
 def main():
@@ -54,8 +55,8 @@ def main():
             spectra["bg7"] = f
         elif "домик 23" in name or "фон в свинцовой защите, 23 суток" in name:
             spectra["shield23"] = f
-        elif "RC103" in name or "проба с цезием-137" in name:
-            spectra["cs137"] = f
+        # Проба с цезием-137 на страницу не выгружается (оператор, 28.08.2026):
+        # калибровка ведётся по реперам самого фона.
 
     # Спектры
     spec_data = []
@@ -137,8 +138,7 @@ def main():
     # Устойчивость по окнам
     window_stability = []
     window_factors = [0.9, 1.0, 1.25, 1.5, 1.75]
-    for spec_label, energy_keV, nuclide in [("cs137", 32.19, "Ba K-alpha"),
-                                            ("cs137", 661.66, "Cs-137"),
+    for spec_label, energy_keV, nuclide in [("bg7", 583.19, "Tl-208"),
                                             ("bg7", 1460.82, "K-40"),
                                             ("bg7", 2614.51, "Tl-208")]:
         if spec_label not in spectra:
@@ -189,7 +189,7 @@ def main():
     #     меньше, чем на 1460,8 кэВ, что физически невозможно.
     # Признак достоверности пишется в каждую точку, чтобы страница могла
     # показать все измерения, но отличить опорные от справочных.
-    RELIABLE_KEV = (661.66, 1460.82)
+    RELIABLE_KEV = (583.19, 1460.82)
     for p in points:
         p["reliable"] = any(abs(p["energy_table_keV"] - e) < 0.01 for e in RELIABLE_KEV)
     points_filtered = [p for p in points

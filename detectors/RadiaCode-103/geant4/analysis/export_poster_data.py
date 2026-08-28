@@ -23,8 +23,14 @@ import fit_two_criteria as ftc
 TEMPLATE_FMT = "rc103_field_room_%s.csv"
 TL208_BRANCH = 0.3594
 NUCS = ftc.NUCS
-# Оптимум связанной модели — из прогона fit_physical_chains.py (см. out/).
-F_RN, R_TH, F_TN = 0.000, 2.000, 0.000
+# Параметры связанной модели. С 28.08.2026 задаются по справочнику
+# skills/geant4-spectrum-pipeline/references/natural-series-equilibrium.md,
+# а не берутся из подгонки; переопределяются окружением так же, как в
+# fit_physical_chains.py, чтобы обе программы читали одни и те же значения.
+F_RN = float(os.environ.get("G4M_FIX_FRN", 0.10))
+R_TH = float(os.environ.get("G4M_FIX_RTH", 1.00))
+F_TN = float(os.environ.get("G4M_FIX_FTN", 0.00))
+NO_MUON = os.environ.get("G4M_NO_MUON", "") == "1"
 
 RU = {"K40": "K-40", "Ra226": "Ra-226", "Pb214": "Pb-214", "Bi214": "Bi-214",
       "Pb212": "Pb-212", "Ac228": "Ac-228", "Bi212": "Bi-212", "Tl208": "Tl-208",
@@ -79,29 +85,43 @@ def main():
     col_th = A_counts[:, cols.index("Ac228")] + R_TH * (1 - F_TN) * (
         A_counts[:, cols.index("Pb212")] + A_counts[:, cols.index("Bi212")]
         + TL208_BRANCH * A_counts[:, cols.index("Tl208")])
-    Ac = np.column_stack([A_counts[:, cols.index("K40")], col_ra, col_th,
-                          A_counts[:, cols.index("mu")]])
+    _chain_cols = [A_counts[:, cols.index("K40")], col_ra, col_th]
+    if not NO_MUON:
+        _chain_cols.append(A_counts[:, cols.index("mu")])
+    Ac = np.column_stack(_chain_cols)
     vc_ra = VAR_counts[:, cols.index("Ra226")] + (1 - F_RN) ** 2 * (
         VAR_counts[:, cols.index("Pb214")] + VAR_counts[:, cols.index("Bi214")])
     vc_th = VAR_counts[:, cols.index("Ac228")] + (R_TH * (1 - F_TN)) ** 2 * (
         VAR_counts[:, cols.index("Pb212")] + VAR_counts[:, cols.index("Bi212")]
         + TL208_BRANCH ** 2 * VAR_counts[:, cols.index("Tl208")])
-    Vc = np.column_stack([VAR_counts[:, cols.index("K40")], vc_ra, vc_th,
-                          VAR_counts[:, cols.index("mu")]])
+    _chain_vars = [VAR_counts[:, cols.index("K40")], vc_ra, vc_th]
+    if not NO_MUON:
+        _chain_vars.append(VAR_counts[:, cols.index("mu")])
+    Vc = np.column_stack(_chain_vars)
     wA = 1.0 / np.sqrt(np.maximum(y, 1.0))
+    _chain_names = ["K40", "Ra226_chain", "Th232_chain"] + ([] if NO_MUON else ["mu"])
     amp_c, sd_c, pred_c, chi2_c, shape_c = ftc.fit(
-        Ac, y, wA, ["K40", "Ra226_chain", "Th232_chain", "mu"],
+        Ac, y, wA, _chain_names,
         "экспорт-связанный", "", var_counts=Vc)
 
-    a_k, a_ra, a_th, a_mu = (float(v) for v in amp_c)
+    if NO_MUON:
+        a_k, a_ra, a_th = (float(v) for v in amp_c)
+        a_mu = 0.0
+    else:
+        a_k, a_ra, a_th, a_mu = (float(v) for v in amp_c)
     act = {"K40": a_k, "Ra226": a_ra, "Pb214": a_ra * (1 - F_RN),
            "Bi214": a_ra * (1 - F_RN), "Ac228": a_th,
            "Pb212": a_th * R_TH * (1 - F_TN), "Bi212": a_th * R_TH * (1 - F_TN),
            "Tl208": TL208_BRANCH * a_th * R_TH * (1 - F_TN), "mu": a_mu}
+    if NO_MUON:
+        act.pop("mu")
 
     # Вклад каждого нуклида = его активность x его шаблон. Сумма тождественно
     # равна pred_c: столбцы связанной модели — те же шаблоны с теми же весами.
-    parts = {n: act[n] * A_counts[:, cols.index(n)] / live for n in cols}
+    # Без мюонов их шаблон в разложение не входит вовсе, иначе на графике
+    # осталась бы тождественно нулевая кривая с подписью.
+    _parts_cols = [n for n in cols if not (NO_MUON and n == "mu")]
+    parts = {n: act[n] * A_counts[:, cols.index(n)] / live for n in _parts_cols}
     resid = float(np.max(np.abs(sum(parts.values()) * live - pred_c)))
 
     step = 2                       # прореживание для веса страницы
@@ -121,7 +141,10 @@ def main():
     # крайних сингулярных чисел. Иначе страница показывает не то число, что
     # печатают отчёты: np.corrcoef центрирует, а деление на сумму столбца даёт
     # другую матрицу — на этом уже разошлись 265 на странице против 246 в отчёте.
-    norm_cols = A_counts / np.maximum(np.linalg.norm(A_counts, axis=0), 1e-300)
+    # Матрица считается по ТЕМ ЖЕ столбцам, что и подписи corr_names: иначе
+    # без мюонов размерности расходятся и страница подписывает чужие строки.
+    _deg = A_counts[:, [cols.index(n) for n in _parts_cols]]
+    norm_cols = _deg / np.maximum(np.linalg.norm(_deg, axis=0), 1e-300)
     C = norm_cols.T @ norm_cols
     sv = np.linalg.svd(norm_cols, compute_uv=False)
     cond_val = float(sv[0] / sv[-1])
@@ -134,11 +157,12 @@ def main():
         "energy": ser(e),
         "measured": ser(y / live),
         "model": ser(pred_c / live),
-        "parts": {n: ser(parts[n]) for n in cols},
+        "parts": {n: ser(parts[n]) for n in _parts_cols},
         "chain": {
-            "amp": {"K40": a_k, "Ra226_chain": a_ra, "Th232_chain": a_th, "mu": a_mu},
-            "sd": {k: float(v) for k, v in zip(
-                ["K40", "Ra226_chain", "Th232_chain", "mu"], sd_c)},
+            "amp": ({"K40": a_k, "Ra226_chain": a_ra, "Th232_chain": a_th}
+                    if NO_MUON else
+                    {"K40": a_k, "Ra226_chain": a_ra, "Th232_chain": a_th, "mu": a_mu}),
+            "sd": {k: float(v) for k, v in zip(_chain_names, sd_c)},
             "act": act, "f_rn": F_RN, "r_th": R_TH, "f_tn": F_TN,
             "chi2ndf": float(chi2_c), "shape": float(shape_c),
             "balance": round(float(pred_c.sum() / y.sum()), 4),
@@ -148,7 +172,8 @@ def main():
         "bands": bands,
         "cond": cond_val,
         "corr": [[round(float(v), 3) for v in row] for row in C],
-        "corr_names": [RU[n] for n in cols],
+        "corr_names": [RU[n] for n in _parts_cols],
+        "no_muon": NO_MUON,
         "muon_pdg": ftc.MUON_PDG_PER_S,
         "ru": RU,
     }

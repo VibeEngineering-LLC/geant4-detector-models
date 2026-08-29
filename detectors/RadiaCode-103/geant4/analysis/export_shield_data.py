@@ -220,15 +220,18 @@ def main():
     acts_ser = {k: round(float(v), 8) for k, v in acts.items()}
 
     # Мюонные параметры (если есть в amp_map или отдельно)
-    muon_info = {}
+    # ⚠ pdg — это ПОТОК PDG через диск шаблона (0,0167 см^-2 c^-1 x площадь), а
+    # НЕ амплитуда. ps.load_cps переопределяет ftc.MUON_PDG_PER_S значением из
+    # метаданных мюонного шаблона, поэтому оно соответствует его радиусу.
+    # Отношение — amp/pdg, справочная сверка порядка, а не доля среди амплитуд.
     if 'mu' in amp_map:
-        muon_info = {
-            "amp": round(float(amp_map['mu']), 8),
-            "pdg": round(float(acts.get('mu', 0)), 8), # pdg может быть в acts?
-            "ratio": round(float(amp_map['mu'] / sum(amp_map.values())), 8) if sum(amp_map.values()) > 0 else 0
-        }
+        amp_mu = float(amp_map['mu'])
+        pdg_mu = float(ftc.MUON_PDG_PER_S)
+        muon_info = {"amp": round(amp_mu, 8),
+                     "pdg": round(pdg_mu, 8),
+                     "ratio": round(amp_mu / pdg_mu, 8) if pdg_mu > 0 else None}
     else:
-        muon_info = {"amp": 0, "pdg": 0, "ratio": 0}
+        muon_info = {"amp": 0, "pdg": 0, "ratio": None}
 
     # Setup параметры
     setup_info = {
@@ -236,9 +239,9 @@ def main():
         "cavity": "150x150x385",
         "top_open": True,
         "tail_T": ps.TAIL_T,
-        "f_rn": ftc.F_RN if hasattr(ftc, 'F_RN') else 0,
-        "r_th": ftc.R_TH if hasattr(ftc, 'R_TH') else 0,
-        "f_tn": ftc.F_TN if hasattr(ftc, 'F_TN') else 0
+        "f_rn": ps.F_RN,
+        "r_th": ps.R_TH,
+        "f_tn": ps.F_TN
     }
 
     # Chi2 и Shape

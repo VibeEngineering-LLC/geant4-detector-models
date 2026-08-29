@@ -15,8 +15,8 @@
 #include <cstdlib>
 
 Rc103MuonPrimaryGeneratorAction::Rc103MuonPrimaryGeneratorAction(
-    const Rc103MuonSpectrum* spectrum, double rDiskMm)
-    : fSpectrum(spectrum), fRDiskMm(rDiskMm), fGun(1) {
+    const Rc103MuonSpectrum* spectrum, double rDiskMm, double zDiskMm)
+    : fSpectrum(spectrum), fRDiskMm(rDiskMm), fZDiskMm(zDiskMm), fGun(1) {
   auto* mu = G4ParticleTable::GetParticleTable()->FindParticle("mu-");
   if (!mu) {
     std::fprintf(stderr,
@@ -31,7 +31,7 @@ void Rc103MuonPrimaryGeneratorAction::GeneratePrimaries(G4Event* event) {
   // 1) точка равномерно ПО ПЛОЩАДИ диска
   const double r = fRDiskMm * std::sqrt(G4UniformRand()) * mm;
   const double ph = twopi * G4UniformRand();
-  const G4ThreeVector pos(r * std::cos(ph), r * std::sin(ph), kZDiskMm * mm);
+  const G4ThreeVector pos(r * std::cos(ph), r * std::sin(ph), fZDiskMm * mm);
 
   // 2) направление вниз; p(cosT) ~ cosT^3  =>  cosT = U^(1/4).
   //    Именно 0.25, НЕ std::cbrt — см. развёрнутое обоснование в .hh.

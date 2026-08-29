@@ -35,8 +35,12 @@ class Rc103MuonPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction {
   static constexpr double kZDiskMm = 100.0;
   static constexpr double kRDiskDefaultMm = 150.0;
 
+  // Z_DISK стал параметром 29.08.2026: со свинцовым домиком высота 100 мм
+  // приходится ВНУТРЬ полости (её верхний срез на z = +217.5 мм), и мюоны
+  // рождались бы уже за защитой. Дефолт оставлен прежним, чтобы прогоны без
+  // домика воспроизводились дословно.
   Rc103MuonPrimaryGeneratorAction(const Rc103MuonSpectrum* spectrum,
-                                  double rDiskMm);
+                                  double rDiskMm, double zDiskMm = kZDiskMm);
   ~Rc103MuonPrimaryGeneratorAction() override = default;
 
   void GeneratePrimaries(G4Event* event) override;
@@ -44,5 +48,6 @@ class Rc103MuonPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction {
  private:
   const Rc103MuonSpectrum* fSpectrum;
   double fRDiskMm;
+  double fZDiskMm;
   G4ParticleGun fGun;
 };

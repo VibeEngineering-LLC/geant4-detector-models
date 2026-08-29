@@ -28,15 +28,40 @@ class Rc103MuonDetectorConstruction : public G4VUserDetectorConstruction {
   // Базовый полуразмер мира по спеке. Фактический = max(этого, R_DISK+100).
   static constexpr double kWorldHalfMmDefault = 400.0;
 
-  Rc103MuonDetectorConstruction(const G4String& gdmlPath, double worldHalfMm);
+  // Свинцовый домик — те же числа, что в run_field (оператор, 15.08.2026):
+  // стенки и дно 50 мм, полость 150 x 150 x 385 мм, ВЕРХ ОТКРЫТ (крышки нет),
+  // поэтому наружная высота = полость + одно дно, а не + два.
+  static constexpr double kShieldPbMm = 50.0;
+  static constexpr double kShieldCavityXMm = 150.0;
+  static constexpr double kShieldCavityYMm = 150.0;
+  static constexpr double kShieldCavityZMm = 385.0;
+  static constexpr double kShieldOuterXMm =
+      kShieldCavityXMm + 2.0 * kShieldPbMm;         // 250
+  static constexpr double kShieldOuterYMm =
+      kShieldCavityYMm + 2.0 * kShieldPbMm;         // 250
+  static constexpr double kShieldOuterZMm =
+      kShieldCavityZMm + kShieldPbMm;               // 435: дно есть, крышки нет
+
+  Rc103MuonDetectorConstruction(const G4String& gdmlPath, double worldHalfMm,
+                                bool shieldOn = false, double zDiskMm = 100.0);
   G4VPhysicalVolume* Construct() override;
 
   // Кристалл CsI(Tl). До Initialize() — nullptr.
   static G4LogicalVolume* GetCrystalLogicalVolume() { return fgCrystalLV; }
+  // Свинец домика. nullptr, если домик выключен либо до Initialize().
+  static G4LogicalVolume* GetShieldLogicalVolume() { return fgShieldLV; }
 
  private:
+  void BuildLeadShield(G4LogicalVolume* worldLV, G4LogicalVolume* deviceLV);
+
   G4String fGdmlPath;
   double fWorldHalfMm;
+  bool fShieldOn = false;
+  // Высота диска старта мюонов. Нужна здесь ради проверки: при включённом
+  // домике диск обязан быть ВЫШЕ его открытого верха, иначе мюоны рождались
+  // бы внутри полости, за защитой.
+  double fZDiskMm = 100.0;
   G4GDMLParser fParser;
   static G4LogicalVolume* fgCrystalLV;
+  static G4LogicalVolume* fgShieldLV;
 };

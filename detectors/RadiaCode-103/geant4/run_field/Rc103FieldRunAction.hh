@@ -32,7 +32,8 @@ class Rc103FieldRunAction : public G4UserRunAction {
   void BeginOfRunAction(const G4Run*) override;
   void EndOfRunAction(const G4Run* run) override;
 
-  void RecordEvent(G4double edepMeV);
+  // category: 0 = мимо свинца, 1 = рассеян в свинце, 2 = рождён в свинце
+  void RecordEvent(G4double edepMeV, int category);
   void AddGammaTrackLengthMm(G4double lenMm) { fSumTrackLenMm += lenMm; }
 
  private:
@@ -48,4 +49,9 @@ class Rc103FieldRunAction : public G4UserRunAction {
   long long fNHits = 0;
   double fSumTrackLenMm = 0.0;
   std::array<long long, kNBins> fHistogram{};
+  // Разбиение того же счёта по происхождению (29.08.2026). Сумма трёх
+  // гистограмм обязана совпадать с fHistogram побитово.
+  static constexpr int kNCat = 3;
+  std::array<std::array<long long, kNBins>, kNCat> fHistOrigin{};
+  std::array<long long, kNCat> fNHitsOrigin{};
 };

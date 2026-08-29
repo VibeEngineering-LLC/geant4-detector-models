@@ -29,9 +29,11 @@ void Rc103FieldRunAction::BeginOfRunAction(const G4Run*) {
   fNHits = 0;
   fSumTrackLenMm = 0.0;
   fHistogram.fill(0);
+  for (auto& h : fHistOrigin) h.fill(0);
+  fNHitsOrigin.fill(0);
 }
 
-void Rc103FieldRunAction::RecordEvent(G4double edepMeV) {
+void Rc103FieldRunAction::RecordEvent(G4double edepMeV, int category) {
   ++fNEvents;
   if (edepMeV > 0.0) {
     ++fNHits;
@@ -39,6 +41,11 @@ void Rc103FieldRunAction::RecordEvent(G4double edepMeV) {
     const int bin = static_cast<int>(edepKeV / kBinWidthKeV);
     if (bin >= 0 && bin < kNBins) {
       ++fHistogram[static_cast<std::size_t>(bin)];
+      if (category >= 0 && category < kNCat) {
+        ++fHistOrigin[static_cast<std::size_t>(category)]
+                     [static_cast<std::size_t>(bin)];
+        ++fNHitsOrigin[static_cast<std::size_t>(category)];
+      }
     }
   }
 }
@@ -99,6 +106,11 @@ void Rc103FieldRunAction::EndOfRunAction(const G4Run* run) {
   csv << "metric,value\n";
   csv << "n_events," << fNEvents << "\n";
   csv << "n_hits_in_crystal," << fNHits << "\n";
+  // Разбиение того же счёта по происхождению: мимо свинца / рассеян в свинце /
+  // рождён в свинце (флуоресценция K-серии, тормозное).
+  csv << "n_hits_direct," << fNHitsOrigin[0] << "\n";
+  csv << "n_hits_pb_scat," << fNHitsOrigin[1] << "\n";
+  csv << "n_hits_pb_born," << fNHitsOrigin[2] << "\n";
   csv << "flux_total_cm2_s," << fFluxTotalCm2S << "\n";
   csv << "surface_cm2," << fSurfaceCm2 << "\n";
   csv << "rate_per_s," << fRatePerS << "\n";
@@ -125,11 +137,15 @@ void Rc103FieldRunAction::EndOfRunAction(const G4Run* run) {
     csv << "flux_measured_cm2_s," << fluxMeasured << "\n";
     csv << "flux_ratio," << fluxRatio << "\n";
   }
-  csv << "\nbin_keV,counts,cps\n";
+  // ⚠ Три первые колонки обязаны остаться на местах и с прежним смыслом: весь
+  // разбор в analysis/ читает их позиционно.
+  csv << "\nbin_keV,counts,cps,counts_direct,counts_pb_scat,counts_pb_born\n";
   for (int i = 0; i < kNBins; ++i) {
-    const long long c = fHistogram[static_cast<std::size_t>(i)];
+    const std::size_t b = static_cast<std::size_t>(i);
+    const long long c = fHistogram[b];
     const double cps = (fTRunS > 0.0) ? double(c) / fTRunS : 0.0;
-    csv << i << "," << c << "," << cps << "\n";
+    csv << i << "," << c << "," << cps << "," << fHistOrigin[0][b] << ","
+        << fHistOrigin[1][b] << "," << fHistOrigin[2][b] << "\n";
   }
   csv.close();
   std::cout << "Rc103FieldRunAction: wrote " << fOutputCsv << std::endl;

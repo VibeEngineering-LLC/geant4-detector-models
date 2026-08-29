@@ -11,9 +11,11 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 SRC = os.path.join(HERE, "src", "index.html")
 DATA = os.path.join(HERE, "..", "analysis", "out", "poster_data.json")
 CALDATA = os.path.join(HERE, "..", "analysis", "out", "calibration_data.json")
+SHDATA = os.path.join(HERE, "..", "analysis", "out", "shield_data.json")
 DIST = os.path.join(HERE, "dist")
 MARK = "/*DATA*/"
 MARK_CAL = "/*CALDATA*/"
+MARK_SH = "/*SHIELDDATA*/"
 
 
 def main():
@@ -21,7 +23,8 @@ def main():
     out = html
     total = 0
     for mark, path, what in ((MARK, DATA, "разложение"),
-                             (MARK_CAL, CALDATA, "калибровка")):
+                             (MARK_CAL, CALDATA, "калибровка"),
+                             (MARK_SH, SHDATA, "свинцовый домик")):
         raw = io.open(path, encoding="utf-8").read()
         json.loads(raw)                  # данные обязаны быть валидны до вставки
         if mark not in out:

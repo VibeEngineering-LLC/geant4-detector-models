@@ -37,12 +37,29 @@
 
 int main(int argc, char** argv) {
   double rDiskMm = Rc103MuonPrimaryGeneratorAction::kRDiskDefaultMm;
+  double zDiskMm = Rc103MuonPrimaryGeneratorAction::kZDiskMm;
+  bool shieldOn = false;
   long seed = 0;  // 0 = не трогать, оставить дефолтный сид Geant4
   std::string positional[2];
   int nPositional = 0;
   for (int i = 1; i < argc; ++i) {
     if (std::strncmp(argv[i], "rdisk=", 6) == 0) {
       rDiskMm = std::atof(argv[i] + 6);
+    } else if (std::strncmp(argv[i], "zdisk=", 6) == 0) {
+      zDiskMm = std::atof(argv[i] + 6);
+    } else if (std::strncmp(argv[i], "shield=", 7) == 0) {
+      const char* v = argv[i] + 7;
+      if (std::strcmp(v, "on") == 0) {
+        shieldOn = true;
+      } else if (std::strcmp(v, "off") == 0) {
+        shieldOn = false;
+      } else {
+        std::fprintf(stderr,
+                     "rc103_muon: FATAL непонятный аргумент '%s'. "
+                     "Формат: shield=on либо shield=off\n",
+                     argv[i]);
+        return 2;
+      }
     } else if (std::strncmp(argv[i], "seed=", 5) == 0) {
       seed = std::atol(argv[i] + 5);
     } else if (nPositional < 2) {
@@ -50,9 +67,9 @@ int main(int argc, char** argv) {
     }
   }
   if (nPositional < 2) {
-    std::fprintf(
-        stderr,
-        "usage: rc103_muon.exe <n_events> <out_csv> [rdisk=<mm>] [seed=<N>]\n");
+    std::fprintf(stderr,
+                 "usage: rc103_muon.exe <n_events> <out_csv> [rdisk=<mm>] "
+                 "[zdisk=<mm>] [shield=on|off] [seed=<N>]\n");
     return 2;
   }
 
@@ -71,8 +88,13 @@ int main(int argc, char** argv) {
     return 2;
   }
 
+  if (!(zDiskMm > 0.0)) {
+    std::fprintf(stderr, "rc103_muon: FATAL zdisk must be > 0 (got %g)\n",
+                 zDiskMm);
+    return 2;
+  }
+
   const double PI = 3.14159265358979323846;
-  const double zDiskMm = Rc103MuonPrimaryGeneratorAction::kZDiskMm;
   const double rDiskCm = rDiskMm / 10.0;
   const double diskAreaCm2 = PI * rDiskCm * rDiskCm;
   // Справочная проверка порядка величины: интегральный поток мюонов на уровне
@@ -83,15 +105,18 @@ int main(int argc, char** argv) {
   const double pdgExpectedPerS = kMuonFluxCm2S * diskAreaCm2;
 
   // Мир обязан вмещать диск: спека фиксирует 400 мм под rdisk=150..300, но
-  // допускает третий прогон при rdisk=600 — тогда 400 мм мало.
-  const double worldHalfMm =
-      std::max(Rc103MuonDetectorConstruction::kWorldHalfMmDefault,
-               rDiskMm + 100.0);
+  // допускает третий прогон при rdisk=600 — тогда 400 мм мало. С 29.08.2026
+  // мир обязан вмещать ещё и поднятый диск старта, и наружный габарит домика
+  // (полувысота 217,5 мм) — иначе постановка развалится молча.
+  const double worldHalfMm = std::max(
+      {Rc103MuonDetectorConstruction::kWorldHalfMmDefault, rDiskMm + 100.0,
+       zDiskMm + 100.0, 0.5 * Rc103MuonDetectorConstruction::kShieldOuterZMm + 100.0});
 
   std::fprintf(stdout,
                "rc103_muon: n_events=%lld out_csv=%s rdisk=%.1f mm zdisk=%.1f "
-               "mm world_half=%.1f mm\n",
-               nEvents, outCsv.c_str(), rDiskMm, zDiskMm, worldHalfMm);
+               "mm shield=%s world_half=%.1f mm\n",
+               nEvents, outCsv.c_str(), rDiskMm, zDiskMm,
+               shieldOn ? "on" : "off", worldHalfMm);
   std::fprintf(stdout,
                "rc103_muon: disk_area=%.6f cm2 pdg_expected=%.6e 1/s "
                "(reference only, NOT a constraint)\n",
@@ -112,7 +137,8 @@ int main(int argc, char** argv) {
   runManager->SetVerboseLevel(0);
 
   runManager->SetUserInitialization(
-      new Rc103MuonDetectorConstruction(gdmlPath, worldHalfMm));
+      new Rc103MuonDetectorConstruction(gdmlPath, worldHalfMm, shieldOn,
+                                        zDiskMm));
   runManager->SetUserInitialization(new Rc103MuonPhysicsList());
 
   auto* runAction = new Rc103MuonRunAction(
@@ -122,7 +148,7 @@ int main(int argc, char** argv) {
   runManager->SetUserAction(runAction);
   runManager->SetUserAction(eventAction);
   runManager->SetUserAction(
-      new Rc103MuonPrimaryGeneratorAction(&spectrum, rDiskMm));
+      new Rc103MuonPrimaryGeneratorAction(&spectrum, rDiskMm, zDiskMm));
   runManager->SetUserAction(new Rc103MuonSteppingAction(eventAction));
 
   runManager->Initialize();

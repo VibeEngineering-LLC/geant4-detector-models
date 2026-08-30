@@ -42,6 +42,17 @@ class Rc103MuonDetectorConstruction : public G4VUserDetectorConstruction {
   static constexpr double kShieldOuterZMm =
       kShieldCavityZMm + kShieldPbMm;               // 435: дно есть, крышки нет
 
+  // --- Посадка прибора в полости (P-005, 30.08.2026) ----------------------
+  // Те же параметры и та же семантика, что в run_field: реальная постановка —
+  // прибор ПЛАШМЯ, ЭКРАНОМ ВВЕРХ, на картонной коробке 25 мм над дном полости.
+  // gStandMm < 0 — прежнее допущение «центр габарита в (0,0,0)».
+  // Мюонный расчёт обязан жить в той же посадке, что гамма: иначе складываются
+  // две компоненты, посчитанные для разных геометрий, и сравнение с измерением
+  // перестаёт означать то, что написано на этикетке.
+  static double gStandMm;                           // = 25.0 (картон)
+  static bool gFlipUp;                              // = true (экран вверх)
+  static double gDeviceZMm;                         // фактическое z центра
+
   Rc103MuonDetectorConstruction(const G4String& gdmlPath, double worldHalfMm,
                                 bool shieldOn = false, double zDiskMm = 100.0);
   G4VPhysicalVolume* Construct() override;
@@ -52,7 +63,10 @@ class Rc103MuonDetectorConstruction : public G4VUserDetectorConstruction {
   static G4LogicalVolume* GetShieldLogicalVolume() { return fgShieldLV; }
 
  private:
-  void BuildLeadShield(G4LogicalVolume* worldLV, G4LogicalVolume* deviceLV);
+  // deviceZMm — фактическое положение центра габарита прибора по Z: проверка
+  // вместимости обязана считать зазоры от него, а не от нуля (P-005).
+  void BuildLeadShield(G4LogicalVolume* worldLV, G4LogicalVolume* deviceLV,
+                       double deviceZMm);
 
   G4String fGdmlPath;
   double fWorldHalfMm;

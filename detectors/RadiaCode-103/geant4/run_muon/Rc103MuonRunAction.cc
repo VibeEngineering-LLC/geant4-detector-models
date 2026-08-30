@@ -1,5 +1,7 @@
 #include "Rc103MuonRunAction.hh"
 
+#include "Rc103MuonDetectorConstruction.hh"  // признаки постановки для CSV
+
 #include "G4Run.hh"
 #include "G4SystemOfUnits.hh"
 
@@ -104,6 +106,16 @@ void Rc103MuonRunAction::EndOfRunAction(const G4Run* run) {
   csv << "e_lo_gev," << fELoGeV << "\n";
   csv << "e_hi_gev," << fEHiGeV << "\n";
   csv << "max_edep_keV," << fMaxEdepKeV << "\n";
+  // Признаки постановки. До 30.08.2026 CSV НЕ нёс даже shield: прогоны с
+  // домиком и без различались только именем файла (дыра, п.4 хендоффа 29.08).
+  // Посадка добавлена там же по P-005 — по той же причине.
+  {
+    using DC = Rc103MuonDetectorConstruction;
+    csv << "shield," << (DC::GetShieldLogicalVolume() != nullptr ? 1 : 0) << "\n";
+    csv << "stand_mm," << DC::gStandMm << "\n";
+    csv << "device_z_mm," << DC::gDeviceZMm << "\n";
+    csv << "screen_up," << (DC::gFlipUp ? 1 : 0) << "\n";
+  }
 
   csv << "\nbin_keV,counts,per_muon\n";
   for (int i = 0; i < kNBins; ++i) {

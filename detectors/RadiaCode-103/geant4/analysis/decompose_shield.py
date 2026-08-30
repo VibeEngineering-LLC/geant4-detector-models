@@ -59,7 +59,7 @@ RU = {"K40": "K-40", "Ra226": "Ra-226", "Pb214": "Pb-214", "Bi214": "Bi-214",
 def fit_open():
     """Подгонка открытого фона для получения исходных активностей."""
     cnt_o, e_o, live_o, _ = ps.read_meas(ftc.MEAS_NAME, ftc.CAL_ROOM)
-    cps_o, var_o, hm_o = ps.load_cps(ps.FMT_OPEN, ftc.MUON_CSV)
+    cps_o, var_o, hm_o, _ = ps.load_cps(ps.FMT_OPEN, ftc.MUON_CSV)
     
     if not hm_o:
         sys.exit("нет мюонного шаблона для открытого фона")

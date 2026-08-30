@@ -2,8 +2,12 @@
 
 #include "Rc103FieldDetectorConstruction.hh"  // состояние домика для CSV
 
+#include "G4LogicalVolume.hh"
+#include "G4Navigator.hh"
 #include "G4Run.hh"
 #include "G4SystemOfUnits.hh"
+#include "G4TransportationManager.hh"
+#include "G4VPhysicalVolume.hh"
 
 #include <cmath>
 #include <filesystem>
@@ -24,7 +28,34 @@ Rc103FieldRunAction::Rc103FieldRunAction(std::string outputCsv,
       fCheckNormMode(checkNormMode),
       fCheckVolumeCm3(checkVolumeCm3) {}
 
+namespace {
+
+// Контроль ОРИЕНТАЦИИ прибора (P-005, 30.08.2026). Кристалл сидит на 0.55 мм
+// от центра габарита в сторону экрана, полувысота его 5 мм. Точка на 5 мм выше
+// центра габарита попадает в кристалл ТОЛЬКО когда экран смотрит вверх: при
+// экране вниз кристалл занимает [z-5.55, z+4.45] и точка оказывается снаружи.
+// Одна точка различает две ориентации — проверка умеет краснеть (#SA-3).
+void ProbeCrystalOrientation() {
+  using DC = Rc103FieldDetectorConstruction;
+  if (DC::GetCrystalLogicalVolume() == nullptr) return;   // --check-norm
+  auto* nav = G4TransportationManager::GetTransportationManager()
+                  ->GetNavigatorForTracking();
+  const G4ThreeVector p(-49.5 * mm, 0.0, (DC::gDeviceZMm + 5.0) * mm);
+  auto* pv = nav->LocateGlobalPointAndSetup(p, nullptr, false, true);
+  const std::string got = pv ? pv->GetLogicalVolume()->GetName() : "(none)";
+  const bool inCrystal = (got == DC::GetCrystalLogicalVolume()->GetName());
+  std::cout << "Rc103FieldRunAction: контроль ориентации — точка (-49.5, 0, "
+            << (DC::gDeviceZMm + 5.0) << ") в объёме '" << got << "'; экран "
+            << (DC::gFlipUp ? "ВВЕРХ" : "вниз") << ", ожидание "
+            << (DC::gFlipUp ? "кристалл" : "НЕ кристалл") << " — "
+            << ((inCrystal == DC::gFlipUp) ? "СОШЛОСЬ" : "РАСХОЖДЕНИЕ")
+            << std::endl;
+}
+
+}  // namespace
+
 void Rc103FieldRunAction::BeginOfRunAction(const G4Run*) {
+  ProbeCrystalOrientation();
   fNEvents = 0;
   fNHits = 0;
   fSumTrackLenMm = 0.0;
@@ -130,6 +161,11 @@ void Rc103FieldRunAction::EndOfRunAction(const G4Run* run) {
     } else {
       csv << "none\n";
     }
+    // Посадка прибора (P-005, 30.08.2026): различение постановок по имени
+    // файла — та самая дыра, из-за которой сравнение вышло без оговорки.
+    csv << "stand_mm," << DC::gStandMm << "\n";
+    csv << "device_z_mm," << DC::gDeviceZMm << "\n";
+    csv << "screen_up," << (DC::gFlipUp ? 1 : 0) << "\n";
   }
   if (fCheckNormMode) {
     csv << "check_volume_cm3," << fCheckVolumeCm3 << "\n";

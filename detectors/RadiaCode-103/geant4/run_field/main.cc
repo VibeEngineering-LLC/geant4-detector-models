@@ -19,6 +19,7 @@
 #include "Rc103FieldSteppingAction.hh"
 
 #include "G4RunManagerFactory.hh"
+#include "Randomize.hh"
 #include "G4UImanager.hh"
 
 #include <cmath>
@@ -33,6 +34,10 @@
 
 int main(int argc, char** argv) {
   bool checkNorm = false;
+  // seed=<N> — зерно ГСЧ. Нужен затем же, зачем в run_muon: прогоны длиннее
+  // ~2 часов на этой машине не доживают (W-040), длинная статистика набирается
+  // серией коротких порций, а складывать их можно ТОЛЬКО при разных зёрнах.
+  long seed = 0;  // 0 = не трогать, оставить дефолтное зерно Geant4
   std::string positional[3];
   int nPositional = 0;
   for (int i = 1; i < argc; ++i) {
@@ -66,6 +71,40 @@ int main(int argc, char** argv) {
                      argv[i]);
         return 2;
       }
+    } else if (std::strncmp(argv[i], "seed=", 5) == 0) {
+      seed = std::atol(argv[i] + 5);
+    } else if (std::strncmp(argv[i], "stand=", 6) == 0) {
+      // stand=<мм> — высота опоры над дном полости (реально картон 25 мм);
+      // stand=asbuilt — прежнее допущение: центр габарита прибора в (0,0,0).
+      const char* v = argv[i] + 6;
+      if (std::strcmp(v, "asbuilt") == 0) {
+        Rc103FieldDetectorConstruction::gStandMm = -1.0;
+      } else {
+        char* end = nullptr;
+        const double s = std::strtod(v, &end);
+        if (end == v || *end != '\0' || s < 0.0) {
+          std::fprintf(stderr,
+                       "rc103_field: FATAL не разобран ключ '%s'. Формат: "
+                       "stand=<мм >= 0> либо stand=asbuilt\n",
+                       argv[i]);
+          return 2;
+        }
+        Rc103FieldDetectorConstruction::gStandMm = s;
+      }
+    } else if (std::strncmp(argv[i], "flip=", 5) == 0) {
+      // flip=up — экран вверх (реальная постановка); flip=down — как до 30.08.
+      const char* v = argv[i] + 5;
+      if (std::strcmp(v, "up") == 0) {
+        Rc103FieldDetectorConstruction::gFlipUp = true;
+      } else if (std::strcmp(v, "down") == 0) {
+        Rc103FieldDetectorConstruction::gFlipUp = false;
+      } else {
+        std::fprintf(stderr,
+                     "rc103_field: FATAL не разобран ключ '%s'. "
+                     "Формат: flip=up либо flip=down\n",
+                     argv[i]);
+        return 2;
+      }
     } else if (nPositional < 3) {
       positional[nPositional++] = argv[i];
     }
@@ -73,7 +112,8 @@ int main(int argc, char** argv) {
   if (nPositional < 3) {
     std::fprintf(stderr,
                  "usage: rc103_field.exe <flux_csv> <n_events> <out_csv> "
-                 "[room=<X>x<Y>x<Z>] [shield=on|off] [--check-norm]\n");
+                 "[room=<X>x<Y>x<Z>] [shield=on|off] [stand=<мм>|asbuilt] "
+                 "[flip=up|down] [--check-norm]\n");
     return 2;
   }
 
@@ -125,6 +165,10 @@ int main(int argc, char** argv) {
   auto* runManager =
       G4RunManagerFactory::CreateRunManager(G4RunManagerType::Serial);
   runManager->SetVerboseLevel(0);
+  if (seed != 0) {
+    G4Random::setTheSeed(seed);
+    std::fprintf(stdout, "rc103_field: seed=%ld\n", seed);
+  }
 
   runManager->SetUserInitialization(
       new Rc103FieldDetectorConstruction(gdmlPath, checkNorm));

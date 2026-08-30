@@ -61,7 +61,7 @@ def build():
     cnt_o, e_o, live_o, _ = ps.read_meas(ftc.MEAS_NAME, ftc.CAL_ROOM)
 
     # 2. Шаблоны открытые
-    cps_o, var_o, hm_o = ps.load_cps(ps.FMT_OPEN, ftc.MUON_CSV)
+    cps_o, var_o, hm_o, _ = ps.load_cps(ps.FMT_OPEN, ftc.MUON_CSV)
     if not hm_o:
         sys.exit("нет мюонного шаблона для открытого фона")
 
@@ -93,7 +93,7 @@ def build():
     cnt_s, e_s, live_s, _ = ps.read_meas(ps.MEAS_SHIELD, None)
 
     # 6. Шаблоны с домиком
-    cps_s, var_s, hm_s = ps.load_cps(ps.FMT_SHIELD, ps.MUON_SHIELD_CSV)
+    cps_s, var_s, hm_s, _ = ps.load_cps(ps.FMT_SHIELD, ps.MUON_SHIELD_CSV)
     if not hm_s:
         sys.exit("нет мюонного шаблона С ДОМИКОМ")
 

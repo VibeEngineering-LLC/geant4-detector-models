@@ -60,6 +60,37 @@ int main(int argc, char** argv) {
                      argv[i]);
         return 2;
       }
+    } else if (std::strncmp(argv[i], "stand=", 6) == 0) {
+      // stand=<мм> — опора над дном полости (реально картон 25 мм);
+      // stand=asbuilt — прежнее допущение: центр габарита в (0,0,0). P-005.
+      const char* v = argv[i] + 6;
+      if (std::strcmp(v, "asbuilt") == 0) {
+        Rc103MuonDetectorConstruction::gStandMm = -1.0;
+      } else {
+        char* end = nullptr;
+        const double sv = std::strtod(v, &end);
+        if (end == v || *end != 0 || sv < 0.0) {
+          std::fprintf(stderr,
+                       "rc103_muon: FATAL не разобран ключ '%s'. Формат: "
+                       "stand=<мм >= 0> либо stand=asbuilt\n",
+                       argv[i]);
+          return 2;
+        }
+        Rc103MuonDetectorConstruction::gStandMm = sv;
+      }
+    } else if (std::strncmp(argv[i], "flip=", 5) == 0) {
+      const char* v = argv[i] + 5;
+      if (std::strcmp(v, "up") == 0) {
+        Rc103MuonDetectorConstruction::gFlipUp = true;
+      } else if (std::strcmp(v, "down") == 0) {
+        Rc103MuonDetectorConstruction::gFlipUp = false;
+      } else {
+        std::fprintf(stderr,
+                     "rc103_muon: FATAL не разобран ключ '%s'. "
+                     "Формат: flip=up либо flip=down\n",
+                     argv[i]);
+        return 2;
+      }
     } else if (std::strncmp(argv[i], "seed=", 5) == 0) {
       seed = std::atol(argv[i] + 5);
     } else if (nPositional < 2) {
@@ -69,7 +100,8 @@ int main(int argc, char** argv) {
   if (nPositional < 2) {
     std::fprintf(stderr,
                  "usage: rc103_muon.exe <n_events> <out_csv> [rdisk=<mm>] "
-                 "[zdisk=<mm>] [shield=on|off] [seed=<N>]\n");
+                 "[zdisk=<mm>] [shield=on|off] [stand=<мм>|asbuilt] "
+                 "[flip=up|down] [seed=<N>]\n");
     return 2;
   }
 

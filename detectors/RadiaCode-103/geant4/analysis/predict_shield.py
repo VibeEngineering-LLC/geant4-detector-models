@@ -34,20 +34,44 @@ MUON_SHIELD_CSV = os.environ.get("G4M_MUON_SHIELD_CSV", "")
 BANDS = ftc.BANDS
 
 
+def _check_posture(meta, tag, posture):
+    """Посадка (P-005) — только у шаблонов С ДОМИКОМ. Смешать в одном
+    предсказании файлы с РАЗНОЙ посадкой — молчаливый W-035: числа сойдутся
+    по форме файла и разъедутся по физике. FATAL, не предупреждение."""
+    if meta.get("shield", 0.0) != 1.0:
+        return posture
+    p = (meta.get("stand_mm"), meta.get("screen_up"))
+    if posture is not None and p != posture:
+        print(f"FATAL: посадка '{tag}' {p} не совпадает с прежней {posture} "
+              f"— шаблоны для разных постановок смешивать нельзя (P-005/W-035).")
+        sys.exit(1)
+    return p if posture is None else posture
+
+
 def load_cps(fmt, muon_csv):
     """
     Загрузка шаблонов для заданного формата имени файла.
-    
+
     Аргументы:
         fmt: строка формата имени шаблона (с %s для нуклида).
         muon_csv: путь к мюонному шаблону (пустая строка = мюонов нет).
-        
+
     Возвращает:
-        (cps, var, has_muon)
+        (cps, var, has_muon, posture)
+
+    posture — (stand_mm, screen_up) из шапки CSV, если шаблон построен с
+    домиком (shield=1), иначе None. P-005 (30.08.2026): посадка прибора в
+    полости — параметр, а не константа кода; смешать в одном предсказании
+    шаблоны, посчитанные для РАЗНЫХ посадок, — тот же класс дефекта W-035
+    («сравниваемые постановки обязаны различаться ровно одной вещью»), только
+    молчаливый — числа сойдутся по форме файла и разъедутся по физике.
+    FATAL здесь, а не предупреждение: посадка входит в состав каждого числа
+    итоговой таблицы, ошибку нельзя откатить постфактум.
     """
     cps = {}
     var = {}
-    
+    posture = None
+
     # Загрузка нуклидов
     for nuc in fpc.NUCS:
         path = os.path.join(ftc.TEMPLATE_DIR, fmt % nuc)
@@ -60,7 +84,8 @@ def load_cps(fmt, muon_csv):
         cps[nuc] = ftc.rcspec.fold(arr, "103", tail_T=TAIL_T)
         # Вычисляем дисперсию (ftc.template_variance делает свой fold без хвоста, это принятое приближение)
         var[nuc] = ftc.template_variance(cnt_mc, float(meta.get("t_run_s", 0.0)))
-        
+        posture = _check_posture(meta, nuc, posture)
+
     has_muon = False
     
     # Загрузка мюонного фона, если указан и файл существует
@@ -75,8 +100,9 @@ def load_cps(fmt, muon_csv):
         pdg = float(meta_mu.get("pdg_expected_per_s", 0.0))
         if pdg > 0:
             ftc.MUON_PDG_PER_S = pdg
-        
-    return cps, var, has_muon
+        posture = _check_posture(meta_mu, "mu", posture)
+
+    return cps, var, has_muon, posture
 
 
 def to_meas_grid(col, e_meas):
@@ -204,7 +230,7 @@ def main():
     print(f"Полный счёт: {np.sum(cnt_o):.0f}, имп/с: {np.sum(cnt_o)/live_o:.4f}")
     
     # 2. Шаблоны без домика
-    cps_o, var_o, hm_o = load_cps(FMT_OPEN, ftc.MUON_CSV)
+    cps_o, var_o, hm_o, _posture_o = load_cps(FMT_OPEN, ftc.MUON_CSV)
     if not hm_o:
         print("ВНИМАНИЕ: Мюонный шаблон не найден или не указан. Работа продолжается без космической компоненты.")
     
@@ -257,11 +283,22 @@ def main():
     print(f"Коэффициенты калибровки: {cal_s[0]:.6f}, {cal_s[1]:.6f}, {cal_s[2]:.6f}")
     
     # 6. Шаблоны с домиком
-    cps_s, var_s, hm_s = load_cps(FMT_SHIELD, MUON_SHIELD_CSV)
+    cps_s, var_s, hm_s, posture_s = load_cps(FMT_SHIELD, MUON_SHIELD_CSV)
     if not hm_s:
         print("\nВНИМАНИЕ: Мюонный шаблон с домиком не найден или не указан.")
         print("Предсказание строится БЕЗ космической компоненты. Ожидается дефицит в жёсткой части спектра.")
-    
+    # Постановка расчёта (P-005) — обязательная оговорка при публикации:
+    # None означает шаблоны БЕЗ posture-полей (собраны ДО 30.08.2026 —
+    # прежнее допущение "центр габарита в (0,0,0), экраном вниз").
+    if posture_s is not None:
+        stand, screen = posture_s
+        print(f"\nПостановка расчёта (P-005): опора {stand} мм, "
+              f"экран {'ВВЕРХ' if screen == 1.0 else 'вниз'}.")
+    else:
+        print("\nПостановка расчёта: посадка НЕ указана в шаблонах — это "
+              "старые файлы (до 30.08.2026, допущение P-005, экраном вниз, "
+              "кристалл в центре полости). Якорь на них НЕ актуален.")
+
     # 7. Предсказание
     names_s, A_s, V_s = columns_on_grid(cps_s, var_s, e_s, hm_s)
     sel_s = (e_s >= ftc.E_LO) & (e_s < ftc.E_HI)

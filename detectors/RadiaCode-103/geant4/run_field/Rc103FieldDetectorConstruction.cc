@@ -23,6 +23,10 @@ double Rc103FieldDetectorConstruction::gRoomHalfXMm = 2000.0;
 double Rc103FieldDetectorConstruction::gRoomHalfYMm = 2000.0;
 double Rc103FieldDetectorConstruction::gRoomHalfZMm = 1400.0;
 bool Rc103FieldDetectorConstruction::gShieldOn = false;
+// Дефолты = РЕАЛЬНАЯ постановка оператора (P-005), а не прежнее допущение.
+double Rc103FieldDetectorConstruction::gStandMm = 25.0;
+bool Rc103FieldDetectorConstruction::gFlipUp = true;
+double Rc103FieldDetectorConstruction::gDeviceZMm = 0.0;
 
 G4LogicalVolume* Rc103FieldDetectorConstruction::fgCrystalLV = nullptr;
 G4LogicalVolume* Rc103FieldDetectorConstruction::fgCheckLV = nullptr;
@@ -78,7 +82,8 @@ G4LogicalVolume* FindVolumeOrFallback(const char* exactName,
 }  // namespace
 
 void Rc103FieldDetectorConstruction::BuildLeadShield(G4LogicalVolume* worldLV,
-                                                    G4LogicalVolume* deviceLV) {
+                                                    G4LogicalVolume* deviceLV,
+                                                    double deviceZMm) {
   auto* nist = G4NistManager::Instance();
 
   // Полуразмеры в мм (наружный габарит центрирован в (0,0,0) — см. развёрнутое
@@ -108,18 +113,21 @@ void Rc103FieldDetectorConstruction::BuildLeadShield(G4LogicalVolume* worldLV,
   const double devHX = devBox->GetXHalfLength() / mm;
   const double devHY = devBox->GetYHalfLength() / mm;
   const double devHZ = devBox->GetZHalfLength() / mm;
-  // Прибор стоит в (0,0,0), поэтому его габарит в мировых координатах —
-  // [-devH*, +devH*] по каждой оси.
+  // Прибор стоит на z = deviceZMm (P-005: посадка — параметр, а не ноль),
+  // поэтому его габарит по Z в мировых координатах — [zLo, zHi].
+  // Разворот на 180° вокруг X габарит не меняет: тело симметрично по Y и Z.
+  const double zLo = deviceZMm - devHZ;
+  const double zHi = deviceZMm + devHZ;
   const bool fitsX = (devHX <= cavHX) && (-devHX >= -cavHX);
   const bool fitsY = (devHY <= cavHY) && (-devHY >= -cavHY);
-  const bool fitsZ = (+devHZ <= cavZMax) && (-devHZ >= cavZMin);
+  const bool fitsZ = (zHi <= cavZMax) && (zLo >= cavZMin);
   std::fprintf(stdout,
                "Rc103FieldDetectorConstruction: SHIELD прибор %.1fx%.1fx%.1f мм "
-               "в полость %.1fx%.1f мм (z от %.1f до %.1f мм); зазоры: "
-               "x=%.1f y=%.1f вниз=%.1f вверх=%.1f мм\n",
-               2 * devHX, 2 * devHY, 2 * devHZ, kShieldCavityXMm,
+               "на z=%.2f мм в полость %.1fx%.1f мм (z от %.1f до %.1f мм); "
+               "зазоры: x=%.1f y=%.1f вниз=%.1f вверх=%.1f мм\n",
+               2 * devHX, 2 * devHY, 2 * devHZ, deviceZMm, kShieldCavityXMm,
                kShieldCavityYMm, cavZMin, cavZMax, cavHX - devHX,
-               cavHY - devHY, (-devHZ) - cavZMin, cavZMax - devHZ);
+               cavHY - devHY, zLo - cavZMin, cavZMax - zHi);
   if (!fitsX || !fitsY || !fitsZ) {
     std::fprintf(stderr,
                  "Rc103FieldDetectorConstruction: FATAL прибор %.1fx%.1fx%.1f мм "
@@ -267,16 +275,51 @@ G4VPhysicalVolume* Rc103FieldDetectorConstruction::Construct() {
   fgCrystalLV = crystalLV;
   fgCheckLV = nullptr;
 
-  // Прибор в (0,0,0) без поворота. pSurfChk=true последним аргументом —
-  // обязательная проверка наложений с миром.
-  new G4PVPlacement(nullptr, G4ThreeVector(0, 0, 0), deviceLV,
+  // --- Посадка прибора (P-005) -------------------------------------------
+  // Толщина берётся из СОЛИДА, а не из константы: если GDML изменится, высота
+  // посадки поедет вместе с ним, а не разойдётся молча.
+  double devHZmm = 0.0;
+  if (auto* devBox0 = dynamic_cast<G4Box*>(deviceLV->GetSolid())) {
+    devHZmm = devBox0->GetZHalfLength() / mm;
+  } else {
+    std::fprintf(stderr,
+                 "Rc103FieldDetectorConstruction: FATAL солид прибора '%s' не "
+                 "G4Box — высоту посадки не вычислить фактом.\n",
+                 deviceLV->GetSolid()->GetName().c_str());
+    std::abort();
+  }
+
+  double zDevMm = 0.0;   // режим «как считалось до 30.08»
+  if (gShieldOn && gStandMm >= 0.0) {
+    const double cavZMinMm = -0.5 * kShieldOuterZMm + kShieldPbMm;  // верх дна
+    zDevMm = cavZMinMm + gStandMm + devHZmm;
+  } else if (!gShieldOn && gStandMm >= 0.0) {
+    // Без домика дна нет — опору отсчитывать не от чего. Это не «поправим
+    // молча»: пара «без домика / с домиком» обязана различаться ровно домиком.
+    zDevMm = 0.0;
+  }
+  gDeviceZMm = zDevMm;
+
+  // Разворот на 180° вокруг длинной оси X: экран (в GDML при -Z) уходит вверх.
+  G4RotationMatrix* rot = nullptr;
+  if (gFlipUp) {
+    rot = new G4RotationMatrix();
+    rot->rotateX(180.0 * deg);
+  }
+  std::fprintf(stdout,
+               "Rc103FieldDetectorConstruction: посадка прибора z=%.2f мм "
+               "(stand=%.1f, экран %s, полутолщина %.2f мм)\n",
+               zDevMm, gStandMm, gFlipUp ? "ВВЕРХ" : "вниз", devHZmm);
+
+  // pSurfChk=true последним аргументом — обязательная проверка наложений.
+  new G4PVPlacement(rot, G4ThreeVector(0, 0, zDevMm * mm), deviceLV,
                     "pv_rc103_in_field", worldLV, false, 0, true);
 
   // Свинцовый домик — строго ПОСЛЕ прибора: так CheckOverlaps домика сверяется
   // с уже поставленным прибором, а не наоборот.
   fgShieldLV = nullptr;
   if (gShieldOn) {
-    BuildLeadShield(worldLV, deviceLV);
+    BuildLeadShield(worldLV, deviceLV, zDevMm);
   } else {
     std::fprintf(stdout,
                  "Rc103FieldDetectorConstruction: SHIELD OFF — свинцовый домик "

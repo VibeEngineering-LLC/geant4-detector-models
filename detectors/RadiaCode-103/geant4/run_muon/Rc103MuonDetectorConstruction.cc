@@ -27,6 +27,10 @@
 
 G4LogicalVolume* Rc103MuonDetectorConstruction::fgCrystalLV = nullptr;
 G4LogicalVolume* Rc103MuonDetectorConstruction::fgShieldLV = nullptr;
+// Дефолты = РЕАЛЬНАЯ постановка оператора (P-005), как и в run_field.
+double Rc103MuonDetectorConstruction::gStandMm = 25.0;
+bool Rc103MuonDetectorConstruction::gFlipUp = true;
+double Rc103MuonDetectorConstruction::gDeviceZMm = 0.0;
 
 Rc103MuonDetectorConstruction::Rc103MuonDetectorConstruction(
     const G4String& gdmlPath, double worldHalfMm, bool shieldOn, double zDiskMm)
@@ -79,7 +83,8 @@ G4LogicalVolume* FindVolumeOrFallback(const char* exactName,
 }  // namespace
 
 void Rc103MuonDetectorConstruction::BuildLeadShield(G4LogicalVolume* worldLV,
-                                                    G4LogicalVolume* deviceLV) {
+                                                    G4LogicalVolume* deviceLV,
+                                                    double deviceZMm) {
   auto* nist = G4NistManager::Instance();
 
   double outHX = (kShieldCavityXMm + 2.0 * kShieldPbMm) / 2.0;
@@ -113,13 +118,16 @@ void Rc103MuonDetectorConstruction::BuildLeadShield(G4LogicalVolume* worldLV,
   // Зазор вниз = (-devHZ) - cavZMin, зазор вверх = cavZMax - devHZ.
   // Генерация давала cavZMin + devHZ — то же по модулю, но с обратным знаком
   // (печаталось -158.75 вместо 158.75). На геометрию не влияло, только на печать.
-  double gapZBottom = (-devHZ) - cavZMin;
-  double gapZTop = cavZMax - devHZ;
+  // P-005: прибор стоит на deviceZMm, зазоры считаются от фактического места.
+  const double devZLo = deviceZMm - devHZ;
+  const double devZHi = deviceZMm + devHZ;
+  double gapZBottom = devZLo - cavZMin;
+  double gapZTop = cavZMax - devZHi;
 
   std::fprintf(stdout, "Rc103MuonDetectorConstruction: SHIELD Gaps (mm): X=%.2f Y=%.2f Z_Bottom=%.2f Z_Top=%.2f\n", 
                gapX, gapY, gapZBottom, gapZTop);
 
-  if (devHX > cavHX || devHY > cavHY || -devHZ < cavZMin || devHZ > cavZMax) {
+  if (devHX > cavHX || devHY > cavHY || devZLo < cavZMin || devZHi > cavZMax) {
     std::fprintf(stderr, "Rc103MuonDetectorConstruction: SHIELD FATAL - Device does not fit in cavity.\n");
     std::abort();
   }
@@ -198,14 +206,40 @@ G4VPhysicalVolume* Rc103MuonDetectorConstruction::Construct() {
   }
   fgCrystalLV = crystalLV;
 
-  // Прибор в (0,0,0) без поворота: корпус Case_outer 123 x 34 x 17.5 мм,
-  // длинная ось по X, по Z всего +-8.75 мм. pSurfChk=true последним
-  // аргументом — обязательная проверка наложений с миром.
-  new G4PVPlacement(nullptr, G4ThreeVector(0, 0, 0), deviceLV,
+  // Посадка прибора (P-005) — та же арифметика, что в run_field: толщина из
+  // СОЛИДА, высота от верха дна полости, разворот на 180° вокруг длинной оси X.
+  double devHZmm = 0.0;
+  if (auto* devBox0 = dynamic_cast<G4Box*>(deviceLV->GetSolid())) {
+    devHZmm = devBox0->GetZHalfLength() / mm;
+  } else {
+    std::fprintf(stderr,
+                 "Rc103MuonDetectorConstruction: FATAL солид прибора '%s' не "
+                 "G4Box — высоту посадки не вычислить фактом.\n",
+                 deviceLV->GetSolid()->GetName().c_str());
+    std::abort();
+  }
+  double zDevMm = 0.0;
+  if (fShieldOn && gStandMm >= 0.0) {
+    zDevMm = -0.5 * kShieldOuterZMm + kShieldPbMm + gStandMm + devHZmm;
+  }
+  gDeviceZMm = zDevMm;
+
+  G4RotationMatrix* rot = nullptr;
+  if (gFlipUp) {
+    rot = new G4RotationMatrix();
+    rot->rotateX(180.0 * deg);
+  }
+  std::fprintf(stdout,
+               "Rc103MuonDetectorConstruction: посадка прибора z=%.2f мм "
+               "(stand=%.1f, экран %s)\n",
+               zDevMm, gStandMm, gFlipUp ? "ВВЕРХ" : "вниз");
+
+  // pSurfChk=true последним аргументом — проверка наложений с миром.
+  new G4PVPlacement(rot, G4ThreeVector(0, 0, zDevMm * mm), deviceLV,
                     "pv_rc103_in_muon", worldLV, false, 0, true);
 
   if (fShieldOn) {
-    BuildLeadShield(worldLV, deviceLV);
+    BuildLeadShield(worldLV, deviceLV, zDevMm);
   }
 
   std::fprintf(stdout,

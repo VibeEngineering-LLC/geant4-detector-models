@@ -1546,17 +1546,30 @@ var ORIGIN = [
   function series(){
     if (mode === "origin"){
       return ORIGIN.map(function(o){
-        return {name:o.ru, color:o.c, data:(S.origin && S.origin[o.key]) || []};
+        return {key:o.key, name:o.ru, color:o.c, data:(S.origin && S.origin[o.key]) || []};
       }).filter(function(s){ return s.data.length; });
     }
     return NUCS.concat(["mu"]).map(function(n){
-      return {name:(S.ru && S.ru[n]) || n, color:col(n), data:(S.parts && S.parts[n]) || []};
+      return {key:n, name:(S.ru && S.ru[n]) || n, color:col(n), data:(S.parts && S.parts[n]) || []};
     }).filter(function(s){ return s.data.length; });
+  }
+  // Переключатели звеньев (по образцу первого графика, указание оператора
+  // 30.08.2026): у origin- и nuclide-режимов РАЗНЫЕ ключи, поэтому состояние
+  // сбрасывается в "все включены" при каждой смене режима, а не хранится
+  // одним объектом на оба набора — иначе "выключено" одного режима протекало
+  // бы в другой по случайному совпадению ключа.
+  var on = {};
+  function sumOf(ser){
+    var out = new Array(x.length);
+    for (var i = 0; i < x.length; i++) out[i] = 0;
+    ser.forEach(function(s){ for (var i = 0; i < x.length; i++) out[i] += (s.data[i] || 0); });
+    return out;
   }
 
   function draw(){
     while (gData.firstChild) gData.removeChild(gData.firstChild);
-    var ser = series();
+    var all = series();
+    var ser = all.filter(function(s){ return on[s.key] !== false; });
     // Заливки стопкой снизу вверх, без прозрачности и без контуров.
     var acc = new Array(x.length);
     for (var i = 0; i < x.length; i++) acc[i] = 0;
@@ -1579,7 +1592,11 @@ var ORIGIN = [
       for (var i = 0; i < x.length; i++) d += (i ? "L" : "M") + X(x[i]) + "," + Y(vals[i] || 0);
       el("path", {d:d, fill:"none", stroke:color, "stroke-width":w}, gData);
     }
-    line(mod, "#d62728", 1.6);
+    // Сумма — ТОЛЬКО по включённым звеньям (как в первом графике): полная
+    // сумма поверх частичных заливок подписывала бы одно, а показывала бы
+    // другое.
+    var sum = sumOf(ser);
+    line(sum, "#d62728", 1.6);
     line(meas, css.getPropertyValue("--ink").trim() || "#111", 1.2);
 
     var lg = document.getElementById("shLegend");
@@ -1593,22 +1610,63 @@ var ORIGIN = [
     }
     chip("измерено", css.getPropertyValue("--ink").trim() || "#111");
     chip("модель, сумма", "#d62728");
-    ser.forEach(function(s){ chip(s.name, s.color); });
     var sw = document.createElement("button");
     sw.type = "button";
     sw.className = "chip";
     sw.style.cursor = "pointer";
     sw.textContent = (mode === "origin") ? "показать по нуклидам" : "показать по происхождению";
-    sw.onclick = function(){ mode = (mode === "origin") ? "nuclide" : "origin"; draw(); };
+    sw.onclick = function(){
+      mode = (mode === "origin") ? "nuclide" : "origin";
+      on = {};                       // сброс: у режимов разные ключи
+      draw();
+    };
     lg.appendChild(sw);
 
-    document.getElementById("shCap").textContent =
+    var grid = document.createElement("div");
+    grid.className = "nucgrid";
+    lg.appendChild(grid);
+    all.forEach(function(s){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.setAttribute("aria-pressed", on[s.key] === false ? "false" : "true");
+      b.innerHTML = '<i style="background:' + s.color + '"></i>' + s.name;
+      b.title = "Показать или скрыть вклад: " + s.name;
+      b.addEventListener("click", function(){
+        on[s.key] = (on[s.key] === false);
+        draw();
+      });
+      grid.appendChild(b);
+    });
+    var box = document.createElement("span");
+    box.className = "allnone";
+    [["все", true], ["ничего", false]].forEach(function(p){
+      var b = document.createElement("button");
+      b.type = "button"; b.textContent = p[0];
+      b.addEventListener("click", function(){
+        all.forEach(function(s){ on[s.key] = p[1]; });
+        draw();
+      });
+      box.appendChild(b);
+    });
+    lg.appendChild(box);
+
+    var sTot = 0, mTot = 0;
+    for (var i = 0; i < x.length; i++){ sTot += sum[i]; mTot += meas[i]; }
+    var allOn = all.every(function(s){ return on[s.key] !== false; });
+    var cap =
       (mode === "origin"
         ? "Разбиение по происхождению относительно свинца. "
         : "Разбиение по нуклидам; космика показана отдельной заливкой. ") +
       "Измерение " + fmt(S.meas_shield.live_d, 2) + " суток, " +
       S.meas_shield.total_counts.toLocaleString("ru-RU") + " отсчётов; " +
-      "χ²/n.d.f. = " + fmt(S.chi2ndf, 2) + " при нуле подобранных параметров.";
+      "χ²/n.d.f. = " + fmt(S.chi2ndf, 2) + " при нуле подобранных параметров " +
+      "(метрика относится к полной модели и от переключений не меняется).";
+    if (!allOn){
+      cap += " Показаны не все звенья: красная кривая — сумма только " +
+        "включённых, она объясняет " + fmt(mTot ? sTot / mTot * 100 : 0, 1) +
+        " % измеренного счёта.";
+    }
+    document.getElementById("shCap").textContent = cap;
   }
   draw();
 })();

@@ -108,7 +108,12 @@ def check_geometry_consistency(metadata_list):
     Проверяет, что геометрические параметры совпадают у всех файлов.
     Возвращает первый словарь метаданных как эталон.
     """
-    geo_keys = ['r_disk_mm', 'z_disk_mm', 'disk_area_cm2', 'pdg_expected_per_s', 'e_lo_gev', 'e_hi_gev']
+    # stand_mm/screen_up добавлены 30.08.2026 (P-005): посадка прибора в
+    # домике теперь параметр, а не константа — сумматор обязан ловить
+    # смешение порций, посчитанных для РАЗНЫХ посадок, тем же механизмом,
+    # каким уже ловит расхождение по диску/потоку.
+    geo_keys = ['r_disk_mm', 'z_disk_mm', 'disk_area_cm2', 'pdg_expected_per_s',
+                'e_lo_gev', 'e_hi_gev', 'stand_mm', 'screen_up']
     
     if not metadata_list:
         return {}

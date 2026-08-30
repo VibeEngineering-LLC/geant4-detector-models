@@ -44,30 +44,24 @@
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
   font-size:16px;line-height:1.5;padding:28px 18px 64px}
-/* ТИПОГРАФИКА (указания оператора 28.08.2026, заменяют прежнюю редакцию).
-   1. Меру набора задаёт ЛИСТ, а не отдельный блок. Прежняя редакция
-      ограничивала ширину каждого текстового блока в ch при листе 1180 px:
-      текст шёл узкой лентой у левого края, справа оставалось пустое поле.
-   2. Основной текст выключается ПО ФОРМАТУ. Это отменяет прежний запрет
-      justify в проекте. Чтобы выключка не рвала строки «реками» пробелов,
-      включены автоматические переносы (hyphens:auto по lang="ru") — без них
-      justify на длинных русских терминах и давал тот дефект, из-за которого
-      его запрещали.
-   3. Заголовки, подписи и ячейки таблиц выключку по формату не получают:
-      короткую строку растягивать между полями нечем. */
+/* ТИПОГРАФИКА (правило оператора 27.08.2026, повторное: justify не
+   применять НИКОГДА, текст — влево; отменяет комментарий 28.08.2026 ниже
+   по хронологии — снят по факту 31.08.2026 после сверки с оператором).
+   Автопереносы (hyphens:auto) оставлены — они помогают с длинными
+   русскими терминами независимо от выключки. */
 .sheet{max-width:880px;margin:0 auto}
 body,p,li,td,th,figcaption,caption{text-align:left}
 p,li,.abstract p,.note p,.warn p,.warn li,.foot p,.sec-lead,.stand,
-.flow .box span{text-align:justify;hyphens:auto;-webkit-hyphens:auto;
+.flow .box span{text-align:left;hyphens:auto;-webkit-hyphens:auto;
   -moz-hyphens:auto;overflow-wrap:break-word}
-p,li,.cap,.sec-lead,caption,.stand,.abstract p,.note p,.warn p,.warn li,
-.warn h3,.flow .box span,.kpi .l,.foot p{max-width:none}
+p,li{max-width:78ch;text-wrap:pretty}
+.note p,.warn li,.warn p{max-width:74ch}
 th,td,caption,figcaption,.cap,.kpi .l,.num-tag,.eyebrow{text-align:left;hyphens:manual}
 /* Химические символы капитализировать нельзя: Ac-228, а не AC-228. */
 th.sym{text-transform:none}
 /* Список источников: нумерация видимая, набор по формату, как у прочей прозы. */
 ol.refs{margin:10px 0 0 0;padding-left:26px}
-ol.refs li{margin:0 0 7px 0;text-align:justify;hyphens:auto;overflow-wrap:break-word}
+ol.refs li{margin:0 0 7px 0;text-align:left;hyphens:auto;overflow-wrap:break-word;max-width:74ch}
 ol.refs li::marker{color:var(--faint);font-family:var(--mono);font-size:12px}
 /* Ссылка в списке источников: длинный URL не должен рвать вёрстку. */
 ol.refs a{color:inherit;text-decoration:underline;text-underline-offset:2px;

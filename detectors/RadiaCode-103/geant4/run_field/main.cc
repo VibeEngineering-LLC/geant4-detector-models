@@ -38,6 +38,14 @@ int main(int argc, char** argv) {
   // ~2 часов на этой машине не доживают (W-040), длинная статистика набирается
   // серией коротких порций, а складывать их можно ТОЛЬКО при разных зёрнах.
   long seed = 0;  // 0 = не трогать, оставить дефолтное зерно Geant4
+  // emcut=/deex= — порог продукции и режим атомной деэкситации (03.09.2026).
+  // ДЕФОЛТ deex=max по правилу #CFG-2 (оператор 03.09.2026: «счёт идёт всегда по
+  // максимальным настройкам, если не сказано иначе»). Прогоны ДО 03.09.2026
+  // воспроизводятся только явным deex=std — молча они больше не повторяются.
+  // emcut=0.05 мм — единственное отступление от «максимума», оплачено
+  // измерением: 1 мм→0,05 мм меняет полосы не больше чем на 1,7 %.
+  double emCutMm = 0.05;
+  std::string deexMode = "max";
   std::string positional[3];
   int nPositional = 0;
   for (int i = 1; i < argc; ++i) {
@@ -105,6 +113,32 @@ int main(int argc, char** argv) {
                      argv[i]);
         return 2;
       }
+    } else if (std::strncmp(argv[i], "emcut=", 6) == 0) {
+      // emcut=<мм> — порог продукции вторичных, тот же для gamma/e-/e+.
+      char* end = nullptr;
+      const double c = std::strtod(argv[i] + 6, &end);
+      if (end == argv[i] + 6 || *end != '\0' || !(c > 0.0)) {
+        std::fprintf(stderr,
+                     "rc103_field: FATAL не разобран ключ '%s'. "
+                     "Формат: emcut=<мм больше 0>\n",
+                     argv[i]);
+        return 2;
+      }
+      emCutMm = c;
+    } else if (std::strncmp(argv[i], "deex=", 5) == 0) {
+      // deex=std — как было; deex=deex — плюс Оже и DeexcitationIgnoreCut;
+      // deex=max — плюс PIXE. Неизвестное значение — отказ, не молчаливый std.
+      const char* v = argv[i] + 5;
+      if (std::strcmp(v, "std") == 0 || std::strcmp(v, "deex") == 0 ||
+          std::strcmp(v, "max") == 0) {
+        deexMode = v;
+      } else {
+        std::fprintf(stderr,
+                     "rc103_field: FATAL не разобран ключ '%s'. "
+                     "Формат: deex=std|deex|max\n",
+                     argv[i]);
+        return 2;
+      }
     } else if (nPositional < 3) {
       positional[nPositional++] = argv[i];
     }
@@ -113,7 +147,8 @@ int main(int argc, char** argv) {
     std::fprintf(stderr,
                  "usage: rc103_field.exe <flux_csv> <n_events> <out_csv> "
                  "[room=<X>x<Y>x<Z>] [shield=on|off] [stand=<мм>|asbuilt] "
-                 "[flip=up|down] [--check-norm]\n");
+                 "[flip=up|down] [emcut=<мм>] [deex=std|deex|max] "
+                 "[--check-norm]\n");
     return 2;
   }
 
@@ -172,7 +207,8 @@ int main(int argc, char** argv) {
 
   runManager->SetUserInitialization(
       new Rc103FieldDetectorConstruction(gdmlPath, checkNorm));
-  runManager->SetUserInitialization(new Rc103FieldPhysicsList());
+  runManager->SetUserInitialization(
+      new Rc103FieldPhysicsList(emCutMm, deexMode));
 
   auto* runAction =
       new Rc103FieldRunAction(outCsv, fluxTotal, surfaceCm2, ratePerS, tRunS,

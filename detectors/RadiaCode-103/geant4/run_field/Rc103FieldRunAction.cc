@@ -1,6 +1,7 @@
 #include "Rc103FieldRunAction.hh"
 
 #include "Rc103FieldDetectorConstruction.hh"  // состояние домика для CSV
+#include "Rc103FieldPhysicsList.hh"           // порог и режим деэкситации для CSV
 
 #include "G4LogicalVolume.hh"
 #include "G4Navigator.hh"
@@ -166,6 +167,10 @@ void Rc103FieldRunAction::EndOfRunAction(const G4Run* run) {
     csv << "stand_mm," << DC::gStandMm << "\n";
     csv << "device_z_mm," << DC::gDeviceZMm << "\n";
     csv << "screen_up," << (DC::gFlipUp ? 1 : 0) << "\n";
+    // Физика (03.09.2026): порог продукции и режим деэкситации — иначе пара
+    // прогонов std/deex/max различима только по имени файла.
+    csv << "em_cut_mm," << Rc103FieldPhysicsList::gCutMm << "\n";
+    csv << "em_deex," << Rc103FieldPhysicsList::gDeexMode << "\n";
   }
   if (fCheckNormMode) {
     csv << "check_volume_cm3," << fCheckVolumeCm3 << "\n";

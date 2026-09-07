@@ -1,0 +1,390 @@
+=== FILE: analyze_stage2.py ===
+import csv
+import math
+import glob
+import argparse
+import pathlib
+import sys
+import json
+import numpy as np
+
+sys.stdout.reconfigure(encoding="utf-8")
+
+try:
+    sys.path.insert(0, str(pathlib.Path(__file__).parent))
+    from analyze_ncompt import parse_csv
+except ImportError as e:
+    print(f"ОШИБКА: Не удалось импортировать analyze_ncompt.py: {e}")
+    sys.exit(3)
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--runs", required=True, help="Glob по CSV прогонов")
+    parser.add_argument("--ref", required=True, help="Путь к эталонной кривой")
+    parser.add_argument("--json", help="Файл для JSON-отчёта")
+    args = parser.parse_args()
+
+    # Читаем эталон
+    ref_data = []
+    try:
+        with open(args.ref, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("#"):
+                    continue
+                if line.strip() == "E_keV,S_MeV_cm,L_over_E_rel":
+                    continue
+                parts = line.strip().split(",")
+                if len(parts) >= 3:
+                    ref_data.append((float(parts[0]), float(parts[1]), float(parts[2])))
+    except Exception as e:
+        print(f"ОШИБКА: Не удалось прочитать эталон {args.ref}: {e}")
+        sys.exit(3)
+    
+    if not ref_data:
+        print("ОШИБКА: Пустой файл эталона")
+        sys.exit(3)
+
+    ref_E = np.array([x[0] for x in ref_data])
+    ref_L_over_E_rel = np.array([x[2] for x in ref_data])
+
+    # Читаем прогоны
+    run_files = glob.glob(args.runs)
+    if not run_files:
+        print("ОШИБКА: Не найдено файлов прогонов по маске")
+        sys.exit(3)
+
+    runs = []
+    all_emcuts = set()
+    for file_path in run_files:
+        data = parse_csv(file_path)
+        if data is None:
+            print(f"ОШИБКА: Не удалось прочитать файл {file_path}")
+            sys.exit(3)
+        runs.append(data)
+        all_emcuts.add(data["em_cut_mm"])
+
+    # Сортируем пороги
+    emcuts = sorted(all_emcuts)
+
+    # Ищем порог 0.05 мм
+    target_emcut = 0.05
+    if target_emcut not in emcuts:
+        print(f"ОШИБКА: Порог {target_emcut} мм отсутствует в наборе прогонов")
+        sys.exit(3)
+    
+    # Собираем данные по каждому порогу
+    run_data_by_emcut = {}
+    for run in runs:
+        emcut = run["em_cut_mm"]
+        if emcut not in run_data_by_emcut:
+            run_data_by_emcut[emcut] = []
+        run_data_by_emcut[emcut].append(run)
+
+    # Проверяем, что у нас есть данные для 662 кэВ при пороге 0.05 мм
+    found_662 = False
+    for run in run_data_by_emcut[target_emcut]:
+        if run["energy_keV"] == 662:
+            found_662 = True
+            break
+    if not found_662:
+        print("ОШИБКА: Нет данных при 662 кэВ для порога 0.05 мм")
+        sys.exit(3)
+
+    # Собираем данные по энергиям и порогам
+    energy_data = {}
+    for emcut, run_list in run_data_by_emcut.items():
+        for run in run_list:
+            energy = run["energy_keV"]
+            if energy not in energy_data:
+                energy_data[energy] = {}
+            energy_data[energy][emcut] = run
+
+    # Строим кривые для каждого порога
+    results_by_emcut = {}
+    for emcut in emcuts:
+        if emcut not in run_data_by_emcut:
+            continue
+        runs_for_emcut = run_data_by_emcut[emcut]
+        ratios = []
+        energies = []
+        n_values = []
+        sum_light_values = []
+        sum_edep_values = []
+        sum_light2_values = []
+        for run in runs_for_emcut:
+            energy = run["energy_keV"]
+            n = int(float(run["n_with_edep"]))
+            sum_edep = float(run["sum_edep_MeV"])
+            sum_light = float(run["sum_light_MeV"])
+            sum_light2 = float(run["sum_light2_MeV2"])
+            if sum_edep <= 0:
+                print(f"ОШИБКА: Нулевой или отрицательный sum_edep при E={energy} кэВ, порог {emcut} мм")
+                sys.exit(3)
+            ratio = sum_light / sum_edep
+            sem_light = math.sqrt(max(sum_light2/n - (sum_light/n)**2, 0.0) / max(n - 1, 1))
+            ratios.append(ratio)
+            energies.append(energy)
+            n_values.append(n)
+            sum_light_values.append(sum_light)
+            sum_edep_values.append(sum_edep)
+            sum_light2_values.append(sum_light2)
+        results_by_emcut[emcut] = {
+            "energies": energies,
+            "ratios": ratios,
+            "n_values": n_values,
+            "sum_light_values": sum_light_values,
+            "sum_edep_values": sum_edep_values,
+            "sum_light2_values": sum_light2_values
+        }
+
+    # Нормируем по 662 кэВ для порога 0.05 мм
+    norm_emcut = target_emcut
+    if norm_emcut not in results_by_emcut:
+        print(f"ОШИБКА: Нет данных для нормировки при пороге {norm_emcut} мм")
+        sys.exit(3)
+    
+    norm_data = results_by_emcut[norm_emcut]
+    norm_ratio_662 = None
+    for i, energy in enumerate(norm_data["energies"]):
+        if energy == 662:
+            norm_ratio_662 = norm_data["ratios"][i]
+            break
+    if norm_ratio_662 is None:
+        print("ОШИБКА: Нет данных при 662 кэВ для нормировки")
+        sys.exit(3)
+
+    # Строим нормированные кривые
+    normalized_results = {}
+    for emcut, data in results_by_emcut.items():
+        y_values = []
+        for ratio in data["ratios"]:
+            y_values.append(ratio / norm_ratio_662)
+        normalized_results[emcut] = {
+            "energies": data["energies"],
+            "y_values": y_values,
+            "ratios": data["ratios"]
+        }
+
+    # Печатаем таблицу
+    print("Таблица результатов:")
+    print("E_keV, n, ratio, y(E), эталон, отклонение %, пометки")
+    
+    # Собираем все энергии
+    all_energies = sorted(energy_data.keys())
+    
+    # Для П-5б: таблица разброса по порогам
+    std_by_energy = {}
+    for energy in all_energies:
+        ratios_at_energy = []
+        for emcut, run_list in run_data_by_emcut.items():
+            for run in run_list:
+                if run["energy_keV"] == energy:
+                    sum_edep = float(run["sum_edep_MeV"])
+                    sum_light = float(run["sum_light_MeV"])
+                    if sum_edep > 0:
+                        ratio = sum_light / sum_edep
+                        ratios_at_energy.append(ratio)
+        if len(ratios_at_energy) >= 2:
+            std_by_energy[energy] = np.std(ratios_at_energy, ddof=1)
+    
+    # Печатаем таблицу для порога 0.05 мм
+    emcut_005 = 0.05
+    if emcut_005 in normalized_results:
+        data_005 = normalized_results[emcut_005]
+        for i, energy in enumerate(data_005["energies"]):
+            ratio = data_005["ratios"][i]
+            y_val = data_005["y_values"][i]
+            n = data_005["n_values"][i]
+            sem_light = math.sqrt(max(data_005["sum_light2_values"][i]/n - (data_005["sum_light_values"][i]/n)**2, 0.0) / max(n - 1, 1))
+            # Интерполируем эталон
+            if energy < ref_E[0] or energy > ref_E[-1]:
+                ref_val = "N/A"
+                diff_percent = "N/A"
+            else:
+                log_energy = math.log10(energy)
+                log_ref_E = np.log10(ref_E)
+                ref_interp = np.interp(log_energy, log_ref_E, ref_L_over_E_rel)
+                ref_val = ref_interp
+                diff_percent = abs(y_val - ref_interp) / ref_interp * 100
+            
+            # Пометки
+            marks = []
+            if sem_light / (data_005["sum_light_values"][i] / n) > 0.01:
+                marks.append("[стат]")
+            
+            mark_str = " ".join(marks)
+            
+            print(f"{energy}, {n}, {ratio:.6f}, {y_val:.6f}, {ref_val}, {diff_percent}, {mark_str}")
+
+    # Проверяем критерии
+    print("\nКРИТЕРИИ:")
+    
+    # П-3: y(E) против эталона при пороге 0.05 мм
+    emcut_005 = 0.05
+    if emcut_005 not in normalized_results:
+        print("П-3 FAIL: Нет данных для порога 0.05 мм")
+        sys.exit(1)
+    
+    data_005 = normalized_results[emcut_005]
+    all_pass_p3 = True
+    for i, energy in enumerate(data_005["energies"]):
+        if energy <= 5:
+            continue
+        y_val = data_005["y_values"][i]
+        # Интерполируем эталон
+        if energy < ref_E[0] or energy > ref_E[-1]:
+            continue
+        log_energy = math.log10(energy)
+        log_ref_E = np.log10(ref_E)
+        ref_interp = np.interp(log_energy, log_ref_E, ref_L_over_E_rel)
+        diff = abs(y_val - ref_interp)
+        if diff > 0.03:
+            all_pass_p3 = False
+            break
+    
+    print(f"П-3: {'PASS' if all_pass_p3 else 'FAIL'} (при пороге {emcut_005} мм)")
+
+    # П-4: положение максимума y(E) при пороге 0.05 мм
+    emcut_005 = 0.05
+    if emcut_005 not in normalized_results:
+        print("П-4 FAIL: Нет данных для порога 0.05 мм")
+        sys.exit(1)
+    
+    data_005 = normalized_results[emcut_005]
+    max_y = -1
+    max_energy = None
+    for i, energy in enumerate(data_005["energies"]):
+        if energy <= 5:
+            continue
+        y_val = data_005["y_values"][i]
+        if y_val > max_y:
+            max_y = y_val
+            max_energy = energy
+    
+    if max_energy is None:
+        print("П-4 FAIL: Нет данных для определения максимума")
+        sys.exit(1)
+    
+    in_range = 8 <= max_energy <= 12
+    print(f"П-4: {'PASS' if in_range else 'FAIL'} (максимум при {max_energy:.1f} кэВ, порог {emcut_005} мм)")
+
+    # П-5а: разброс сырых отношений по трём порогам при E ≤ 5 кэВ
+    emcuts_for_p5a = [0.01, 0.02, 0.05]
+    valid_emcuts = [emcut for emcut in emcuts_for_p5a if emcut in results_by_emcut]
+    if len(valid_emcuts) < 3:
+        print("П-5а FAIL: Не хватает порогов для проверки")
+        sys.exit(1)
+    
+    max_diff_p5a = 0
+    for energy in all_energies:
+        if energy > 5:
+            continue
+        ratios_at_energy = []
+        for emcut in valid_emcuts:
+            if emcut in results_by_emcut:
+                data = results_by_emcut[emcut]
+                for i, e in enumerate(data["energies"]):
+                    if e == energy:
+                        ratios_at_energy.append(data["ratios"][i])
+                        break
+        if len(ratios_at_energy) >= 2:
+            diff = max(ratios_at_energy) - min(ratios_at_energy)
+            if diff > max_diff_p5a:
+                max_diff_p5a = diff
+    
+    pass_p5a = max_diff_p5a <= 0.0005
+    print(f"П-5а: {'PASS' if pass_p5a else 'FAIL'} (максимальное отклонение {max_diff_p5a:.6f})")
+
+    # П-5б: таблица разброса по порогам (всегда)
+    print("\nТаблица разброса по порогам:")
+    print("E_keV, разброс по порогам, %")
+    for energy in sorted(std_by_energy.keys()):
+        std = std_by_energy[energy]
+        mean_ratio = np.mean([run["sum_light_MeV"] / run["sum_edep_MeV"] 
+                              for emcut, run_list in run_data_by_emcut.items() 
+                              for run in run_list if run["energy_keV"] == energy and float(run["sum_edep_MeV"]) > 0])
+        percent = std / mean_ratio * 100 if mean_ratio != 0 else 0
+        print(f"{energy}, {std:.6f}, {percent:.2f}")
+
+    # П-6: счётчики
+    all_pass_p6 = True
+    for run in runs:
+        bad_s = int(float(run["npsm_bad_s_count"]))
+        out_of_range = int(float(run["npsm_out_of_range_count"]))
+        overflow_edep = int(float(run["n_overflow_edep"]))
+        overflow_light = int(float(run["n_overflow_light"]))
+        if bad_s != 0 or out_of_range != 0 or overflow_edep != 0 or overflow_light != 0:
+            all_pass_p6 = False
+            break
+    
+    print(f"П-6: {'PASS' if all_pass_p6 else 'FAIL'}")
+
+    # Требуют толкования
+    print("\nТРЕБУЕТ ТОЛКОВАНИЯ:")
+    issues = []
+    
+    # Точки с пометкой [стат]
+    for emcut, data in normalized_results.items():
+        for i, energy in enumerate(data["energies"]):
+            if energy <= 5:
+                continue
+            n = data["n_values"][i]
+            sum_light = data["sum_light_values"][i]
+            sem_light = math.sqrt(max(data["sum_light2_values"][i]/n - (sum_light/n)**2, 0.0) / max(n - 1, 1))
+            if sem_light / (sum_light / n) > 0.01:
+                issues.append(f"Точка {energy} кэВ при пороге {emcut} мм с высокой статистикой")
+    
+    # Точки N/A
+    for energy in all_energies:
+        if energy < ref_E[0] or energy > ref_E[-1]:
+            issues.append(f"Точка {energy} кэВ вне диапазона эталона")
+
+    # Близкие к порогу значения
+    for emcut, data in normalized_results.items():
+        for i, energy in enumerate(data["energies"]):
+            if energy <= 5:
+                continue
+            y_val = data["y_values"][i]
+            if energy < ref_E[0] or energy > ref_E[-1]:
+                continue
+            log_energy = math.log10(energy)
+            log_ref_E = np.log10(ref_E)
+            ref_interp = np.interp(log_energy, log_ref_E, ref_L_over_E_rel)
+            diff = abs(y_val - ref_interp)
+            if 0.015 < diff <= 0.03:
+                issues.append(f"Точка {energy} кэВ при пороге {emcut} мм близка к порогу (отклонение {diff:.3f})")
+
+    # Прогоны с малым числом событий
+    for run in runs:
+        n = int(float(run["n_with_edep"]))
+        if n < 10000:
+            issues.append(f"Прогон при E={run['energy_keV']} кэВ, порог {run['em_cut_mm']} мм: {n} событий")
+
+    if issues:
+        for issue in issues:
+            print(issue)
+    else:
+        print("пусто")
+
+    # Итог
+    all_pass = all_pass_p3 and in_range and pass_p5a and all_pass_p6
+    result = "PASS" if all_pass else "FAIL"
+    print(f"\nSTAGE2_ACCEPTANCE={result}")
+    
+    if args.json:
+        report = {
+            "stage2_acceptance": result,
+            "criteria": {
+                "P3": all_pass_p3,
+                "P4": in_range,
+                "P5a": pass_p5a,
+                "P6": all_pass_p6
+            }
+        }
+        with open(args.json, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2)
+
+    return 0 if all_pass else 1
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,221 @@
+=== FILE: main.cc ===
+#include <iostream>
+#include <cstdlib>
+#include <string>
+#include <vector>
+#include <sstream>
+#include <fstream>
+#include <iomanip>
+#include <cstring>
+
+#include "G4RunManagerFactory.hh"
+#include "G4UImanager.hh"
+#include "G4UIcommand.hh"
+#include "Randomize.hh"  // G4Random::setTheSeed объявлен здесь, а не в G4Random.hh (его нет в 11.2.1)
+#include "G4SystemOfUnits.hh"
+
+#include "NpsmBenchDetectorConstruction.hh"
+#include "NpsmBenchPrimaryGeneratorAction.hh"
+#include "NpsmBenchEventAction.hh"
+#include "NpsmBenchRunAction.hh"
+#include "NpsmBenchSteppingAction.hh"
+#include "Rc103FieldPhysicsList.hh"
+#include "NpsmLightYield.hh"
+
+int main(int argc, char** argv) {
+    if (argc >= 2 && std::string(argv[1]) == "selftest") {
+        return NpsmLightYieldSelfTest();
+    }
+
+    if (argc < 4) {
+        std::fprintf(stderr, "Usage: %s <energy_keV> <n_events> <out_csv> [seed=<N>] [emcut=<mm>] [deex=std|deex|max] [crystal=<X>x<Y>x<Z>] [particle=gamma|e-] [beam=iso|pencil] [npsm=on|off] [npsm_eta=<value>] [npsm_ons=<value>] [npsm_trap=<value>] [npsm_birks=<value>]\n", argv[0]);
+        return 2;
+    }
+
+    double energyKeV = std::stod(argv[1]);
+    if (energyKeV <= 0) {
+        std::fprintf(stderr, "Ошибка: энергия должна быть положительной\n");
+        return 2;
+    }
+
+    long long nEvents = std::stoll(argv[2]);
+    if (nEvents <= 0) {
+        std::fprintf(stderr, "Ошибка: количество событий должно быть положительным\n");
+        return 2;
+    }
+
+    std::string outCsv = argv[3];
+
+    long seed = 0;
+    double emCutMm = 0.05;
+    std::string deexMode = "max";
+    std::string crystalStr = "102x102x406";
+    std::string particle = "gamma";
+    std::string beam = "iso";
+    std::string npsm = "off";
+    double npsmEta = 0.0;
+    double npsmOns = 0.0;
+    double npsmTrap = 0.0;
+    double npsmBirks = 0.0;
+
+    for (int i = 4; i < argc; ++i) {
+        const char* arg = argv[i];
+        if (std::strncmp(arg, "seed=", 5) == 0) {
+            seed = std::stoll(arg + 5);
+        } else if (std::strncmp(arg, "emcut=", 6) == 0) {
+            emCutMm = std::stod(arg + 6);
+            if (emCutMm <= 0) {
+                std::fprintf(stderr, "Ошибка: emcut должен быть положительным\n");
+                return 2;
+            }
+        } else if (std::strncmp(arg, "deex=", 5) == 0) {
+            deexMode = arg + 5;
+            if (deexMode != "std" && deexMode != "deex" && deexMode != "max") {
+                std::fprintf(stderr, "Ошибка: неизвестный режим deex\n");
+                return 2;
+            }
+        } else if (std::strncmp(arg, "crystal=", 8) == 0) {
+            crystalStr = arg + 8;
+        } else if (std::strncmp(arg, "particle=", 9) == 0) {
+            particle = arg + 9;
+            if (particle != "gamma" && particle != "e-") {
+                std::fprintf(stderr, "Ошибка: неизвестный тип частицы\n");
+                return 2;
+            }
+        } else if (std::strncmp(arg, "beam=", 5) == 0) {
+            beam = arg + 5;
+            if (beam != "iso" && beam != "pencil") {
+                std::fprintf(stderr, "Ошибка: неизвестный тип пучка\n");
+                return 2;
+            }
+        } else if (std::strncmp(arg, "npsm=", 5) == 0) {
+            npsm = arg + 5;
+            if (npsm != "on" && npsm != "off") {
+                std::fprintf(stderr, "Ошибка: неизвестный режим NPSM\n");
+                return 2;
+            }
+        } else if (std::strncmp(arg, "npsm_eta=", 9) == 0) {
+            npsmEta = std::stod(arg + 9);
+            if (npsmEta <= 0 || npsmEta > 1.0) {
+                std::fprintf(stderr, "Ошибка: npsm_eta должен быть в интервале (0, 1]\n");
+                return 2;
+            }
+        } else if (std::strncmp(arg, "npsm_ons=", 9) == 0) {
+            npsmOns = std::stod(arg + 9);
+            if (npsmOns <= 0) {
+                std::fprintf(stderr, "Ошибка: npsm_ons должен быть положительным\n");
+                return 2;
+            }
+        } else if (std::strncmp(arg, "npsm_trap=", 10) == 0) {
+            npsmTrap = std::stod(arg + 10);
+            if (npsmTrap <= 0) {
+                std::fprintf(stderr, "Ошибка: npsm_trap должен быть положительным\n");
+                return 2;
+            }
+        } else if (std::strncmp(arg, "npsm_birks=", 11) == 0) {
+            npsmBirks = std::stod(arg + 11);
+            if (npsmBirks <= 0) {
+                std::fprintf(stderr, "Ошибка: npsm_birks должен быть положительным\n");
+                return 2;
+            }
+        } else {
+            std::fprintf(stderr, "Ошибка: неизвестный параметр %s\n", arg);
+            return 2;
+        }
+    }
+
+    // Парсинг размеров кристалла
+    long long x, y, z;
+    if (std::sscanf(crystalStr.c_str(), "%lldx%lldx%lld", &x, &y, &z) != 3) {
+        std::fprintf(stderr, "Ошибка: неверный формат crystal=<X>x<Y>x<Z>\n");
+        return 2;
+    }
+
+    NpsmBenchDetectorConstruction::gCrystalXMm = static_cast<double>(x);
+    NpsmBenchDetectorConstruction::gCrystalYMm = static_cast<double>(y);
+    NpsmBenchDetectorConstruction::gCrystalZMm = static_cast<double>(z);
+
+    // Создание объекта NpsmLightYield и установка параметров
+    NpsmLightYield lightYield;
+    double eta = lightYield.Eta();
+    double ons = lightYield.SOns();
+    double trap = lightYield.STrap();
+    double birks = lightYield.SBirks();
+
+    if (npsmEta != 0.0) eta = npsmEta;
+    if (npsmOns != 0.0) ons = npsmOns;
+    if (npsmTrap != 0.0) trap = npsmTrap;
+    if (npsmBirks != 0.0) birks = npsmBirks;
+
+    lightYield.SetParameters(eta, ons, trap, birks);
+    lightYield.SetEnabled(npsm == "on");
+
+    // Инициализация Геанта
+    auto runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Serial);
+    runManager->SetVerboseLevel(0);
+
+    NpsmBenchPrimaryGeneratorAction::gParticle = particle;
+    NpsmBenchPrimaryGeneratorAction::gPencilBeam = (beam == "pencil");
+
+    auto detectorConstruction = new NpsmBenchDetectorConstruction();
+    runManager->SetUserInitialization(detectorConstruction);
+
+    auto physicsList = new Rc103FieldPhysicsList(emCutMm, deexMode);
+    runManager->SetUserInitialization(physicsList);
+
+    auto runAction = new NpsmBenchRunAction(outCsv, energyKeV, nEvents, seed, &lightYield);
+    runManager->SetUserAction(runAction);
+
+    auto eventAction = new NpsmBenchEventAction(runAction);
+    runManager->SetUserAction(eventAction);
+
+    auto primaryGenerator = new NpsmBenchPrimaryGeneratorAction(energyKeV);
+    runManager->SetUserAction(primaryGenerator);
+
+    auto steppingAction = new NpsmBenchSteppingAction(eventAction, &lightYield);
+    runManager->SetUserAction(steppingAction);
+
+    runManager->Initialize();
+
+    if (!NpsmBenchDetectorConstruction::GetCrystalLogicalVolume()) {
+        std::fprintf(stderr, "Ошибка: кристалл не был создан\n");
+        return 3;
+    }
+
+    // Установка UI команд
+    auto ui = G4UImanager::GetUIpointer();
+    ui->ApplyCommand("/run/verbose 1");
+    ui->ApplyCommand("/event/verbose 0");
+    ui->ApplyCommand("/tracking/verbose 0");
+
+    long long printProgress = nEvents / 10;
+    if (printProgress < 1) printProgress = 1;
+    std::ostringstream oss;
+    oss << "/run/printProgress " << printProgress;
+    ui->ApplyCommand(oss.str());
+
+    // Вывод информации перед запуском
+    double srcRadius = NpsmBenchDetectorConstruction::SourceRadiusMm();
+    std::printf("npsm_bench: energy_keV=%.3f n_events=%lld out_csv=%s crystal_mm=%gx%gx%g r_src_mm=%g seed=%ld\n",
+                energyKeV, nEvents, outCsv.c_str(),
+                NpsmBenchDetectorConstruction::gCrystalXMm,
+                NpsmBenchDetectorConstruction::gCrystalYMm,
+                NpsmBenchDetectorConstruction::gCrystalZMm,
+                srcRadius, seed);
+
+    std::printf("npsm_bench: particle=%s beam=%s npsm=%s eta=%.3f s_ons=%.3f s_trap=%.3f s_birks=%.3f\n",
+                particle.c_str(), beam.c_str(), npsm.c_str(),
+                eta, ons, trap, birks);
+
+    // Установка зерна случайных чисел
+    if (seed != 0) {
+        G4Random::setTheSeed(seed);
+    }
+
+    runManager->BeamOn(nEvents);
+
+    delete runManager;
+
+    std::printf("EXITCODE=0\n");
+    return 0;
+}

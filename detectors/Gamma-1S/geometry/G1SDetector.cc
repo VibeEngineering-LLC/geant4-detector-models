@@ -48,7 +48,13 @@
 #include "G4Tubs.hh"
 #include "G4VisAttributes.hh"
 
+#include "G4LogicalVolumeStore.hh"
+#include "G4VSolid.hh"
+
 #include <cstdio>
+#include "G4Region.hh"
+#include <functional>
+#include <map>
 #include <vector>
 
 namespace {
@@ -452,6 +458,18 @@ void G1SDetector::BuildHead(G4LogicalVolume* w) {
   // Кристалл
   fCrystalLV = Ring("NaI", 0, rCry, -zCry, zCry, Mat("G4_SODIUM_IODIDE"), w, cCry);
 
+  // Регион кристалла — для адресной деэкситации (линия В, 07.09.2026).
+  // Позволяет включить флуоресценцию/Оже/PIXE ТОЛЬКО там, где считается
+  // сигнал, и не платить за них в свинце, корпусе и баллоне ФЭУ. Здесь, в
+  // отличие от стенда, это имеет смысл: вокруг кристалла настоящее вещество.
+  // Регион создаётся всегда; пока физ-лист не получил имя региона ключом
+  // deex_region, поведение прежнее.
+  {
+    auto* reg = new G4Region("CrystalRegion");
+    reg->AddRootLogicalVolume(fCrystalLV);
+    std::printf("Region: CrystalRegion <- NaI\n");
+  }
+
   // Отражатель MgO: кольцо вдоль кристалла + шайба на входном торце
   Ring("MgO_side", rCry, rMgo, -zCry, zCry, Mat("MgO_powder"), w, cMgo);
   Ring("MgO_face", 0, rMgo, zCry, zMgoTop, Mat("MgO_powder"), w, cMgo);
@@ -661,5 +679,32 @@ void G1SDetector::ReportMasses() const {
   // потом не восстановить, при каких значениях получен результат.
   std::printf("  MgO %.2f г/см³ ; колодец маринелли %.1f мм ; матрица %s\n",
               h.mgoDensity, fVessel.wellDepth, fVessel.sampleMatrix.c_str());
+  ReportMassesFromGeometry();
   std::printf("\n");
+}
+
+// Независимая проверка масс ПО ПОСТРОЕННОЙ геометрии. Всё, что напечатано выше,
+// посчитано нашими же формулами по нашим же переменным и зашитыми плотностями:
+// такой счёт проверяет арифметику замысла, но не то, что Geant4 действительно
+// построил. Здесь объём берётся у САМОГО тела (`GetCubicVolume`), плотность — у
+// материала Geant4, а объём прямых дочерних вычитается — как это делает штатный
+// ASCIITree на уровне детальности 4 (Book For Application Developers, разд.
+// 8.3.15). Расхождение двух столбцов означает ошибку в одном из них.
+void G1SDetector::ReportMassesFromGeometry() const {
+  auto* store = G4LogicalVolumeStore::GetInstance();
+  G4LogicalVolume* world = store ? store->GetVolume("World", false) : nullptr;
+  if (!world) { std::printf("  [проверка масс: мир не найден]\n"); return; }
+  std::map<G4String, double> byMat;
+  std::function<void(G4LogicalVolume*)> walk = [&](G4LogicalVolume* lv) {
+    double v = lv->GetSolid()->GetCubicVolume();
+    const std::size_t nd = lv->GetNoDaughters();
+    for (std::size_t i = 0; i < nd; ++i)
+      v -= lv->GetDaughter(i)->GetLogicalVolume()->GetSolid()->GetCubicVolume();
+    byMat[lv->GetMaterial()->GetName()] += v * lv->GetMaterial()->GetDensity();
+    for (std::size_t i = 0; i < nd; ++i) walk(lv->GetDaughter(i)->GetLogicalVolume());
+  };
+  walk(world);
+  std::printf("--- то же по ПОСТРОЕННОЙ геометрии Geant4, кг ---\n");
+  for (const auto& kv : byMat)
+    std::printf("  %-22s %9.3f\n", kv.first.c_str(), kv.second / kg);
 }

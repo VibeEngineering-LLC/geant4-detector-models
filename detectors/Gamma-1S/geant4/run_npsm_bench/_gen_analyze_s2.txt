@@ -1,0 +1,359 @@
+=== FILE: analyze_stage2.py ===
+import csv
+import glob
+import argparse
+import pathlib
+import sys
+import json
+import numpy as np
+
+sys.stdout.reconfigure(encoding="utf-8")
+
+# Импорт функции parse_csv из analyze_ncompt.py
+try:
+    sys.path.insert(0, str(pathlib.Path(__file__).parent))
+    from analyze_ncompt import parse_csv
+except ImportError as e:
+    print(f"ОШИБКА: Не удалось импортировать analyze_ncompt.py: {e}")
+    sys.exit(3)
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--runs", required=True, help="Glob по CSV прогонов")
+    parser.add_argument("--ref", required=True, help="Путь к эталонной кривой")
+    parser.add_argument("--json", help="Файл для JSON-отчёта")
+    args = parser.parse_args()
+
+    # Чтение эталона
+    ref_data = []
+    try:
+        with open(args.ref, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("#"):
+                    continue
+                parts = line.strip().split(",")
+                if len(parts) >= 3:
+                    e_kev = float(parts[0])
+                    s_mev_cm = float(parts[1])
+                    l_over_e_rel = float(parts[2])
+                    ref_data.append((e_kev, s_mev_cm, l_over_e_rel))
+    except Exception as e:
+        print(f"ОШИБКА: Не удалось прочитать эталон {args.ref}: {e}")
+        sys.exit(3)
+
+    if not ref_data:
+        print("ОШИБКА: Пустой файл эталона")
+        sys.exit(3)
+
+    # Сбор данных по прогонам
+    runs = glob.glob(args.runs)
+    if not runs:
+        print("ОШИБКА: Не найдено файлов прогонов по маске", args.runs)
+        sys.exit(3)
+
+    run_data = []
+    for run_file in runs:
+        data = parse_csv(run_file)
+        if data is None:
+            print(f"ОШИБКА: Не удалось прочитать файл {run_file}")
+            sys.exit(3)
+        run_data.append(data)
+
+    # Сортировка по порогу
+    run_data.sort(key=lambda x: x.get("em_cut_mm", 0.0))
+
+    # Проверка наличия 662 кэВ для каждого порога
+    energy_662 = 662.0
+    required_energy = set()
+    for data in run_data:
+        required_energy.add(data["em_cut_mm"])
+
+    # Сбор данных по энергиям и порогам
+    energy_to_run = {}
+    for data in run_data:
+        em_cut = data["em_cut_mm"]
+        if em_cut not in energy_to_run:
+            energy_to_run[em_cut] = []
+        energy_to_run[em_cut].append(data)
+
+    # Проверка наличия 662 кэВ для каждого порога
+    for cut in required_energy:
+        found = False
+        for data in energy_to_run.get(cut, []):
+            if abs(data["energy_keV"] - energy_662) < 0.1:
+                found = True
+                break
+        if not found:
+            print(f"ОШИБКА: Для порога {cut} отсутствует точка 662 кэВ")
+            sys.exit(3)
+
+    # Подготовка эталонных данных для интерполяции
+    ref_energy = np.array([x[0] for x in ref_data])
+    ref_ratio = np.array([x[2] for x in ref_data])  # уже нормировано
+
+    # Сбор всех энергий и порогов
+    all_energies = set()
+    all_cuts = set()
+    for data in run_data:
+        all_energies.add(data["energy_keV"])
+        all_cuts.add(data["em_cut_mm"])
+
+    all_energies = sorted(all_energies)
+    all_cuts = sorted(all_cuts)
+
+    # Для каждого порога строим кривую
+    results = {}
+    for cut in all_cuts:
+        results[cut] = []
+
+    # Обработка прогонов
+    for data in run_data:
+        energy = data["energy_keV"]
+        em_cut = data["em_cut_mm"]
+        n_with_edep = int(float(data.get("n_with_edep", 0)))
+        sum_edep_MeV = float(data.get("sum_edep_MeV", 0))
+        sum_light_MeV = float(data.get("sum_light_MeV", 0))
+        sum_light2_MeV2 = float(data.get("sum_light2_MeV2", 0))
+
+        if n_with_edep <= 0:
+            print(f"ОШИБКА: Нулевое количество событий в прогоне {data}")
+            sys.exit(3)
+
+        if sum_edep_MeV <= 0:
+            print(f"ОШИБКА: Нулевая сумма энергии в прогоне {data}")
+            sys.exit(3)
+
+        ratio = sum_light_MeV / sum_edep_MeV
+
+        # Вычисление сем
+        sem_light = np.sqrt(max(sum_light2_MeV2 / n_with_edep - (sum_light_MeV / n_with_edep)**2, 0.0) / max(n_with_edep - 1, 1))
+
+        results[em_cut].append({
+            "energy": energy,
+            "n": n_with_edep,
+            "ratio": ratio,
+            "sem_light": sem_light
+        })
+
+    # Нормировка по 662 кэВ для каждого порога
+    norm_ratios = {}
+    for cut, data_list in results.items():
+        norm_ratios[cut] = []
+        energy_662_data = None
+        for item in data_list:
+            if abs(item["energy"] - energy_662) < 0.1:
+                energy_662_data = item
+                break
+        if not energy_662_data:
+            print(f"ОШИБКА: Не найдена точка 662 кэВ для порога {cut}")
+            sys.exit(3)
+        norm_val = energy_662_data["ratio"]
+        for item in data_list:
+            y = item["ratio"] / norm_val
+            norm_ratios[cut].append({
+                "energy": item["energy"],
+                "n": item["n"],
+                "ratio": item["ratio"],
+                "y": y,
+                "sem_light": item["sem_light"]
+            })
+
+    # Интерполяция эталона
+    ref_energy_log = np.log10(ref_energy)
+    ref_ratio_interp = np.interp(np.log10(all_energies), ref_energy_log, ref_ratio)
+
+    # Проверка критериев
+    criteria_results = []
+
+    # П-3: сравнение с эталоном
+    max_deviation = 0.0
+    na_count = 0
+    for cut, data_list in norm_ratios.items():
+        for item in data_list:
+            energy = item["energy"]
+            if energy <= 5.0:
+                continue
+            y = item["y"]
+            # Интерполируем эталон
+            try:
+                idx = all_energies.index(energy)
+                ref_val = ref_ratio_interp[idx]
+            except ValueError:
+                # Энергия не в эталоне
+                na_count += 1
+                continue
+
+            deviation = abs(y - ref_val) / ref_val
+            max_deviation = max(max_deviation, deviation)
+
+    if max_deviation <= 0.03:
+        criteria_results.append(("П-3", "относительное расхождение ≤ 0.03", "PASS"))
+    else:
+        criteria_results.append(("П-3", "относительное расхождение > 0.03", "FAIL"))
+
+    # П-4: положение максимума
+    max_energy = None
+    for cut, data_list in norm_ratios.items():
+        max_y = -1.0
+        max_e = None
+        for item in data_list:
+            if item["energy"] <= 5.0:
+                continue
+            if item["y"] > max_y:
+                max_y = item["y"]
+                max_e = item["energy"]
+        if max_energy is None or abs(max_e - 10) < abs(max_energy - 10):
+            max_energy = max_e
+
+    if 8 <= max_energy <= 12:
+        criteria_results.append(("П-4", "положение максимума в интервале 8…12 кэВ", "PASS"))
+    else:
+        criteria_results.append(("П-4", f"положение максимума вне интервала 8…12 кэВ: {max_energy} кэВ", "FAIL"))
+
+    # П-5: согласие трёх порогов
+    energy_to_ratios = {}
+    for cut, data_list in norm_ratios.items():
+        for item in data_list:
+            if item["energy"] <= 5.0:
+                continue
+            e = item["energy"]
+            if e not in energy_to_ratios:
+                energy_to_ratios[e] = []
+            energy_to_ratios[e].append(item["y"])
+
+    max_min_ratio = 0.0
+    for e, ratios in energy_to_ratios.items():
+        if len(ratios) < 2:
+            continue
+        min_r = min(ratios)
+        max_r = max(ratios)
+        ratio_diff = (max_r - min_r) / min_r
+        max_min_ratio = max(max_min_ratio, ratio_diff)
+
+    if max_min_ratio <= 0.01:
+        criteria_results.append(("П-5", "максимальное отношение max/min по порогам ≤ 0.01", "PASS"))
+    else:
+        criteria_results.append(("П-5", "максимальное отношение max/min по порогам > 0.01", "FAIL"))
+
+    # П-6: счётчики
+    all_counters_ok = True
+    for data in run_data:
+        bad_s = int(float(data.get("npsm_bad_s_count", 0)))
+        out_of_range = int(float(data.get("npsm_out_of_range_count", 0)))
+        overflow_edep = int(float(data.get("n_overflow_edep", 0)))
+        overflow_light = int(float(data.get("n_overflow_light", 0)))
+        if bad_s != 0 or out_of_range != 0 or overflow_edep != 0 or overflow_light != 0:
+            all_counters_ok = False
+            break
+
+    if all_counters_ok:
+        criteria_results.append(("П-6", "все счётчики нулевые", "PASS"))
+    else:
+        criteria_results.append(("П-6", "некоторые счётчики не нулевые", "FAIL"))
+
+    # Вывод таблицы
+    print("Таблица результатов:")
+    print("E_keV, n, ratio, y(E), эталон, отклонение %, пометки")
+    for cut, data_list in norm_ratios.items():
+        print(f"\nПорог {cut} мм:")
+        for item in data_list:
+            energy = item["energy"]
+            if energy <= 5.0:
+                continue
+            y = item["y"]
+            # Интерполируем эталон
+            try:
+                idx = all_energies.index(energy)
+                ref_val = ref_ratio_interp[idx]
+                deviation = abs(y - ref_val) / ref_val * 100
+            except ValueError:
+                ref_val = "N/A"
+                deviation = "N/A"
+                na_count += 1
+
+            sem_light = item["sem_light"]
+            mean_light = item["ratio"]
+            stat_flag = ""
+            if sem_light / mean_light > 0.01:
+                stat_flag = "[стат]"
+
+            print(f"{energy:.1f}, {item['n']}, {item['ratio']:.6f}, {y:.6f}, {ref_val}, {deviation}, {stat_flag}")
+
+    # Вывод критериев
+    print("\nКРИТЕРИИ:")
+    for crit, threshold, result in criteria_results:
+        print(f"{crit}: {threshold} → {result}")
+
+    # Требует толкования
+    print("\nТРЕБУЕТ ТОЛКОВАНИЯ:")
+    needs_interpretation = []
+    for cut, data_list in norm_ratios.items():
+        for item in data_list:
+            energy = item["energy"]
+            if energy <= 5.0:
+                continue
+            y = item["y"]
+            try:
+                idx = all_energies.index(energy)
+                ref_val = ref_ratio_interp[idx]
+                deviation = abs(y - ref_val) / ref_val * 100
+            except ValueError:
+                needs_interpretation.append(f"Точка {energy} кэВ: N/A")
+                continue
+
+            if 1.5 <= deviation <= 3.0:
+                needs_interpretation.append(f"Точка {energy} кэВ: отклонение {deviation:.2f}%")
+
+    # Проверка статистики
+    for cut, data_list in norm_ratios.items():
+        for item in data_list:
+            energy = item["energy"]
+            if energy <= 5.0:
+                continue
+            sem_light = item["sem_light"]
+            mean_light = item["ratio"]
+            if sem_light / mean_light > 0.01:
+                needs_interpretation.append(f"Точка {energy} кэВ: статистика [{sem_light:.6f}]")
+
+    # Проверка n_with_edep
+    for data in run_data:
+        n_with_edep = int(float(data.get("n_with_edep", 0)))
+        if n_with_edep < 10000:
+            needs_interpretation.append(f"Прогон с {n_with_edep} событий")
+
+    if not needs_interpretation:
+        print("пусто")
+    else:
+        for line in needs_interpretation:
+            print(line)
+
+    # Итог
+    all_pass = all(result == "PASS" for _, _, result in criteria_results)
+    if all_pass:
+        print("\nSTAGE2_ACCEPTANCE=PASS")
+        final_result = "PASS"
+    else:
+        print("\nSTAGE2_ACCEPTANCE=FAIL")
+        final_result = "FAIL"
+
+    # JSON-отчёт
+    if args.json:
+        report = {
+            "stage": "stage2",
+            "acceptance": final_result,
+            "criteria": [
+                {"name": name, "threshold": threshold, "result": result}
+                for name, threshold, result in criteria_results
+            ],
+            "needs_interpretation": needs_interpretation
+        }
+        try:
+            with open(args.json, "w", encoding="utf-8") as f:
+                json.dump(report, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"ПРЕДУПРЕЖДЕНИЕ: Не удалось записать JSON-отчёт {args.json}: {e}")
+
+    return 0 if all_pass else 1
+
+if __name__ == "__main__":
+    sys.exit(main())

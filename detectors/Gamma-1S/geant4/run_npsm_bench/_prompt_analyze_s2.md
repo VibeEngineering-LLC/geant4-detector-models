@@ -1,0 +1,161 @@
+# Спека анализатора приёмки этапа 2: analyze_stage2.py
+
+Ты — генератор кода на Python 3.11 (Windows). Верни ОДИН ПОЛНЫЙ файл, целиком,
+без пояснений вне кода. Комментарии в коде — по-русски.
+
+Формат вывода — строго:
+
+```
+=== FILE: analyze_stage2.py ===
+<полный текст>
+```
+
+## Назначение
+
+Приёмка этапа 2 стенда `run_npsm_bench`: перенос модели непропорциональности
+светового выхода в код переноса Geant4. Скрипт читает CSV-файлы прогонов,
+строит кривую «свет / энергия» и проверяет ЧЕТЫРЕ критерия, назначенные ДО
+прогона. Печатает таблицу и итог, возвращает 0 при PASS всех критериев и 1
+при провале любого.
+
+## Вход
+
+```
+python analyze_stage2.py --runs "out/s2_cut*.csv" --ref <путь к эталонной кривой> [--json out/acceptance_stage2.json]
+```
+
+- `--runs` — glob по CSV прогонов серии. В каждом файле шапка вида `ключ,значение`
+  (по одной паре в строке) до первой таблицы. Нужные поля:
+  `energy_keV`, `em_cut_mm`, `particle`, `beam`, `npsm_enabled`,
+  `n_with_edep`, `sum_edep_MeV`, `sum_light_MeV`, `sum_light2_MeV2`,
+  `npsm_bad_s_count`, `npsm_out_of_range_count`,
+  `n_overflow_edep`, `n_overflow_light`.
+- `--ref` — CSV эталона: строки-комментарии `#`, затем заголовок
+  `E_keV,S_MeV_cm,L_over_E_rel` и 20 000 строк. Колонка `L_over_E_rel` уже
+  нормирована на 662 кэВ.
+
+**Разбор шапки НЕ писать заново:** в том же каталоге лежит `analyze_ncompt.py`
+с функцией `parse_csv(file_path)`, возвращающей словарь полей шапки. Подключить
+её импортом (`sys.path.insert(0, str(pathlib.Path(__file__).parent))`,
+`from analyze_ncompt import parse_csv`), а НЕ копией. Если импорт не удался —
+громкая ошибка с текстом причины и возврат 3, без тихого отката на свою
+реализацию.
+
+## Величина, которую строит скрипт
+
+Для каждого прогона: `ratio = sum_light_MeV / sum_edep_MeV`.
+Кривая нормируется на значение при 662 кэВ ТОГО ЖЕ порога продукции:
+`y(E) = ratio(E) / ratio(662)`. Если прогона при 662 кэВ для этого порога нет —
+ошибка, возврат 3 (нормировать не на что; молча брать соседнюю точку запрещено).
+
+Погрешность среднего света на точку:
+`sem_light = sqrt(max(sum_light2/n - (sum_light/n)**2, 0.0) / max(n - 1, 1))`,
+где `n = n_with_edep`. Печатается в таблице; в критерии не входит, но при
+`sem_light/mean_light > 0.01` рядом со строкой печатается пометка `[стат]`.
+
+## Критерии
+
+| № | Критерий | Порог |
+|---|---|---|
+| П-3 | `y(E)` против эталона, интерполированного на ту же энергию | относительное расхождение ≤ 0,03 на КАЖДОЙ точке при E > 5 кэВ |
+| П-4 | положение максимума `y(E)` | в интервале 8…12 кэВ включительно |
+| П-5 | согласие трёх порогов продукции | для каждой энергии E > 5 кэВ max/min по порогам − 1 ≤ 0,01 |
+| П-6 | счётчики `npsm_bad_s_count`, `npsm_out_of_range_count`, `n_overflow_edep`, `n_overflow_light` | ноль в каждом прогоне |
+
+Точки с E ≤ 5 кэВ печатаются в таблице, но в П-3 и П-5 не входят: там кривая
+круто меняется, и любое несовпадение сетки даёт ложное расхождение. Это
+ограничение печатается в отчёте явной строкой, а не подразумевается.
+
+Положение максимума (П-4) определяется по порогу 0,05 мм (действующий #CFG-2).
+Если такого порога в наборе нет — берётся наименьший присутствующий, и это
+называется в отчёте отдельной строкой.
+
+Интерполяция эталона — линейная по логарифму энергии (`numpy.interp` по
+`log10(E)`); за пределами сетки эталона — критерий на этой точке НЕ проверяется,
+точка помечается `N/A`, и в отчёте печатается их число. **Отсутствие точки
+никогда не засчитывается как PASS.**
+
+## Вывод
+
+1. Таблица по каждому порогу: `E, n, ratio, y(E), эталон, отклонение %, пометки`.
+2. Блок «КРИТЕРИИ»: строка на каждый из П-3…П-6 с порогом, фактом и PASS/FAIL.
+3. Блок **«ТРЕБУЕТ ТОЛКОВАНИЯ»** — обязателен, печатается всегда. В него
+   попадают: точки с пометкой `[стат]`; точки `N/A`; энергии, где расхождение
+   лежит в интервале от половины порога до порога (то есть прошло, но близко);
+   любой прогон, где `n_with_edep` меньше запрошенного числа событий.
+   Если ничего не попало — печатается «пусто».
+4. Итог `STAGE2_ACCEPTANCE=PASS` либо `=FAIL` и, при `--json`, машинный отчёт.
+
+## Ограничения
+
+- `sys.stdout.reconfigure(encoding="utf-8")` первой строкой в `main`.
+- Только stdlib + numpy.
+- Ни одного «молчаливого» пропуска: отсутствующий файл, отсутствующее поле,
+  ноль в знаменателе — сообщение и ненулевой возврат.
+- Числа сравнивать как float, читать из шапки через `float(...)`; поля
+  счётчиков — через `int(float(...))`.
+
+### analyze_ncompt.py (донор parse_csv, читать интерфейс)
+
+```python
+import csv
+import math
+import glob
+import argparse
+import pathlib
+import sys
+import json
+
+sys.stdout.reconfigure(encoding="utf-8")
+
+def parse_csv(file_path):
+    data = {}
+    table = []
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("#"):
+                    continue
+                if "," in line:
+                    key, value = line.strip().split(",", 1)
+                    # Приводим к числу ОДИН РАЗ при чтении — все потребители
+                    # ниже получают уже числа. Точечная конвертация по списку
+                    # ключей оставляла mean/sem строками и роняла критерии K1/K2.
+                    if key in ("em_deex", "crystal_mm"):
+                        data[key] = value            # заведомо строковые поля
+                    else:
+                        try:
+                            data[key] = int(value)
+                        except ValueError:
+                            try:
+                                data[key] = float(value)
+                            except ValueError:
+                                data[key] = value
+                elif line.strip() == "n_compt,count_absorbed,count_all":
+                    continue
+                elif line.strip().startswith("0,"):
+                    break
+            for line in f:
+                if "," in line and not line.startswith("#"):
+                    parts = line.strip().split(",")
+                    if len(parts) >= 3:
+                        table.append([int(parts[0]), int(parts[1]), int(parts[2])])
+    except Exception as e:
+        print(f"ПРЕДУПРЕЖДЕНИЕ: Не удалось прочитать файл {file_path}: {e}")
+        return None
+    if "energy_keV" not in data or "mean_ncompt_absorbed" not in data:
+        print(f"ПРЕДУПРЕЖДЕНИЕ: В файле {file_path} отсутствуют необходимые поля")
+        return None
+    data["table"] = table
+    return data
+
+def weighted_mean(table):
+    total_weighted = 0
+    total_weight = 0
+    for n_compt, count_absorbed, _ in table:
+        total_weighted += n_compt * count_absorbed
+        total_weight += count_absorbed
+    if total_weight == 0:
+        return float('nan')
+    return total_weighted / total_weight
+```

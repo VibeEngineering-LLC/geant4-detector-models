@@ -146,6 +146,13 @@ int main(int argc, char** argv) {
   };
   for (const Out& o : OUTS) {
     FILE* f = std::fopen(o.fn, "w");
+    // Проверки не было: fprintf получал NULL при неоткрывшемся файле —
+    // неопределённое поведение вместо отказа (скан класса W-067, 07.09.2026).
+    // Отказ громкий: иначе результат прогона теряется молча.
+    if (!f) {
+      std::fprintf(stderr, "FATAL: не открыть для записи '%s'\n", o.fn);
+      std::exit(2);
+    }
     std::fprintf(f, "# %s, массовый коэффициент ослабления, см²/г\n", o.title);
     std::fprintf(f, "# compt+phot+conv, EmStandardPhysics_option4, Geant4 11.2.1\n");
     std::fprintf(f, "# src_sha1 = %s\n", G1SMU_SRC_SHA1);
@@ -179,6 +186,10 @@ int main(int argc, char** argv) {
         {gOisn, "OISN16"},
     };
     FILE* f = std::fopen("mu_xcom_check.csv", "w");
+    if (!f) {
+      std::fprintf(stderr, "FATAL: не открыть для записи 'mu_xcom_check.csv'\n");
+      std::exit(2);
+    }
     std::fprintf(f, "# mu/ro по компонентам, см²/г, EmStandardPhysics_option4,"
                     " Geant4 11.2.1\n");
     std::fprintf(f, "# incoh=Compton, phot=фотоэффект, pair=conv, rayl="

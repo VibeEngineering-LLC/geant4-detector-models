@@ -165,7 +165,21 @@ static std::vector<G4String> MacroConfineVolumes(const std::string& path,
   std::vector<G4String> out;
   if (depth > 4) return out;                 // защита от кольцевых include
   std::ifstream f(path);
-  if (!f) return out;
+  if (!f) {
+    // Тихий отказ убит 07.09.2026 (скан класса W-067). Прежде функция молча
+    // возвращала пустой список, и «в макросе ограничения нет» становилось
+    // неотличимо от «макрос не прочитан» — ровно те два состояния, которые
+    // комментарий выше требует развести. На вложенном include (depth>0)
+    // отсутствие файла законно, поэтому отказ только на корневом.
+    if (depth == 0) {
+      G4cerr << "FATAL: не открыть макрос " << path
+             << " — ограничения источника прочитать нельзя" << G4endl;
+      std::exit(2);
+    }
+    G4cerr << "ВНИМАНИЕ: не открыть вложенный макрос " << path
+           << " — его команды не учтены" << G4endl;
+    return out;
+  }
   std::string ln;
   while (std::getline(f, ln)) {
     std::istringstream is(ln);
@@ -569,6 +583,14 @@ public:
       const size_t dot = cn.rfind('.');
       cn = (dot == G4String::npos ? cn : cn.substr(0, dot)) + "_chan.csv";
       FILE* g = std::fopen(cn.c_str(), "w");
+      // Прежде тут стоял голый `if (g)`: при неоткрывшемся файле блок просто
+      // пропускался, прогон завершался успешно, а таблицы не было (класс
+      // W-067, скан 07.09.2026). Молчать об этом нельзя — это результат.
+      if (!g) {
+        G4cerr << "FATAL: не открыть для записи " << cn
+               << " — таблица разложения по каналам ПОТЕРЯНА" << G4endl;
+        std::exit(2);
+      }
       if (g) {
         std::fprintf(g, "# разложение отклика по каналам, канал ставится по "
                         "истории процессов события\n");
@@ -616,6 +638,11 @@ public:
       const size_t dot = sn.rfind('.');
       sn = (dot == G4String::npos ? sn : sn.substr(0, dot)) + "_shield.csv";
       FILE* g = std::fopen(sn.c_str(), "w");
+      if (!g) {
+        G4cerr << "FATAL: не открыть для записи " << sn
+               << " — таблица вклада защиты ПОТЕРЯНА" << G4endl;
+        std::exit(2);
+      }
       if (g) {
         std::fprintf(g, "# вклад защиты, отобран по истории трека\n");
         std::fprintf(g, "#   pb_fluor — квант родился в свинце (K-серия Pb "
@@ -665,6 +692,11 @@ public:
       const size_t dot = cn.rfind('.');
       cn = (dot == G4String::npos ? cn : cn.substr(0, dot)) + "_coinc.csv";
       FILE* g = std::fopen(cn.c_str(), "w");
+      if (!g) {
+        G4cerr << "FATAL: не открыть для записи " << cn
+               << " — таблица совпадений ПОТЕРЯНА" << G4endl;
+        std::exit(2);
+      }
       if (g) {
         std::fprintf(g, "# срабатывания по происхождению вклада: сколько "
                         "РАЗНЫХ первичных частиц распада принесли энергию\n");
@@ -707,6 +739,12 @@ public:
       const size_t dot = en.rfind('.');
       en = (dot == G4String::npos ? en : en.substr(0, dot)) + "_emit.csv";
       FILE* g = std::fopen(en.c_str(), "w");
+      if (!g) {
+        G4cerr << "FATAL: не открыть для записи " << en
+               << " — таблица испущенного ПОТЕРЯНА (из неё берутся выход "
+                  "линии и мера чистоты)" << G4endl;
+        std::exit(2);
+      }
       if (g) {
         std::fprintf(g, "# гамма, испущенные при распаде, на %ld распадов\n", N);
         // Штамп и здесь: из _emit.csv берутся выход линии и мера чистоты, то
@@ -741,6 +779,11 @@ public:
       G4String xn = (dot == G4String::npos ? fOut : fOut.substr(0, dot))
                   + "_emitx.csv";
       FILE* h = std::fopen(xn.c_str(), "w");
+      if (!h) {
+        G4cerr << "FATAL: не открыть для записи " << xn
+               << " — таблица испущенного по происхождению ПОТЕРЯНА" << G4endl;
+        std::exit(2);
+      }
       if (h) {
         std::fprintf(h, "# испущенное при распаде, разделённое по "
                         "происхождению кванта, на %ld распадов\n", N);

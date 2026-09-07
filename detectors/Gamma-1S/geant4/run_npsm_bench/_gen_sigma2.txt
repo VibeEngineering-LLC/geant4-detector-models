@@ -1,0 +1,407 @@
+=== FILE: analyze_sigma_intr.py ===
+import sys
+import pathlib
+import argparse
+import json
+import numpy as np
+from collections import defaultdict
+
+sys.stdout.reconfigure(encoding="utf-8")
+sys.path.insert(0, str(pathlib.Path(__file__).parent))
+try:
+    from analyze_ncompt import parse_csv
+except ImportError:
+    print("ОШИБКА: Не удалось импортировать analyze_ncompt.py")
+    sys.exit(3)
+
+def find_peak(bin_centers, counts_light, energy_keV):
+    lower_bound = 0.2 * energy_keV
+    upper_bound = 1.05 * energy_keV
+    
+    # Ищем бины в диапазоне
+    valid_indices = []
+    for i, center in enumerate(bin_centers):
+        if lower_bound <= center <= upper_bound and center > 1:
+            valid_indices.append(i)
+    
+    if not valid_indices:
+        raise ValueError("Нет бинов в области поиска пика")
+    
+    # Находим максимум среди допустимых
+    max_count = 0
+    max_index = -1
+    for i in valid_indices:
+        if counts_light[i] > max_count:
+            max_count = counts_light[i]
+            max_index = i
+    
+    if max_index == valid_indices[0] or max_index == valid_indices[-1]:
+        is_boundary = True
+    else:
+        is_boundary = False
+    
+    return max_index, max_count, is_boundary
+
+def calculate_fwhm(bin_centers, counts_light, peak_index, peak_value):
+    half_max = peak_value / 2.0
+    
+    # Ищем левую границу
+    left_bound = peak_index
+    for i in range(peak_index, -1, -1):
+        if counts_light[i] <= half_max:
+            left_bound = i + 1
+            break
+        if i == 0:
+            left_bound = 0
+    
+    # Ищем правую границу
+    right_bound = peak_index
+    for i in range(peak_index, len(counts_light)):
+        if counts_light[i] <= half_max:
+            right_bound = i - 1
+            break
+        if i == len(counts_light) - 1:
+            right_bound = len(counts_light) - 1
+    
+    # Вычисляем полуширину
+    left_center = bin_centers[left_bound]
+    right_center = bin_centers[right_bound]
+    fwhm = right_center - left_center
+    return fwhm, left_bound, right_bound
+
+def estimate_background(bin_centers, counts_light, peak_index, fwhm, left_bound, right_bound):
+    # Определяем участки для фона: от 4 до 10 полуширин влево и вправо
+    left_bg_start = max(0, left_bound - int(4 * fwhm))
+    left_bg_end = left_bound - 1
+    right_bg_start = right_bound + 1
+    right_bg_end = min(len(counts_light) - 1, right_bound + int(4 * fwhm))
+    
+    # Левый участок
+    if left_bg_end >= left_bg_start and left_bg_end - left_bg_start >= 2:
+        x_left = bin_centers[left_bg_start:left_bg_end+1]
+        y_left = counts_light[left_bg_start:left_bg_end+1]
+        if len(x_left) >= 2:
+            # Линейная регрессия
+            A = np.vstack([x_left, np.ones(len(x_left))]).T
+            m, c = np.linalg.lstsq(A, y_left, rcond=None)[0]
+            left_bg_value = m * bin_centers[peak_index] + c
+        else:
+            left_bg_value = 0
+    else:
+        left_bg_value = 0
+    
+    # Правый участок
+    if right_bg_end >= right_bg_start and right_bg_end - right_bg_start >= 2:
+        x_right = bin_centers[right_bg_start:right_bg_end+1]
+        y_right = counts_light[right_bg_start:right_bg_end+1]
+        if len(x_right) >= 2:
+            # Линейная регрессия
+            A = np.vstack([x_right, np.ones(len(x_right))]).T
+            m, c = np.linalg.lstsq(A, y_right, rcond=None)[0]
+            right_bg_value = m * bin_centers[peak_index] + c
+        else:
+            right_bg_value = 0
+    else:
+        right_bg_value = 0
+    
+    # Среднее значение фона
+    if left_bg_value != 0 and right_bg_value != 0:
+        bg_value = (left_bg_value + right_bg_value) / 2.0
+    elif left_bg_value != 0:
+        bg_value = left_bg_value
+    elif right_bg_value != 0:
+        bg_value = right_bg_value
+    else:
+        bg_value = 0
+    
+    return bg_value
+
+def fit_gaussian(bin_centers, counts_light, peak_index, fwhm, peak_value, bg_value):
+    # Определяем окно ±3 полуширины
+    half_fwhm = fwhm / 2.0
+    window_start = max(0, int(peak_index - 3 * half_fwhm))
+    window_end = min(len(counts_light), int(peak_index + 3 * half_fwhm) + 1)
+    
+    # Выбираем данные в окне
+    x_window = bin_centers[window_start:window_end]
+    y_window = counts_light[window_start:window_end]
+    bg_window = [bg_value] * len(y_window)
+    y_subtracted = np.array(y_window) - np.array(bg_window)
+    
+    # Проверяем, что есть положительные значения
+    if not any(v > 0 for v in y_subtracted):
+        raise ValueError("Нет положительных значений после вычитания фона")
+    
+    # Подбор параметров гауссиана
+    sigma_min = 0.25
+    sigma_max = 4.0
+    n_sigma = 120
+    n_mu = 81
+    
+    sigma_grid = np.linspace(sigma_min, sigma_max, n_sigma)
+    mu_grid = np.linspace(bin_centers[peak_index] - 2 * fwhm, bin_centers[peak_index] + 2 * fwhm, n_mu)
+    
+    best_chi2 = float('inf')
+    best_sigma = None
+    best_mu = None
+    
+    for sigma in sigma_grid:
+        for mu in mu_grid:
+            # Вычисляем гауссиану
+            g = np.exp(-0.5 * ((np.array(x_window) - mu) / sigma) ** 2)
+            # Аналитически находим амплитуду
+            A = np.sum(np.array(y_subtracted) * g) / np.sum(g ** 2)
+            if not np.isfinite(A):
+                continue
+            
+            # Вычисляем модель
+            model = A * g + bg_value
+            chi2 = np.sum((np.array(y_window) - model) ** 2)
+            
+            if chi2 < best_chi2:
+                best_chi2 = chi2
+                best_sigma = sigma
+                best_mu = mu
+    
+    # Проверяем, не уперлись ли в границы сетки
+    if best_sigma == sigma_min or best_sigma == sigma_max:
+        raise ValueError("Найденная σ упёрлась в край сетки")
+    
+    return best_sigma, best_mu
+
+def process_run(data):
+    energy_keV = data["energy_keV"]
+    npsm_enabled = data["npsm_enabled"]
+    particle = data["particle"]
+    beam = data["beam"]
+    n_events_processed = data["n_events_processed"]
+    em_cut_mm = data["em_cut_mm"]
+    em_deex = data["em_deex"]
+    
+    # Извлекаем таблицу спектра
+    table = data["table"]
+    bin_centers = []
+    count_edep = []
+    count_light = []
+    
+    for row in table:
+        if len(row) >= 3:
+            bin_centers.append(float(row[0]))
+            count_edep.append(int(row[1]))
+            count_light.append(int(row[2]))
+    
+    # Проверяем, что таблица не пустая
+    if not bin_centers or not count_light:
+        raise ValueError("Пустой спектр")
+    
+    # Если модель выключена — возвращаем σ = 0 с пометкой [линия]
+    if npsm_enabled == 0:
+        return {
+            "E_keV": energy_keV,
+            "centroid": energy_keV,
+            "sigma_keV": 0.0,
+            "sigma_rel_percent": 0.0,
+            "n_events_in_peak": sum(count_light),
+            "notes": "[линия]"
+        }
+    
+    # Находим пик
+    peak_index, peak_value, is_boundary = find_peak(bin_centers, count_light, energy_keV)
+    
+    # Вычисляем полуширину
+    fwhm, left_bound, right_bound = calculate_fwhm(bin_centers, count_light, peak_index, peak_value)
+    sigma_keV = fwhm / 2.3548
+    
+    # Оцениваем фон
+    bg_value = estimate_background(bin_centers, count_light, peak_index, fwhm, left_bound, right_bound)
+    
+    # Подгонка гауссиана
+    try:
+        sigma_fit, mu_fit = fit_gaussian(bin_centers, count_light, peak_index, fwhm, peak_value, bg_value)
+        sigma_keV = sigma_fit
+        centroid = mu_fit
+    except Exception as e:
+        raise ValueError(f"Подгонка гауссиана не удалась: {e}")
+    
+    # Вычисляем относительную ширину и смещение
+    sigma_rel_percent = (sigma_keV / energy_keV) * 100.0
+    centroid_offset_percent = ((centroid - energy_keV) / energy_keV) * 100.0
+    
+    # Формируем пометки
+    notes = []
+    if is_boundary:
+        notes.append("[край]")
+    if sum(count_light) < 500:
+        notes.append("[низкая статистика]")
+    
+    return {
+        "E_keV": energy_keV,
+        "centroid": centroid,
+        "sigma_keV": sigma_keV,
+        "sigma_rel_percent": sigma_rel_percent,
+        "n_events_in_peak": sum(count_light),
+        "centroid_offset_percent": centroid_offset_percent,
+        "notes": ", ".join(notes) if notes else ""
+    }
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--runs", required=True, help="Шаблон файлов CSV")
+    parser.add_argument("--json", help="Выходной JSON файл")
+    parser.add_argument("--csv", help="Выходной CSV файл")
+    
+    args = parser.parse_args()
+    
+    # Собираем список файлов
+    files = sorted(pathlib.Path().glob(args.runs))
+    if not files:
+        print("ОШИБКА: Не найдено файлов по шаблону")
+        sys.exit(1)
+    
+    results = []
+    all_runs = []
+    
+    for file_path in files:
+        try:
+            data = parse_csv(file_path)
+            if data is None:
+                continue
+            result = process_run(data)
+            result["file"] = str(file_path)
+            results.append(result)
+            all_runs.append(data)
+        except Exception as e:
+            print(f"ОШИБКА: Не удалось обработать файл {file_path}: {e}")
+            sys.exit(2)
+    
+    # Проверяем наличие прогона с выключенной моделью
+    npsm_disabled_found = any(run["npsm_enabled"] == 0 for run in all_runs)
+    if not npsm_disabled_found:
+        print("КРИТЕРИЙ С-4: FAIL — прогон с npsm_enabled = 0 отсутствует")
+        print("STAGE3_ACCEPTANCE=FAIL")
+        sys.exit(1)
+    
+    # Печатаем таблицу по прогонам
+    print("E_keV, центроид, смещение %, σ_keV, σ/E %, событий в пике, пометки")
+    for result in results:
+        notes_str = result["notes"] if result["notes"] else ""
+        print(f"{result['E_keV']:.1f}, {result['centroid']:.2f}, {result['centroid_offset_percent']:.2f}, "
+              f"{result['sigma_keV']:.3f}, {result['sigma_rel_percent']:.2f}, {result['n_events_in_peak']}, {notes_str}")
+    
+    # Проверяем критерии
+    print("\nКРИТЕРИИ")
+    
+    # С-1: σ_intr(E) монотонно возрастает при E > 100 кэВ
+    valid_runs = [r for r in results if r["E_keV"] > 100 and "край" not in r["notes"] and "низкая статистика" not in r["notes"]]
+    if len(valid_runs) < 2:
+        print("С-1: FAIL — недостаточно данных для проверки")
+        s1_pass = False
+    else:
+        sigmas = [r["sigma_keV"] for r in valid_runs]
+        is_increasing = all(sigmas[i] <= sigmas[i+1] for i in range(len(sigmas)-1))
+        if is_increasing:
+            print("С-1: PASS — σ_intr(E) монотонно возрастает при E > 100 кэВ")
+            s1_pass = True
+        else:
+            print("С-1: FAIL — σ_intr(E) не монотонно возрастает при E > 100 кэВ")
+            s1_pass = False
+    
+    # С-2: σ_intr/E монотонно убывает при E > 100 кэВ
+    if len(valid_runs) < 2:
+        print("С-2: FAIL — недостаточно данных для проверки")
+        s2_pass = False
+    else:
+        ratios = [r["sigma_rel_percent"] for r in valid_runs]
+        is_decreasing = all(ratios[i] >= ratios[i+1] for i in range(len(ratios)-1))
+        if is_decreasing:
+            print("С-2: PASS — σ_intr/E монотонно убывает при E > 100 кэВ")
+            s2_pass = True
+        else:
+            print("С-2: FAIL — σ_intr/E не монотонно убывает при E > 100 кэВ")
+            s2_pass = False
+    
+    # С-3: центроид пика ниже энергии на всех точках
+    all_centroids_less = all(r["centroid_offset_percent"] < 0 for r in results)
+    if all_centroids_less:
+        print("С-3: PASS — центроид пика ниже энергии на всех точках")
+        s3_pass = True
+    else:
+        print("С-3: FAIL — центроид пика не всегда ниже энергии")
+        s3_pass = False
+    
+    # С-4: прогон с npsm_enabled = 0
+    disabled_runs = [r for r in results if r["file"].endswith("_npsm_0.csv")]
+    if not disabled_runs:
+        print("С-4: FAIL — прогон с npsm_enabled = 0 отсутствует")
+        s4_pass = False
+    else:
+        # Проверяем, что σ не больше ширины одного бина (1 кэВ)
+        sigma_max = max(r["sigma_keV"] for r in disabled_runs)
+        if sigma_max <= 1.0:
+            print("С-4: PASS — σ не больше ширины одного бина при выключенной модели")
+            s4_pass = True
+        else:
+            print(f"С-4: FAIL — σ ({sigma_max:.3f} кэВ) больше ширины одного бина при выключенной модели")
+            s4_pass = False
+    
+    # Подгонка регрессии
+    valid_runs_for_fit = [r for r in results if r["E_keV"] > 100 and "край" not in r["notes"] and "низкая статистика" not in r["notes"]]
+    if len(valid_runs_for_fit) >= 2:
+        log_E = np.log([r["E_keV"] for r in valid_runs_for_fit])
+        log_sigma = np.log([r["sigma_keV"] for r in valid_runs_for_fit])
+        
+        # Линейная регрессия в логарифмах
+        A = np.vstack([log_E, np.ones(len(log_E))]).T
+        a, b = np.linalg.lstsq(A, log_sigma, rcond=None)[0]
+        
+        # Коэффициент детерминации
+        y_pred = a * np.array(log_E) + b
+        ss_res = np.sum((log_sigma - y_pred) ** 2)
+        ss_tot = np.sum((log_sigma - np.mean(log_sigma)) ** 2)
+        r_squared = 1 - (ss_res / ss_tot)
+        
+        print(f"\nРегрессия σ_intr(E) = a * E^b:")
+        print(f"a = {a:.4f}")
+        print(f"b = {b:.4f}")
+        print(f"R² = {r_squared:.4f}")
+        
+        # σ_intr/E при 662 кэВ
+        sigma_662 = np.exp(a + b * np.log(662.0))
+        ratio_662 = (sigma_662 / 662.0) * 100.0
+        print(f"σ_intr/E при 662 кэВ: {ratio_662:.4f}%")
+    
+    # Требует толкования
+    print("\nТРЕБУЕТ ТОЛКОВАНИЯ")
+    trouble_points = []
+    for r in results:
+        if "[край]" in r["notes"] or "[низкая статистика]" in r["notes"]:
+            trouble_points.append(r)
+    
+    if not trouble_points:
+        print("пусто")
+    else:
+        for point in trouble_points:
+            print(f"{point['E_keV']:.1f} кэВ: {point['notes']}")
+    
+    # Итог
+    all_pass = s1_pass and s2_pass and s3_pass and s4_pass
+    if all_pass:
+        print("\nSTAGE3_ACCEPTANCE=PASS")
+    else:
+        print("\nSTAGE3_ACCEPTANCE=FAIL")
+    
+    # Сохраняем в JSON и CSV при необходимости
+    if args.json:
+        with open(args.json, "w", encoding="utf-8") as f:
+            json.dump(results, f, ensure_ascii=False, indent=2)
+    
+    if args.csv:
+        with open(args.csv, "w", encoding="utf-8") as f:
+            f.write("E_keV, центроид, смещение %, σ_keV, σ/E %, событий в пике, пометки\n")
+            for result in results:
+                notes_str = result["notes"] if result["notes"] else ""
+                f.write(f"{result['E_keV']:.1f}, {result['centroid']:.2f}, {result['centroid_offset_percent']:.2f}, "
+                        f"{result['sigma_keV']:.3f}, {result['sigma_rel_percent']:.2f}, {result['n_events_in_peak']}, {notes_str}\n")
+
+if __name__ == "__main__":
+    main()

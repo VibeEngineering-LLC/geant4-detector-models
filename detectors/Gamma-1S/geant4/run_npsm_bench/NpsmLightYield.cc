@@ -1,0 +1,123 @@
+#include "NpsmLightYield.hh"
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+
+NpsmLightYield::NpsmLightYield() {
+  SetParameters(0.596, 36.4, 14.6, 322.0);
+}
+
+double NpsmLightYield::Weight(double S_MeV_cm) const {
+  if (!fEnabled) return 1.0;
+
+  if (!std::isfinite(S_MeV_cm) || S_MeV_cm <= 0.0) {
+    ++fNBadS;
+    return 1.0;
+  }
+
+  // Вычисляем внутренний экспоненциальный член: exp(-S_trap / S)
+  double inner_exp = std::exp(-fSTrap / S_MeV_cm);
+
+  // Вычисляем внешний экспоненциальный член: exp(-S / S_ons * exp(...))
+  double outer_exp = std::exp(-S_MeV_cm / fSOns * inner_exp);
+
+  // Числитель формулы
+  double numerator = 1.0 - fEta * outer_exp;
+
+  // Знаменатель формулы
+  double denominator = 1.0 + S_MeV_cm / fSBirks;
+
+  double result = numerator / denominator;
+
+  if (result <= 0.0 || result > 1.0) {
+    ++fNOutOfRange;
+  }
+
+  return result;
+}
+
+void NpsmLightYield::SetParameters(double eta, double sOns, double sTrap, double sBirks) {
+  if (!std::isfinite(eta) || eta <= 0.0 || eta > 1.0) {
+    std::fprintf(stderr, "NpsmLightYield: FATAL invalid eta = %g\n", eta);
+    std::abort();
+  }
+  if (!std::isfinite(sOns) || sOns <= 0.0) {
+    std::fprintf(stderr, "NpsmLightYield: FATAL invalid sOns = %g\n", sOns);
+    std::abort();
+  }
+  if (!std::isfinite(sTrap) || sTrap <= 0.0) {
+    std::fprintf(stderr, "NpsmLightYield: FATAL invalid sTrap = %g\n", sTrap);
+    std::abort();
+  }
+  if (!std::isfinite(sBirks) || sBirks <= 0.0) {
+    std::fprintf(stderr, "NpsmLightYield: FATAL invalid sBirks = %g\n", sBirks);
+    std::abort();
+  }
+
+  fEta = eta;
+  fSOns = sOns;
+  fSTrap = sTrap;
+  fSBirks = sBirks;
+}
+
+double NpsmLightYield::Eta() const { return fEta; }
+double NpsmLightYield::SOns() const { return fSOns; }
+double NpsmLightYield::STrap() const { return fSTrap; }
+double NpsmLightYield::SBirks() const { return fSBirks; }
+
+int NpsmLightYieldSelfTest() {
+  NpsmLightYield model;
+  model.SetEnabled(true);
+
+  // Проверка 1: Weight(1.0) и Weight(1000.0) должны быть конечны и в (0, 1]
+  double w1 = model.Weight(1.0);
+  double w2 = model.Weight(1000.0);
+  if (!std::isfinite(w1) || w1 <= 0.0 || w1 > 1.0) {
+    std::printf("selftest 1: FAIL Weight(1.0) = %g\n", w1);
+    return 1;
+  }
+  if (!std::isfinite(w2) || w2 <= 0.0 || w2 > 1.0) {
+    std::printf("selftest 1: FAIL Weight(1000.0) = %g\n", w2);
+    return 1;
+  }
+  std::printf("selftest 1: OK\n");
+
+  // Проверка 2: Weight должен быть строго убывающим между S=100 и S=1000
+  double w100 = model.Weight(100.0);
+  double w1000 = model.Weight(1000.0);
+  if (w100 <= w1000) {
+    std::printf("selftest 2: FAIL Weight(100)=%g <= Weight(1000)=%g\n", w100, w1000);
+    return 2;
+  }
+  std::printf("selftest 2: OK\n");
+
+  // Проверка 3: при малом eta, Weight(S) должен приближаться к 1/(1+S/S_birks)
+  model.SetParameters(1e-9, 36.4, 14.6, 322.0);
+  double expected = 1.0 / (1.0 + 200.0 / 322.0);
+  double actual = model.Weight(200.0);
+  if (std::abs(actual - expected) > 1e-6) {
+    std::printf("selftest 3: FAIL Weight(200)=%g, expected ~%g\n", actual, expected);
+    return 3;
+  }
+  std::printf("selftest 3: OK\n");
+
+  // Проверка 4: при выключенной модели всегда возвращается 1.0
+  model.SetEnabled(false);
+  if (model.Weight(12345.0) != 1.0) {
+    std::printf("selftest 4: FAIL Weight(12345.0) = %g\n", model.Weight(12345.0));
+    return 4;
+  }
+  std::printf("selftest 4: OK\n");
+
+  // Проверка 5: Weight(-1.0) должен вернуть 1.0 и увеличить счётчик
+  model.SetEnabled(true);
+  long long before = model.BadSCount();
+  double w_neg = model.Weight(-1.0);
+  if (w_neg != 1.0 || model.BadSCount() != before + 1) {
+    std::printf("selftest 5: FAIL Weight(-1.0)=%g, bad count %lld\n", w_neg, model.BadSCount());
+    return 5;
+  }
+  std::printf("selftest 5: OK\n");
+
+  return 0;
+}

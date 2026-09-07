@@ -1,0 +1,297 @@
+=== FILE: NpsmBenchEventAction.hh ===
+```cpp
+#pragma once
+
+#include "G4UserEventAction.hh"
+#include "G4Event.hh"
+
+class NpsmBenchRunAction;
+
+class NpsmBenchEventAction : public G4UserEventAction {
+public:
+    // Указатель на RunAction ОБЯЗАТЕЛЕН. В первой версии конструктор был без
+    // аргументов, fRunAction оставался nullptr, а EndOfEventAction молча
+    // пропускал каждое событие через `if (fRunAction)` — прогон 10 000 событий
+    // отработал успешно и записал CSV со всеми нулями (05.09).
+    explicit NpsmBenchEventAction(NpsmBenchRunAction* runAction);
+    void BeginOfEventAction(const G4Event*) override;
+    void EndOfEventAction(const G4Event*) override;
+
+    // Мутаторы
+    inline void AddCompt() { fNCompt++; }
+    inline void AddRayl() { fNRayl++; }
+    inline void SetPhotAbsorbed() { fPhotAbsorbed = true; }
+    inline void SetConv() { fConv = true; }
+    inline void SetEscaped() { fEscaped = true; }
+    inline void AddEdep(double edepMeV) { fEdepMeV += edepMeV; }
+    inline void AddEdepLight(double v) { fEdepLightMeV += v; }
+
+private:
+    int fNCompt;
+    int fNRayl;
+    bool fPhotAbsorbed;
+    bool fConv;
+    bool fEscaped;
+    double fEdepMeV;
+    double fEdepLightMeV;
+
+    NpsmBenchRunAction* fRunAction;
+};
+```
+=== FILE: NpsmBenchEventAction.cc ===
+```cpp
+#include "NpsmBenchEventAction.hh"
+#include "NpsmBenchRunAction.hh"
+
+#include <cstdio>
+#include <cstdlib>
+
+NpsmBenchEventAction::NpsmBenchEventAction(NpsmBenchRunAction* runAction)
+    : fNCompt(0), fNRayl(0), fPhotAbsorbed(false), fConv(false), fEscaped(false), fEdepMeV(0.0), fEdepLightMeV(0.0),
+      fRunAction(runAction) {
+    // Отказ громкий, а не тихий: без RunAction прогон не имеет смысла, и лучше
+    // не стартовать вовсе, чем отработать 10 000 событий с нулевой статистикой.
+    if (!fRunAction) {
+        std::fprintf(stderr, "NpsmBenchEventAction: FATAL runAction == nullptr\n");
+        std::abort();
+    }
+}
+
+void NpsmBenchEventAction::BeginOfEventAction(const G4Event*) {
+    fNCompt = 0;
+    fNRayl = 0;
+    fPhotAbsorbed = false;
+    fConv = false;
+    fEscaped = false;
+    fEdepMeV = 0.0;
+    fEdepLightMeV = 0.0;
+}
+
+void NpsmBenchEventAction::EndOfEventAction(const G4Event*) {
+    // Проверки на nullptr здесь намеренно нет: он исключён в конструкторе, а
+    // тихая проверка в этом месте и была причиной нулевой статистики.
+    fRunAction->RecordEvent(fNCompt, fNRayl, fPhotAbsorbed, fConv, fEscaped, fEdepMeV, fEdepLightMeV);
+}
+```
+=== FILE: NpsmBenchRunAction.hh ===
+```cpp
+#pragma once
+
+#include "G4UserRunAction.hh"
+#include "G4Run.hh"
+#include <array>
+#include <string>
+
+class NpsmLightYield;
+
+class NpsmBenchRunAction : public G4UserRunAction {
+public:
+    explicit NpsmBenchRunAction(std::string outCsv, double energyKeV, long long nEventsRequested, long seed, const NpsmLightYield* lightYield);
+    void BeginOfRunAction(const G4Run*) override;
+    void EndOfRunAction(const G4Run*) override;
+
+    void RecordEvent(int nCompt, int nRayl, bool phot, bool conv, bool escaped, double edepMeV, double edepLightMeV);
+
+private:
+    std::string fOutCsv;
+    double fEnergyKeV;
+    long long fNEventsRequested;
+    long fSeed;
+    const NpsmLightYield* fLightYield;
+
+    static constexpr int kMaxCompt = 32;
+    std::array<long long, kMaxCompt+1> fHistAbsorbed{};
+    std::array<long long, kMaxCompt+1> fHistAll{};
+    long long fNEvents;
+    long long fNAbsorbed;
+    long long fNConv;
+    long long fNEscaped;
+    long long fNOther;
+    long long fNFullEdep;
+    double fSumComptAbsorbed;
+    double fSumCompt2Absorbed;
+
+    static constexpr int kNBins = 3200;
+    static constexpr double kBinKeV = 1.0;
+    std::array<long long, kNBins> fSpecEdep{};
+    std::array<long long, kNBins> fSpecLight{};
+    long long fNOverflowEdep = 0;
+    long long fNOverflowLight = 0;
+
+    double fSumEdepMeV = 0.0;
+    double fSumLightMeV = 0.0;
+    double fSumLight2MeV2 = 0.0;   // для оценки погрешности среднего
+    long long fNWithEdep = 0;      // события с edepMeV > 0
+
+    void WriteCSV();
+};
+```
+=== FILE: NpsmBenchRunAction.cc ===
+```cpp
+#include "NpsmBenchRunAction.hh"
+// Шапка CSV читает статические поля геометрии и физ-листа напрямую — без этих
+// заголовков компилятор видел «<error type>» на SourceRadiusMm() (сборка 05.09).
+#include "NpsmBenchDetectorConstruction.hh"
+#include "Rc103FieldPhysicsList.hh"
+#include "G4EmParameters.hh"
+#include "G4SystemOfUnits.hh"
+#include "NpsmLightYield.hh"
+#include <fstream>
+#include <iomanip>
+#include <cmath>
+
+NpsmBenchRunAction::NpsmBenchRunAction(std::string outCsv, double energyKeV, long long nEventsRequested, long seed, const NpsmLightYield* lightYield)
+    : fOutCsv(outCsv), fEnergyKeV(energyKeV), fNEventsRequested(nEventsRequested), fSeed(seed),
+      fLightYield(lightYield),
+      fNEvents(0), fNAbsorbed(0), fNConv(0), fNEscaped(0), fNOther(0), fNFullEdep(0),
+      fSumComptAbsorbed(0.0), fSumCompt2Absorbed(0.0) {
+    if (!fLightYield) {
+        std::fprintf(stderr, "NpsmBenchRunAction: FATAL lightYield == nullptr\n");
+        std::abort();
+    }
+}
+
+void NpsmBenchRunAction::BeginOfRunAction(const G4Run*) {
+    // Ничего не делаем
+}
+
+void NpsmBenchRunAction::RecordEvent(int nCompt, int nRayl, bool phot, bool conv, bool escaped, double edepMeV, double edepLightMeV) {
+    ++fNEvents;
+
+    // Исходы первичного фотона — ВЗАИМОИСКЛЮЧАЮЩИЕ категории. Сумма
+    // n_absorbed_phot + n_conv + n_escaped + n_other обязана равняться
+    // n_events_processed — это проверяет анализатор. В сгенерированной версии
+    // «other» инкрементировался и для поглощённых событий (ветка else после
+    // проверки conv/escaped внутри блока phot) — счётчик дублировал n_absorbed.
+    if (phot) {
+        ++fNAbsorbed;
+        fSumComptAbsorbed += nCompt;
+        fSumCompt2Absorbed += static_cast<double>(nCompt) * nCompt;
+        const int bin = (nCompt > kMaxCompt) ? kMaxCompt : nCompt;
+        ++fHistAbsorbed[static_cast<std::size_t>(bin)];
+    } else if (conv) {
+        ++fNConv;
+    } else if (escaped) {
+        ++fNEscaped;
+    } else {
+        ++fNOther;  // ни одного из трёх флагов: иной конец трека
+    }
+
+    // Все события
+    int bin = (nCompt > kMaxCompt) ? kMaxCompt : nCompt;
+    ++fHistAll[bin];
+
+    // Проверка полного поглощения по энергии
+    double diff = std::abs(edepMeV - fEnergyKeV / 1000.0);
+    if (diff < 0.001) { // 1 keV
+        ++fNFullEdep;
+    }
+
+    // Два спектра
+    {
+        const double value_keV = edepMeV * 1000.0;
+        const int bin = static_cast<int>(value_keV / kBinKeV);
+        if (bin >= 0 && bin < kNBins) {
+            ++fSpecEdep[static_cast<std::size_t>(bin)];
+        } else {
+            ++fNOverflowEdep;
+        }
+    }
+    {
+        const double value_keV = edepLightMeV * 1000.0;
+        const int bin = static_cast<int>(value_keV / kBinKeV);
+        if (bin >= 0 && bin < kNBins) {
+            ++fSpecLight[static_cast<std::size_t>(bin)];
+        } else {
+            ++fNOverflowLight;
+        }
+    }
+
+    // Суммы для кривой отклика
+    if (edepMeV > 0.0) {
+        fSumEdepMeV += edepMeV;
+        fSumLightMeV += edepLightMeV;
+        fSumLight2MeV2 += edepLightMeV * edepLightMeV;
+        ++fNWithEdep;
+    }
+}
+
+void NpsmBenchRunAction::EndOfRunAction(const G4Run*) {
+    WriteCSV();
+
+    double mean = fNAbsorbed > 0 ? fSumComptAbsorbed / fNAbsorbed : 0.0;
+    double sem = 0.0;
+    if (fNAbsorbed > 0) {
+        double mean2 = fSumCompt2Absorbed / fNAbsorbed;
+        double variance = mean2 - mean * mean;
+        if (variance >= 0 && fNAbsorbed > 1) {
+            sem = std::sqrt(variance / (fNAbsorbed - 1));
+        }
+    }
+
+    // Вывод в stdout
+    std::printf("npsm_bench: E=%.1f keV  N_absorbed=%lld  mean_ncompt=%.4f +- %.4f  escaped=%lld\n",
+                fEnergyKeV, fNAbsorbed, mean, sem, fNEscaped);
+    
+    double ratio = (fSumEdepMeV > 0.0) ? fSumLightMeV / fSumEdepMeV : 0.0;
+    std::printf("npsm_bench: n_with_edep=%lld mean_edep_keV=%.3f mean_light_keV=%.3f ratio=%.6f\n",
+                fNWithEdep, fSumEdepMeV * 1000.0 / fNWithEdep, fSumLightMeV * 1000.0 / fNWithEdep, ratio);
+}
+
+void NpsmBenchRunAction::WriteCSV() {
+    std::ofstream file(fOutCsv, std::ios::out);
+    if (!file.is_open()) {
+        return;
+    }
+
+    file << "# npsm_bench geometry/transport benchmark\n";
+    file << "energy_keV," << fEnergyKeV << "\n";
+    file << "n_events_requested," << fNEventsRequested << "\n";
+    file << "n_events_processed," << fNEvents << "\n";
+    file << "seed," << fSeed << "\n";
+    file << "em_cut_mm," << Rc103FieldPhysicsList::gCutMm << "\n";
+    file << "em_deex," << Rc103FieldPhysicsList::gDeexMode << "\n";
+    file << "lowest_electron_energy_keV," << G4EmParameters::Instance()->LowestElectronEnergy() / keV << "\n";
+    file << "crystal_mm," << NpsmBenchDetectorConstruction::gCrystalXMm << "x" << NpsmBenchDetectorConstruction::gCrystalYMm << "x" << NpsmBenchDetectorConstruction::gCrystalZMm << "\n";
+    file << "crystal_volume_cm3," << (NpsmBenchDetectorConstruction::gCrystalXMm * NpsmBenchDetectorConstruction::gCrystalYMm * NpsmBenchDetectorConstruction::gCrystalZMm) / 1000.0 << "\n";
+    file << "r_src_mm," << NpsmBenchDetectorConstruction::SourceRadiusMm() << "\n";
+    file << "particle," << (NpsmBenchPrimaryGeneratorAction::gParticle == "gamma" ? "gamma" : "e-") << "\n";
+    file << "beam," << (NpsmBenchPrimaryGeneratorAction::gPencilBeam ? "pencil" : "iso") << "\n";
+    file << "npsm_enabled," << (fLightYield->IsEnabled() ? 1 : 0) << "\n";
+    file << "npsm_eta," << fLightYield->Eta() << "\n";
+    file << "npsm_s_ons," << fLightYield->SOns() << "\n";
+    file << "npsm_s_trap," << fLightYield->STrap() << "\n";
+    file << "npsm_s_birks," << fLightYield->SBirks() << "\n";
+    file << "npsm_bad_s_count," << fLightYield->BadSCount() << "\n";
+    file << "npsm_out_of_range_count," << fLightYield->OutOfRangeCount() << "\n";
+    file << "n_with_edep," << fNWithEdep << "\n";
+    file << "sum_edep_MeV," << std::setprecision(17) << fSumEdepMeV << "\n";
+    file << "sum_light_MeV," << std::setprecision(17) << fSumLightMeV << "\n";
+    file << "sum_light2_MeV2," << std::setprecision(17) << fSumLight2MeV2 << "\n";
+    file << "n_overflow_edep," << fNOverflowEdep << "\n";
+    file << "n_overflow_light," << fNOverflowLight << "\n";
+    file << "n_absorbed_phot," << fNAbsorbed << "\n";
+    file << "n_full_edep_1keV," << fNFullEdep << "\n";
+    file << "n_conv," << fNConv << "\n";
+    file << "n_escaped," << fNEscaped << "\n";
+    file << "n_other," << fNOther << "\n";
+    file << "mean_ncompt_absorbed," << (fNAbsorbed > 0 ? fSumComptAbsorbed / fNAbsorbed : 0.0) << "\n";
+    file << "sem_ncompt_absorbed," << (fNAbsorbed > 0 ? std::sqrt((fSumCompt2Absorbed / fNAbsorbed - (fSumComptAbsorbed / fNAbsorbed) * (fSumComptAbsorbed / fNAbsorbed)) / fNAbsorbed) : 0.0) << "\n";
+    file << "n_compt,count_absorbed,count_all\n";
+
+    for (int i = 0; i <= kMaxCompt; ++i) {
+        file << i << "," << fHistAbsorbed[i] << "," << fHistAll[i] << "\n";
+    }
+
+    // Вторая таблица — спектры
+    file << "\nbin_keV,count_edep,count_light\n";
+    for (int i = 0; i < kNBins; ++i) {
+        if (fSpecEdep[i] != 0 || fSpecLight[i] != 0) {
+            const double binCenterKeV = (i + 0.5) * kBinKeV;
+            file << binCenterKeV << "," << fSpecEdep[i] << "," << fSpecLight[i] << "\n";
+        }
+    }
+
+    file.close();
+}
+```

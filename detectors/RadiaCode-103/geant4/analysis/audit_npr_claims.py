@@ -7,6 +7,23 @@ from collections import defaultdict
 
 sys.stdout.reconfigure(encoding="utf-8")
 
+
+def _refs_dir():
+    """Каталог справочных материалов контура.
+
+    Берётся из переменной окружения GEANT4_REFS. Прежде путь был
+    зашит абсолютным путём: работал только на машине автора и
+    раскрывал структуру его дисков в публичном репозитории.
+    Убрано 07.09.2026 перед публикацией. Молча подставлять пустую
+    строку нельзя — проверка тогда «пройдёт», ничего не прочитав.
+    """
+    d = os.environ.get("GEANT4_REFS")
+    if not d:
+        raise SystemExit(
+            "Не задана переменная окружения GEANT4_REFS — каталог "
+            "справочных материалов контура. Проверять нечего.")
+    return d
+
 def parse_md_table(lines):
     """Разбор таблицы из markdown. Возвращает список кортежей."""
     result = []
@@ -72,7 +89,7 @@ def check(name, got, want, tol):
 
 def p1_csitable():
     """Проверка таблицы CsI(Tl)."""
-    doc_path = r"D:\GoogleDrive\Рабочая папка ИИ\GEANT4\references\nonproportionality-csi-tl-concept-2026-09-03.md"
+    doc_path = os.path.join(_refs_dir(), "nonproportionality-csi-tl-concept-2026-09-03.md")
     with open(doc_path, "r", encoding="utf-8") as f:
         lines = f.readlines()
     
@@ -95,6 +112,15 @@ def p1_csitable():
             table_lines.append(line)
     
     table_data = parse_md_table(table_lines)
+    # Пустая таблица означает, что не разобралось НИЧЕГО (изменился формат
+    # документа, другой разделитель, не тот раздел). Прежде это приводило к
+    # `0 OK, 0 FAIL` и `return fail_count == 0` → True: аудитор рапортовал
+    # «проверка пройдена», не проверив ни одного утверждения. Худший вид
+    # тихого отказа — ложное подтверждение (скан 07.09.2026, класс W-067).
+    if not table_data:
+        print("FAIL — таблица утверждений не разобрана (0 строк); "
+              "проверять нечего, это НЕ успех")
+        return False
     csv_paths = [
         os.path.join(os.path.dirname(__file__), "out", "payne3_fig2_CsI_Tl_T_m40.csv"),
         os.path.join(os.path.dirname(__file__), "out", "payne3_fig2_CsI_Tl_T_0.csv"),
@@ -144,7 +170,7 @@ def p1_csitable():
 
 def p2_nai():
     """Проверка таблицы NaI(Tl)."""
-    doc_path = r"D:\GoogleDrive\Рабочая папка ИИ\GEANT4\references\nonproportionality-csi-tl-concept-2026-09-03.md"
+    doc_path = os.path.join(_refs_dir(), "nonproportionality-csi-tl-concept-2026-09-03.md")
     with open(doc_path, "r", encoding="utf-8") as f:
         lines = f.readlines()
     
@@ -167,6 +193,15 @@ def p2_nai():
             table_lines.append(line)
     
     table_data = parse_md_table(table_lines)
+    # Пустая таблица означает, что не разобралось НИЧЕГО (изменился формат
+    # документа, другой разделитель, не тот раздел). Прежде это приводило к
+    # `0 OK, 0 FAIL` и `return fail_count == 0` → True: аудитор рапортовал
+    # «проверка пройдена», не проверив ни одного утверждения. Худший вид
+    # тихого отказа — ложное подтверждение (скан 07.09.2026, класс W-067).
+    if not table_data:
+        print("FAIL — таблица утверждений не разобрана (0 строк); "
+              "проверять нечего, это НЕ успех")
+        return False
     csv_paths = [
         os.path.join(os.path.dirname(__file__), "out", "payne3_fig2_NaI_Tl_T_m40.csv"),
         os.path.join(os.path.dirname(__file__), "out", "payne3_fig2_NaI_Tl_T_0.csv"),
@@ -216,7 +251,7 @@ def p2_nai():
 
 def p3_maxima():
     """Проверка максимумов кривых."""
-    doc_path = r"D:\GoogleDrive\Рабочая папка ИИ\GEANT4\references\nonproportionality-csi-tl-concept-2026-09-03.md"
+    doc_path = os.path.join(_refs_dir(), "nonproportionality-csi-tl-concept-2026-09-03.md")
     
     # CsI(Tl) максимум
     cs_e = 8.6
@@ -442,7 +477,7 @@ def p6_deex():
 def p7_files():
     """Проверка наличия файлов."""
     # PDF
-    pdf_dir = r"D:\GoogleDrive\Рабочая папка ИИ\GEANT4\references\pdf"
+    pdf_dir = os.path.join(_refs_dir(), "pdf")
     if not os.path.exists(pdf_dir):
         print("P7: FAIL — директория PDF не найдена.")
         return False
@@ -451,7 +486,7 @@ def p7_files():
     print(f"P7 PDF: {len(pdf_files)} файлов")
     
     # Книги
-    books_dir = r"D:\GoogleDrive\Дозиметрия\Книги\Гамма-спектрометрия"
+    books_dir = os.environ.get("GAMMA_BOOKS_DIR", "")
     if not os.path.exists(books_dir):
         print("P7: FAIL — директория книг не найдена.")
         return False
@@ -469,7 +504,7 @@ def p7_files():
 
 def p8_links():
     """Проверка ссылок вида `файл:строка`."""
-    doc_path = r"D:\GoogleDrive\Рабочая папка ИИ\GEANT4\references\nonproportionality-csi-tl-concept-2026-09-03.md"
+    doc_path = os.path.join(_refs_dir(), "nonproportionality-csi-tl-concept-2026-09-03.md")
     
     with open(doc_path, "r", encoding="utf-8") as f:
         content = f.read()
@@ -550,7 +585,7 @@ def selftest():
 
 def main(argv):
     """Основная функция."""
-    doc_path = r"D:\GoogleDrive\Рабочая папка ИИ\GEANT4\references\nonproportionality-csi-tl-concept-2026-09-03.md"
+    doc_path = os.path.join(_refs_dir(), "nonproportionality-csi-tl-concept-2026-09-03.md")
     selftest_mode = False
     
     if "--selftest" in argv:

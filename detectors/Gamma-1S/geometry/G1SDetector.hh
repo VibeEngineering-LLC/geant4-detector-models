@@ -263,6 +263,11 @@ public:
   // Служит проверкой геометрии против таблицы 2.2 паспорта.
   void ReportMasses() const;
 
+  // Те же массы, но снятые с ПОСТРОЕННОЙ геометрии Geant4, а не посчитанные
+  // нашими формулами: объём тела минус объёмы прямых дочерних, плотность из
+  // материала. Независимая перекрёстная проверка ReportMasses (#SA-6).
+  void ReportMassesFromGeometry() const;
+
 private:
   void DefineMaterials();
   void BuildHead(G4LogicalVolume* world);

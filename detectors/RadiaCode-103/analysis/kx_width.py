@@ -72,7 +72,15 @@ def fit_single_gaussian(x, y):
         popt, _ = curve_fit(gaussian, x, y, p0=[a_guess, mu_guess, s_guess, c_guess], maxfev=10000)
         amplitude, mu, s, c = popt
         return mu, abs(s) * 2.35482
-    except:
+    except (RuntimeError, ValueError, TypeError) as exc:
+        # Прежде здесь стоял ГОЛЫЙ `except: return начальные догадки` — при
+        # несошедшейся подгонке наружу уходило стартовое значение, неотличимое
+        # от результата (скан тихих отказов 07.09.2026, класс W-067). Голый
+        # except ловил заодно и KeyboardInterrupt. Теперь отказ виден.
+        print("ВНИМАНИЕ: подгонка гауссианы не сошлась (%s); возвращены "
+              "СТАРТОВЫЕ значения mu=%.3f FWHM=%.3f — это не результат "
+              "подгонки" % (type(exc).__name__, mu_guess, s_guess * 2.35482),
+              file=sys.stderr)
         return mu_guess, s_guess * 2.35482
 
 def observed_fwhm(fwhm_true):

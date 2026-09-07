@@ -1,0 +1,593 @@
+=== FILE: CMakeLists.txt ===
+```cmake
+cmake_minimum_required(VERSION 3.16)
+project(npsm_bench CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+if(DEFINED ENV{GEANT4_ROOT} AND NOT DEFINED G4ROOT)
+  set(G4ROOT "$ENV{GEANT4_ROOT}" CACHE PATH "Geant4 root")
+endif()
+if(NOT DEFINED G4ROOT)
+  message(FATAL_ERROR "Не задан корень Geant4. Укажите GEANT4_ROOT или -DG4ROOT=<путь>.")
+endif()
+file(GLOB G4_IMPORT_LIBS "${G4ROOT}/lib/*.lib")
+set(DONOR_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../RadiaCode-103/geant4/run_field")
+add_executable(npsm_bench
+  main.cc
+  NpsmBenchDetectorConstruction.cc
+  NpsmBenchPrimaryGeneratorAction.cc
+  NpsmBenchEventAction.cc
+  NpsmBenchRunAction.cc
+  NpsmBenchSteppingAction.cc
+  "${DONOR_DIR}/Rc103FieldPhysicsList.cc"
+)
+target_include_directories(npsm_bench PRIVATE "${G4ROOT}/include/Geant4" "${DONOR_DIR}")
+target_link_libraries(npsm_bench PRIVATE ${G4_IMPORT_LIBS})
+```
+=== FILE: main.cc ===
+```cpp
+#include <iostream>
+#include <cstdlib>
+#include <string>
+#include <vector>
+#include <sstream>
+#include <fstream>
+#include <iomanip>
+
+#include "G4RunManagerFactory.hh"
+#include "G4UImanager.hh"
+#include "G4UIcommand.hh"
+#include "G4Random.hh"
+#include "G4SystemOfUnits.hh"
+
+#include "NpsmBenchDetectorConstruction.hh"
+#include "NpsmBenchPrimaryGeneratorAction.hh"
+#include "NpsmBenchEventAction.hh"
+#include "NpsmBenchRunAction.hh"
+#include "NpsmBenchSteppingAction.hh"
+#include "Rc103FieldPhysicsList.hh"
+
+int main(int argc, char** argv) {
+    if (argc < 4) {
+        std::fprintf(stderr, "Usage: %s <energy_keV> <n_events> <out_csv> [seed=<N>] [emcut=<mm>] [deex=std|deex|max] [crystal=<X>x<Y>x<Z>]\n", argv[0]);
+        return 2;
+    }
+
+    double energyKeV = std::stod(argv[1]);
+    if (energyKeV <= 0) {
+        std::fprintf(stderr, "Ошибка: энергия должна быть положительной\n");
+        return 2;
+    }
+
+    long long nEvents = std::stoll(argv[2]);
+    if (nEvents <= 0) {
+        std::fprintf(stderr, "Ошибка: количество событий должно быть положительным\n");
+        return 2;
+    }
+
+    std::string outCsv = argv[3];
+
+    long seed = 0;
+    double emCutMm = 0.05;
+    std::string deexMode = "max";
+    std::string crystalStr = "102x102x406";
+
+    for (int i = 4; i < argc; ++i) {
+        const char* arg = argv[i];
+        if (std::strncmp(arg, "seed=", 5) == 0) {
+            seed = std::stoll(arg + 5);
+        } else if (std::strncmp(arg, "emcut=", 6) == 0) {
+            emCutMm = std::stod(arg + 6);
+            if (emCutMm <= 0) {
+                std::fprintf(stderr, "Ошибка: emcut должен быть положительным\n");
+                return 2;
+            }
+        } else if (std::strncmp(arg, "deex=", 5) == 0) {
+            deexMode = arg + 5;
+            if (deexMode != "std" && deexMode != "deex" && deexMode != "max") {
+                std::fprintf(stderr, "Ошибка: неизвестный режим deex\n");
+                return 2;
+            }
+        } else if (std::strncmp(arg, "crystal=", 8) == 0) {
+            crystalStr = arg + 8;
+        } else {
+            std::fprintf(stderr, "Ошибка: неизвестный параметр %s\n", arg);
+            return 2;
+        }
+    }
+
+    // Парсинг размеров кристалла
+    long long x, y, z;
+    if (std::sscanf(crystalStr.c_str(), "%lldx%lldx%lld", &x, &y, &z) != 3) {
+        std::fprintf(stderr, "Ошибка: неверный формат crystal=<X>x<Y>x<Z>\n");
+        return 2;
+    }
+
+    NpsmBenchDetectorConstruction::gCrystalXMm = static_cast<double>(x);
+    NpsmBenchDetectorConstruction::gCrystalYMm = static_cast<double>(y);
+    NpsmBenchDetectorConstruction::gCrystalZMm = static_cast<double>(z);
+
+    // Инициализация Геанта
+    auto runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Serial);
+    runManager->SetVerboseLevel(0);
+
+    auto detectorConstruction = new NpsmBenchDetectorConstruction();
+    runManager->SetUserInitialization(detectorConstruction);
+
+    auto physicsList = new Rc103FieldPhysicsList(emCutMm, deexMode);
+    runManager->SetUserInitialization(physicsList);
+
+    auto runAction = new NpsmBenchRunAction(outCsv, energyKeV, nEvents, seed);
+    runManager->SetUserAction(runAction);
+
+    auto eventAction = new NpsmBenchEventAction();
+    runManager->SetUserAction(eventAction);
+
+    auto primaryGenerator = new NpsmBenchPrimaryGeneratorAction(energyKeV);
+    runManager->SetUserAction(primaryGenerator);
+
+    auto steppingAction = new NpsmBenchSteppingAction(eventAction);
+    runManager->SetUserAction(steppingAction);
+
+    runManager->Initialize();
+
+    if (!NpsmBenchDetectorConstruction::GetCrystalLogicalVolume()) {
+        std::fprintf(stderr, "Ошибка: кристалл не был создан\n");
+        return 3;
+    }
+
+    // Установка UI команд
+    auto ui = G4UImanager::GetUIpointer();
+    ui->ApplyCommand("/run/verbose 1");
+    ui->ApplyCommand("/event/verbose 0");
+    ui->ApplyCommand("/tracking/verbose 0");
+
+    long long printProgress = nEvents / 10;
+    if (printProgress < 1) printProgress = 1;
+    std::ostringstream oss;
+    oss << "/run/printProgress " << printProgress;
+    ui->ApplyCommand(oss.str());
+
+    // Вывод информации перед запуском
+    double srcRadius = NpsmBenchDetectorConstruction::SourceRadiusMm();
+    std::printf("npsm_bench: energy_keV=%.3f n_events=%lld out_csv=%s crystal_mm=%gx%gx%g r_src_mm=%g seed=%ld\n",
+                energyKeV, nEvents, outCsv.c_str(),
+                NpsmBenchDetectorConstruction::gCrystalXMm,
+                NpsmBenchDetectorConstruction::gCrystalYMm,
+                NpsmBenchDetectorConstruction::gCrystalZMm,
+                srcRadius, seed);
+
+    // Установка зерна случайных чисел
+    if (seed != 0) {
+        G4Random::setTheSeed(seed);
+    }
+
+    runManager->BeamOn(nEvents);
+
+    delete runManager;
+
+    std::printf("EXITCODE=0\n");
+    return 0;
+}
+```
+=== FILE: NpsmBenchDetectorConstruction.hh ===
+```cpp
+#pragma once
+
+#include "G4VUserDetectorConstruction.hh"
+#include "G4LogicalVolume.hh"
+
+class NpsmBenchDetectorConstruction : public G4VUserDetectorConstruction {
+public:
+    static double gCrystalXMm;
+    static double gCrystalYMm;
+    static double gCrystalZMm;
+
+    static double SourceRadiusMm();
+    static G4LogicalVolume* GetCrystalLogicalVolume();
+
+    G4VPhysicalVolume* Construct() override;
+
+private:
+    static G4LogicalVolume* fgCrystalLV;
+};
+```
+=== FILE: NpsmBenchDetectorConstruction.cc ===
+```cpp
+#include "NpsmBenchDetectorConstruction.hh"
+#include "G4Box.hh"
+#include "G4LogicalVolume.hh"
+#include "G4PVPlacement.hh"
+#include "G4NistManager.hh"
+#include "G4SystemOfUnits.hh"
+#include "G4Material.hh"
+#include <iostream>
+
+double NpsmBenchDetectorConstruction::gCrystalXMm = 102.0;
+double NpsmBenchDetectorConstruction::gCrystalYMm = 102.0;
+double NpsmBenchDetectorConstruction::gCrystalZMm = 406.0;
+
+G4LogicalVolume* NpsmBenchDetectorConstruction::fgCrystalLV = nullptr;
+
+double NpsmBenchDetectorConstruction::SourceRadiusMm() {
+    // Расстояние от центра до диагонали кристалла + запас 30 мм
+    double diag = 0.5 * std::sqrt(gCrystalXMm * gCrystalXMm + gCrystalYMm * gCrystalYMm + gCrystalZMm * gCrystalZMm) + 30.0;
+    return diag;
+}
+
+G4LogicalVolume* NpsmBenchDetectorConstruction::GetCrystalLogicalVolume() {
+    return fgCrystalLV;
+}
+
+G4VPhysicalVolume* NpsmBenchDetectorConstruction::Construct() {
+    G4NistManager* nist = G4NistManager::Instance();
+
+    // Определение материалов
+    G4Material* galactic = nist->FindOrBuildMaterial("G4_Galactic");
+    G4Material* sodiumIodide = nist->FindOrBuildMaterial("G4_SODIUM_IODIDE");
+
+    // Создание мира
+    double worldSize = SourceRadiusMm() + 50.0;
+    G4Box* worldSolid = new G4Box("World", worldSize * mm, worldSize * mm, worldSize * mm);
+    G4LogicalVolume* worldLV = new G4LogicalVolume(worldSolid, galactic, "World");
+    G4VPhysicalVolume* worldPV = new G4PVPlacement(nullptr, G4ThreeVector(), worldLV, "World", nullptr, false, 0);
+
+    // Создание кристалла
+    double halfX = gCrystalXMm / 2.0;
+    double halfY = gCrystalYMm / 2.0;
+    double halfZ = gCrystalZMm / 2.0;
+    G4Box* crystalSolid = new G4Box("Crystal", halfX * mm, halfY * mm, halfZ * mm);
+    G4LogicalVolume* crystalLV = new G4LogicalVolume(crystalSolid, sodiumIodide, "Crystal");
+    new G4PVPlacement(nullptr, G4ThreeVector(), crystalLV, "Crystal", worldLV, false, 0, true);
+
+    fgCrystalLV = crystalLV;
+
+    // Вывод информации о геометрии
+    double volumeCm3 = (gCrystalXMm * gCrystalYMm * gCrystalZMm) / 1000.0;
+    double density = sodiumIodide->GetDensity() / (g/cm3);
+    std::printf("Crystal: %gx%gx%g mm, volume=%.2f cm3, density=%.4f g/cm3, world half-size=%.1f mm\n",
+                gCrystalXMm, gCrystalYMm, gCrystalZMm, volumeCm3, density, worldSize);
+
+    return worldPV;
+}
+```
+=== FILE: NpsmBenchPrimaryGeneratorAction.hh ===
+```cpp
+#pragma once
+
+#include "G4VUserPrimaryGeneratorAction.hh"
+#include "G4ParticleGun.hh"
+
+class NpsmBenchPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction {
+public:
+    explicit NpsmBenchPrimaryGeneratorAction(double energyKeV);
+    void GeneratePrimaries(G4Event* anEvent) override;
+
+private:
+    G4ParticleGun fGun;
+    double fEnergyKeV;
+};
+```
+=== FILE: NpsmBenchPrimaryGeneratorAction.cc ===
+```cpp
+#include "NpsmBenchPrimaryGeneratorAction.hh"
+#include "G4ParticleTable.hh"
+#include "G4ParticleDefinition.hh"
+#include "G4SystemOfUnits.hh"
+#include "G4PhysicalConstants.hh"
+#include "Randomize.hh"
+#include "G4Event.hh"
+
+#include "NpsmBenchDetectorConstruction.hh"
+
+NpsmBenchPrimaryGeneratorAction::NpsmBenchPrimaryGeneratorAction(double energyKeV)
+    : fGun(1), fEnergyKeV(energyKeV) {
+    G4ParticleDefinition* gamma = G4ParticleTable::GetParticleTable()->FindParticle("gamma");
+    fGun.SetParticleDefinition(gamma);
+}
+
+void NpsmBenchPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent) {
+    const double R_SRC = NpsmBenchDetectorConstruction::SourceRadiusMm() * mm;
+
+    // 1) точка равномерно по сфере радиуса R_SRC
+    const double cosT = 2.0 * G4UniformRand() - 1.0;
+    const double sinT = std::sqrt(1.0 - cosT * cosT);
+    const double phi  = twopi * G4UniformRand();
+    const G4ThreeVector n(sinT * std::cos(phi), sinT * std::sin(phi), cosT); // наружная нормаль
+    const G4ThreeVector pos = R_SRC * n;
+
+    // 2) направление ВНУТРЬ, косинусное относительно -n
+    const G4ThreeVector e3 = -n;
+    G4ThreeVector e1 = e3.orthogonal().unit();
+    const G4ThreeVector e2 = e3.cross(e1).unit();
+    const double ct  = std::sqrt(G4UniformRand());
+    const double st  = std::sqrt(1.0 - ct * ct);
+    const double psi = twopi * G4UniformRand();
+    const G4ThreeVector dir = st * std::cos(psi) * e1 + st * std::sin(psi) * e2 + ct * e3;
+
+    fGun.SetParticlePosition(pos);
+    fGun.SetParticleMomentumDirection(dir);
+    fGun.SetParticleEnergy(fEnergyKeV * keV);
+
+    fGun.GeneratePrimaryVertex(anEvent);
+}
+```
+=== FILE: NpsmBenchEventAction.hh ===
+```cpp
+#pragma once
+
+#include "G4UserEventAction.hh"
+#include "G4Event.hh"
+
+class NpsmBenchRunAction;
+
+class NpsmBenchEventAction : public G4UserEventAction {
+public:
+    explicit NpsmBenchEventAction();
+    void BeginOfEventAction(const G4Event*) override;
+    void EndOfEventAction(const G4Event*) override;
+
+    // Мутаторы
+    inline void AddCompt() { fNCompt++; }
+    inline void AddRayl() { fNRayl++; }
+    inline void SetPhotAbsorbed() { fPhotAbsorbed = true; }
+    inline void SetConv() { fConv = true; }
+    inline void SetEscaped() { fEscaped = true; }
+    inline void AddEdep(double edepMeV) { fEdepMeV += edepMeV; }
+
+private:
+    int fNCompt;
+    int fNRayl;
+    bool fPhotAbsorbed;
+    bool fConv;
+    bool fEscaped;
+    double fEdepMeV;
+
+    NpsmBenchRunAction* fRunAction;
+};
+```
+=== FILE: NpsmBenchEventAction.cc ===
+```cpp
+#include "NpsmBenchEventAction.hh"
+#include "NpsmBenchRunAction.hh"
+
+NpsmBenchEventAction::NpsmBenchEventAction()
+    : fNCompt(0), fNRayl(0), fPhotAbsorbed(false), fConv(false), fEscaped(false), fEdepMeV(0.0),
+      fRunAction(nullptr) {}
+
+void NpsmBenchEventAction::BeginOfEventAction(const G4Event*) {
+    fNCompt = 0;
+    fNRayl = 0;
+    fPhotAbsorbed = false;
+    fConv = false;
+    fEscaped = false;
+    fEdepMeV = 0.0;
+}
+
+void NpsmBenchEventAction::EndOfEventAction(const G4Event*) {
+    if (fRunAction) {
+        fRunAction->RecordEvent(fNCompt, fNRayl, fPhotAbsorbed, fConv, fEscaped, fEdepMeV);
+    }
+}
+```
+=== FILE: NpsmBenchRunAction.hh ===
+```cpp
+#pragma once
+
+#include "G4UserRunAction.hh"
+#include "G4Run.hh"
+#include <array>
+#include <string>
+
+class NpsmBenchRunAction : public G4UserRunAction {
+public:
+    explicit NpsmBenchRunAction(std::string outCsv, double energyKeV, long long nEventsRequested, long seed);
+    void BeginOfRunAction(const G4Run*) override;
+    void EndOfRunAction(const G4Run*) override;
+
+    void RecordEvent(int nCompt, int nRayl, bool phot, bool conv, bool escaped, double edepMeV);
+
+private:
+    std::string fOutCsv;
+    double fEnergyKeV;
+    long long fNEventsRequested;
+    long fSeed;
+
+    static constexpr int kMaxCompt = 32;
+    std::array<long long, kMaxCompt+1> fHistAbsorbed{};
+    std::array<long long, kMaxCompt+1> fHistAll{};
+    long long fNEvents;
+    long long fNAbsorbed;
+    long long fNConv;
+    long long fNEscaped;
+    long long fNOther;
+    long long fNFullEdep;
+    double fSumComptAbsorbed;
+    double fSumCompt2Absorbed;
+
+    void WriteCSV();
+};
+```
+=== FILE: NpsmBenchRunAction.cc ===
+```cpp
+#include "NpsmBenchRunAction.hh"
+#include "G4EmParameters.hh"
+#include "G4SystemOfUnits.hh"
+#include <fstream>
+#include <iomanip>
+#include <cmath>
+
+NpsmBenchRunAction::NpsmBenchRunAction(std::string outCsv, double energyKeV, long long nEventsRequested, long seed)
+    : fOutCsv(outCsv), fEnergyKeV(energyKeV), fNEventsRequested(nEventsRequested), fSeed(seed),
+      fNEvents(0), fNAbsorbed(0), fNConv(0), fNEscaped(0), fNOther(0), fNFullEdep(0),
+      fSumComptAbsorbed(0.0), fSumCompt2Absorbed(0.0) {}
+
+void NpsmBenchRunAction::BeginOfRunAction(const G4Run*) {
+    // Ничего не делаем
+}
+
+void NpsmBenchRunAction::RecordEvent(int nCompt, int nRayl, bool phot, bool conv, bool escaped, double edepMeV) {
+    ++fNEvents;
+
+    if (phot || conv || escaped) {
+        // Только если событие завершено
+        if (phot) {
+            ++fNAbsorbed;
+            fSumComptAbsorbed += nCompt;
+            fSumCompt2Absorbed += nCompt * nCompt;
+
+            int bin = (nCompt > kMaxCompt) ? kMaxCompt : nCompt;
+            ++fHistAbsorbed[bin];
+        }
+
+        if (conv) {
+            ++fNConv;
+        } else if (escaped) {
+            ++fNEscaped;
+        } else {
+            ++fNOther;
+        }
+    }
+
+    // Все события
+    int bin = (nCompt > kMaxCompt) ? kMaxCompt : nCompt;
+    ++fHistAll[bin];
+
+    // Проверка полного поглощения по энергии
+    double diff = std::abs(edepMeV - fEnergyKeV / 1000.0);
+    if (diff < 0.001) { // 1 keV
+        ++fNFullEdep;
+    }
+}
+
+void NpsmBenchRunAction::EndOfRunAction(const G4Run*) {
+    WriteCSV();
+
+    double mean = fNAbsorbed > 0 ? fSumComptAbsorbed / fNAbsorbed : 0.0;
+    double sem = 0.0;
+    if (fNAbsorbed > 0) {
+        double mean2 = fSumCompt2Absorbed / fNAbsorbed;
+        double variance = mean2 - mean * mean;
+        if (variance >= 0 && fNAbsorbed > 1) {
+            sem = std::sqrt(variance / (fNAbsorbed - 1));
+        }
+    }
+
+    // Вывод в stdout
+    std::printf("npsm_bench: E=%.1f keV  N_absorbed=%lld  mean_ncompt=%.4f +- %.4f  escaped=%lld\n",
+                fEnergyKeV, fNAbsorbed, mean, sem, fNEscaped);
+}
+
+void NpsmBenchRunAction::WriteCSV() {
+    std::ofstream file(fOutCsv, std::ios::out);
+    if (!file.is_open()) {
+        return;
+    }
+
+    file << "# npsm_bench geometry/transport benchmark\n";
+    file << "energy_keV," << fEnergyKeV << "\n";
+    file << "n_events_requested," << fNEventsRequested << "\n";
+    file << "n_events_processed," << fNEvents << "\n";
+    file << "seed," << fSeed << "\n";
+    file << "em_cut_mm," << Rc103FieldPhysicsList::gCutMm << "\n";
+    file << "em_deex," << Rc103FieldPhysicsList::gDeexMode << "\n";
+    file << "lowest_electron_energy_keV," << G4EmParameters::Instance()->LowestElectronEnergy() / keV << "\n";
+    file << "crystal_mm," << NpsmBenchDetectorConstruction::gCrystalXMm << "x" << NpsmBenchDetectorConstruction::gCrystalYMm << "x" << NpsmBenchDetectorConstruction::gCrystalZMm << "\n";
+    file << "crystal_volume_cm3," << (NpsmBenchDetectorConstruction::gCrystalXMm * NpsmBenchDetectorConstruction::gCrystalYMm * NpsmBenchDetectorConstruction::gCrystalZMm) / 1000.0 << "\n";
+    file << "r_src_mm," << NpsmBenchDetectorConstruction::SourceRadiusMm() << "\n";
+    file << "n_absorbed_phot," << fNAbsorbed << "\n";
+    file << "n_full_edep_1keV," << fNFullEdep << "\n";
+    file << "n_conv," << fNConv << "\n";
+    file << "n_escaped," << fNEscaped << "\n";
+    file << "n_other," << fNOther << "\n";
+    file << "mean_ncompt_absorbed," << (fNAbsorbed > 0 ? fSumComptAbsorbed / fNAbsorbed : 0.0) << "\n";
+    file << "sem_ncompt_absorbed," << (fNAbsorbed > 0 ? std::sqrt((fSumCompt2Absorbed / fNAbsorbed - (fSumComptAbsorbed / fNAbsorbed) * (fSumComptAbsorbed / fNAbsorbed)) / fNAbsorbed) : 0.0) << "\n";
+    file << "n_compt,count_absorbed,count_all\n";
+
+    for (int i = 0; i <= kMaxCompt; ++i) {
+        file << i << "," << fHistAbsorbed[i] << "," << fHistAll[i] << "\n";
+    }
+
+    file.close();
+}
+```
+=== FILE: NpsmBenchSteppingAction.hh ===
+```cpp
+#pragma once
+
+#include "G4UserSteppingAction.hh"
+#include "G4Step.hh"
+
+class NpsmBenchEventAction;
+
+class NpsmBenchSteppingAction : public G4UserSteppingAction {
+public:
+    explicit NpsmBenchSteppingAction(NpsmBenchEventAction* eventAction);
+    void UserSteppingAction(const G4Step*) override;
+
+private:
+    NpsmBenchEventAction* fEventAction;
+};
+```
+=== FILE: NpsmBenchSteppingAction.cc ===
+```cpp
+#include "NpsmBenchSteppingAction.hh"
+#include "NpsmBenchEventAction.hh"
+#include "NpsmBenchDetectorConstruction.hh"
+#include "G4Step.hh"
+#include "G4Track.hh"
+#include "G4VProcess.hh"
+#include "G4LogicalVolume.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4TouchableHandle.hh"
+#include "G4SystemOfUnits.hh"
+
+NpsmBenchSteppingAction::NpsmBenchSteppingAction(NpsmBenchEventAction* eventAction)
+    : fEventAction(eventAction) {}
+
+void NpsmBenchSteppingAction::UserSteppingAction(const G4Step* step) {
+    // Получаем предшествующий объем
+    const G4VPhysicalVolume* preVol = step->GetPreStepPoint()->GetPhysicalVolume();
+    if (!preVol) return;
+
+    // Получаем логический объем кристалла
+    G4LogicalVolume* crystalLV = NpsmBenchDetectorConstruction::GetCrystalLogicalVolume();
+    if (!crystalLV) return;
+
+    // Энергия, депонированная в кристалле
+    double edep = step->GetTotalEnergyDeposit();
+    if (edep > 0 && step->GetPreStepPoint()->GetLogicalVolume() == crystalLV) {
+        fEventAction->AddEdep(edep / MeV);
+    }
+
+    // Только для первичного трека (parent ID == 0)
+    if (step->GetTrack()->GetParentID() != 0) return;
+
+    // Получаем процесс, определивший шаг
+    const G4VProcess* process = step->GetPostStepPoint()->GetProcessDefinedStep();
+    std::string name = "";
+    if (process) {
+        name = process->GetProcessName();
+    }
+
+    // Проверяем, находится ли постшаг внутри кристалла
+    const G4VPhysicalVolume* postVol = step->GetPostStepPoint()->GetPhysicalVolume();
+    bool inCrystal = (postVol && postVol->GetLogicalVolume() == crystalLV);
+
+    if (inCrystal) {
+        // Если шаг завершен внутри кристалла, обновляем статистику
+        if (name == "compt") {
+            fEventAction->AddCompt();
+        } else if (name == "Rayl") {
+            fEventAction->AddRayl();  // Почему Rayleigh считается отдельно: это упругий процесс, меняющий только направление, а не количество Compton-взаимодействий
+        } else if (name == "phot") {
+            fEventAction->SetPhotAbsorbed();
+        } else if (name == "conv") {
+            fEventAction->SetConv();
+        }
+    } else if (!postVol) {
+        // Если трек покинул мир, помечаем как ушедший
+        fEventAction->SetEscaped();
+    }
+}
+```

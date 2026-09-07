@@ -1,0 +1,213 @@
+=== FILE: NpsmBenchPrimaryGeneratorAction.hh ===
+```cpp
+#pragma once
+
+#include "G4VUserPrimaryGeneratorAction.hh"
+#include "G4ParticleGun.hh"
+
+class NpsmBenchPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction {
+public:
+    explicit NpsmBenchPrimaryGeneratorAction(double energyKeV);
+    void GeneratePrimaries(G4Event* anEvent) override;
+
+private:
+    G4ParticleGun fGun;
+    double fEnergyKeV;
+};
+```
+
+=== FILE: NpsmBenchPrimaryGeneratorAction.cc ===
+```cpp
+#include "NpsmBenchPrimaryGeneratorAction.hh"
+#include "G4ParticleTable.hh"
+#include "G4ParticleDefinition.hh"
+#include "G4SystemOfUnits.hh"
+#include "G4PhysicalConstants.hh"
+#include "Randomize.hh"
+#include "G4Event.hh"
+
+#include "NpsmBenchDetectorConstruction.hh"
+
+// Статические поля
+std::string NpsmBenchPrimaryGeneratorAction::gParticle = "gamma";
+bool NpsmBenchPrimaryGeneratorAction::gPencilBeam = false;
+
+NpsmBenchPrimaryGeneratorAction::NpsmBenchPrimaryGeneratorAction(double energyKeV)
+    : fGun(1), fEnergyKeV(energyKeV) {
+    G4ParticleDefinition* particle = G4ParticleTable::GetParticleTable()->FindParticle(gParticle);
+    if (!particle) {
+        std::fprintf(stderr, "Ошибка: неизвестная частица '%s'\n", gParticle.c_str());
+        std::abort();
+    }
+    fGun.SetParticleDefinition(particle);
+}
+
+void NpsmBenchPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent) {
+    if (gPencilBeam) {
+        // Карандашный пучок: центр кристалла, направление вверх
+        const G4ThreeVector pos(0., 0., 0.);
+        const G4ThreeVector dir(0., 0., 1.);
+
+        fGun.SetParticlePosition(pos);
+        fGun.SetParticleMomentumDirection(dir);
+        fGun.SetParticleEnergy(fEnergyKeV * keV);
+
+        fGun.GeneratePrimaryVertex(anEvent);
+        return;
+    }
+
+    // Известный изотропный розыгрыш по сфере
+    const double R_SRC = NpsmBenchDetectorConstruction::SourceRadiusMm() * mm;
+
+    // 1) точка равномерно по сфере радиуса R_SRC
+    const double cosT = 2.0 * G4UniformRand() - 1.0;
+    const double sinT = std::sqrt(1.0 - cosT * cosT);
+    const double phi  = twopi * G4UniformRand();
+    const G4ThreeVector n(sinT * std::cos(phi), sinT * std::sin(phi), cosT); // наружная нормаль
+    const G4ThreeVector pos = R_SRC * n;
+
+    // 2) направление ВНУТРЬ, косинусное относительно -n
+    const G4ThreeVector e3 = -n;
+    G4ThreeVector e1 = e3.orthogonal().unit();
+    const G4ThreeVector e2 = e3.cross(e1).unit();
+    const double ct  = std::sqrt(G4UniformRand());
+    const double st  = std::sqrt(1.0 - ct * ct);
+    const double psi = twopi * G4UniformRand();
+    const G4ThreeVector dir = st * std::cos(psi) * e1 + st * std::sin(psi) * e2 + ct * e3;
+
+    fGun.SetParticlePosition(pos);
+    fGun.SetParticleMomentumDirection(dir);
+    fGun.SetParticleEnergy(fEnergyKeV * keV);
+
+    fGun.GeneratePrimaryVertex(anEvent);
+}
+```
+
+=== FILE: NpsmBenchSteppingAction.hh ===
+```cpp
+#pragma once
+
+#include "G4UserSteppingAction.hh"
+#include "G4Step.hh"
+#include "G4EmCalculator.hh"
+
+class NpsmBenchEventAction;
+class NpsmLightYield;
+
+class NpsmBenchSteppingAction : public G4UserSteppingAction {
+public:
+    NpsmBenchSteppingAction(NpsmBenchEventAction* eventAction,
+                            const NpsmLightYield* lightYield);
+    void UserSteppingAction(const G4Step*) override;
+
+private:
+    NpsmBenchEventAction* fEventAction;
+    const NpsmLightYield* fLightYield;
+    G4EmCalculator fEmCalc;
+    static constexpr double kMinStepMm = 1e-4;
+};
+```
+
+=== FILE: NpsmBenchSteppingAction.cc ===
+```cpp
+#include "NpsmBenchSteppingAction.hh"
+#include "NpsmBenchEventAction.hh"
+#include "NpsmBenchDetectorConstruction.hh"
+#include "G4Step.hh"
+#include "G4Track.hh"
+#include "G4VProcess.hh"
+#include "G4LogicalVolume.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4TouchableHandle.hh"
+#include "G4SystemOfUnits.hh"
+#include "G4Electron.hh"
+#include "G4Positron.hh"
+#include <cfloat>
+
+NpsmBenchSteppingAction::NpsmBenchSteppingAction(NpsmBenchEventAction* eventAction,
+                                                   const NpsmLightYield* lightYield)
+    : fEventAction(eventAction), fLightYield(lightYield), fEmCalc() {
+    if (!fEventAction) {
+        std::fprintf(stderr, "Ошибка: fEventAction == nullptr\n");
+        std::abort();
+    }
+    if (!fLightYield) {
+        std::fprintf(stderr, "Ошибка: fLightYield == nullptr\n");
+        std::abort();
+    }
+}
+
+void NpsmBenchSteppingAction::UserSteppingAction(const G4Step* step) {
+    // Получаем предшествующий объем
+    const G4VPhysicalVolume* preVol = step->GetPreStepPoint()->GetPhysicalVolume();
+    if (!preVol) return;
+
+    // Получаем логический объем кристалла
+    G4LogicalVolume* crystalLV = NpsmBenchDetectorConstruction::GetCrystalLogicalVolume();
+    if (!crystalLV) return;
+
+    // Энергия, депонированная в кристалле
+    double edep = step->GetTotalEnergyDeposit();
+    // У G4StepPoint нет GetLogicalVolume(); логический объём берётся через
+    // физический объём пре-шага (preVol получен выше).
+    if (edep > 0 && preVol->GetLogicalVolume() == crystalLV) {
+        double edepMeV = edep / MeV;
+        double w = 1.0;
+
+        const G4Track* track = step->GetTrack();
+        const G4ParticleDefinition* particleDef = track->GetDefinition();
+
+        if (fLightYield->IsEnabled() &&
+            (particleDef == G4Electron::Definition() ||
+             particleDef == G4Positron::Definition())) {
+            // Вычисление S — удельные потери энергии, МэВ/см
+            double S;
+            const double stepLength = step->GetStepLength();
+            if (stepLength > kMinStepMm * mm) {
+                // Шаг конечной длины
+                S = edepMeV / (stepLength / cm);
+            } else {
+                // Локальный депозит
+                const G4double Ek = step->GetPreStepPoint()->GetKineticEnergy();
+                const G4Material* material = step->GetPreStepPoint()->GetMaterial();
+                const G4double dedx = fEmCalc.ComputeElectronicDEDX(Ek, particleDef, material, DBL_MAX);
+                S = dedx / (MeV / cm);
+            }
+            w = fLightYield->Weight(S);
+        }
+
+        fEventAction->AddEdep(edepMeV);
+        fEventAction->AddEdepLight(edepMeV * w);
+    }
+
+    // Только для первичного трека (parent ID == 0)
+    if (step->GetTrack()->GetParentID() != 0) return;
+
+    // Получаем процесс, определивший шаг
+    const G4VProcess* process = step->GetPostStepPoint()->GetProcessDefinedStep();
+    std::string name = "";
+    if (process) {
+        name = process->GetProcessName();
+    }
+
+    // Проверяем, находится ли постшаг внутри кристалла
+    const G4VPhysicalVolume* postVol = step->GetPostStepPoint()->GetPhysicalVolume();
+    bool inCrystal = (postVol && postVol->GetLogicalVolume() == crystalLV);
+
+    if (inCrystal) {
+        // Если шаг завершен внутри кристалла, обновляем статистику
+        if (name == "compt") {
+            fEventAction->AddCompt();
+        } else if (name == "Rayl") {
+            fEventAction->AddRayl();  // Почему Rayleigh считается отдельно: это упругий процесс, меняющий только направление, а не количество Compton-взаимодействий
+        } else if (name == "phot") {
+            fEventAction->SetPhotAbsorbed();
+        } else if (name == "conv") {
+            fEventAction->SetConv();
+        }
+    } else if (!postVol) {
+        // Если трек покинул мир, помечаем как ушедший
+        fEventAction->SetEscaped();
+    }
+}
+```

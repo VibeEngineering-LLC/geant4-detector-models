@@ -1,0 +1,233 @@
+=== FILE: G1sNpsmPrimaryGeneratorAction.hh ===
+```cpp
+#ifndef G1S_NPSM_PRIMARY_GENERATOR_ACTION_HH
+#define G1S_NPSM_PRIMARY_GENERATOR_ACTION_HH
+
+#include "G4VUserPrimaryGeneratorAction.hh"
+#include "G4ParticleGun.hh"
+#include "G4ThreeVector.hh"
+
+class G1sNpsmPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction {
+public:
+    static double gSourceZmm;
+    static double gEnergyKeV;
+
+public:
+    G1sNpsmPrimaryGeneratorAction();
+    ~G1sNpsmPrimaryGeneratorAction() override = default;
+
+    void GeneratePrimaries(G4Event* anEvent) override;
+
+private:
+    G4ParticleGun fGun;
+};
+
+#endif // G1S_NPSM_PRIMARY_GENERATOR_ACTION_HH
+```
+
+=== FILE: G1sNpsmPrimaryGeneratorAction.cc ===
+```cpp
+#include "G1sNpsmPrimaryGeneratorAction.hh"
+#include "G4Event.hh"
+#include "G4ParticleTable.hh"
+#include "G4ParticleDefinition.hh"
+#include "G4SystemOfUnits.hh"
+#include "Randomize.hh"
+
+double G1sNpsmPrimaryGeneratorAction::gSourceZmm = 91.0;
+double G1sNpsmPrimaryGeneratorAction::gEnergyKeV = 661.657;
+
+G1sNpsmPrimaryGeneratorAction::G1sNpsmPrimaryGeneratorAction()
+    : fGun(1) {
+    G4ParticleDefinition* gamma = G4ParticleTable::GetParticleTable()->FindParticle("gamma");
+    fGun.SetParticleDefinition(gamma);
+}
+
+void G1sNpsmPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent) {
+    // Задаем позицию источника
+    G4ThreeVector position(0., 0., gSourceZmm * mm);
+    fGun.SetParticlePosition(position);
+
+    // Задаем энергию
+    fGun.SetParticleEnergy(gEnergyKeV * keV);
+
+    // Генерируем изотропное направление
+    // Разыгрываем косинус полярного угла для равномерного распределения по телесному углу
+    G4double cosTheta = 1.0 - 2.0 * G4UniformRand();
+    G4double phi = 2.0 * M_PI * G4UniformRand();
+    G4double sinTheta = std::sqrt(1.0 - cosTheta * cosTheta);
+
+    G4ThreeVector direction(sinTheta * std::cos(phi),
+                            sinTheta * std::sin(phi),
+                            cosTheta);
+    fGun.SetParticleMomentumDirection(direction);
+
+    // Генерируем первичную вершину
+    fGun.GeneratePrimaryVertex(anEvent);
+}
+```
+
+=== FILE: main.cc ===
+```cpp
+#include "G4RunManager.hh"
+#include "G4UImanager.hh"
+#include "G4UIterminal.hh"
+#include "G4String.hh"
+#include "G4SystemOfUnits.hh"
+
+#include "G1SDetector.hh"
+#include "Rc103FieldPhysicsList.hh"
+#include "NpsmLightYield.hh"
+#include "NpsmBenchRunAction.hh"
+#include "NpsmBenchEventAction.hh"
+#include "NpsmBenchSteppingAction.hh"
+#include "G1sNpsmPrimaryGeneratorAction.hh"
+
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <map>
+#include <string>
+#include <cstdlib>
+
+// Параметры по умолчанию
+std::string gOutCsv = "g1s_npsm.csv";
+long long gEvents = 1000000;
+long gSeed = 12345;
+double gEnergyKeV = 661.657;
+double gSourceZmm = 91.0;
+std::string gNpsm = "on";
+double gEta = 0.453;
+double gSOns = 36.4;
+double gSTrap = 12.0;
+double gSBirks = 185.3;
+double gCutMm = 0.05;
+std::string gDeexMode = "deex";
+std::string gPixeModel = "";
+std::string gPixeElecModel = "";
+int gShield = 1;
+int gMasses = 1;
+
+void ParseArgs(int argc, char** argv) {
+    std::map<std::string, std::string> args;
+    for (int i = 1; i < argc; ++i) {
+        std::string arg(argv[i]);
+        size_t pos = arg.find('=');
+        if (pos == std::string::npos) {
+            std::cerr << "Неизвестный ключ: " << arg << std::endl;
+            exit(2);
+        }
+        std::string key = arg.substr(0, pos);
+        std::string value = arg.substr(pos + 1);
+        args[key] = value;
+    }
+
+    if (args.find("out=") != args.end()) gOutCsv = args["out="];
+    if (args.find("events=") != args.end()) gEvents = std::stoll(args["events="]);
+    if (args.find("seed=") != args.end()) gSeed = std::stoll(args["seed="]);
+    if (args.find("energy_keV=") != args.end()) gEnergyKeV = std::stof(args["energy_keV="]);
+    if (args.find("src_z_mm=") != args.end()) gSourceZmm = std::stof(args["src_z_mm="]);
+    if (args.find("npsm=") != args.end()) gNpsm = args["npsm="];
+    if (args.find("npsm_eta=") != args.end()) gEta = std::stof(args["npsm_eta="]);
+    if (args.find("npsm_s_ons=") != args.end()) gSOns = std::stof(args["npsm_s_ons="]);
+    if (args.find("npsm_s_trap=") != args.end()) gSTrap = std::stof(args["npsm_s_trap="]);
+    if (args.find("npsm_s_birks=") != args.end()) gSBirks = std::stof(args["npsm_s_birks="]);
+    if (args.find("cut_mm=") != args.end()) gCutMm = std::stof(args["cut_mm="]);
+    if (args.find("deex=") != args.end()) gDeexMode = args["deex="];
+    if (args.find("pixe_model=") != args.end()) gPixeModel = args["pixe_model="];
+    if (args.find("pixe_e_model=") != args.end()) gPixeElecModel = args["pixe_e_model="];
+    if (args.find("shield=") != args.end()) gShield = (args["shield="] == "1") ? 1 : 0;
+    if (args.find("masses=") != args.end()) gMasses = (args["masses="] == "1") ? 1 : 0;
+
+    // Проверка корректности значений
+    if (gNpsm != "on" && gNpsm != "off") {
+        std::cerr << "Некорректное значение npsm: " << gNpsm << std::endl;
+        exit(2);
+    }
+}
+
+int main(int argc, char** argv) {
+    ParseArgs(argc, argv);
+
+    // Установка зерна
+    G4Random::setTheSeed(gSeed);
+
+    // Установка статических полей физ-листа
+    Rc103FieldPhysicsList::gCutMm = gCutMm;
+    Rc103FieldPhysicsList::gDeexMode = gDeexMode;
+    Rc103FieldPhysicsList::gPixeModel = gPixeModel;
+    Rc103FieldPhysicsList::gPixeElecModel = gPixeElecModel;
+
+    // Создание менеджера
+    G4RunManager* runManager = new G4RunManager;
+
+    // Создание детектора
+    G1SDetector* detector = new G1SDetector;
+    detector->fWithShield = (gShield == 1);
+    detector->fWithVessel = false;
+
+    runManager->SetUserInitialization(detector);
+
+    // Создание физического листа
+    Rc103FieldPhysicsList* physicsList = new Rc103FieldPhysicsList(gCutMm, gDeexMode);
+    runManager->SetUserInitialization(physicsList);
+
+    // Инициализация
+    runManager->Initialize();
+
+    // Получение логического объема кристалла и установка в stepping action
+    G4LogicalVolume* crystalLV = detector->fCrystalLV;
+    if (!crystalLV) {
+        std::cerr << "Ошибка: fCrystalLV не установлен" << std::endl;
+        return 3;
+    }
+    NpsmBenchSteppingAction::SetCrystalLogicalVolume(crystalLV);
+
+    // Печать масс
+    if (gMasses) {
+        detector->ReportMasses();
+    }
+
+    // Создание модели светового выхода
+    NpsmLightYield* lightYield = nullptr;
+    if (gNpsm == "on") {
+        lightYield = new NpsmLightYield(gEta, gSOns, gSTrap, gSBirks);
+    }
+
+    // Создание и регистрация действий
+    NpsmBenchRunAction* runAction = new NpsmBenchRunAction(gOutCsv, gEnergyKeV, gEvents, gSeed, lightYield);
+    runManager->SetUserAction(runAction);
+
+    NpsmBenchEventAction* eventAction = new NpsmBenchEventAction();
+    runManager->SetUserAction(eventAction);
+
+    NpsmBenchSteppingAction* steppingAction = new NpsmBenchSteppingAction();
+    runManager->SetUserAction(steppingAction);
+
+    G1sNpsmPrimaryGeneratorAction* genAction = new G1sNpsmPrimaryGeneratorAction();
+    genAction->gSourceZmm = gSourceZmm;
+    genAction->gEnergyKeV = gEnergyKeV;
+    runManager->SetUserAction(genAction);
+
+    // Печать постановки
+    std::cout << "G1S_NPSM_SETUP: events=" << gEvents
+              << " seed=" << gSeed
+              << " energy_keV=" << gEnergyKeV
+              << " src_z_mm=" << gSourceZmm
+              << " npsm=" << gNpsm
+              << " eta=" << gEta
+              << " ons=" << gSOns
+              << " trap=" << gSTrap
+              << " birks=" << gSBirks
+              << " cut_mm=" << gCutMm
+              << " deex=" << gDeexMode
+              << " shield=" << gShield
+              << std::endl;
+
+    // Запуск моделирования
+    runManager->BeamOn(gEvents);
+
+    delete runManager;
+    return 0;
+}
+```

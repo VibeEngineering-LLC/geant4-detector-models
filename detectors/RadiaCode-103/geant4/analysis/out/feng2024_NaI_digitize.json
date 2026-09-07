@@ -1,0 +1,120 @@
+{
+  "fig11": {
+    "field_box": [
+      37,
+      963,
+      171,
+      1439
+    ],
+    "axis_x": {
+      "a": 0.0018868872506444475,
+      "b": 0.30558780963167564,
+      "residual_decades": 0.001874326540254767,
+      "ticks_used": [
+        10.0,
+        50.0,
+        100.0,
+        200.0
+      ]
+    },
+    "axis_y": {
+      "c": -0.00086245258076766,
+      "d": 1.1977720301238548,
+      "residual": 0.0009103448635855438,
+      "ticks_used": [
+        1.1,
+        0.9,
+        0.8,
+        0.6,
+        0.5
+      ]
+    },
+    "reference_lines_expected": {
+      "magenta": 1.0,
+      "black_dotted": 0.9
+    },
+    "reference_lines_measured": {
+      "magenta": 0.999407936547293,
+      "black_dotted": 0.9002258897590121
+    },
+    "legend_box": [
+      607,
+      891,
+      807,
+      1239
+    ],
+    "marker_color": "blue",
+    "n_points": 48,
+    "n_splits": 13,
+    "energy_range_keV": [
+      4.111326249903707,
+      372.25076121976934
+    ],
+    "max_yield": {
+      "E_keV": 14.113107155605997,
+      "value": 1.1554284939372432
+    }
+  },
+  "fig16": {
+    "field_box": [
+      37,
+      965,
+      171,
+      1439
+    ],
+    "axis_x": {
+      "a": 0.0023591520869300606,
+      "b": 0.3066723952449683,
+      "residual_decades": 0.001961274284615344,
+      "ticks_used": [
+        20.0,
+        50.0,
+        200.0,
+        400.0
+      ]
+    },
+    "axis_y": {
+      "c": -0.0008617369221629588,
+      "d": 1.298132087296561,
+      "residual": 0.0009291417230825605,
+      "ticks_used": [
+        1.2,
+        1.1,
+        0.8,
+        0.6
+      ]
+    },
+    "reference_lines_expected": {
+      "red": 1.0,
+      "blue_dotted": 0.9,
+      "black_dotted": 1.1
+    },
+    "reference_lines_measured": {
+      "red": 1.0008328491503402,
+      "blue_dotted": 0.900871366179437,
+      "black_dotted": 1.0990708582769175
+    },
+    "legend_box": [
+      550,
+      927,
+      699,
+      1242
+    ],
+    "marker_color": "black",
+    "n_points": 51,
+    "n_splits": 16,
+    "energy_range_keV": [
+      4.126373804610562,
+      379.4485206301702
+    ],
+    "max_yield": {
+      "E_keV": 14.09161666366146,
+      "value": 1.1557073266435975
+    }
+  },
+  "comparison": {
+    "median_difference_percent": 0.08512787093036632,
+    "max_difference_percent": 1.0218248365106033,
+    "max_difference_energy_keV": 4.126373804610562
+  }
+}

@@ -5,14 +5,66 @@
 #include "G4SystemOfUnits.hh"
 #include "Randomize.hh"
 #include "G4IonTable.hh"
+#include "G4LogicalVolumeStore.hh"
+#include "G4LogicalVolume.hh"
+#include "G4VSolid.hh"
+#include "G4Exception.hh"
 #include <cstdio>
 #include <cstdlib>
+#include <cmath>
 
 double G1sNpsmPrimaryGeneratorAction::gSourceZmm = 91.0;
 double G1sNpsmPrimaryGeneratorAction::gEnergyKeV = 661.657;
 std::string G1sNpsmPrimaryGeneratorAction::gPrimary = "gamma";
 int G1sNpsmPrimaryGeneratorAction::gIonZ = 27;   // Co
 int G1sNpsmPrimaryGeneratorAction::gIonA = 60;   // Co-60
+std::string G1sNpsmPrimaryGeneratorAction::gSourceMode = "point";
+double G1sNpsmPrimaryGeneratorAction::gSrcZFrac = 1.0;
+double G1sNpsmPrimaryGeneratorAction::gSrcRFrac = 1.0;
+
+G4ThreeVector G1sNpsmPrimaryGeneratorAction::SamplePointInSample() {
+    if (!fSampleSolid) {
+        G4LogicalVolume* lv =
+            G4LogicalVolumeStore::GetInstance()->GetVolume("Sample", false);
+        if (!lv) {
+            // Громкий отказ, а не тихий возврат нуля: молча вылетающая из
+            // центра мира первичка дала бы правдоподобный, но неверный спектр.
+            G4Exception("G1sNpsmPrimaryGeneratorAction::SamplePointInSample",
+                        "NoSample", FatalException,
+                        "src=sample, но логического объёма Sample нет: "
+                        "сосуд не построен (vessel=none?)");
+        }
+        fSampleSolid = lv->GetSolid();
+        fSampleSolid->BoundingLimits(fSampleMin, fSampleMax);
+    }
+    // Отбор с отклонением: тело пробы — G4Polycone (кольцо вокруг колодца плюс
+    // слой над ним), аналитического равномерного розыгрыша для него нет, а
+    // Inside() у солида точен. Счётчик срыва защищает от бесконечного цикла.
+    for (int i = 0; i < 10000; ++i) {
+        const G4ThreeVector p(
+            fSampleMin.x() + (fSampleMax.x() - fSampleMin.x()) * G4UniformRand(),
+            fSampleMin.y() + (fSampleMax.y() - fSampleMin.y()) * G4UniformRand(),
+            fSampleMin.z() + (fSampleMax.z() - fSampleMin.z()) * G4UniformRand());
+        if (fSampleSolid->Inside(p) != kInside) continue;
+        // Ограничение области: снизу по высоте и снаружи по радиусу.
+        if (gSrcZFrac < 1.0) {
+            const double zTop = fSampleMin.z()
+                + (fSampleMax.z() - fSampleMin.z()) * gSrcZFrac;
+            if (p.z() > zTop) continue;
+        }
+        if (gSrcRFrac < 1.0) {
+            const double rMax = std::max(std::abs(fSampleMax.x()),
+                                         std::abs(fSampleMin.x()));
+            const double rMin = rMax * (1.0 - gSrcRFrac);
+            if (p.perp() < rMin) continue;
+        }
+        return p;
+    }
+    G4Exception("G1sNpsmPrimaryGeneratorAction::SamplePointInSample",
+                "RejectionFailed", FatalException,
+                "10000 попыток отбора не дали точки внутри пробы");
+    return G4ThreeVector();
+}
 
 G1sNpsmPrimaryGeneratorAction::G1sNpsmPrimaryGeneratorAction()
     : fGun(1) {
@@ -26,8 +78,10 @@ G1sNpsmPrimaryGeneratorAction::G1sNpsmPrimaryGeneratorAction()
 }
 
 void G1sNpsmPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent) {
-    // Задаем позицию источника
-    G4ThreeVector position(0., 0., gSourceZmm * mm);
+    // Позиция источника: точка на оси либо равномерно по объёму пробы.
+    const G4ThreeVector position = (gSourceMode == "sample")
+        ? SamplePointInSample()
+        : G4ThreeVector(0., 0., gSourceZmm * mm);
     fGun.SetParticlePosition(position);
 
     if (gPrimary == "ion") {

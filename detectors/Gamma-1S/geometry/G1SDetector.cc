@@ -325,9 +325,12 @@ void G1SDetector::BuildVessel(G4LogicalVolume* w) {
   // в сплошной слой до вычисленного уровня засыпки. Один физический объём
   // нужен GPS-розыгрышу (/gps/pos/confine принимает одно имя).
   auto* sm = Mat("Sample");
+  // Внутренний радиус кольца пробы: стенка колодца плюс зазор, если он задан.
+  // Зазор — проверочный параметр (VesselGeom::sampleGap), по умолчанию 0.
+  const double rSampleIn = rWellOut + v.sampleGap;
   const double zs[4] = {(zBot + v.wall) * mm, zWellFloor * mm,
                         zWellFloor * mm, zFill * mm};
-  const double ri[4] = {rWellOut * mm, rWellOut * mm, 0, 0};
+  const double ri[4] = {rSampleIn * mm, rSampleIn * mm, 0, 0};
   const double ro[4] = {rIn * mm, rIn * mm, rIn * mm, rIn * mm};
   auto* smSolid = new G4Polycone("Sample", 0, CLHEP::twopi, 4, zs, ri, ro);
   fSampleLV = new G4LogicalVolume(smSolid, sm, "Sample");

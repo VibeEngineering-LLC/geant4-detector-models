@@ -84,6 +84,11 @@ std::vector<double> LoadGrid(const char* path) {
 
 G4Material* gOisn = nullptr;
 G4Material* gWater = nullptr;   // для лёгких матриц источников комплекта
+// Матрица поверочного комплекта РИСН-379 (смесь AmTiCsEu). Добавлена
+// 11.09.2026: без неё коэффициент ослабления этой матрицы приходилось
+// ОЦЕНИВАТЬ по составу, а оценка — не измерение (#AH-1). Нужна прежде всего
+// при 59,5 кэВ (Am-241), где самопоглощение в пробе наибольшее.
+G4Material* gRisn = nullptr;
 
 // Материалы входного торца — для сверки самого тулкита с NIST XCOM.
 // Плотность здесь произвольна: массовый коэффициент mu/ro от неё не зависит,
@@ -98,6 +103,7 @@ public:
   G4VPhysicalVolume* Construct() override {
     gOisn = G1SDetector::MakeMatrix("OISN16", 1.0, "OISN16_unit");
     gWater = G1SDetector::MakeMatrix("water", 1.0, "Water_unit");
+    gRisn = G1SDetector::MakeMatrix("risn379", 1.0, "RISN379_unit");
     auto* nist = G4NistManager::Instance();
     gMgO = nist->FindOrBuildMaterial("G4_MAGNESIUM_OXIDE");
     gAl = nist->FindOrBuildMaterial("G4_Al");
@@ -143,6 +149,7 @@ int main(int argc, char** argv) {
   const Out OUTS[] = {
       {gOisn, "mu_oisn16.csv", "ОИСН-16"},
       {gWater, "mu_water.csv", "вода"},
+      {gRisn, "mu_risn379.csv", "РИСН-379 (AmTiCsEu)"},
   };
   for (const Out& o : OUTS) {
     FILE* f = std::fopen(o.fn, "w");
@@ -184,6 +191,12 @@ int main(int argc, char** argv) {
     const Chk CHKS[] = {
         {gMgO, "MgO"}, {gAl, "Al"}, {gRubber, "rubber"}, {gNaI, "NaI"},
         {gOisn, "OISN16"},
+        // РИСН-379 добавлена 11.09.2026 с разбором ПО ПРОЦЕССАМ, а не только
+        // полной mu: две матрицы с одинаковой полной mu дают разный отклик в
+        // окне пика, потому что доли фотоэффекта и комптона у них разные, а
+        // исчезает фотон только в первом случае. Сравнивать матрицы по одной
+        // полной mu — ошибка, проверено прогоном (расхождение 90 %, 29σ).
+        {gRisn, "RISN379"},
     };
     FILE* f = std::fopen("mu_xcom_check.csv", "w");
     if (!f) {

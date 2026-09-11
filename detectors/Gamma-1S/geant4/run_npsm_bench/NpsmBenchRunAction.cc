@@ -19,6 +19,12 @@ std::string NpsmBenchRunAction::gPrimaryKind = "gamma";
 int NpsmBenchRunAction::gIonZ = 0;
 int NpsmBenchRunAction::gIonA = 0;
 int NpsmBenchRunAction::gThreads = 0;
+std::string NpsmBenchRunAction::gVessel = "none";
+std::string NpsmBenchRunAction::gMatrix = "";
+double NpsmBenchRunAction::gRhoSample = 0.0;
+double NpsmBenchRunAction::gSampleCm3 = 0.0;
+std::string NpsmBenchRunAction::gSrcMode = "point";
+std::string NpsmBenchRunAction::gChainLimits = "";
 
 NpsmBenchRunAction::NpsmBenchRunAction(std::string outCsv, double energyKeV, long long nEventsRequested, long seed, const NpsmLightYield* lightYield)
     : fOutCsv(outCsv), fEnergyKeV(energyKeV), fNEventsRequested(nEventsRequested), fSeed(seed),
@@ -147,7 +153,12 @@ void NpsmBenchRunAction::WriteCSV(const NpsmBenchRun& run) {
     file << "restricted_dedx," << (NpsmBenchSteppingAction::gRestrictedDedx ? 1 : 0) << "\n";
     file << "lowest_electron_energy_keV," << G4EmParameters::Instance()->LowestElectronEnergy() / keV << "\n";
     file << "crystal_mm," << NpsmBenchDetectorConstruction::gCrystalXMm << "x" << NpsmBenchDetectorConstruction::gCrystalYMm << "x" << NpsmBenchDetectorConstruction::gCrystalZMm << "\n";
-    file << "crystal_volume_cm3," << (NpsmBenchDetectorConstruction::gCrystalXMm * NpsmBenchDetectorConstruction::gCrystalYMm * NpsmBenchDetectorConstruction::gCrystalZMm) / 1000.0 << "\n";
+    // Форма — явно, объём — заданный, если проект его знает. Произведение
+    // габаритов верно только для G4Box; у цилиндра оно завышает на 27 %.
+    file << "crystal_shape," << NpsmBenchDetectorConstruction::gCrystalShape << "\n";
+    file << "crystal_volume_cm3," << (NpsmBenchDetectorConstruction::gCrystalVolumeCm3 > 0.0
+             ? NpsmBenchDetectorConstruction::gCrystalVolumeCm3
+             : (NpsmBenchDetectorConstruction::gCrystalXMm * NpsmBenchDetectorConstruction::gCrystalYMm * NpsmBenchDetectorConstruction::gCrystalZMm) / 1000.0) << "\n";
     file << "r_src_mm," << NpsmBenchDetectorConstruction::SourceRadiusMm() << "\n";
     // Постановка первички. `particle` — поле генератора СТЕНДА и в проекте с
     // чужим генератором (run_g1s_npsm) остаётся на умолчании; поэтому рядом
@@ -163,6 +174,15 @@ void NpsmBenchRunAction::WriteCSV(const NpsmBenchRun& run) {
     file << "decay," << (Rc103FieldPhysicsList::gDecay ? 1 : 0) << "\n";
     file << "correlated_gamma," << (Rc103FieldPhysicsList::gCorrGamma ? 1 : 0) << "\n";
     file << "beam," << (NpsmBenchPrimaryGeneratorAction::gPencilBeam ? "pencil" : "iso") << "\n";
+    // Проба: кювета, матрица, плотность, объём засыпки, способ розыгрыша.
+    file << "vessel," << gVessel << "\n";
+    file << "chain_limits," << (gChainLimits.empty() ? "none" : gChainLimits) << "\n";
+    file << "src_mode," << gSrcMode << "\n";
+    if (gVessel != "none") {
+        file << "sample_matrix," << gMatrix << "\n";
+        file << "sample_rho_g_cm3," << gRhoSample << "\n";
+        file << "sample_cm3," << gSampleCm3 << "\n";
+    }
     file << "npsm_enabled," << (fLightYield->IsEnabled() ? 1 : 0) << "\n";
     file << "npsm_eta," << fLightYield->Eta() << "\n";
     file << "npsm_s_ons," << fLightYield->SOns() << "\n";

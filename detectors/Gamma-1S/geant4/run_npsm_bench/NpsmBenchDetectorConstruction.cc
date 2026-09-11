@@ -16,6 +16,8 @@ bool NpsmBenchDetectorConstruction::gScintLight = false;
 double NpsmBenchDetectorConstruction::gCrystalXMm = 102.0;
 double NpsmBenchDetectorConstruction::gCrystalYMm = 102.0;
 double NpsmBenchDetectorConstruction::gCrystalZMm = 406.0;
+std::string NpsmBenchDetectorConstruction::gCrystalShape = "box";
+double NpsmBenchDetectorConstruction::gCrystalVolumeCm3 = 0.0;
 
 G4LogicalVolume* NpsmBenchDetectorConstruction::fgCrystalLV = nullptr;
 

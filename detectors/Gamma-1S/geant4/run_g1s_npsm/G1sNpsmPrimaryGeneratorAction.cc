@@ -84,6 +84,27 @@ void G1sNpsmPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent) {
         : G4ThreeVector(0., 0., gSourceZmm * mm);
     fGun.SetParticlePosition(position);
 
+    if (gPrimary == "eplus" || gPrimary == "eplus_gamma") {
+        // β⁺ (Sc-44): позитрон покоится в точке рождения и аннигилирует сам —
+        // две встречные 511 кэВ; при eplus_gamma из той же точки в том же
+        // событии — изотропный квант gEnergyKeV. Пробег позитрона и аннигиляция
+        // на лету не учитываются — приближение, названное в отчёте.
+        static G4ParticleDefinition* ep = G4ParticleTable::GetParticleTable()->FindParticle("e+");
+        static G4ParticleDefinition* gm = G4ParticleTable::GetParticleTable()->FindParticle("gamma");
+        fGun.SetParticleDefinition(ep);
+        fGun.SetParticleEnergy(0.0);
+        fGun.SetParticleMomentumDirection(G4ThreeVector(0., 0., 1.));
+        fGun.GeneratePrimaryVertex(anEvent);
+        if (gPrimary == "eplus") return;
+        fGun.SetParticleDefinition(gm);
+        fGun.SetParticleEnergy(gEnergyKeV * keV);
+        const G4double ct = 1.0 - 2.0 * G4UniformRand(), ph = 2.0 * M_PI * G4UniformRand();
+        const G4double st = std::sqrt(1.0 - ct * ct);
+        fGun.SetParticleMomentumDirection(G4ThreeVector(st * std::cos(ph), st * std::sin(ph), ct));
+        fGun.GeneratePrimaryVertex(anEvent);
+        return;
+    }
+
     if (gPrimary == "ion") {
         // Ядро создаётся один раз, при первом событии: таблица ионов готова
         // только после Initialize. Энергия нулевая — ядро покоится, распад

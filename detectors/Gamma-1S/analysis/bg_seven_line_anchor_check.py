@@ -38,8 +38,8 @@ os.environ.setdefault("G4MODELS_SOURCE_CONFIG",
                       os.path.join(WEB, "configs", "amticseu.yaml"))
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 sys.path.insert(0, WEB)
-import export_data as ed  # noqa: E402
-import export_ra226_data as erd  # noqa: E402
+# export_data / export_ra226_data импортируются внутри main(): measure_anchors()
+# ими не пользуется, и выгрузка страницы подключает модуль без старого движка.
 
 # 7 стандартных ЛСРМ-якорей ЕРН/фона NaI (SpectraVibe references/
 # 01_metadata_calibration.md, "Background-only anchor heuristic") --
@@ -82,7 +82,31 @@ def weighted_centroid_ch(ch, counts, ch_center, hw_ch):
     return float((x * net).sum() / net.sum()), float(net.sum())
 
 
+def measure_anchors(counts_bg, c0, c1, fwhm_kev, verbose=True):
+    """Якоря шкалы фона: 10 природных линий (центроид в окне ±0,6·ПШПВ) + 11-й,
+    К-рентген Pb защиты (канал по директиве оператора) -> (каналы, энергии,
+    чистый счёт). Вынесено из main() 11.09.2026: выгрузка берёт якоря импортом."""
+    ch = np.arange(len(counts_bg), dtype=float)
+    out = []
+    for E0, name in LINES:
+        hw_kev = 0.6 * fwhm_kev(E0)
+        r = weighted_centroid_ch(ch, counts_bg, (E0 - c0) / c1, hw_kev / c1)
+        if r is None:
+            if verbose:
+                print("%9.3f %-20s -- окно вырождено, пропуск" % (E0, name))
+            continue
+        if verbose:
+            print("%9.3f %-20s окно=+-%.1f кэВ  канал=%8.3f  netsum=%8.1f"
+                  % (E0, name, hw_kev, r[0], r[1]))
+        out.append((r[0], E0, r[1]))
+    out.append((PB_XRAY_CH, PB_XRAY_KEV_ACCEPTED, PB_XRAY_NETSUM))
+    a = np.array(out)
+    return a[:, 0], a[:, 1], a[:, 2]
+
+
 def main():
+    import export_data as ed  # noqa: E402
+    import export_ra226_data as erd  # noqa: E402
     meas, bg = erd.read_pair()
     fwhm_k, fwhm_p, _ = erd.fit_power_law_to_factory_fwhm(
         meas["fwhm_coefs"], meas["fwhm_model"])
@@ -95,32 +119,12 @@ def main():
     print("Заводские коэфф. фона (линейные): c0=%.5f c1=%.6f" % (c0, c1))
     print()
 
-    anchors_ch, anchors_E, weights = [], [], []
-    for E0, name in LINES:
-        hw_kev = 0.6 * ed.fwhm_kev(E0)
-        ch_center = (E0 - c0) / c1
-        hw_ch = hw_kev / c1
-        r = weighted_centroid_ch(ch, counts_bg, ch_center, hw_ch)
-        if r is None:
-            print("%9.3f %-20s -- окно вырождено, пропуск" % (E0, name))
-            continue
-        cch, s = r
-        print("%9.3f %-20s окно=+-%.1f кэВ  канал=%8.3f  netsum=%8.1f"
-              % (E0, name, hw_kev, cch, s))
-        anchors_ch.append(cch)
-        anchors_E.append(E0)
-        weights.append(s)
-
+    anchors_ch, anchors_E, weights = measure_anchors(counts_bg, c0, c1,
+                                                     ed.fwhm_kev)
     print("%9.3f %-20s окно=argmax(узкое)  канал=%8.3f  netsum=%8.1f"
           "  -- 11-й якорь, принят по директиве оператора"
           % (PB_XRAY_KEV_ACCEPTED, "К-рентген Pb", PB_XRAY_CH, PB_XRAY_NETSUM))
-    anchors_ch.append(PB_XRAY_CH)
-    anchors_E.append(PB_XRAY_KEV_ACCEPTED)
-    weights.append(PB_XRAY_NETSUM)
-
-    anchors_ch = np.array(anchors_ch)
-    anchors_E = np.array(anchors_E)
-    w = np.sqrt(np.array(weights))
+    w = np.sqrt(weights)
 
     print()
     print("=== Подгонка (взвешенная МНК), степень 1-3 ===")

@@ -195,17 +195,26 @@ def apply_xray_anchor_correction_bg(e_of_ch_bg, bg_energy_cal_coefs, xray_ch_bg)
     return e_of_ch_bg + shift
 
 
-def run_method2(library, sums, resp, e, ch_edges, keys):
+def run_method2(library, sums, resp, e, ch_edges, keys, var_acc=None, n_of=None):
     """Урезанный, но физически тот же run_method2, что в export_data.py
     (F_B-депопуляция, F_B-нормировка сумм-пиков) -- без канальной
     раскладки и без диагностики peak_area_with_shelf (не нужны лёгкой
-    странице)."""
+    странице).
+    var_acc/n_of (13.09.2026, D-020 для метода 2, scripts/_spec_crit_bench_m2.md П1): при словаре
+    var_acc накапливается дисперсия столбца от шума узлов сетки w**2 * shape / n_of(E узла).
+    Без них поведение прежнее."""
+    if var_acc is not None and n_of is None:
+        raise SystemExit("ОТКАЗ run_method2: var_acc передан без n_of (число событий узла)")
     shape_total = np.zeros_like(e)
     by_nuc_w = {k: np.zeros_like(e) for k in keys}
 
-    def add(nuc_key, weight, shp):
+    def add(nuc_key, weight, shp, E_node):
         shape_total[:] += weight * shp
         by_nuc_w[nuc_key] += weight * shp
+        if var_acc is not None:
+            if nuc_key not in var_acc:
+                var_acc[nuc_key] = np.zeros_like(e)
+            var_acc[nuc_key] += weight ** 2 * shp / float(n_of(E_node))
 
     # ИСПРАВЛЕНО 09.08.2026 (аудит Б2, коммит df5d178 -- та же находка, что и
     # в export_data.py.run_method2, здесь отдельная, НЕ синхронизированная
@@ -237,7 +246,7 @@ def run_method2(library, sums, resp, e, ch_edges, keys):
         if w_depl > 0:
             depl_pct = 100.0 * w_depl / max(w, 1e-30)
             w = max(0.0, w - w_depl)
-        add(nuc_key, w, shp)
+        add(nuc_key, w, shp, E)
         lines_out.append({"E_keV": E, "nuclide": nuc_key, "I_pct": I_pct,
                           "note": note, "kind": "line",
                           "depleted_pct": depl_pct,
@@ -253,7 +262,7 @@ def run_method2(library, sums, resp, e, ch_edges, keys):
         shp, chans, eps_sum_node = resp(Esum)
         w = ((I1_pct / 100.0) * (I2_pct / 100.0) * eps1 * eps2
              / max(eps_sum_node, 1e-30) / (fb_pct / 100.0))
-        add(nuc_key, w, shp)
+        add(nuc_key, w, shp, Esum)
         lines_out.append({"E_keV": Esum, "nuclide": nuc_key, "I_pct": None,
                           "note": note, "kind": "sum",
                           "E1_keV": E1, "E2_keV": E2,

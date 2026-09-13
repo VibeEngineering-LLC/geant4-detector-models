@@ -32,7 +32,10 @@
   // которую Th-232/Ra-226 не совершали (у них xHi=3000 всегда, при
   // e_hi_kev=2900/2300 соответственно) -- здесь была допущена и теперь
   // исправлена по тому же образцу.
-  var X_LO = 30, X_HI = 3000;
+  // 11.09.2026 (#AMT-1/#AMT-2, «не вижу рентгена»): ось с 10 кэВ, иначе
+  // K-рентген Ba/Sm (31–47 кэВ) и L-рентген Np уходили за левый край.
+  var X_LO = 10, X_HI = 3000;
+  var XRAY_ZOOM = { xLo: 10, xHi: 130 };   // кнопка «рентген и Am»
 
   // zoom -- общий для обеих вкладок (метод 1/2 используют одну drawSpectrum,
   // навигация окном шаблона -- замечание оператора 11.08.2026), тот же
@@ -44,7 +47,8 @@
   // Восстановлено 11.08.2026 (замечание оператора №2) -- переключатель
   // отобранная/полная библиотека, как на Th-232/Ra-226; было сознательно
   // пропущено в первой версии, здесь исправлено.
-  function M2() { return ST.lib === "full" ? D.method2_full : D.method2_sel; }
+  // Метод 2 прежней редакции снят 11.09.2026; вкладку «путь 2» рисует
+  // g1s-amticseu-rerun.js по данным D.netarea.
 
   function fit(cv) {
     var dpr = window.devicePixelRatio || 1;
@@ -105,12 +109,14 @@
     return acc;
   }
 
+  // Вкладка «метод 2» (режим m3, 11.09.2026): γ-линии × прямой отклик.
+  // Идентификаторы «M2» заняты вкладкой «путь 2: нетто-площади».
   function STACK(mode) {
-    return mode === "m1" ? D.spectrum.stack1 : M2().stack;
+    return mode === "m3" ? D.method2.stack : D.spectrum.stack1;
   }
-  function CV_ID(mode) { return mode === "m1" ? "cvM1" : "cvM2"; }
-  function TIP_ID(mode) { return mode === "m1" ? "m1-tip" : "m2-tip"; }
-  function CURSOR_ID(mode) { return mode === "m1" ? "cursorM1" : "cursorM2"; }
+  function CV_ID(mode) { return mode === "m3" ? "cvM3" : "cvM1"; }
+  function TIP_ID(mode) { return mode === "m3" ? "m3-tip" : "m1-tip"; }
+  function CURSOR_ID(mode) { return mode === "m3" ? "cursorM3" : "cursorM1"; }
 
   function drawSpectrum(mode) {
     var cv = document.getElementById(CV_ID(mode));
@@ -155,6 +161,17 @@
 
     var x0 = m.l, x1 = W - m.r, y0 = m.t, y1 = H - m.b;
     var n = e.length;
+
+    // Вне окна подгонки модель — продолжение, а не подгонка: затеняем, чтобы
+    // рентген ниже D.meta.e_fit_lo читался как область вне фита.
+    var fLo = D.meta.e_fit_lo, fHi = D.meta.e_fit_hi;
+    g.fillStyle = p.grid; g.globalAlpha = 0.45;
+    if (fLo > xLo) g.fillRect(x0, y0, mapX(Math.min(fLo, xHi), xLo, xHi, x0, x1) - x0, y1 - y0);
+    if (fHi < xHi) {
+      var xf = mapX(Math.max(fHi, xLo), xLo, xHi, x0, x1);
+      g.fillRect(xf, y0, x1 - xf, y1 - y0);
+    }
+    g.globalAlpha = 1;
 
     var order = D.nuclides.filter(function (nd) {
       return ST.on[nd.key] && stk[nd.key];
@@ -281,6 +298,10 @@
     // приём, что wireCal()/CAL.zoom на вкладке «калибровка».
     var resetBtn = document.getElementById("spec-reset-" + mode);
     if (resetBtn) resetBtn.addEventListener("click", function () { resetSpecZoom(mode); });
+    var xrayBtn = document.getElementById("spec-xray-" + mode);
+    if (xrayBtn) xrayBtn.addEventListener("click", function () {
+      ST.zoom = { xLo: XRAY_ZOOM.xLo, xHi: XRAY_ZOOM.xHi }; cursorText(mode); drawSpectrum(mode);
+    });
     cv.addEventListener("dblclick", function () { resetSpecZoom(mode); });
     cv.addEventListener("mousedown", function (ev) {
       var r = cv.getBoundingClientRect();
@@ -350,7 +371,7 @@
   }
 
   function buildLegend(mode) {
-    var el = document.getElementById(mode === "m1" ? "legendM1" : "legendM2");
+    var el = document.getElementById(mode === "m3" ? "legendM3" : "legendM1");
     if (!el) return;
     el.innerHTML = "";
     D.nuclides.forEach(function (nd) {
@@ -400,7 +421,7 @@
   // не одна ячейка амплитуды (главное отличие от ra226.js/g1s-th232.js --
   // здесь нет единой "активности ветви"). ──────────────────────────────
   function groupTable(kind) {
-    var res = kind === "m1" ? D.method1 : M2();
+    var res = kind === "m3" ? D.method2 : D.method1;
     var html = "<table class='big'><thead><tr><th>группа</th>"
       + "<th class='num'>A, Бк</th><th class='num'>± Бк</th>"
       + "<th class='num'>против паспорта</th></tr></thead><tbody>";
@@ -409,24 +430,15 @@
       if (!g) return;
       html += "<tr><td><span class='sw' style='background:" + nd.color + "'></span>"
         + esc(nd.label_ru) + "</td><td class='num'>" + cnt(g.A_Bq)
-        + "</td><td class='num'>" + cnt(g.dA_Bq) + "</td><td class='num ratio-cell'>"
+        + "</td><td class='num'>" + (g.dA_Bq == null ? "—" : cnt(g.dA_Bq)) + "</td><td class='num ratio-cell'>"
         + num(g.A_over_passport, 3) + " (" + signedPct(g.A_over_passport) + ")</td></tr>";
     });
     html += "</tbody></table>";
     return html;
   }
 
-  function fillSummary() {
-    var el = document.getElementById("sumM2");
-    if (!el) return;
-    var m2 = M2();
-    el.innerHTML = "<div class='grouprow'><div class='grouptable-wrap'>"
-      + groupTable("m2") + "</div><div class='summary'>"
-      + cell("χ²/ν (совместный фит)", num(m2.chi2_ndof, 2))
-      + cell("линий в модели", cnt(m2.n_lines) + " + " + cnt(m2.n_sum_peaks) + " сумм-пиков")
-      + cell(CONT_LAB, num(m2.bg_amplitude, 2), false, CONT_HINT)
-      + "</div></div>";
-  }
+  // Сводку и таблицу вкладки «путь 2» рисует g1s-amticseu-rerun.js.
+  function fillSummary() {}
   function signedPct(ratio) {
     var s = 100 * (ratio - 1);
     return (s < 0 ? "−" : "+") + num(Math.abs(s), 1) + " %";
@@ -438,8 +450,23 @@
     var m1 = D.method1;
     el.innerHTML = "<div class='grouprow'><div class='grouptable-wrap'>"
       + groupTable("m1") + "</div><div class='summary'>"
-      + cell("χ²/ν (совместный фит)", num(m1.chi2_ndof, 2))
-      + cell(CONT_LAB, num(m1.bg_amplitude, 2), false, CONT_HINT)
+      + cell("χ²/ν (совместный фит)", num(m1.chi2_ndof, 1))
+      + cell("множитель погрешности √(χ²/ν)", num(m1.birge, 2))
+      + cell("зона 50–70 кэВ: модель / измерение", num(m1.zone_50_70.ratio, 3), true)
+      + "</div></div>";
+  }
+
+  function fillSummary3() {
+    var el = document.getElementById("sumM3");
+    if (!el || !D.method2) return;
+    var m2 = D.method2;
+    el.innerHTML = "<div class='grouprow'><div class='grouptable-wrap'>"
+      + groupTable("m3") + "</div><div class='summary'>"
+      + cell("χ²/ν, единая метрика", num(m2.chi2_ref_ndof, 1))
+      + cell("χ²/ν по дисперсии критерия A2", num(m2.chi2_ndof, 1))
+      + cell("линий в модели", cnt(m2.n_lines) + " + " + cnt(m2.n_sum_peaks) + " сумм-пиков")
+      + cell("энергий прямого отклика", cnt(m2.n_nodes))
+      + cell("зона 50–70 кэВ: модель / измерение", num(m2.zone_50_70_ratio, 3), true)
       + "</div></div>";
   }
 
@@ -461,39 +488,48 @@
     contrib: function (a, b) { return (a.predicted_net || 0) - (b.predicted_net || 0); },
   };
 
-  function fillTable() {
-    var tbl = document.getElementById("tblM2");
-    if (!tbl) return;
-    var m2 = M2();
-    var rows = m2.lines.filter(function (r) {
-      return r.E_keV >= TBL_E_LO && r.E_keV <= TBL_E_HI;
-    });
-    var cmp = M2SORT_CMP[M2SORT.key] || M2SORT_CMP.energy;
-    rows.sort(function (a, b) { return M2SORT.dir * cmp(a, b); });
+  function fillTable() {}
+
+  // Таблица линий метода 2 — перенос fillTable() редакции 0a7428b на вкладку m3.
+  function m3Head() {
     function th(key, label) {
       var arrow = M2SORT.key === key ? (M2SORT.dir > 0 ? " ▲" : " ▼") : "";
       return "<th class='sortable' data-sort='" + key + "'>" + label + arrow + "</th>";
     }
-    var html = "<thead><tr>" + th("energy", "E, кэВ") + th("nuclide", "группа")
-      + "<th>I<sub>γ</sub>, %</th>" + th("contrib", "вклад, отсч.")
-      + "<th>тип</th><th>примечание</th></tr></thead><tbody>";
-    rows.forEach(function (r) {
-      html += "<tr><td>" + num(r.E_keV, 3) + "</td><td>" + esc(labelRu(r.nuclide)) +
-        "</td><td>" + (r.I_pct === null || r.I_pct === undefined ? "—" : num(r.I_pct, 3)) +
-        "</td><td class='num'>" + cnt(r.predicted_net || 0) +
-        "</td><td>" + (r.kind === "sum" ? "сумма" : "линия") +
-        "</td><td>" + esc(r.note || "") + "</td></tr>";
-    });
-    html += "</tbody>";
-    tbl.innerHTML = html;
+    return "<thead><tr>" + th("energy", "E, кэВ") + th("nuclide", "группа")
+      + "<th>I<sub>γ</sub>, %</th><th class='num'>эффективность пика, %</th>"
+      + th("contrib", "вклад, отсч.") + "<th>тип</th><th>примечание</th></tr></thead>";
+  }
+  function wireSort3(tbl) {
     tbl.querySelectorAll("th.sortable").forEach(function (h) {
       h.addEventListener("click", function () {
         var key = h.dataset.sort;
         if (M2SORT.key === key) M2SORT.dir = -M2SORT.dir;
         else { M2SORT.key = key; M2SORT.dir = key === "contrib" ? -1 : 1; }
-        fillTable();
+        fillTable3();
       });
     });
+  }
+
+  function fillTable3() {
+    var tbl = document.getElementById("tblM3");
+    if (!tbl || !D.method2) return;
+    var rows = D.method2.lines.filter(function (r) {
+      return r.E_keV >= TBL_E_LO && r.E_keV <= TBL_E_HI;
+    });
+    var cmp = M2SORT_CMP[M2SORT.key] || M2SORT_CMP.energy;
+    rows.sort(function (a, b) { return M2SORT.dir * cmp(a, b); });
+    var html = m3Head() + "<tbody>";
+    rows.forEach(function (r) {
+      html += "<tr><td>" + num(r.E_keV, 3) + "</td><td>" + esc(labelRu(r.nuclide)) +
+        "</td><td>" + (r.I_pct === null || r.I_pct === undefined ? "—" : num(r.I_pct, 3)) +
+        "</td><td class='num'>" + num(100 * r.eps_peak, 3) +
+        "</td><td class='num'>" + cnt(r.predicted_net || 0) + "</td><td>" +
+        (r.kind === "sum" ? "сумма " + num(r.E1_keV, 1) + " + " + num(r.E2_keV, 1) : "линия") +
+        "</td><td>" + esc(r.note || "") + "</td></tr>";
+    });
+    tbl.innerHTML = html + "</tbody>";
+    wireSort3(tbl);
   }
 
   function fillTable1() {
@@ -510,7 +546,7 @@
       if (v) for (var i = 0; i < v.length; i++) total += v[i];
     });
     var html = "<thead><tr><th>группа</th><th class='num'>распадов в МК-прогоне</th>"
-      + "<th class='num'>вклад в модель, Бк</th><th class='num'>доля модели</th></tr></thead><tbody>";
+      + "<th class='num'>вклад в модель, имп/с</th><th class='num'>доля модели</th></tr></thead><tbody>";
     D.nuclides.forEach(function (nd) {
       var v = stk[nd.key];
       var s = 0;
@@ -530,6 +566,14 @@
   // одном холсте, порт drawCmp() ra226.js/g1s-th232.js один в один по
   // механике рисования (рамка/сетка/подписи), только список items длиннее
   // и сгруппирован по нуклиду визуально подписями. ─────────────────────
+  // Путь 2 как активность: отношение главной линии × паспорт (D.netarea).
+  function path2(key, pass) {
+    if (!pass || !D.netarea) return null;
+    var ln = D.netarea.lines.filter(function (r) { return r.nuclide === key && r.main; })[0];
+    if (!ln || ln.ratio == null) return null;
+    return { A_Bq: ln.ratio * pass.A_Bq, dA_Bq: (ln.d_ratio_stat || 0) * pass.A_Bq,
+             A_over_passport: ln.ratio };
+  }
   function fillCompare() {
     var cv = document.getElementById("cvCmp");
     var tbl = document.getElementById("cmpTable");
@@ -537,11 +581,11 @@
     D.nuclides.forEach(function (nd) {
       var pass = D.passport[nd.key];
       var m1 = D.method1.groups[nd.key];
-      var m2 = M2().groups[nd.key];
+      var m2 = path2(nd.key, pass);
       if (!pass) return;
       items.push({ lab: nd.label_ru + " — паспорт", A: pass.A_Bq, dA: pass.dA_Bq, col: "#6a6558" });
-      if (m1) items.push({ lab: nd.label_ru + " — метод 1", A: m1.A_Bq, dA: m1.dA_Bq, col: nd.color });
-      if (m2) items.push({ lab: nd.label_ru + " — метод 2", A: m2.A_Bq, dA: m2.dA_Bq, col: nd.color });
+      if (m1) items.push({ lab: nd.label_ru + " — путь 1", A: m1.A_Bq, dA: m1.dA_Bq || 0, col: nd.color });
+      if (m2) items.push({ lab: nd.label_ru + " — путь 2", A: m2.A_Bq, dA: m2.dA_Bq, col: nd.color });
     });
     if (cv) {
       // ИСПРАВЛЕНО 11.08.2026 (замечание оператора "каша", "шрифты
@@ -627,15 +671,15 @@
       D.nuclides.forEach(function (nd) {
         var pass = D.passport[nd.key];
         var m1 = D.method1.groups[nd.key];
-        var m2 = M2().groups[nd.key];
+        var m2 = path2(nd.key, pass);
         if (!pass) return;
         html += "<tr><td rowspan='3'><span class='sw' style='background:" + nd.color
           + "'></span>" + esc(nd.label_ru) + "</td><td>паспорт</td><td>"
           + cnt(pass.A_Bq) + " ± " + cnt(pass.dA_Bq)
           + "</td><td class='ratio-cell'>1,000</td></tr>";
-        if (m1) html += "<tr><td>метод 1</td><td>" + cnt(m1.A_Bq) + " ± " + cnt(m1.dA_Bq)
+        if (m1) html += "<tr><td>путь 1</td><td>" + cnt(m1.A_Bq) + " ± " + (m1.dA_Bq == null ? "—" : cnt(m1.dA_Bq))
           + "</td><td class='ratio-cell'>" + num(m1.A_over_passport, 3) + "</td></tr>";
-        if (m2) html += "<tr><td>метод 2</td><td>" + cnt(m2.A_Bq) + " ± " + cnt(m2.dA_Bq)
+        if (m2) html += "<tr><td>путь 2 (нетто-площади)</td><td>" + cnt(m2.A_Bq) + " ± " + cnt(m2.dA_Bq)
           + "</td><td class='ratio-cell'>" + num(m2.A_over_passport, 3) + "</td></tr>";
       });
       html += "</tbody></table>";
@@ -650,48 +694,8 @@
     return String(n).split("").map(function (c) { return d[c] || c; }).join("");
   }
 
-  function buildCal() {
-    var tbl = document.getElementById("tblCal");
-    if (tbl && !tbl.dataset.built) {
-      tbl.dataset.built = "1";
-      var m = D.meta;
-      function coefsHtml(coefs) {
-        return coefs.map(function (c, i) {
-          var abs = Math.abs(c), s;
-          if (abs === 0) s = "0";
-          else if (abs >= 0.01 && abs < 10000) s = num(c, 6);
-          else s = c.toExponential(4).replace(".", ",");
-          return "<span class='mono'>c" + i + " = " + s + "</span>";
-        }).join("<br>");
-      }
-      var head = "<thead><tr><th>параметр</th>"
-               + "<th>образец (Mix AmTiCsEu)</th><th>фон той же геометрии</th></tr></thead>";
-      var body = "<tbody>"
-        + "<tr><td>каналов</td><td class='num'>" + m.cal_sample.n_channels
-        + "</td><td class='num'>" + m.cal_bg.n_channels + "</td></tr>"
-        + "<tr><td>живое время, с</td><td class='num'>" + num(m.live_s, 2)
-        + "</td><td class='num'>" + num(m.bg_live_s, 2) + "</td></tr>"
-        + "<tr><td>реальное время, с</td><td class='num'>" + num(m.real_s, 2)
-        + "</td><td class='num'>" + num(m.bg_real_s, 2) + "</td></tr>"
-        + "<tr><td>мёртвое время, %</td><td class='num'>"
-        + num(100 * (m.real_s - m.live_s) / m.real_s, 3) + "</td><td class='num'>"
-        + num(100 * (m.bg_real_s - m.bg_live_s) / m.bg_real_s, 3) + "</td></tr>"
-        + "<tr><td>степень полинома E(канал)</td><td class='num'>"
-        + m.cal_sample.order + "</td><td class='num'>" + m.cal_bg.order + "</td></tr>"
-        + "<tr><td>коэффициенты</td><td>" + coefsHtml(m.cal_sample.coefs)
-        + "</td><td>" + coefsHtml(m.cal_bg.coefs) + "</td></tr>"
-        + "<tr><td>масштаб фона (t_обр / t_фон)</td>"
-        + "<td class='num' colspan='2'>" + num(m.bg_scale_time, 4) + "</td></tr>";
-      body += "</tbody>";
-      tbl.innerHTML = head + body;
-    }
-    var fw = D.fwhm_cal;
-    var fwcs = document.getElementById("cal-fwcs");
-    var fw662 = document.getElementById("cal-fw662");
-    if (fwcs) fwcs.textContent = num(fw.fwhm662_cs, 1) + " кэВ";
-    if (fw662) fw662.textContent = num(fw.fwhm662_law, 1) + " кэВ";
-    buildFwhmTable();
-  }
+  // Таблицы калибровки рисует g1s-amticseu-rerun.js (D.meta.cal_*).
+  function buildCal() { if (window.G1SA_RERUN) window.G1SA_RERUN.showCal(); }
 
   var CAL = { smp: true, bg: true, diff: false, log: true, anch: true,
               zoom: null, drag: null, dragging: false, cursorE: null };
@@ -730,8 +734,10 @@
     });
     var Y = makeY(CAL.log, CAL.log ? 1 : 0, vMax * (CAL.log ? 2 : 1.1));
     g.strokeStyle = p.grid; g.lineWidth = 1; g.beginPath();
-    var xTicks = [250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2250,
-                  2500, 2750, 3000];
+    // При приближении — засечки по диапазону (как drawSpectrum): фиксированный
+    // набор от 250 кэВ оставлял ось зоны 10–130 кэВ вовсе без подписей.
+    var xTicks = CAL.zoom ? niceTicksFor(xLo, xHi)
+      : [250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, 3000];
     for (var xi = 0; xi < xTicks.length; xi++) {
       if (xTicks[xi] > xHi) break;
       var xx = mapX(xTicks[xi], xLo, xHi, m.l, W - m.r);
@@ -881,6 +887,10 @@
     if (calReset) calReset.addEventListener("click", function () {
       CAL.zoom = null; drawCal();
     });
+    var calXray = document.getElementById("cal-xray");
+    if (calXray) calXray.addEventListener("click", function () {
+      CAL.zoom = { xLo: XRAY_ZOOM.xLo, xHi: XRAY_ZOOM.xHi }; drawCal();
+    });
     var cv = document.getElementById("cvCal");
     var ro = document.getElementById("cal-ro");
     var tip = document.getElementById("cal-tip");
@@ -965,118 +975,8 @@
     CAL_wired = true;
   }
 
-  function buildFwhmTable() {
-    var tbl = document.getElementById("tblFwhm");
-    if (!tbl || !D.fwhm_cal) return;
-    var fw = D.fwhm_cal;
-    var head = "<thead><tr><th>линия, кэВ</th>"
-      + "<th class='num'>ПШПВ заводская, кэВ</th>"
-      + "<th class='num'>аппроксимация k·E<sup>p</sup></th>"
-      + "<th class='num'>отклонение аппроксимации</th></tr></thead>";
-    var body = "<tbody>";
-    (fw.reference_points || []).forEach(function (r) {
-      var dev = 100 * (r.fwhm_power_law_keV / r.fwhm_factory_keV - 1);
-      body += "<tr><td>" + num(r.E_keV, 1) + "</td>"
-        + "<td class='num'>" + num(r.fwhm_factory_keV, 2) + "</td>"
-        + "<td class='num'>" + num(r.fwhm_power_law_keV, 2) + "</td>"
-        + "<td class='num'>" + (dev >= 0 ? "+" : "−")
-        + num(Math.abs(dev), 1) + " %</td></tr>";
-    });
-    body += "<tr class='sum'><td>степенной закон (аппрокс.)</td>"
-      + "<td class='num'>ПШПВ = " + num(fw.k, 3) + "·E<sup>"
-      + num(fw.p, 4) + "</sup></td>"
-      + "<td class='num'>СКО аппрокс. " + num(fw.fit_rms_pct, 1) + " %</td>"
-      + "<td class='num'>662 кэВ: " + num(fw.fwhm662_law, 1) + " кэВ ("
-      + num(fw.res662_pct, 2) + " %)</td></tr>";
-    tbl.innerHTML = head + body + "</tbody>";
-  }
-
-  function drawFwhm() {
-    var cv = document.getElementById("cvFwhm");
-    if (!cv || !D.fwhm_cal) return;
-    var fw = D.fwhm_cal;
-    var p = pal();
-    var f = fit(cv);
-    var g = f.g, W = f.w, H = f.h;
-    var m = { l: 62, r: 16, t: 14, b: 34 };
-    var refPts = fw.reference_points || [];
-    if (!refPts.length) return;
-    var xLo = 0, xHi = X_HI;
-    var vMax = 0;
-    refPts.forEach(function (r) { vMax = Math.max(vMax, r.fwhm_factory_keV); });
-    vMax = Math.max(vMax, fw.k * Math.pow(xHi, fw.p)) * 1.15;
-
-    g.strokeStyle = p.grid; g.lineWidth = 1; g.beginPath();
-    var xTicks = [500, 1000, 1500, 2000, 2500, 3000];
-    xTicks.forEach(function (t) {
-      var x = mapX(t, xLo, xHi, m.l, W - m.r);
-      g.moveTo(x, m.t); g.lineTo(x, H - m.b);
-    });
-    var yTicks = [20, 40, 60, 80, 100, 120];
-    yTicks.forEach(function (t) {
-      if (t > vMax) return;
-      var y = m.t + (1 - t / vMax) * (H - m.b - m.t);
-      g.moveTo(m.l, y); g.lineTo(W - m.r, y);
-    });
-    g.stroke();
-    g.fillStyle = p.faint; g.font = "11px system-ui, sans-serif";
-    g.textAlign = "center"; g.textBaseline = "top";
-    xTicks.forEach(function (t) {
-      g.fillText(String(t), mapX(t, xLo, xHi, m.l, W - m.r), H - m.b + 4);
-    });
-    g.textAlign = "right"; g.textBaseline = "middle";
-    yTicks.forEach(function (t) {
-      if (t > vMax) return;
-      g.fillText(String(t), m.l - 4, m.t + (1 - t / vMax) * (H - m.b - m.t));
-    });
-    g.textAlign = "center"; g.textBaseline = "bottom";
-    g.fillText("энергия, кэВ", (m.l + W - m.r) / 2, H - 2);
-    g.save();
-    g.translate(12, (m.t + H - m.b) / 2);
-    g.rotate(-Math.PI / 2);
-    g.textAlign = "center"; g.textBaseline = "top";
-    g.fillText("ПШПВ, кэВ", 0, 0);
-    g.restore();
-    g.strokeStyle = p.rule; g.lineWidth = 2;
-    g.strokeRect(m.l, m.t, W - m.r - m.l, H - m.b - m.t);
-
-    function yOf(v) { return m.t + (1 - v / vMax) * (H - m.b - m.t); }
-
-    g.strokeStyle = "#0f5aa8"; g.lineWidth = 2;
-    g.beginPath();
-    for (var E = 40; E <= xHi; E += 10) {
-      var x = mapX(E, xLo, xHi, m.l, W - m.r);
-      var y = yOf(fw.k * Math.pow(E, fw.p));
-      if (E === 40) g.moveTo(x, y); else g.lineTo(x, y);
-    }
-    g.stroke();
-
-    g.strokeStyle = p.faint; g.lineWidth = 1.5; g.setLineDash([5, 4]);
-    g.beginPath();
-    for (var E2 = 40; E2 <= xHi; E2 += 10) {
-      var x2 = mapX(E2, xLo, xHi, m.l, W - m.r);
-      var y2 = yOf(fw.fwhm662_cs * Math.sqrt(E2 / 661.657));
-      if (E2 === 40) g.moveTo(x2, y2); else g.lineTo(x2, y2);
-    }
-    g.stroke();
-    g.setLineDash([]);
-
-    g.fillStyle = "#c8541c"; g.strokeStyle = "#c8541c"; g.lineWidth = 1.5;
-    refPts.forEach(function (r) {
-      var x = mapX(r.E_keV, xLo, xHi, m.l, W - m.r);
-      var y = yOf(r.fwhm_factory_keV);
-      g.beginPath(); g.arc(x, y, 4, 0, 2 * Math.PI); g.fill();
-    });
-
-    g.font = "600 11px system-ui, sans-serif";
-    g.textAlign = "left"; g.textBaseline = "top";
-    g.fillStyle = "#c8541c";
-    g.fillText("заводская калибровка (реперные точки)", m.l + 10, m.t + 8);
-    g.fillStyle = "#0f5aa8";
-    g.fillText("аппроксимация степенным законом k·E^p", m.l + 10, m.t + 24);
-    g.fillStyle = p.faint;
-    g.fillText("корневой закон по записи цезия", m.l + 10, m.t + 40);
-  }
+  // Таблицы и график разрешения рисует g1s-amticseu-rerun.js (D.fwhm_cal).
+  function drawFwhm() { if (window.G1SA_RERUN) window.G1SA_RERUN.redraw(); }
 
   function fillHeader() {
     var el = document.getElementById("passportBox");
@@ -1096,7 +996,7 @@
     el.innerHTML = html;
   }
 
-  var VIEW_ID = { m1: "viewM1", m2: "viewM2", cmp: "viewCmp", cal: "viewCal" };
+  var VIEW_ID = { m1: "viewM1", m2: "viewM2", m3: "viewM3", cmp: "viewCmp", cal: "viewCal" };
   function switchTab(name) {
     Object.keys(VIEW_ID).forEach(function (t) {
       document.getElementById(VIEW_ID[t]).hidden = t !== name;
@@ -1106,9 +1006,10 @@
     });
     if (name === "m1") { buildLegend("m1"); fillSummary1(); fillTable1();
                          attachCursor("m1"); cursorText("m1"); drawSpectrum("m1"); }
-    if (name === "m2") { buildLegend("m2"); fillSummary(); fillTable();
-                         attachCursor("m2"); cursorText("m2"); drawSpectrum("m2"); }
-    if (name === "cmp") fillCompare();
+    if (name === "m2" && window.G1SA_RERUN) window.G1SA_RERUN.showNet();
+    if (name === "m3") { buildLegend("m3"); fillSummary3(); fillTable3();
+                         attachCursor("m3"); cursorText("m3"); drawSpectrum("m3"); }
+    if (name === "cmp") { fillCompare(); if (window.G1SA_RERUN) window.G1SA_RERUN.showCmp(); }
     if (name === "cal") { buildCal(); drawCal(); drawFwhm(); }
   }
 
@@ -1157,10 +1058,13 @@
 
   window.addEventListener("resize", function () {
     if (!document.getElementById("viewM1").hidden) drawSpectrum("m1");
-    if (!document.getElementById("viewM2").hidden) drawSpectrum("m2");
+    if (!document.getElementById("viewM3").hidden) drawSpectrum("m3");
     if (!document.getElementById("viewCal").hidden) { drawCal(); drawFwhm(); }
   });
 
+  // Помощники для g1s-amticseu-rerun.js (11.09.2026): одна реализация формата
+  // чисел и холстов на оба файла, без копий.
+  window.G1SA = { num: num, cnt: cnt, esc: esc, fit: fit, pal: pal, mapX: mapX };
   fillHeader();
   switchTab("m1");
 })();

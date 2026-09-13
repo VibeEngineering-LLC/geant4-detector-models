@@ -123,6 +123,9 @@ void G1SDetector::DefineMaterials() {
   // Имя материала — по роли («Sample»), а не по составу: матрица переключаема.
   MakeMatrix(fVessel.sampleMatrix, fVessel.sampleDensity, "Sample");
   nist->FindOrBuildMaterial("G4_POLYPROPYLENE");
+  // Стенка чашки Петри (оператор, 12.09.2026). Материал штатный для базы NIST —
+  // проверено грепом по G4materials.dll, не по памяти.
+  nist->FindOrBuildMaterial("G4_POLYCARBONATE");
 }
 
 // ---------------------------------------------------------------------------
@@ -374,19 +377,40 @@ VesselGeom VesselGeom::Preset(const G4String& n) {
   }
 
   if (n == "denta") {
-    v.outerR = 37.50;      // ЛСРМ табл.: Ø75
-    v.height = 35.00;      // ЛСРМ табл.: H = 35
-    v.wall = 1.50;         // ДОПУЩЕНИЕ: стенка пластмассовой кюветы
-    v.wellInR = -1;        // колодца нет
-    v.sampleCm3 = 120.0;   // .efa: Volume = 120 мл
+    // ОПЕРАТОР 12.09.2026, дословно: «дента. внеш размеры: дно 68, верх 76,
+    // высота внутр 35» и «материал 5 в треугольнике, 0.1 мм». Это усечённый
+    // конус с уклоном 4 мм на сторону; код переработки 5 по ASTM D7611 —
+    // полипропилен. Заменяет прежний цилиндр Ø75 × 35 со стенкой 1,5 мм,
+    // взятый из таблицы ЛСРМ за неимением чертежа.
+    v.outerR    = 34.00;               // наружный Ø68 у дна
+    v.outerRTop = 38.00;               // наружный Ø76 у верха
+    v.wall = 0.10;
+    v.height = 35.00 + 2 * v.wall;     // height — НАРУЖНАЯ; внутренняя 35,0
+    v.wallMaterial = "G4_POLYPROPYLENE";
+    v.wellInR = -1;                    // колодца нет
+    // 120 мл — ВМЕСТИМОСТЬ сосуда, а не объём засыпки (оператор, 12.09.2026:
+    // «Сам сосуд Дента вмещает 120 мл. А заполнить можно и 100»). Это умолчание
+    // пресета; фактическая засыпка конкретного измерения задаётся ключом
+    // sample_cm3 — так же, как у маринелли, где пресет несёт номинал 1000 мл.
+    // Для спектра «РИСН №379_Am-Ti-Eu-Cs_Дента-100.spe» засыпка равна 100,0 мл
+    // (поля RAWVOLUME / PROBEVOLUME / SAMPLEVOLUME, массы 100,0 г) — прогоны по
+    // нему обязаны передавать sample_cm3=100, иначе самопоглощение будет
+    // посчитано для другой засыпки.
+    v.sampleCm3 = 120.0;
     return v;
   }
   if (n == "petri") {
-    v.outerR = 44.00;      // ЛСРМ табл.: Ø88
-    v.height = 14.00;      // ЛСРМ табл.: H = 14
-    v.wall = 1.50;         // ДОПУЩЕНИЕ
+    // ОПЕРАТОР 12.09.2026 (дословно: «петри бери d 87 h 11 поликарбонат 0.1 мм»,
+    // уточнение: «87 - это внешнее. 11 - внутренне»). Заменяет прежние числа из
+    // таблицы ЛСРМ (Ø88, H 14) и допущение «полипропилен 1,5 мм».
+    // height в этой структуре — НАРУЖНАЯ высота (BuildCup строит дно и крышку
+    // внутрь от неё), поэтому наружная = внутренняя 11,0 + две стенки.
+    v.outerR = 43.50;                       // наружный Ø87
+    v.wall = 0.10;                          // поликарбонат 0,1 мм
+    v.height = 11.00 + 2 * v.wall;          // внутренняя высота 11,0
+    v.wallMaterial = "G4_POLYCARBONATE";    // есть в базе NIST (проверено грепом G4materials.dll)
     v.wellInR = -1;
-    v.sampleCm3 = 60.0;    // .efa: Volume = 60 мл
+    v.sampleCm3 = 60.0;    // .efa и шапка спектра Петри-60: 60 мл, 60 г
     return v;
   }
   G4Exception("VesselGeom::Preset", "g1s003", FatalException,
@@ -399,36 +423,105 @@ VesselGeom VesselGeom::Preset(const G4String& n) {
 // детектора, засыпка — от внутреннего дна до уровня, заданного объёмом.
 void G1SDetector::BuildCup(G4LogicalVolume* w) {
   const VesselGeom& v = fVessel;
-  // 41,0 = крышка Al (см. BuildVessel)
-  const double zFace = 41.00;                 // наружная плоскость головки
-  const double zBot = zFace;                  // сосуд стоит на торце
-  const double zTop = zBot + v.height;
-  const double rIn = v.outerR - v.wall;
-  const double zIn = zBot + v.wall;           // внутреннее дно
-
-  const double h = v.sampleCm3 * 1000.0 / (CLHEP::pi * rIn * rIn);  // мм
-  const double zFill = zIn + h;
-  fSampleVolumeCm3 = CylCm3(0, rIn, h);
-  fSampleFits = (zFill <= zTop - v.wall);
-
   const G4Colour cPP(0.9, 0.9, 0.6), cSm(0.55, 0.35, 0.15);
-  auto* pp = Mat("G4_POLYPROPYLENE");
-  // Стенка начинается ОТ ВЕРХА ДНА (zIn), а не от zBot: дно — сплошной диск
-  // на всё сечение, и стенка от zBot перекрывала бы его в кольце
-  // [rIn, outerR] на всю толщину дна. Поймано прогоном /geometry/test/run:
-  // перекрытие 0,74 мм, оба тела полипропилен — на ослабление не влияло,
-  // но геометрия была формально невалидной.
-  Ring("V_side", rIn, v.outerR, zIn, zTop, pp, w, cPP);
-  Ring("V_bottom", 0, v.outerR, zBot, zIn, pp, w, cPP);
-  Ring("V_lid", 0, rIn, zTop - v.wall, zTop, pp, w, cPP);
+  auto* pp = Mat(v.wallMaterial);
 
-  auto* s = new G4Tubs("Sample", 0, rIn * mm, 0.5 * h * mm, 0, CLHEP::twopi);
-  fSampleLV = new G4LogicalVolume(s, Mat("Sample"), "Sample");
+  const double zFace = 41.00;                 // наружная плоскость головки
+  const double zBot  = zFace;                 // сосуд стоит на торце
+  const double zIn   = zBot + v.wall;         // внутреннее дно
+  const double zTop  = zBot + v.height;
+  const double zLid  = zTop - v.wall;         // низ крышки = верх полости
+  // Отрицательный outerRTop означает цилиндр: верх равен низу. Так сохраняется
+  // прежнее поведение кювет, для которых форма не задана явно.
+  const double rTop  = (v.outerRTop > 0) ? v.outerRTop : v.outerR;
+
+  // Уклон задаётся НАРУЖНЫМИ размерами: от outerR на дне до rTop на верху.
+  // ВСЕ радиусы дальше берутся из этих двух функций и ниоткуда больше.
+  // Первая редакция считала стенку по своей высоте, пробу — по высоте полости,
+  // а крышку — по радиусу верха: знаменатели разошлись, и тела наложились на
+  // микроны (12.09.2026: V_side/V_lid 6,98 мкм, Sample/V_side 8,21 мкм в 412
+  // точках). Geant4 считает это перекрытием, и правильно: геометрия, собранная
+  // из несогласованных формул, неверна независимо от величины расхождения.
+  const double k = (rTop - v.outerR) / v.height;
+  auto Rout = [&](double z) { return v.outerR + k * (z - zBot); };
+  auto Rin  = [&](double z) { return Rout(z) - v.wall; };
+
+  const double H      = zLid - zIn;           // высота полости
+  const double rInBot = Rin(zIn);
+  const double rInTop = Rin(zLid);
+
+  // Дно — сплошной диск на всё сечение; стенка начинается ОТ ВЕРХА ДНА (zIn),
+  // а не от zBot: иначе она перекрывала бы дно в кольце [rInBot, outerR] на всю
+  // его толщину (поймано прогоном /geometry/test/run, перекрытие 0,74 мм).
+  Ring("V_bottom", 0, v.outerR, zBot, zIn, pp, w, cPP);
+
+  double h = 0.0;
+  if (v.outerRTop <= 0) {
+    // Цилиндр — прежний код слово в слово: правка не должна двигать результаты
+    // уже посчитанных постановок (чашка Петри).
+    h = v.sampleCm3 * 1000.0 / (CLHEP::pi * rInBot * rInBot);
+    fSampleVolumeCm3 = CylCm3(0, rInBot, h);
+    Ring("V_side", rInBot, v.outerR, zIn, zTop, pp, w, cPP);
+    Ring("V_lid", 0, rInTop, zLid, zTop, pp, w, cPP);
+    auto* s = new G4Tubs("Sample", 0, rInBot * mm, 0.5 * h * mm, 0, CLHEP::twopi);
+    fSampleLV = new G4LogicalVolume(s, Mat("Sample"), "Sample");
+    new G4PVPlacement(nullptr, G4ThreeVector(0, 0, (zIn + 0.5 * h) * mm),
+                      fSampleLV, "Sample", w, false, 0, true);
+  } else {
+    // Усечённый конус (Дента, оператор 12.09.2026: наружные Ø68 снизу, Ø76
+    // сверху). Уровень засыпки аналитически не выражается — бисекция по объёму.
+    // Полигон вращения принимает МИРОВЫЕ границы по z, поэтому центр тела
+    // вычислять не нужно: попытка считать его вручную дала тело на z = 0,1 мм
+    // вместо 46 мм, то есть внутри кристалла (разбор 12.09.2026).
+    const double target = v.sampleCm3 * 1000.0;
+    double a = 0.0, b = H;
+    for (int i = 0; i < 200; ++i) {
+      const double c = 0.5 * (a + b);
+      const double rc = Rin(zIn + c);
+      const double vc = (CLHEP::pi * c / 3.0) * (rInBot * rInBot + rInBot * rc + rc * rc);
+      if (vc < target) a = c; else b = c;
+    }
+    h = 0.5 * (a + b);
+    const double rh = Rin(zIn + h);
+    fSampleVolumeCm3 = (CLHEP::pi * h / 3.0)
+                     * (rInBot * rInBot + rInBot * rh + rh * rh) / 1000.0;
+
+    const double zsSide[2] = {zIn * mm, zTop * mm};
+    const double riSide[2] = {rInBot * mm, Rin(zTop) * mm};
+    const double roSide[2] = {Rout(zIn) * mm, Rout(zTop) * mm};
+    auto* side = new G4Polycone("V_side", 0, CLHEP::twopi, 2, zsSide, riSide, roSide);
+    auto* sideLV = new G4LogicalVolume(side, pp, "V_side");
+    auto* vaSide = new G4VisAttributes(cPP);
+    vaSide->SetForceSolid(true);
+    sideLV->SetVisAttributes(vaSide);
+    new G4PVPlacement(nullptr, {}, sideLV, "V_side", w, false, 0, true);
+
+    // Крышка тоже коническая: плоский диск радиуса rInTop либо перекрыл бы
+    // стенку, либо оставил кольцевую щель — полость выше zLid расширяется.
+    const double zsLid[2] = {zLid * mm, zTop * mm};
+    const double riLid[2] = {0, 0};
+    const double roLid[2] = {rInTop * mm, Rin(zTop) * mm};
+    auto* lid = new G4Polycone("V_lid", 0, CLHEP::twopi, 2, zsLid, riLid, roLid);
+    auto* lidLV = new G4LogicalVolume(lid, pp, "V_lid");
+    lidLV->SetVisAttributes(vaSide);
+    new G4PVPlacement(nullptr, {}, lidLV, "V_lid", w, false, 0, true);
+
+    const double zsSm[2] = {zIn * mm, (zIn + h) * mm};
+    const double riSm[2] = {0, 0};
+    const double roSm[2] = {rInBot * mm, rh * mm};
+    auto* smSolid = new G4Polycone("Sample", 0, CLHEP::twopi, 2, zsSm, riSm, roSm);
+    // Материал ПРОБЫ, не стенки. Генератор подставил сюда полипропилен: прогон
+    // отработал бы успешно, перекрытий бы не было, и мы считали бы спектр пробы
+    // из пластика вместо матрицы — тихий дефект класса #SA-6.
+    fSampleLV = new G4LogicalVolume(smSolid, Mat("Sample"), "Sample");
+    new G4PVPlacement(nullptr, {}, fSampleLV, "Sample", w, false, 0, true);
+  }
+
+  fSampleFits = (zIn + h <= zLid);
+
   auto* va = new G4VisAttributes(cSm);
   va->SetForceSolid(true);
   fSampleLV->SetVisAttributes(va);
-  new G4PVPlacement(nullptr, G4ThreeVector(0, 0, 0.5 * (zIn + zFill) * mm),
-                    fSampleLV, "Sample", w, false, 0, true);
 }
 
 // ---------------------------------------------------------------------------

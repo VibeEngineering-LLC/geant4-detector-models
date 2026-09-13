@@ -25,6 +25,7 @@ double NpsmBenchRunAction::gRhoSample = 0.0;
 double NpsmBenchRunAction::gSampleCm3 = 0.0;
 std::string NpsmBenchRunAction::gSrcMode = "point";
 std::string NpsmBenchRunAction::gChainLimits = "";
+int NpsmBenchRunAction::gShield = 1;
 
 NpsmBenchRunAction::NpsmBenchRunAction(std::string outCsv, double energyKeV, long long nEventsRequested, long seed, const NpsmLightYield* lightYield)
     : fOutCsv(outCsv), fEnergyKeV(energyKeV), fNEventsRequested(nEventsRequested), fSeed(seed),
@@ -174,7 +175,11 @@ void NpsmBenchRunAction::WriteCSV(const NpsmBenchRun& run) {
     file << "decay," << (Rc103FieldPhysicsList::gDecay ? 1 : 0) << "\n";
     file << "correlated_gamma," << (Rc103FieldPhysicsList::gCorrGamma ? 1 : 0) << "\n";
     file << "beam," << (NpsmBenchPrimaryGeneratorAction::gPencilBeam ? "pencil" : "iso") << "\n";
-    // Проба: кювета, матрица, плотность, объём засыпки, способ розыгрыша.
+    // Постановка: экран-защита, затем проба — кювета, матрица, плотность,
+    // объём засыпки, способ розыгрыша. Поле shield добавлено 12.09.2026:
+    // до него шапки пары shld1/shld0 не различались НИЧЕМ, и вариант
+    // постановки нёс только имя файла (рецидив W-068).
+    file << "shield," << gShield << "\n";
     file << "vessel," << gVessel << "\n";
     file << "chain_limits," << (gChainLimits.empty() ? "none" : gChainLimits) << "\n";
     file << "src_mode," << gSrcMode << "\n";

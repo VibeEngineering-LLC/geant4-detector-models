@@ -42,8 +42,11 @@ std::string gPixeModel = "";
 std::string gPixeElecModel = "";
 int gShield = 1;
 int gMasses = 1;
-// primary=gamma|ion; при ion первичкой служит ядро (ion_z, ion_a),
+// primary=gamma|ion|eplus|eplus_gamma; при ion первичкой служит ядро (ion_z, ion_a),
 // которое распадается само — тогда в спектре есть каскадное суммирование.
+// eplus — покоящийся позитрон (встречная пара 511 кэВ), eplus_gamma — он же плюс
+// изотропный квант energy_keV из той же точки в том же событии (β⁺ Sc-44 + 1157,
+// метод 2 разбора смеси AmTiCsEu, 11.09.2026).
 std::string gPrimary = "gamma";
 int gIonZ = 27;
 int gIonA = 60;
@@ -171,7 +174,8 @@ void ParseArgs(int argc, char** argv) {
     }
 
     // Проверка корректности значений
-    if (gPrimary != "gamma" && gPrimary != "ion") {
+    if (gPrimary != "gamma" && gPrimary != "ion" && gPrimary != "eplus"
+        && gPrimary != "eplus_gamma") {
         std::cerr << "Некорректное значение primary: " << gPrimary << std::endl;
         exit(2);
     }
@@ -300,6 +304,7 @@ int main(int argc, char** argv) {
     // Постановка пробы — в шапку CSV. Значения берутся из ПОСТРОЕННОГО
     // пресета, а не из ключей: пресет мог подставить умолчание там, где ключ
     // не задан, и в файле должно лежать применённое, а не запрошенное (W-052).
+    NpsmBenchRunAction::gShield = gShield;
     NpsmBenchRunAction::gVessel = gVessel;
     NpsmBenchRunAction::gSrcMode = gSrcMode;
     NpsmBenchRunAction::gChainLimits = gChain;

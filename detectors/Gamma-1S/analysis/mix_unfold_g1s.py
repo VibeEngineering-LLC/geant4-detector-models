@@ -115,7 +115,9 @@ def recalibrate_energy(spec, verbose=True, extra_refs=None, ch_offset=0.0):
 
 def read_template(path):
     """Читает шаблон из CSV-файла и возвращает гистограмму и параметры."""
-    with open(path, 'r') as f:
+    # encoding явно (15.09.2026): без него Python на этой машине читает в cp1251, и путь с «И» (байт 0x98)
+    # в шапке шаблона (например spectrum_csv режима gamma_table) ронял разбор. Шаблоны пишутся в UTF-8.
+    with open(path, 'r', encoding='utf-8') as f:
         lines = [line.strip() for line in f.readlines()]
     
     # ⚠ Между шапкой и данными лежит таблица распределения по числу

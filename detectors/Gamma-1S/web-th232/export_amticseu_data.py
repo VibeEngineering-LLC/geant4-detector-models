@@ -195,6 +195,11 @@ def main():
     library = cfg["library"]
     sum_peaks = cfg["sum_peaks"]
     fit = cfg["fit"]
+    # #CH-1 (14.09.2026): сдвиг нумерации LSRM — единый источник в ядре; ключ конфига обязан совпадать, иначе отказ
+    # (прежние чтения fit.get("lsrm_ch_offset", 0.0) при потере ключа молча ушли бы на 0).
+    if "lsrm_ch_offset" not in fit or float(fit["lsrm_ch_offset"]) != g1s.LSRM_CH_OFFSET:
+        raise SystemExit("ОТКАЗ: fit.lsrm_ch_offset=%r не равен ядру LSRM_CH_OFFSET=%r (#CH-1)"
+                         % (fit.get("lsrm_ch_offset"), g1s.LSRM_CH_OFFSET))
     # Внешние реперы шкалы пробы ниже 59,5 кэВ (#AMT-3, analysis/low_scale_donors.py).
     low_refs = [(float(x["ch"]), float(x["e_kev"])) for x in (fit.get("low_refs") or [])] \
         if fit.get("use_low_refs") else []

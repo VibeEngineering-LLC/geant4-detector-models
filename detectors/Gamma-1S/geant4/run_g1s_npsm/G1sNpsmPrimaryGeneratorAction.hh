@@ -6,6 +6,9 @@
 #include "G4ThreeVector.hh"
 
 #include <string>
+#include <vector>
+#include <atomic>
+#include <memory>
 
 class G1sNpsmPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction {
 public:
@@ -43,6 +46,28 @@ public:
     static double gSrcZFrac;
     static double gSrcRFrac;
 
+    // primary=gamma_table (15.09.2026, дыра 26к — внутреннее тормозное
+    // излучение β-распада): одиночный изотропный фотон, энергия которого
+    // разыгрывается по таблице spectrum_csv. Формат: строки '#' — комментарии,
+    // заголовок `k_keV,dNdk_per_decay_per_keV`, далее центр бина и плотность.
+    // Бины — равномерная сетка с шагом, равным наименьшему расстоянию между
+    // соседними центрами (пропуски сетки допустимы и значат нулевую плотность);
+    // вес бина = плотность × шаг, внутри бина энергия равномерна.
+    // Таблица читается ОДИН раз в main до создания рабочих потоков
+    // (LoadSpectrumTable); потоки её только читают — гонки нет.
+    static std::string gSpectrumCsv;
+    static void LoadSpectrumTable(const std::string& path);
+    static int SpectrumRows() { return static_cast<int>(gTabK.size()); }
+    static double SpectrumKminKeV() { return gTabK.empty() ? 0.0 : gTabK.front(); }
+    static double SpectrumKmaxKeV() { return gTabK.empty() ? 0.0 : gTabK.back(); }
+    static double SpectrumStepKeV() { return gTabStep; }
+    // Путь к таблице в UTF-8 для шапки CSV: argv на Windows приходит в
+    // кодовой странице ANSI (cp1251), а шапку читают скрипты в UTF-8.
+    static std::string SpectrumCsvUtf8();
+    // Диагностика розыгрыша: сколько раз выпал каждый бин (все потоки).
+    // Печатается в лог после BeamOn при числе строк ≤ 20.
+    static void PrintSpectrumDrawCounts();
+
 public:
     G1sNpsmPrimaryGeneratorAction();
     ~G1sNpsmPrimaryGeneratorAction() override = default;
@@ -57,6 +82,13 @@ private:
     // G4LogicalVolumeStore при первом событии: в многопоточном режиме
     // хранилище общее, а указатель из детектора мастер-потока брать нельзя.
     G4ThreeVector SamplePointInSample();
+    // Энергия по таблице, кэВ: обратная функция распределения по бинам.
+    static double SampleTableEnergyKeV();
+
+    static std::vector<double> gTabK;     // центры бинов, кэВ
+    static std::vector<double> gTabCdf;   // накопленный вес на правом краю бина
+    static double gTabStep;               // шаг сетки, кэВ
+    static std::unique_ptr<std::atomic<long long>[]> gTabDrawn;
 
     G4ParticleGun fGun;
     G4ParticleDefinition* fIon = nullptr;  // создаётся при первом событии

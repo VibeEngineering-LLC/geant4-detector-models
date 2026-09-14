@@ -124,7 +124,9 @@ void ParseArgs(int argc, char** argv) {
         // именем). Ключ нужен, чтобы ИЗМЕРИТЬ систематику от физического
         // разброса 0,5…1,2 г/см³, а не оценивать её по формуле.
         "mgo_rho", "well_gap", "src_z_frac", "src_r_frac",
-        "liner_cu_mm", "liner_cd_mm"};
+        "liner_cu_mm", "liner_cd_mm",
+        // Таблица энергий для primary=gamma_table (15.09.2026, дыра 26к).
+        "spectrum_csv"};
     for (const auto& kv : args) {
         if (known.find(kv.first) == known.end()) {
             std::cerr << "Неизвестный ключ: " << kv.first << std::endl;
@@ -182,8 +184,20 @@ void ParseArgs(int argc, char** argv) {
 
     // Проверка корректности значений
     if (gPrimary != "gamma" && gPrimary != "ion" && gPrimary != "eplus"
-        && gPrimary != "eplus_gamma") {
+        && gPrimary != "eplus_gamma" && gPrimary != "gamma_table") {
         std::cerr << "Некорректное значение primary: " << gPrimary << std::endl;
+        exit(2);
+    }
+    // Таблица и режим — только вместе: ключ без режима молча не действовал бы,
+    // режим без ключа — нечего разыгрывать.
+    if (args.count("spectrum_csv"))
+        G1sNpsmPrimaryGeneratorAction::gSpectrumCsv = args["spectrum_csv"];
+    if (gPrimary == "gamma_table" && G1sNpsmPrimaryGeneratorAction::gSpectrumCsv.empty()) {
+        std::cerr << "primary=gamma_table требует spectrum_csv=<путь>" << std::endl;
+        exit(2);
+    }
+    if (gPrimary != "gamma_table" && !G1sNpsmPrimaryGeneratorAction::gSpectrumCsv.empty()) {
+        std::cerr << "spectrum_csv допустим только при primary=gamma_table" << std::endl;
         exit(2);
     }
     if (gNpsm != "on" && gNpsm != "off") {
@@ -335,6 +349,16 @@ int main(int argc, char** argv) {
     G1sNpsmPrimaryGeneratorAction::gSourceMode = gSrcMode;
     G1sNpsmPrimaryGeneratorAction::gSrcZFrac = gSrcZFrac;
     G1sNpsmPrimaryGeneratorAction::gSrcRFrac = gSrcRFrac;
+    // Таблица энергий — один раз, на мастере, ДО создания рабочих потоков:
+    // потоки её только читают. Отказ (G4Exception Fatal) — до BeamOn, CSV не пишется.
+    if (gPrimary == "gamma_table") {
+        G1sNpsmPrimaryGeneratorAction::LoadSpectrumTable(
+            G1sNpsmPrimaryGeneratorAction::gSpectrumCsv);
+        NpsmBenchRunAction::gSpectrumCsv = G1sNpsmPrimaryGeneratorAction::SpectrumCsvUtf8();
+        NpsmBenchRunAction::gSpectrumRows = G1sNpsmPrimaryGeneratorAction::SpectrumRows();
+        NpsmBenchRunAction::gSpectrumKminKeV = G1sNpsmPrimaryGeneratorAction::SpectrumKminKeV();
+        NpsmBenchRunAction::gSpectrumKmaxKeV = G1sNpsmPrimaryGeneratorAction::SpectrumKmaxKeV();
+    }
 
     // Действия создаёт инициализатор: в многопоточном режиме они нужны по
     // экземпляру на поток, а мастеру — только RunAction, который получает
@@ -420,6 +444,9 @@ int main(int argc, char** argv) {
               << " birks=" << gSBirks
               << " cut_mm=" << gCutMm
               << " primary=" << gPrimary
+              << " spectrum_csv=" << (G1sNpsmPrimaryGeneratorAction::gSpectrumCsv.empty()
+                                          ? std::string("-")
+                                          : G1sNpsmPrimaryGeneratorAction::SpectrumCsvUtf8())
               << " ion=" << gIonZ << "/" << gIonA
               << " corr_gamma=" << gCorrGamma
               << " deex=" << gDeexMode
@@ -449,6 +476,8 @@ int main(int argc, char** argv) {
 
     // Запуск моделирования
     runManager->BeamOn(gEvents);
+    if (gPrimary == "gamma_table")
+        G1sNpsmPrimaryGeneratorAction::PrintSpectrumDrawCounts();
 
     delete runManager;
     return 0;

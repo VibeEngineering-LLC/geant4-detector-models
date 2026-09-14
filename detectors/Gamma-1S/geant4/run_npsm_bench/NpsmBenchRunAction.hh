@@ -32,6 +32,12 @@ public:
     static std::string gPrimaryKind;   // "gamma" | "ion"
     static int gIonZ;                  // только при gPrimaryKind == "ion"
     static int gIonA;
+    // primary=gamma_table (run_g1s_npsm, 15.09.2026): таблица энергий. Пишутся
+    // в шапку ТОЛЬКО в этом режиме — шапки прочих режимов не меняются.
+    static std::string gSpectrumCsv;   // путь в UTF-8
+    static int gSpectrumRows;
+    static double gSpectrumKminKeV;
+    static double gSpectrumKmaxKeV;
 
     // Постановка ПРОБЫ (11.09.2026). Кювета, матрица, плотность, объём и
     // способ розыгрыша первички обязаны лежать В ФАЙЛЕ: два прогона одного

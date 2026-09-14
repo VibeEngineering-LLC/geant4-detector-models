@@ -18,6 +18,10 @@
 std::string NpsmBenchRunAction::gPrimaryKind = "gamma";
 int NpsmBenchRunAction::gIonZ = 0;
 int NpsmBenchRunAction::gIonA = 0;
+std::string NpsmBenchRunAction::gSpectrumCsv = "";
+int NpsmBenchRunAction::gSpectrumRows = 0;
+double NpsmBenchRunAction::gSpectrumKminKeV = 0.0;
+double NpsmBenchRunAction::gSpectrumKmaxKeV = 0.0;
 int NpsmBenchRunAction::gThreads = 0;
 std::string NpsmBenchRunAction::gVessel = "none";
 std::string NpsmBenchRunAction::gMatrix = "";
@@ -173,6 +177,12 @@ void NpsmBenchRunAction::WriteCSV(const NpsmBenchRun& run) {
     if (gPrimaryKind == "ion") {
         file << "ion_z," << gIonZ << "\n";
         file << "ion_a," << gIonA << "\n";
+    }
+    if (gPrimaryKind == "gamma_table") {
+        file << "spectrum_csv," << gSpectrumCsv << "\n";
+        file << "spectrum_rows," << gSpectrumRows << "\n";
+        file << "spectrum_kmin_keV," << gSpectrumKminKeV << "\n";
+        file << "spectrum_kmax_keV," << gSpectrumKmaxKeV << "\n";
     }
     file << "decay," << (Rc103FieldPhysicsList::gDecay ? 1 : 0) << "\n";
     file << "correlated_gamma," << (Rc103FieldPhysicsList::gCorrGamma ? 1 : 0) << "\n";

@@ -106,8 +106,10 @@ def explain(reports, max_wait_s=600):
     """Сводка по пачке логов через Ollama. Импорт guarded_generate ОБЯЗАТЕЛЕН
     (HARD RULE скилла workflow, LOCKED 2026-06-04): raw requests.post не
     встаёт в машинную очередь, и параллельные вызовы роняют хост по VRAM."""
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from _vram_guard import guarded_generate
+    # 2026-09-14 (#CPU-1): локальная копия guard v1.8.0 удалена — она сама
+    # уходила на CPU. Импорт только эталона из скилла workflow; нет GPU → отказ.
+    sys.path.insert(0, os.path.expanduser("~/.claude/skills/workflow/scripts"))
+    from vram_guard_reference import guarded_generate
 
     compact = []
     for r in reports:

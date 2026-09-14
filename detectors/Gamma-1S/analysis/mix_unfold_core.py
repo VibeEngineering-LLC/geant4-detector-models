@@ -97,7 +97,8 @@ def unfold(spe, bg, templates, fwhm_points, lo=40.0, hi=1500.0,
                 raise SystemExit("ОТКАЗ: задана шкала света, но шаблон %s посчитан без "
                                  "непропорциональности (npsm_enabled=0)" % name)
             e_of = lambda c: float(np.interp(c, np.arange(len(e), dtype=float), e))
-            hist, st = light_mode.light_to_energy(hist, light_scale[0], light_scale[1], e_of, len(e))
+            hist, st = light_mode.light_to_energy(hist, light_scale[0], light_scale[1], e_of, len(e),
+                                                  c=(light_scale[2] if len(light_scale) > 2 else 0.0))
             if st["sum_used"] <= 0:
                 raise SystemExit("ОТКАЗ: шаблон %s — в шкалу пробы не попал ни один бин света" % name)
             if verbose:

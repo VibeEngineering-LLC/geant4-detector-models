@@ -73,6 +73,10 @@ double gWellGap = -1.0;
 // и доля радиального размаха снаружи. 1,0 — вся проба, прежнее поведение.
 double gSrcZFrac = 1.0;
 double gSrcRFrac = 1.0;
+// Толщины вкладышей экрана, мм (граничный прогон 26в, 14.09.2026). <0 —
+// умолчание геометрии (ShieldGeom: Cu 1,50, Cd 1,20); 0 — вкладыш снят.
+double gLinerCuMm = -1.0;
+double gLinerCdMm = -1.0;
 
 void ParseArgs(int argc, char** argv) {
     std::map<std::string, std::string> args;
@@ -119,7 +123,8 @@ void ParseArgs(int argc, char** argv) {
         // неверное в торце и станет эффективной массовой толщиной под чужим
         // именем). Ключ нужен, чтобы ИЗМЕРИТЬ систематику от физического
         // разброса 0,5…1,2 г/см³, а не оценивать её по формуле.
-        "mgo_rho", "well_gap", "src_z_frac", "src_r_frac"};
+        "mgo_rho", "well_gap", "src_z_frac", "src_r_frac",
+        "liner_cu_mm", "liner_cd_mm"};
     for (const auto& kv : args) {
         if (known.find(kv.first) == known.end()) {
             std::cerr << "Неизвестный ключ: " << kv.first << std::endl;
@@ -161,6 +166,8 @@ void ParseArgs(int argc, char** argv) {
     if (args.count("well_gap")) gWellGap = std::stod(args["well_gap"]);
     if (args.count("src_z_frac")) gSrcZFrac = std::stod(args["src_z_frac"]);
     if (args.count("src_r_frac")) gSrcRFrac = std::stod(args["src_r_frac"]);
+    if (args.count("liner_cu_mm")) gLinerCuMm = std::stod(args["liner_cu_mm"]);
+    if (args.count("liner_cd_mm")) gLinerCdMm = std::stod(args["liner_cd_mm"]);
     if (args.count("deex_region"))
         Rc103FieldPhysicsList::gDeexRegion = args["deex_region"];
     if (args.count("em")) {
@@ -266,6 +273,8 @@ int main(int argc, char** argv) {
     detector->fWithShield = (gShield == 1);
     detector->fWithVessel = (gVessel != "none");
     if (gMgoRho > 0) detector->fHead.mgoDensity = gMgoRho;
+    if (gLinerCuMm >= 0) detector->fShield.cu = gLinerCuMm;
+    if (gLinerCdMm >= 0) detector->fShield.cd = gLinerCdMm;
     if (detector->fWithVessel) {
         detector->fVessel = VesselGeom::Preset(gVessel);
         if (!gMatrix.empty()) detector->fVessel.sampleMatrix = gMatrix;
@@ -305,6 +314,8 @@ int main(int argc, char** argv) {
     // пресета, а не из ключей: пресет мог подставить умолчание там, где ключ
     // не задан, и в файле должно лежать применённое, а не запрошенное (W-052).
     NpsmBenchRunAction::gShield = gShield;
+    NpsmBenchRunAction::gLinerCuMm = detector->fShield.cu;
+    NpsmBenchRunAction::gLinerCdMm = detector->fShield.cd;
     NpsmBenchRunAction::gVessel = gVessel;
     NpsmBenchRunAction::gSrcMode = gSrcMode;
     NpsmBenchRunAction::gChainLimits = gChain;
@@ -413,6 +424,8 @@ int main(int argc, char** argv) {
               << " corr_gamma=" << gCorrGamma
               << " deex=" << gDeexMode
               << " shield=" << gShield
+              << " liner_cu_mm=" << detector->fShield.cu
+              << " liner_cd_mm=" << detector->fShield.cd
               << " mgo_rho=" << detector->fHead.mgoDensity
               << " vessel=" << gVessel
               << " src=" << gSrcMode

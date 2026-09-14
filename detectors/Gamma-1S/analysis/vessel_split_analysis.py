@@ -117,7 +117,7 @@ def unfold_spectrum(spec, vessel_key, shift_ch=0.358):
     # путём, кривую ядро строит само (make_fwhm), готовую функцию оно не принимает.
     return core.unfold(spec, bg, templates, PSPHV_PATH, lo=25.0, hi=1500.0, recalibrate=True,
                        tail=0.75, bg_energy_of_ch=None, conv="channel", blur=0.798,
-                       ch_offset=1.0, light_scale=light_scale)
+                       ch_offset=g1s.LSRM_CH_OFFSET, light_scale=light_scale)
 
 def selftest():
     print("selftest: build_peaks_table на синтетике")

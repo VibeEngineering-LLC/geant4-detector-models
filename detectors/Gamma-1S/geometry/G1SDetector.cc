@@ -700,11 +700,17 @@ void G1SDetector::BuildShield(G4LogicalVolume* w) {
 
   // Вкладыши полости: обечайка и дно. Стоят внутри свинца, а не съедают
   // полость: радиус полости rCav снят с разреза по видимой стенке.
-  fCuLV = Ring("Cu_side", s.rCav, rCu, s.zFloor, s.zCeil, Mat("G4_Cu"), w, cCu);
-  fCdLV = Ring("Cd_side", rCu, rCd, s.zFloor, s.zCeil, Mat("G4_Cd"), w, cCd);
-  Ring("Cu_floor", s.rBore, rCd, s.zFloor - s.cu, s.zFloor, Mat("G4_Cu"), w, cCu);
-  Ring("Cd_floor", s.rBore, rCd, s.zFloor - lin, s.zFloor - s.cu, Mat("G4_Cd"),
-       w, cCd);
+  // Нулевая толщина вкладыша (ключи liner_cu_mm / liner_cd_mm, граничный
+  // прогон 26в 14.09.2026) — тело не строится: у G4Tubs rmin = rmax недопустим.
+  if (s.cu > 0) {
+    fCuLV = Ring("Cu_side", s.rCav, rCu, s.zFloor, s.zCeil, Mat("G4_Cu"), w, cCu);
+    Ring("Cu_floor", s.rBore, rCd, s.zFloor - s.cu, s.zFloor, Mat("G4_Cu"), w, cCu);
+  }
+  if (s.cd > 0) {
+    fCdLV = Ring("Cd_side", rCu, rCd, s.zFloor, s.zCeil, Mat("G4_Cd"), w, cCd);
+    Ring("Cd_floor", s.rBore, rCd, s.zFloor - lin, s.zFloor - s.cu, Mat("G4_Cd"),
+         w, cCd);
+  }
 
   // Свинцовая пробка канала. Закрывает единственный путь в полость, не
   // перекрытый свинцом: снизу канал открыт наружу, и без пробки фон входил бы
@@ -723,8 +729,10 @@ void G1SDetector::BuildShield(G4LogicalVolume* w) {
   if (s.lidClosed) {
     n = LidProfile(s, z, ri, ro);
     Body("Pb_lid", n, z, ri, ro, Mat("G4_Pb"), w, cPb);
-    Ring("Cu_top", 0, rCd, s.zCeil, s.zCeil + s.cu, Mat("G4_Cu"), w, cCu);
-    Ring("Cd_top", 0, rCd, s.zCeil + s.cu, s.zCeil + lin, Mat("G4_Cd"), w, cCd);
+    if (s.cu > 0)
+      Ring("Cu_top", 0, rCd, s.zCeil, s.zCeil + s.cu, Mat("G4_Cu"), w, cCu);
+    if (s.cd > 0)
+      Ring("Cd_top", 0, rCd, s.zCeil + s.cu, s.zCeil + lin, Mat("G4_Cd"), w, cCd);
     Ring("St_top", 0, s.rPbOut + s.steel, s.zLidTop, s.zLidTop + s.steel,
          Mat("G4_STAINLESS-STEEL"), w, cSt);
   }

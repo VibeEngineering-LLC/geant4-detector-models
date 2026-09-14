@@ -12,11 +12,17 @@ def load_scale(path):
         b = data["b"]
         if not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
             raise SystemExit(f"Ошибка в файле {path}: поле 'a' или 'b' не является числом")
+        # 14.09.2026: необязательный квадратичный член «канал = a + b·свет + c·свет²» (шкалы комплекта 2024,
+        # реперы 186…2614 кэВ; линейная давала −3,7 кан на 2614). Нет поля — прежняя пара (a, b), смесь 2016 не меняется.
+        if "c" in data:
+            if not isinstance(data["c"], (int, float)):
+                raise SystemExit(f"Ошибка в файле {path}: поле 'c' не является числом")
+            return (a, b, data["c"])
         return (a, b)
     except KeyError as e:
         raise SystemExit(f"Ошибка в файле {path}: отсутствует поле {e}")
 
-def light_to_energy(hist, a, b, e_of_ch, n_channels, l_min=1.0):
+def light_to_energy(hist, a, b, e_of_ch, n_channels, l_min=1.0, c=0.0):
     result = {}
     stats = {
         "n_in": 0,
@@ -35,7 +41,7 @@ def light_to_energy(hist, a, b, e_of_ch, n_channels, l_min=1.0):
             stats["n_below_lmin"] += 1
             continue
             
-        ch = a + b * light
+        ch = a + b * light + c * light * light
         if ch < 0 or ch > n_channels - 1:
             stats["n_out_of_range"] += 1
             continue
@@ -106,7 +112,14 @@ def main():
         raise SystemExit(f"SELFTEST FAIL: монотонность: ключей {len(energies)} вместо {len(lights)}")
     if any(energies[i] <= energies[i - 1] for i in range(1, len(energies))):
         raise SystemExit(f"SELFTEST FAIL: монотонность: {energies}")
-            
+
+    # Проверка 5 (14.09.2026): квадратичный член действует и по умолчанию равен нулю — по ВЫХОДУ функции.
+    # свет 50: без c канал 31,5 → E 88,75; c = 0,002 добавляет 5 кан → E 101,25.
+    r0, _ = light_to_energy({50.0: 1.0}, a, b, e_of_ch, n_channels)
+    r2, _ = light_to_energy({50.0: 1.0}, a, b, e_of_ch, n_channels, c=0.002)
+    if abs(list(r0)[0] - 88.75) > 1e-9 or abs(list(r2)[0] - 101.25) > 1e-9:
+        raise SystemExit(f"SELFTEST FAIL: квадратичный член: без c {list(r0)}, c=0,002 {list(r2)}")
+
     print("SELFTEST OK")
 
 if __name__ == "__main__":

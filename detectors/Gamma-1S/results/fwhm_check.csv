@@ -1,7 +1,7 @@
 #@ stamp.version = 1
 #@ src.script = detectors/Gamma-1S/analysis/fwhm_check.py
-#@ src.git = 7beacb0-dirty
-#@ src.tree_sha1 = bd17f9bea1e4
+#@ src.git = 19bc622
+#@ src.tree_sha1 = 046072891958
 #@ src.inputs_verdict = no_inputs
 #@ src.inputs_n = 0
 #@ obs.quantity = ПШПВ прибора по трём независимым источникам: закон конвейера; файл калибровки Calibr.cfw; измеренные записи

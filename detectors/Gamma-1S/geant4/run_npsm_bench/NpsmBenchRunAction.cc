@@ -32,6 +32,7 @@ std::string NpsmBenchRunAction::gChainLimits = "";
 int NpsmBenchRunAction::gShield = 1;
 double NpsmBenchRunAction::gLinerCuMm = -1.0;
 double NpsmBenchRunAction::gLinerCdMm = -1.0;
+std::string NpsmBenchRunAction::gShieldVariant = "legacy";
 
 NpsmBenchRunAction::NpsmBenchRunAction(std::string outCsv, double energyKeV, long long nEventsRequested, long seed, const NpsmLightYield* lightYield)
     : fOutCsv(outCsv), fEnergyKeV(energyKeV), fNEventsRequested(nEventsRequested), fSeed(seed),
@@ -192,6 +193,7 @@ void NpsmBenchRunAction::WriteCSV(const NpsmBenchRun& run) {
     // до него шапки пары shld1/shld0 не различались НИЧЕМ, и вариант
     // постановки нёс только имя файла (рецидив W-068).
     file << "shield," << gShield << "\n";
+    file << "shield_variant," << gShieldVariant << "\n";
     if (gLinerCuMm >= 0) {
         file << "shield_cu_mm," << gLinerCuMm << "\n";
         file << "shield_cd_mm," << gLinerCdMm << "\n";

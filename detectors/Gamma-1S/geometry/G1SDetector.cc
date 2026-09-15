@@ -685,6 +685,8 @@ G4LogicalVolume* Body(const G4String& nm, int n, const double* z,
 // Cu -> Cd -> Pb -> стальной кожух. Форма ступенчатая: широкий блок с полостью
 // под сосуд сверху, свинцовая шейка с каналом под головку снизу.
 void G1SDetector::BuildShield(G4LogicalVolume* w) {
+  // Новый вариант строится отдельно; прежний код ниже не тронут (15.09.2026).
+  if (fShield.variant == "geo1_2026_09_15") { BuildShieldGeo1(w); return; }
   const ShieldGeom& s = fShield;
   const double lin = s.cu + s.cd;
   const double rCu = s.rCav + s.cu;      // наружная граница меди
@@ -744,6 +746,7 @@ void G1SDetector::BuildShield(G4LogicalVolume* w) {
 // Массы считаются по формулам, а не по построенным телам, чтобы отчёт был
 // доступен и без инициализации ядра.
 void G1SDetector::ReportMasses() const {
+  if (fShield.variant == "geo1_2026_09_15") { ReportMassesGeo1(); return; }
   const ShieldGeom& s = fShield;
   const HeadGeom& h = fHead;
   const double lin = s.cu + s.cd;
@@ -812,3 +815,6 @@ void G1SDetector::ReportMassesFromGeometry() const {
   for (const auto& kv : byMat)
     std::printf("  %-22s %9.3f\n", kv.first.c_str(), kv.second / kg);
 }
+
+// Вариант защиты geo1_2026_09_15 (15.09.2026): BuildShieldGeo1, ReportMassesGeo1.
+#include "G1SDetectorGeo1.icc"

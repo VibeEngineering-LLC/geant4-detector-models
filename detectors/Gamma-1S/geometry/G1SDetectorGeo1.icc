@@ -1,0 +1,176 @@
+// Защита Гамма-1С, вариант geo1_2026_09_15 (ключ shield_variant). Включается в
+// конце G1SDetector.cc — пользуется его Ring/Body/Mat/CylCm3. Числа — CFG1-2026-09-15-
+// shield-geo1.md разд. 2 + Blender gamma1s_shield_2026-09-15.blend (сверено 15.09).
+// Сгенерировано qwen3-coder:30b по спеке scripts/_spec_shield_geo1_icc.md, правлено вручную.
+#include <cstdio>
+#include <cstring>
+#include <tuple>
+#include <map>
+#include <vector>
+#include <functional>
+#include <cmath>
+#include <string>
+
+namespace {
+struct Geo1Tube { const char* name; const char* mat; double rin, rout, z0, z1; const char* group; bool lid; };
+const Geo1Tube kGeo1Tubes[] = {
+  {"St_platform", "G4_STAINLESS-STEEL", 0.0, 147.5, -431.9, -423.9, "steel", false},
+  {"St_cup", "G4_STAINLESS-STEEL", 140.5, 147.5, -423.9, -55.9, "steel", false},
+  {"St_chamber", "G4_STAINLESS-STEEL", 143.5, 147.5, -55.9, 101.1, "steel", false},
+  {"St_spool1_tube", "G4_STAINLESS-STEEL", 45.3, 50.3, -175.9, -36.9, "steel", false},
+  {"St_spool1_flange_bot", "G4_STAINLESS-STEEL", 50.3, 90.3, -175.9, -170.9, "steel", false},
+  {"St_spool1_flange_top", "G4_STAINLESS-STEEL", 50.3, 93.5, -41.9, -36.9, "steel", false},
+  {"St_spool2_tube", "G4_STAINLESS-STEEL", 45.3, 50.3, -423.9, -175.9, "steel", false},
+  {"St_spool2_flange_bot", "G4_STAINLESS-STEEL", 50.3, 85.3, -423.9, -418.9, "steel", false},
+  {"St_spool2_flange_top", "G4_STAINLESS-STEEL", 50.3, 85.3, -180.9, -175.9, "steel", false},
+  {"Pb_middle", "G4_Pb", 50.3, 90.3, -170.9, -41.9, "pb_middle", false},
+  {"Pb_lower", "G4_Pb", 50.3, 85.3, -418.9, -180.9, "pb_lower", false},
+  {"Pb_plug", "G4_Pb", 0.0, 45.3, -423.9, -372.0, "pb_plug", false},
+  {"St_lid_bot", "G4_STAINLESS-STEEL", 0.0, 147.5, 101.1, 106.1, "steel", true},
+  {"Pb_lid", "G4_Pb", 0.0, 143.5, 106.1, 151.1, "pb_lid", true},
+  {"St_lid_side", "G4_STAINLESS-STEEL", 143.5, 147.5, 106.1, 151.1, "steel", true},
+  {"St_lid_top", "G4_STAINLESS-STEEL", 0.0, 147.5, 151.1, 156.1, "steel", true}
+};
+const double kGeo1PbR = 93.5;
+const double kGeo1FloorPb = -36.9;
+const double kGeo1CeilPb = 101.1;
+const double kGeo1Bore = 45.3;
+}  // namespace
+
+void G1SDetector::BuildShieldGeo1(G4LogicalVolume* w) {
+  const ShieldGeom& s = fShield;
+  const G4Colour cPb(0.35, 0.40, 0.55), cSt(0.80, 0.80, 0.82), cCu(0.80, 0.50, 0.20), cCd(0.95, 0.85, 0.20);
+  auto colOf = [&cPb, &cSt, &cCu, &cCd](const char* mat) {
+    if (strcmp(mat, "G4_Pb") == 0) return cPb;
+    if (strcmp(mat, "G4_Cu") == 0) return cCu;
+    if (strcmp(mat, "G4_Cd") == 0) return cCd;
+    return cSt;
+  };
+
+  // Pb chamber wall with skirt as one polycone
+  const double zPbWall[] = {-78.9, -55.9, -55.9, 101.1};
+  const double riPbWall[] = {93.5, 93.5, 93.5, 93.5};
+  const double roPbWall[] = {140.5, 140.5, 143.5, 143.5};
+  fPbLV = Body("Pb_chamber_wall", 4, zPbWall, riPbWall, roPbWall, Mat("G4_Pb"), w, cPb);
+
+  // Loop over tubes
+  for (const auto& row : kGeo1Tubes) {
+    if (row.lid && !s.lidClosed) continue;
+    G4LogicalVolume* lv = Ring(row.name, row.rin, row.rout, row.z0, row.z1, Mat(row.mat), w, colOf(row.mat));
+    if (strcmp(row.name, "St_chamber") == 0) fSteelLV = lv;
+  }
+
+  // Liners
+  const double rCd = kGeo1PbR - s.cd;
+  const double rCu = rCd - s.cu;
+  const double zCdFloorTop = kGeo1FloorPb + s.cd;
+  const double zFloor = zCdFloorTop + s.cu;
+  const double zCdCeilBot = kGeo1CeilPb - s.cd;
+  const double zCeil = zCdCeilBot - s.cu;
+
+  if (s.cd > 0) {
+    fCdLV = Ring("Cd_side", rCd, kGeo1PbR, zFloor, zCeil, Mat("G4_Cd"), w, cCd);
+    Ring("Cd_floor", kGeo1Bore, kGeo1PbR, kGeo1FloorPb, zCdFloorTop, Mat("G4_Cd"), w, cCd);
+  }
+  if (s.cu > 0) {
+    fCuLV = Ring("Cu_side", rCu, rCd, zFloor, zCeil, Mat("G4_Cu"), w, cCu);
+    Ring("Cu_floor", kGeo1Bore, kGeo1PbR, zCdFloorTop, zFloor, Mat("G4_Cu"), w, cCu);
+  }
+  if (s.lidClosed) {
+    if (s.cu > 0) Ring("Cu_top", 0, kGeo1PbR, zCeil, zCdCeilBot, Mat("G4_Cu"), w, cCu);
+    if (s.cd > 0) Ring("Cd_top", 0, kGeo1PbR, zCdCeilBot, kGeo1CeilPb, Mat("G4_Cd"), w, cCd);
+  }
+}
+
+void G1SDetector::ReportMassesGeo1() const {
+  const ShieldGeom& s = fShield;
+  const double rCd = kGeo1PbR - s.cd;
+  const double rCu = rCd - s.cu;
+  const double zCdFloorTop = kGeo1FloorPb + s.cd;
+  const double zFloor = zCdFloorTop + s.cu;
+  const double zCdCeilBot = kGeo1CeilPb - s.cd;
+  const double zCeil = zCdCeilBot - s.cu;
+
+  struct Row { std::string name; std::string mat; double vFormulaCm3; std::string group; };
+  std::vector<Row> rows;
+
+  rows.push_back({"Pb_chamber_wall", "G4_Pb",
+                  CylCm3(93.5, 143.5, 101.1 - (-55.9)) + CylCm3(93.5, 140.5, -55.9 - (-78.9)), "pb_wall_skirt"});
+
+  for (const auto& row : kGeo1Tubes) {
+    if (row.lid && !fShield.lidClosed) continue;
+    rows.push_back({row.name, row.mat, CylCm3(row.rin, row.rout, row.z1 - row.z0), row.group});
+  }
+
+  if (s.cd > 0) {
+    rows.push_back({"Cd_side", "G4_Cd", CylCm3(rCd, kGeo1PbR, zCeil - zFloor), "cd"});
+    rows.push_back({"Cd_floor", "G4_Cd", CylCm3(kGeo1Bore, kGeo1PbR, s.cd), "cd"});
+  }
+  if (s.cu > 0) {
+    rows.push_back({"Cu_side", "G4_Cu", CylCm3(rCu, rCd, zCeil - zFloor), "cu"});
+    rows.push_back({"Cu_floor", "G4_Cu", CylCm3(kGeo1Bore, kGeo1PbR, s.cu), "cu"});
+  }
+  if (s.lidClosed) {
+    if (s.cu > 0) rows.push_back({"Cu_top", "G4_Cu", CylCm3(0, kGeo1PbR, s.cu), "cu"});
+    if (s.cd > 0) rows.push_back({"Cd_top", "G4_Cd", CylCm3(0, kGeo1PbR, s.cd), "cd"});
+  }
+
+  std::printf("\n--- shield_variant=geo1_2026_09_15: тела защиты (V формула / V Geant4, см3; масса, кг) ---\n");
+
+  std::map<std::string,double> gm;
+  double mPb = 0., mCu = 0., mCd = 0., mSt = 0.;
+
+  for (const auto& row : rows) {
+    const double rho = Mat(row.mat)->GetDensity() / (g / cm3);
+    G4LogicalVolume* lv = G4LogicalVolumeStore::GetInstance()->GetVolume(row.name, false);
+    double vG4 = -1;
+    if (lv) {
+      vG4 = lv->GetSolid()->GetCubicVolume() / cm3;
+    }
+    const double vFormula = row.vFormulaCm3;
+    const double mass = vFormula * rho / 1000.0;
+
+    std::printf("  %-22s %-20s V %10.2f  V_g4 %10.2f  dV %+7.3f%%  m %8.3f\n",
+                row.name.c_str(), row.mat.c_str(), vFormula, vG4,
+                (vG4 >= 0) ? 100*(vG4 - vFormula)/vFormula : 0.0,
+                mass);
+    if (vG4 < 0) std::printf("    ^ ТЕЛО %s НЕ НАЙДЕНО в хранилище объёмов\n", row.name.c_str());
+
+    gm[row.group] += mass;
+
+    if (row.mat == "G4_Pb") mPb += mass;
+    else if (row.mat == "G4_Cu") mCu += mass;
+    else if (row.mat == "G4_Cd") mCd += mass;
+    else mSt += mass;
+  }
+
+  std::printf("--- свинец по узлам, кг (эталон CFG1 15.09) ---\n");
+  const std::vector<std::tuple<std::string,double,std::string>> ref = {
+    {"pb_wall_skirt", 75.3, "стенка+юбка"},
+    {"pb_lid", 33.0, "крышка"},
+    {"pb_middle", 25.9, "средний"},
+    {"pb_lower", 40.3, "нижний"},
+    {"pb_plug", 3.8, "пробка"}
+  };
+
+  for (const auto& [key, refVal, label] : ref) {
+    const double val = gm[key];
+    std::printf("  %-12s %8.2f   эталон %6.1f   откл %+6.2f%%\n", label.c_str(), val, refVal, 100*(val - refVal)/refVal);
+  }
+
+  const double dev = 100*(mPb - 178.3)/178.3;
+  std::printf("  %-12s %8.2f   эталон %6.1f   откл %+6.2f%%  (допуск 1%%: %s)\n",
+              "итого Pb", mPb, 178.3, dev, std::fabs(dev) <= 1.0 ? "PASS" : "FAIL");
+
+  std::printf("  медь %.3f  кадмий %.3f  сталь %.2f кг; облицовка Cu %.2f / Cd %.2f мм; полость R %.2f, z %.2f…%.2f, крышка %s\n",
+              mCu, mCd, mSt, s.cu, s.cd, rCu, zFloor, zCeil, s.lidClosed ? "закрыта" : "открыта");
+
+  if (fSampleVolumeCm3 > 0)
+    std::printf("  проба    %8.1f см³  (цель %.0f, уровень %s)\n",
+                fSampleVolumeCm3, fVessel.sampleCm3,
+                fSampleFits ? "ниже крышки — ок" : "ВЫШЕ КРЫШКИ!");
+  std::printf("  MgO %.2f г/см³ ; колодец маринелли %.1f мм ; матрица %s\n",
+              fHead.mgoDensity, fVessel.wellDepth, fVessel.sampleMatrix.c_str());
+  ReportMassesFromGeometry();
+  std::printf("\n");
+}

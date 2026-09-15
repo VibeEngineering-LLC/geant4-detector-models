@@ -177,6 +177,13 @@ struct ShieldGeom {
 
   bool lidClosed = true;       // крышка экрана: для точечной 25 см она открыта
 
+  // Вариант защиты (15.09.2026). "legacy" — всё, что выше (разрез рис. 1.1 РЭ),
+  // умолчание, не меняется. "geo1_2026_09_15" — геометрия по замерам оператора
+  // (CFG1-2026-09-15-shield-geo1.md, Blender gamma1s_shield_2026-09-15.blend):
+  // строится BuildShieldGeo1 из таблицы G1SDetectorGeo1.icc, поля z*/r* выше
+  // тогда НЕ используются; cu/cd — толщины облицовки внутрь от свинца R 93,5.
+  G4String variant = "legacy";
+
   // ЧЕГО В МОДЕЛИ НЕТ: тележка с колёсами и её стальная палуба (ниже zBottom,
   // экранирована свинцом шейки), петля и подъёмный механизм крышки слева,
   // кабельный ввод, столик под сосуд. Ввод и петля — сквозные нарушения
@@ -293,6 +300,8 @@ private:
   void DefineMaterials();
   void BuildHead(G4LogicalVolume* world);
   void BuildShield(G4LogicalVolume* world);
+  void BuildShieldGeo1(G4LogicalVolume* world);   // variant geo1_2026_09_15
+  void ReportMassesGeo1() const;                  // массы тел того же варианта
   void BuildVessel(G4LogicalVolume* world);   // Маринелли, с колодцем
   void BuildCup(G4LogicalVolume* world);      // Дента и Петри, плоские
 

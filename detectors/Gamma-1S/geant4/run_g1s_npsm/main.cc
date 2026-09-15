@@ -3,6 +3,7 @@
 #include "G1sNpsmActionInitialization.hh"
 #include "G4UImanager.hh"
 #include "G4UIterminal.hh"
+#include "G4VisExecutive.hh"
 #include "G4String.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4PhysicalConstants.hh"
@@ -77,6 +78,11 @@ double gSrcRFrac = 1.0;
 // умолчание геометрии (ShieldGeom: Cu 1,50, Cd 1,20); 0 — вкладыш снят.
 double gLinerCuMm = -1.0;
 double gLinerCdMm = -1.0;
+// Вариант защиты (15.09.2026): legacy (умолчание) | geo1_2026_09_15.
+std::string gShieldVariant = "legacy";
+// macro=<файл>: после инициализации выполнить макрос (vis, /geometry/test/run)
+// и выйти БЕЗ BeamOn. Для рендера и проверки геометрии, не для счёта.
+std::string gMacro = "";
 
 void ParseArgs(int argc, char** argv) {
     std::map<std::string, std::string> args;
@@ -125,6 +131,8 @@ void ParseArgs(int argc, char** argv) {
         // разброса 0,5…1,2 г/см³, а не оценивать её по формуле.
         "mgo_rho", "well_gap", "src_z_frac", "src_r_frac",
         "liner_cu_mm", "liner_cd_mm",
+        // Вариант защиты и макрос без счёта (15.09.2026, #GEO-1).
+        "shield_variant", "macro",
         // Таблица энергий для primary=gamma_table (15.09.2026, дыра 26к).
         "spectrum_csv"};
     for (const auto& kv : args) {
@@ -170,6 +178,13 @@ void ParseArgs(int argc, char** argv) {
     if (args.count("src_r_frac")) gSrcRFrac = std::stod(args["src_r_frac"]);
     if (args.count("liner_cu_mm")) gLinerCuMm = std::stod(args["liner_cu_mm"]);
     if (args.count("liner_cd_mm")) gLinerCdMm = std::stod(args["liner_cd_mm"]);
+    if (args.count("shield_variant")) gShieldVariant = args["shield_variant"];
+    if (args.count("macro")) gMacro = args["macro"];
+    // Закрытый список: опечатка в имени варианта не должна молча дать legacy.
+    if (gShieldVariant != "legacy" && gShieldVariant != "geo1_2026_09_15") {
+        std::cerr << "Некорректное значение shield_variant: " << gShieldVariant << std::endl;
+        exit(2);
+    }
     if (args.count("deex_region"))
         Rc103FieldPhysicsList::gDeexRegion = args["deex_region"];
     if (args.count("em")) {
@@ -287,6 +302,13 @@ int main(int argc, char** argv) {
     detector->fWithShield = (gShield == 1);
     detector->fWithVessel = (gVessel != "none");
     if (gMgoRho > 0) detector->fHead.mgoDensity = gMgoRho;
+    // Вариант geo1: облицовка по замеру 14.09 (Cu 3 / Cd 1,5) — умолчание
+    // варианта; ключи liner_* ниже по-прежнему перекрывают её.
+    if (gShieldVariant == "geo1_2026_09_15") {
+        detector->fShield.variant = gShieldVariant;
+        detector->fShield.cu = 3.0;
+        detector->fShield.cd = 1.5;
+    }
     if (gLinerCuMm >= 0) detector->fShield.cu = gLinerCuMm;
     if (gLinerCdMm >= 0) detector->fShield.cd = gLinerCdMm;
     if (detector->fWithVessel) {
@@ -330,6 +352,7 @@ int main(int argc, char** argv) {
     NpsmBenchRunAction::gShield = gShield;
     NpsmBenchRunAction::gLinerCuMm = detector->fShield.cu;
     NpsmBenchRunAction::gLinerCdMm = detector->fShield.cd;
+    NpsmBenchRunAction::gShieldVariant = detector->fShield.variant;   // применённый вариант, не запрошенный (W-052)
     NpsmBenchRunAction::gVessel = gVessel;
     NpsmBenchRunAction::gSrcMode = gSrcMode;
     NpsmBenchRunAction::gChainLimits = gChain;
@@ -451,6 +474,7 @@ int main(int argc, char** argv) {
               << " corr_gamma=" << gCorrGamma
               << " deex=" << gDeexMode
               << " shield=" << gShield
+              << " shield_variant=" << detector->fShield.variant
               << " liner_cu_mm=" << detector->fShield.cu
               << " liner_cd_mm=" << detector->fShield.cd
               << " mgo_rho=" << detector->fHead.mgoDensity
@@ -472,6 +496,18 @@ int main(int argc, char** argv) {
     if (detector->fWithVessel && !detector->fSampleFits) {
         std::cerr << "ОТКАЗ: уровень засыпки выше крышки сосуда" << std::endl;
         return 4;
+    }
+
+    // Режим макроса: проверка геометрии и рендер БЕЗ счёта. BeamOn не
+    // вызывается вовсе; выход сразу после макроса (15.09.2026).
+    if (!gMacro.empty()) {
+        auto* visManager = new G4VisExecutive("warnings");
+        visManager->Initialize();
+        G4UImanager::GetUIpointer()->ApplyCommand("/control/execute " + gMacro);
+        std::cout << "G1S_MACRO_DONE: " << gMacro << " (BeamOn не вызывался)" << std::endl;
+        delete visManager;
+        delete runManager;
+        return 0;
     }
 
     // Запуск моделирования

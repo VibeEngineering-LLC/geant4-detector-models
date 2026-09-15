@@ -4,6 +4,7 @@
 (большая ось = ось прутка, малая ширина = ⌀3,2 мм — масштаб), центры
 проецируются на перпендикуляр к средней оси прутков; диффы = шаг.
 Масштаб per-pair: средняя ширина двух соседних кончиков."""
+import os
 import sys
 sys.path.insert(0, '.venv/Lib/site-packages')
 import numpy as np
@@ -13,7 +14,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-IMG = r'C:\Users\Дмитрий\Мой диск\Дозиметрия\Руководства\Атом Нано 16 про\WT-20\6971217312.webp'
+# Путь к снимку зонда задаётся переменной окружения (файл лежит в личной папке
+# оператора и в репозиторий не коммитится).
+IMG = os.environ.get("WT20_TIP_IMAGE", "wt20_tip.webp")
 DIA = 3.2  # мм, диаметр прутка = ширина красной метки
 
 rgb = np.asarray(Image.open(IMG).convert('RGB'), dtype=float)

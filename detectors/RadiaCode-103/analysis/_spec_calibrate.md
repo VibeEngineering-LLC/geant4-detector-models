@@ -35,7 +35,7 @@ import rcspec
 sys.path.insert(0, os.path.join(_HERE, "..", "..", "..", "common", "py"))
 import paths
 
-DONOR = r"D:\GoogleDrive\Дозиметрия\ИИ\1 Скилы\0_Work\gamma-spectrum-analysis\scripts"
+DONOR = os.environ.get("SPECTRAVIBE_SCRIPTS", "")  # каталог донорских скриптов SpectraVibe
 sys.path.insert(0, DONOR)
 from gamma.calibration.fwhm_measure import measure_fwhm
 from gamma.calibration.fwhm_fit import fit_fwhm_scintillator

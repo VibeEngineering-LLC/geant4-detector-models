@@ -13,7 +13,14 @@ sys.path.insert(0, os.path.join(_HERE, "..", "..", "..", "common", "py"))
 import paths
 
 # ДОНОР: SpectraVibe, только чтение (§12 - чужая зона)
-DONOR = r"D:\GoogleDrive\Дозиметрия\ИИ\1 Скилы\0_Work\gamma-spectrum-analysis\scripts"
+# Каталог донорских скриптов SpectraVibe задаётся переменной окружения
+# SPECTRAVIBE_SCRIPTS; машинный путь в репозитории не хранится.
+DONOR = os.environ.get("SPECTRAVIBE_SCRIPTS", "")
+if not DONOR:
+    raise ImportError(
+        "Не задана переменная окружения SPECTRAVIBE_SCRIPTS — каталог "
+        "донорских скриптов SpectraVibe (пакет gamma.calibration)."
+    )
 sys.path.insert(0, DONOR)
 from gamma.calibration.fwhm_provider import _measure_fwhm_channels
 from gamma.calibration.fwhm_fit import fit_fwhm_scintillator

@@ -15,8 +15,12 @@ from scipy.optimize import least_squares
 HERE = os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, "..", "..", "analysis"))  # read_rcxml
-DONOR = "D:/GoogleDrive/Дозиметрия/ИИ/1 Скилы/0_Work/gamma-spectrum-analysis/scripts"  # forward slash: без \-ловушек
-sys.path.insert(0, DONOR)
+# Каталог донорских скриптов SpectraVibe задаётся переменной окружения
+# SPECTRAVIBE_SCRIPTS; машинный путь в репозитории не хранится.
+# Пусто — работает только режим --selftest (отказ по месту импорта ниже).
+DONOR = os.environ.get("SPECTRAVIBE_SCRIPTS", "")
+if DONOR:
+    sys.path.insert(0, DONOR)
 
 def measure_lines(counts, device_coef):
     # Реперные линии (кэВ, имя)
@@ -283,6 +287,10 @@ def main(argv):
         from gamma.calibration.energy_fit import polynomial_energy_fit
     except ImportError as exc:
         print(f"Ошибка: не удалось импортировать необходимые модули: {exc!r}")
+        if not DONOR:
+            print("Причина: не задана переменная окружения SPECTRAVIBE_SCRIPTS "
+                  "— каталог донорских скриптов SpectraVibe (пакет "
+                  "gamma.calibration); без неё доступен только режим --selftest.")
         return 1
 
     # Чтение спектра

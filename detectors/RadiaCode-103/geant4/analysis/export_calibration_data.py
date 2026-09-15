@@ -18,7 +18,14 @@ import numpy as np
 import read_rcxml
 import rcspec
 
-DONOR = r"D:\GoogleDrive\Дозиметрия\ИИ\1 Скилы\0_Work\gamma-spectrum-analysis\scripts"
+# Каталог донорских скриптов SpectraVibe задаётся переменной окружения
+# SPECTRAVIBE_SCRIPTS; машинный путь в репозитории не хранится.
+DONOR = os.environ.get("SPECTRAVIBE_SCRIPTS", "")
+if not DONOR:
+    raise ImportError(
+        "Не задана переменная окружения SPECTRAVIBE_SCRIPTS — каталог "
+        "донорских скриптов SpectraVibe (пакет gamma.calibration)."
+    )
 sys.path.insert(0, DONOR)
 import gamma.calibration.fwhm_measure as FM
 

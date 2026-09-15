@@ -14,7 +14,7 @@
 HERE = os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, "..", "..", "analysis"))          # read_rcxml
-DONOR = r"D:\GoogleDrive\Дозиметрия\ИИ\1 Скилы\0_Work\gamma-spectrum-analysis\scripts"
+DONOR = os.environ.get("SPECTRAVIBE_SCRIPTS", "")  # каталог донорских скриптов SpectraVibe
 sys.path.insert(0, DONOR)
 import read_rcxml
 import gamma.calibration.fwhm_measure as FM

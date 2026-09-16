@@ -51,8 +51,9 @@ import crit_bench_m2 as cbm2     # noqa: E402  fit_A2V
 BUILD_OUT = os.path.join(os.environ.get("G4MODELS_BUILD_GAMMA_1S_NPSM",
                                         os.path.join(ed.REPO, "build", "Gamma-1S-npsm-1142")), "out")
 GRID_DIR = os.path.join(BUILD_OUT, "r226g1_grid")            # М2-Б, run_r226g1.sh
-CHAIN_TPLS = (("Ra226", "k24g1_Ra226_marinelli_OISN06_epoxy.csv"),           # М1-Б: форма и амплитуда —
-              ("Rn222chain", "k24g1_Rn222chain_marinelli_OISN06_epoxy.csv"))  # сумма двух, одна амплитуда
+CHAIN_TPLS = (("Ra226", "k24g1t_Ra226_marinelli_OISN06_epoxy.csv"),           # М1-Б: форма и амплитуда —
+              ("Rn222chain", "k24g1t_Rn222chain_marinelli_OISN06_epoxy.csv"))  # сумма двух, одна амплитуда;
+              # k24g1t_ — набор с исправлением P-033 (ложные совпадения в цепочках), принят 16.09.2026
 ISO_TPL = "r226g1_%s_marinelli_OISN06_epoxy.csv"                # доли нуклидов, склейка post_r226g1.sh
 FWHM_POINTS = os.path.join(HERE, "data", "fwhm_points_g1s_2016.csv")
 FWHM_LAW_CSV = os.path.join(HERE, "data", "fwhm_law3_g1s_2016.csv")     # prep_r226g1_page.py

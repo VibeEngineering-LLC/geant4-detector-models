@@ -456,7 +456,7 @@
     });
     html += "<tr class='sum'><td>МК-шаблон цепочки (в каждом из двух)</td>"
       + "<td class='num'>" + cnt(D.method1_meta.chain_decays) + "</td>"
-      + "<td class='num' colspan='2'>k24g1_Ra226 + k24g1_Rn222chain: форма и амплитуда</td></tr>";
+      + "<td class='num' colspan='2'>k24g1t_Ra226 + k24g1t_Rn222chain: форма и амплитуда</td></tr>";
     html += "</tbody>";
     tbl.innerHTML = html;
   }

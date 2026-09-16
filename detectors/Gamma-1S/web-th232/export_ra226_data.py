@@ -113,7 +113,8 @@ def run_method1_npsm(spec, bgs, e_bg, scale):
     a, sd, _ = cb.fit_A2(col, cnt, r["bg_scaled"], k_bg, ns[:1], sel)
     var = cb.fit_A1(col, cnt, r["bg_scaled"], k_bg, ns[:1], sel)[2]["var"] + col[0, sel] / ns[0] * a[0] ** 2
     chi2, ndof = float(np.sum((col[0, sel] * a[0] - r["net"][sel]) ** 2 / var)), int(sel.sum()) - 1
-    a_e1 = cb.fit_E1(col, cnt, r["bg_scaled"], k_bg, ns[:1], sel)[0]
+    a_e1, sd_e1, x_e1 = cb.fit_E1(col, cnt, r["bg_scaled"], k_bg, ns[:1], sel)
+    m_e1 = cb.metrics_all(a_e1, col, cnt, r["bg_scaled"], k_bg, sel, r["e"], ["sum"], {"sum": 1.0}, T)
     print("метод 1, справочно два шаблона (core.unfold, A2): %s"
           % ", ".join("%s %.1f Бк" % (g, A) for g, A in zip(r["names"], r["activities"])))
     total = col[0] * a[0]
@@ -132,7 +133,9 @@ def run_method1_npsm(spec, bgs, e_bg, scale):
     stack["XRAY"] = np.zeros(len(total))    # В3 = Р-А: К-рентген дочерних отдельно не выделяется
     res = {"A_Bq": float(a[0] / T), "dA_Bq": float(sd[0] / T), "bg_amplitude": 1.0, "d_bg_amplitude": 0.0,
            "chi2": chi2, "ndof": ndof, "chi2_ndof": chi2 / ndof, "xray_total_per_branch_pct": None,
-           "n_channels_fit": int(sel.sum())}
+           "n_channels_fit": int(sel.sum()),
+           "E1": {"A_Bq": float(a_e1[0] / T), "dA_Bq": float(sd_e1[0] / T), "sd_method": x_e1["sd_method"],
+                  "tv": float(x_e1["tv"]), "chi2_ref_nu": float(m_e1["chi2_ref_nu"]), "nu": int(m_e1["nu"])}}
     extra = {"A_E1_Bq": float(a_e1[0] / T), "two": dict(zip(r["names"], map(float, r["activities"]))), "r": r}
     return (res, {k: [round(float(x), 4) for x in v] for k, v in stack.items()},
             {"template_decays": decays, "chain_decays": int(ns[0])}, extra)

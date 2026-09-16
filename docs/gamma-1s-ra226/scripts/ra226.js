@@ -362,6 +362,12 @@
       cell("активность (метод 1)", cnt(m1.A_Bq) + " Бк <em>± " + cnt(m1.dA_Bq) + " Бк</em>", true) +
       cell("против паспорта", num(m1.A_Bq / pass.A_Bq, 3) + " (" + signedPct(m1.A_Bq / pass.A_Bq) + ")") +
       cell("χ²/ν", num(m1.chi2_ndof, 2)) +
+      (m1.E1 ? cell("вторая мера E1 (невязка формы)",
+           cnt(m1.E1.A_Bq) + " Бк <em>± " + cnt(m1.E1.dA_Bq) + " Бк</em>, "
+             + num(m1.E1.A_Bq / pass.A_Bq, 3) + " паспорта", false,
+           "Критерий E1 (D-020): минимум полной вариации нормированных форм при равенстве сумм модели и нетто. "
+             + "Погрешность: бутстрап, " + esc(String(m1.E1.sd_method).replace("bootstrap", "")) + " реплик. χ²/ν по дисперсии A1 = "
+             + num(m1.E1.chi2_ref_nu, 2) + " при ν = " + m1.E1.nu + ".") : "") +
       cell("К-рентген дочерних",
            m1.xray_total_per_branch_pct === null || m1.xray_total_per_branch_pct === undefined
              ? "не выделяется"

@@ -5,6 +5,8 @@
 #include "NpsmBenchRun.hh"
 #include <array>
 #include <string>
+#include <utility>
+#include <vector>
 
 class NpsmLightYield;
 
@@ -22,7 +24,8 @@ public:
     // успешным — ровно тот класс отказа, который мы вычищаем (W-067).
     G4Run* GenerateRun() override;
 
-    void RecordEvent(int nCompt, int nRayl, bool phot, bool conv, bool escaped, double edepMeV, double edepLightMeV);
+    void RecordEvent(int nCompt, int nRayl, bool phot, bool conv, bool escaped, double edepMeV, double edepLightMeV,
+                     const std::vector<std::pair<double, double>>* pulses = nullptr);
 
     // Постановка первички ДЛЯ ШАПКИ CSV. Заполняет main того проекта, который
     // подменил генератор стенда своим (run_g1s_npsm, режим primary=ion):

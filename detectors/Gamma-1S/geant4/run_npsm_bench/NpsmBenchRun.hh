@@ -2,6 +2,8 @@
 
 #include "G4Run.hh"
 #include <array>
+#include <utility>
+#include <vector>
 #include <cstdlib>
 #include <cstdio>
 #include <cmath>
@@ -48,7 +50,8 @@ public:
     ~NpsmBenchRun() override = default;
 
     void RecordEvent(int nCompt, int nRayl, bool phot, bool conv, bool escaped,
-                     double edepMeV, double edepLightMeV, double energyKeV);
+                     double edepMeV, double edepLightMeV, double energyKeV,
+                     const std::vector<std::pair<double, double>>* pulses = nullptr);
 
     void Merge(const G4Run* run) override;
 };

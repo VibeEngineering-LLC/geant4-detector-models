@@ -2,7 +2,8 @@
 
 void NpsmBenchRun::RecordEvent(int nCompt, int /*nRayl*/, bool phot, bool conv,
                                bool escaped, double edepMeV, double edepLightMeV,
-                               double energyKeV) {
+                               double energyKeV,
+                               const std::vector<std::pair<double, double>>* pulses) {
     ++fNEvents;
 
     if (phot) {
@@ -28,20 +29,29 @@ void NpsmBenchRun::RecordEvent(int nCompt, int /*nRayl*/, bool phot, bool conv,
         fSumLight2FullMeV2 += edepLightMeV * edepLightMeV;
     }
 
-    // Спектр энерговыделения
-    int indexEdep = static_cast<int>(edepMeV * 1000.0 / kBinKeV);
-    if (indexEdep >= 0 && indexEdep < kNBins) {
-        ++fSpecEdep[indexEdep];
-    } else {
-        ++fNOverflowEdep;
-    }
+    // Спектры: одна запись на событие (pulses == nullptr, прежний путь) либо
+    // по записи на каждый импульс (ключ pulse_window_s, >1 импульса). Всё
+    // остальное в этой функции — один раз на событие в любом режиме.
+    const size_t nRec = pulses ? pulses->size() : 1;
+    for (size_t k = 0; k < nRec; ++k) {
+        const double e = pulses ? (*pulses)[k].first : edepMeV;
+        const double l = pulses ? (*pulses)[k].second : edepLightMeV;
 
-    // Спектр света
-    int indexLight = static_cast<int>(edepLightMeV * 1000.0 / kBinKeV);
-    if (indexLight >= 0 && indexLight < kNBins) {
-        ++fSpecLight[indexLight];
-    } else {
-        ++fNOverflowLight;
+        // Спектр энерговыделения
+        int indexEdep = static_cast<int>(e * 1000.0 / kBinKeV);
+        if (indexEdep >= 0 && indexEdep < kNBins) {
+            ++fSpecEdep[indexEdep];
+        } else {
+            ++fNOverflowEdep;
+        }
+
+        // Спектр света
+        int indexLight = static_cast<int>(l * 1000.0 / kBinKeV);
+        if (indexLight >= 0 && indexLight < kNBins) {
+            ++fSpecLight[indexLight];
+        } else {
+            ++fNOverflowLight;
+        }
     }
 
     // Суммы для статистики

@@ -120,6 +120,13 @@ void NpsmBenchSteppingAction::UserSteppingAction(const G4Step* step) {
 
         fEventAction->AddEdep(edepMeV);
         fEventAction->AddEdepLight(edepMeV * w);
+        // Режим импульсов: время ПОСТШАГА. У шага распада в покое (RDM)
+        // предшаг несёт время прихода ядра, а постшаг — время распада; всё,
+        // что выделено в таком шаге, произошло после распада. Для пролётных
+        // шагов разница — длительность шага (≪ нс) и на разбиение не влияет.
+        if (NpsmBenchEventAction::gPulseWindowS >= 0.0) {
+            fEventAction->AddDeposit(step->GetPostStepPoint()->GetGlobalTime(), edepMeV, edepMeV * w);
+        }
     }
 
     // Только для первичного трека (parent ID == 0)

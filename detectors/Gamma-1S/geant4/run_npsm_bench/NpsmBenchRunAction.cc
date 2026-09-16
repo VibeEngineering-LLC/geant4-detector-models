@@ -8,6 +8,7 @@
 #include "NpsmLightYield.hh"
 #include "NpsmBenchPrimaryGeneratorAction.hh"
 #include "NpsmBenchSteppingAction.hh"
+#include "NpsmBenchEventAction.hh"
 #include "G4RunManager.hh"
 #include <fstream>
 #include <iomanip>
@@ -54,7 +55,8 @@ G4Run* NpsmBenchRunAction::GenerateRun() {
     return new NpsmBenchRun();
 }
 
-void NpsmBenchRunAction::RecordEvent(int nCompt, int nRayl, bool phot, bool conv, bool escaped, double edepMeV, double edepLightMeV) {
+void NpsmBenchRunAction::RecordEvent(int nCompt, int nRayl, bool phot, bool conv, bool escaped, double edepMeV, double edepLightMeV,
+                                     const std::vector<std::pair<double, double>>* pulses) {
     // Пишем в объект ТЕКУЩЕГО прогона (свой у каждого потока), а не в поля
     // этого действия. G4RunManager::GetNonConstCurrentRun даёт его и на
     // рабочем потоке. Нулевой указатель здесь означал бы, что события идут
@@ -68,7 +70,7 @@ void NpsmBenchRunAction::RecordEvent(int nCompt, int nRayl, bool phot, bool conv
         std::abort();
     }
     run->RecordEvent(nCompt, nRayl, phot, conv, escaped, edepMeV, edepLightMeV,
-                     fEnergyKeV);
+                     fEnergyKeV, pulses);
 }
 
 void NpsmBenchRunAction::EndOfRunAction(const G4Run* aRun) {
@@ -200,6 +202,9 @@ void NpsmBenchRunAction::WriteCSV(const NpsmBenchRun& run) {
     }
     file << "vessel," << gVessel << "\n";
     file << "chain_limits," << (gChainLimits.empty() ? "none" : gChainLimits) << "\n";
+    // Окно разбиения события на импульсы, с (P-033). "none" — одна запись в
+    // спектр на событие; иначе — по записи на импульс.
+    file << "pulse_window_s," << NpsmBenchEventAction::PulseWindowStr() << "\n";
     file << "src_mode," << gSrcMode << "\n";
     if (gVessel != "none") {
         file << "sample_matrix," << gMatrix << "\n";

@@ -25,6 +25,7 @@
 #include <cstdio>
 #include <string>
 #include <cstdlib>
+#include <cmath>
 
 // Параметры по умолчанию
 std::string gOutCsv = "g1s_npsm.csv";
@@ -134,7 +135,9 @@ void ParseArgs(int argc, char** argv) {
         // Вариант защиты и макрос без счёта (15.09.2026, #GEO-1).
         "shield_variant", "macro",
         // Таблица энергий для primary=gamma_table (15.09.2026, дыра 26к).
-        "spectrum_csv"};
+        "spectrum_csv",
+        // Окно разбиения события на импульсы по времени, с (16.09.2026, P-033).
+        "pulse_window_s"};
     for (const auto& kv : args) {
         if (known.find(kv.first) == known.end()) {
             std::cerr << "Неизвестный ключ: " << kv.first << std::endl;
@@ -180,6 +183,16 @@ void ParseArgs(int argc, char** argv) {
     if (args.count("liner_cd_mm")) gLinerCdMm = std::stod(args["liner_cd_mm"]);
     if (args.count("shield_variant")) gShieldVariant = args["shield_variant"];
     if (args.count("macro")) gMacro = args["macro"];
+    // Не задан — NpsmBenchEventAction::gPulseWindowS остаётся -1, путь прежний.
+    if (args.count("pulse_window_s")) {
+        const double v = std::stod(args["pulse_window_s"]);
+        if (!std::isfinite(v) || v < 0.0) {
+            std::cerr << "Некорректное значение pulse_window_s (нужно конечное >= 0): "
+                      << args["pulse_window_s"] << std::endl;
+            exit(2);
+        }
+        NpsmBenchEventAction::gPulseWindowS = v;
+    }
     // Закрытый список: опечатка в имени варианта не должна молча дать legacy.
     if (gShieldVariant != "legacy" && gShieldVariant != "geo1_2026_09_15") {
         std::cerr << "Некорректное значение shield_variant: " << gShieldVariant << std::endl;
@@ -480,7 +493,8 @@ int main(int argc, char** argv) {
               << " mgo_rho=" << detector->fHead.mgoDensity
               << " vessel=" << gVessel
               << " src=" << gSrcMode
-              << " src_z_frac=" << gSrcZFrac << " src_r_frac=" << gSrcRFrac;
+              << " src_z_frac=" << gSrcZFrac << " src_r_frac=" << gSrcRFrac
+              << " pulse_window_s=" << NpsmBenchEventAction::PulseWindowStr();
     if (detector->fWithVessel) {
         std::cout << " matrix=" << detector->fVessel.sampleMatrix
                   << " rho=" << detector->fVessel.sampleDensity

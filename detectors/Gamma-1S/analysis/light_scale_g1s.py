@@ -1,5 +1,6 @@
 import sys, os, re, json, argparse, numpy as np
-A = "D:/Claude_files/repos/geant4-detector-models/detectors/Gamma-1S"
+A = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_REPO_ROOT = os.path.dirname(os.path.dirname(A))
 sys.path.insert(0, A + "/analysis"); sys.path.insert(0, A + "/geant4/run_g1s_npsm")
 import mix_unfold_g1s as g1s
 from analyze_stage5 import find_peak_position
@@ -39,7 +40,7 @@ def read_grid_file(path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--spe', default=A + "/reference/lsrm/raw_lsrm/Work/BG/Gamma-1S/Spe - поверки/Поверка 2016/Маринелли/Смесь_AmTiCsEu_Маринелли.spe")
-    parser.add_argument('--grid', default="D:/Claude_files/repos/geant4-detector-models/build/Gamma-1S-npsm-1142/out")
+    parser.add_argument('--grid', default=_REPO_ROOT + "/build/Gamma-1S-npsm-1142/out")
     parser.add_argument('--ch-offset', type=float, default=1.0)
     parser.add_argument('--out', default=A + "/web-th232/data/light_scale_amticseu.json")
     parser.add_argument('--selftest', action='store_true')

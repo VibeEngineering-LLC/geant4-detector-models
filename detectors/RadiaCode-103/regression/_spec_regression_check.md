@@ -33,8 +33,8 @@ GEANT4_ENV = {
     "G4INCLDATA": r"C:\geant4\share\data\G4INCL1.2",
     "G4ENSDFSTATEDATA": r"C:\geant4\share\data\G4ENSDFSTATE2.3",
 }
-EXE = r"D:\Claude_files\repos\geant4-detector-models\build\RadiaCode-103\rc_curves.exe"
-HERE = папка самого скрипта (os.path.dirname(os.path.abspath(__file__)))
+HERE = папка самого скрипта, как Path (Path(os.path.dirname(os.path.abspath(__file__))))
+EXE = str(HERE.parent.parent.parent / "build" / "RadiaCode-103" / "rc_curves.exe")  # репозиторий на 3 уровня выше regression/
 BASELINE_PATH = HERE / "baseline.json"
 STATE_PATH = HERE / "state.json"
 REFS = [

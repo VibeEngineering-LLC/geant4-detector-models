@@ -1,7 +1,7 @@
 """Низ шкалы пробы (<59,5 кэВ) по донорам комплекта: переход каналов донор→проба линеен (кристалл один),
 находится по линиям выше 59,5 кэВ через шкалу пробы; низкие пики донора переносятся в каналы пробы."""
-import sys, numpy as np
-A = "D:/Claude_files/repos/geant4-detector-models/detectors/Gamma-1S"; sys.path.insert(0, A + "/analysis")
+import sys, os, numpy as np
+A = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); sys.path.insert(0, A + "/analysis")
 import mix_unfold_g1s as g
 K = A + "/reference/lsrm/raw_lsrm/Work/BG/Gamma-1S/Spe - поверки/Поверка 2016/"
 smp = g.read_lsrm_spe(K + "Маринелли/Смесь_AmTiCsEu_Маринелли.spe"); e_of, _ = g.recalibrate_energy(smp, verbose=False)

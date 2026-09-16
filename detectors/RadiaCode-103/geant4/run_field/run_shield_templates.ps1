@@ -5,8 +5,9 @@
 param([string]$Tag = "real", [string]$Stand = "25", [string]$Flip = "up",
       [long]$NEvents = 300000000)
 . C:\g4work\g4setup.ps1 | Out-Null
-$exe = "D:\Claude_files\repos\geant4-detector-models\build\RadiaCode-103-field\rc103_field.exe"
-$root = "D:\Claude_files\repos\geant4-detector-models\detectors\RadiaCode-103\geant4"
+$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..\..\..")
+$exe = Join-Path $repoRoot "build\RadiaCode-103-field\rc103_field.exe"
+$root = Resolve-Path (Join-Path $PSScriptRoot "..")
 $nuc = @("K40", "Ra226", "Pb214", "Bi214", "Ac228", "Pb212", "Bi212", "Tl208")
 $seed = 1000
 foreach ($n in $nuc) {

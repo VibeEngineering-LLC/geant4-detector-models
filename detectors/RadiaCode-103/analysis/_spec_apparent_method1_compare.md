@@ -8,7 +8,7 @@
 
 Для 8 нуклидов метода 1 (`K40, Ra226, Pb214, Bi214, Pb212, Ac228, Bi212, Tl208`)
 уже посчитаны Stage-2 прогоны: файлы
-`D:/Claude_files/repos/geant4-detector-models/build/RadiaCode-103/_stage2_ypos/s2_<нуклид>_ypos.csv`
+`<repo-root>/build/RadiaCode-103/_stage2_ypos/s2_<нуклид>_ypos.csv`
 дают распределение по 7 Y-бинам (energy-weighted координата взаимодействия) для
 каждого 1-кэВ канала энерговыделения (формат ниже).
 
@@ -68,7 +68,7 @@ import read_rcxml
 ```python
 LCE_MAP = {-4.5: 25.0, -3.0: 25.7, -1.5: 23.6, 0.0: 20.0,
            1.5: 18.8, 3.0: 18.2, 4.5: 15.8}
-STAGE2_DIR = "D:/Claude_files/repos/geant4-detector-models/build/RadiaCode-103/_stage2_ypos"
+STAGE2_DIR = os.path.dirname(os.path.dirname(os.path.dirname(_HERE))) + "/build/RadiaCode-103/_stage2_ypos"
 ```
 
 ### Функция `load_ypos(path)`
@@ -251,7 +251,7 @@ print("   каналах — fallback на глобальное P(y) нукли�
 print("   сглаживает это, но остаётся источником неопределённости.")
 ```
 15. Сохранить `pred_baseline`, `pred_apparent`, `e_meas` в CSV для дальнейшего
-    разбора: `D:/Claude_files/repos/geant4-detector-models/detectors/RadiaCode-103/analysis/results/apparent_vs_baseline_20260823.csv`
+    разбора: `<repo-root>/detectors/RadiaCode-103/analysis/results/apparent_vs_baseline_20260823.csv`
     (создать директорию `results/` если не существует — `os.makedirs(..., exist_ok=True)`),
     колонки `E_keV,measured,baseline,apparent`, кодировка utf-8.
 

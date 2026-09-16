@@ -19,7 +19,7 @@ import read_rcxml
 
 LCE_MAP = {-4.5: 25.0, -3.0: 25.7, -1.5: 23.6, 0.0: 20.0,
            1.5: 18.8, 3.0: 18.2, 4.5: 15.8}
-STAGE2_DIR = "D:/Claude_files/repos/geant4-detector-models/build/RadiaCode-103/_stage2_ypos"
+STAGE2_DIR = os.path.dirname(os.path.dirname(os.path.dirname(_HERE))) + "/build/RadiaCode-103/_stage2_ypos"
 
 def load_ypos(path):
     """Читает _ypos.csv. Возвращает (y_cols, dist):

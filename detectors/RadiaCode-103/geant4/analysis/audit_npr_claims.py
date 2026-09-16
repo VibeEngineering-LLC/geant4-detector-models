@@ -512,7 +512,8 @@ def p8_links():
     pattern = r"`([^`]+)\.([ch][ch]):(\d+)`"
     matches = re.findall(pattern, content)
     
-    root1 = r"D:\Claude_files\repos\geant4-detector-models"
+    root1 = os.path.normpath(os.path.join(
+        os.path.dirname(__file__), "..", "..", "..", ".."))
     root2 = r"C:\g4work\thirdparty\geant4-11.2.1\source"
     
     ok_count = 0

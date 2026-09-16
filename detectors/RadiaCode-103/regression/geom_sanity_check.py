@@ -36,9 +36,10 @@ N_EVENTS = 30000
 MIN_HITS = 30
 MAX_HITS = N_EVENTS
 
+_GEOM_DIR = Path(__file__).resolve().parent.parent / "geometry"
 GEOM_FILES = [
-    r"D:\Claude_files\repos\geant4-detector-models\detectors\RadiaCode-103\geometry\RCDetector.cc",
-    r"D:\Claude_files\repos\geant4-detector-models\detectors\RadiaCode-103\geometry\RCDetector.hh",
+    str(_GEOM_DIR / "RCDetector.cc"),
+    str(_GEOM_DIR / "RCDetector.hh"),
 ]
 
 STATE_PATH = Path(__file__).parent / "geom_sanity_state.json"

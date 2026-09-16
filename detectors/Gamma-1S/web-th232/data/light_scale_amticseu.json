@@ -334,5 +334,5 @@
   }
  ],
  "ch_offset": 1.0,
- "spe": "D:/Claude_files/repos/geant4-detector-models/detectors/Gamma-1S/reference/lsrm/raw_lsrm/Work/BG/Gamma-1S/Spe - поверки/Поверка 2016/Маринелли/Смесь_AmTiCsEu_Маринелли.spe"
+ "spe": "detectors/Gamma-1S/reference/lsrm/raw_lsrm/Work/BG/Gamma-1S/Spe - поверки/Поверка 2016/Маринелли/Смесь_AmTiCsEu_Маринелли.spe"
 }

@@ -71,6 +71,10 @@ std::string gChain = "";
 double gMgoRho = -1.0;   // <0 — умолчание геометрии (0,80 г/см³)
 // Зазор проба↔стенка колодца, мм. <0 — умолчание пресета (0, вплотную).
 double gWellGap = -1.0;
+// Материалы стенки сосуда и бокового амортизатора. Пусто — умолчание геометрии.
+// Замена на G4_Galactic без смены размеров меряет вклад рассеяния в них (дыра 28).
+std::string gWallMat = "";
+std::string gRubberMat = "";
 // Область розыгрыша внутри пробы (проверка неоднородности): доля высоты снизу
 // и доля радиального размаха снаружи. 1,0 — вся проба, прежнее поведение.
 double gSrcZFrac = 1.0;
@@ -130,7 +134,7 @@ void ParseArgs(int argc, char** argv) {
         // неверное в торце и станет эффективной массовой толщиной под чужим
         // именем). Ключ нужен, чтобы ИЗМЕРИТЬ систематику от физического
         // разброса 0,5…1,2 г/см³, а не оценивать её по формуле.
-        "mgo_rho", "well_gap", "src_z_frac", "src_r_frac",
+        "mgo_rho", "well_gap", "src_z_frac", "src_r_frac", "wall_mat", "rubber_mat",
         "liner_cu_mm", "liner_cd_mm",
         // Вариант защиты и макрос без счёта (15.09.2026, #GEO-1).
         "shield_variant", "macro",
@@ -176,6 +180,8 @@ void ParseArgs(int argc, char** argv) {
     if (args.count("src")) gSrcMode = args["src"];
     if (args.count("chain")) gChain = args["chain"];
     if (args.count("mgo_rho")) gMgoRho = std::stod(args["mgo_rho"]);
+    if (args.count("wall_mat")) gWallMat = args["wall_mat"];
+    if (args.count("rubber_mat")) gRubberMat = args["rubber_mat"];
     if (args.count("well_gap")) gWellGap = std::stod(args["well_gap"]);
     if (args.count("src_z_frac")) gSrcZFrac = std::stod(args["src_z_frac"]);
     if (args.count("src_r_frac")) gSrcRFrac = std::stod(args["src_r_frac"]);
@@ -315,6 +321,7 @@ int main(int argc, char** argv) {
     detector->fWithShield = (gShield == 1);
     detector->fWithVessel = (gVessel != "none");
     if (gMgoRho > 0) detector->fHead.mgoDensity = gMgoRho;
+    if (!gRubberMat.empty()) detector->fHead.rubberMaterial = gRubberMat;
     // Вариант geo1: облицовка по замеру 14.09 (Cu 3 / Cd 1,5) — умолчание
     // варианта; ключи liner_* ниже по-прежнему перекрывают её.
     if (gShieldVariant == "geo1_2026_09_15") {
@@ -330,6 +337,7 @@ int main(int argc, char** argv) {
         if (gRho > 0) detector->fVessel.sampleDensity = gRho;
         if (gSampleCm3 > 0) detector->fVessel.sampleCm3 = gSampleCm3;
         if (gWellGap >= 0) detector->fVessel.sampleGap = gWellGap;
+        if (!gWallMat.empty()) detector->fVessel.wallMaterial = gWallMat;
     }
 
     runManager->SetUserInitialization(detector);
@@ -491,6 +499,8 @@ int main(int argc, char** argv) {
               << " liner_cu_mm=" << detector->fShield.cu
               << " liner_cd_mm=" << detector->fShield.cd
               << " mgo_rho=" << detector->fHead.mgoDensity
+              << " rubber_mat=" << detector->fHead.rubberMaterial
+              << " wall_mat=" << (detector->fWithVessel ? detector->fVessel.wallMaterial : G4String("-"))
               << " vessel=" << gVessel
               << " src=" << gSrcMode
               << " src_z_frac=" << gSrcZFrac << " src_r_frac=" << gSrcRFrac

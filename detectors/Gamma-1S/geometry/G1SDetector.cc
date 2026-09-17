@@ -238,6 +238,27 @@ G4Material* G1SDetector::MakeMatrix(const G4String& matrix, double rho,
     return m;
   }
 
+  // Матрица «сушёная черника» (образец «Алтайское Зло», оператор 17.09.2026: «черника сушеная», целые ягоды
+  // 3-4 мм, сушка тепловая) — брутто-состав из macronutrient-разбивки USDA FoodData Central (Blueberries raw,
+  // FDC 2346411, прочитано 17.09.2026, провенанс — references/gamma1s-marinelli-vessel-2026-09-17.md § «Разбор
+  // #AZL-1»); пересчёт на остаточную влажность тепловой сушки 15% (допущение, середина диапазона 10-20%) —
+  // scripts/food_matrix.py. Калий выделен явно (нужен для активности K-40), прочая неучтённая зола (0,11 г/100г
+  // сырой ягоды) присоединена к кислороду — грубое приближение, назвать в интерпретации.
+  if (matrix == "blueberry_dry") {
+    auto* m = new G4Material(g4name, rho * g / cm3, 10);
+    m->AddElement(nist->FindOrBuildElement("H"), 0.072705);
+    m->AddElement(nist->FindOrBuildElement("C"), 0.359301);
+    m->AddElement(nist->FindOrBuildElement("N"), 0.006015);
+    m->AddElement(nist->FindOrBuildElement("O"), 0.555562);
+    m->AddElement(nist->FindOrBuildElement("K"), 0.004617);
+    m->AddElement(nist->FindOrBuildElement("Ca"), 0.000644);
+    m->AddElement(nist->FindOrBuildElement("Fe"), 0.000018);
+    m->AddElement(nist->FindOrBuildElement("Mg"), 0.000333);
+    m->AddElement(nist->FindOrBuildElement("Na"), 0.000107);
+    m->AddElement(nist->FindOrBuildElement("P"), 0.000698);
+    return m;
+  }
+
   if (matrix != "OISN16") {
     G4Exception("G1SDetector::MakeMatrix", "g1s002", FatalException,
                 ("неизвестная матрица: " + matrix).c_str());
@@ -314,7 +335,9 @@ void G1SDetector::BuildVessel(G4LogicalVolume* w) {
   fSampleFits = (zFill <= zTop - v.wall);
 
   const G4Colour cPP(0.9, 0.9, 0.6), cSm(0.55, 0.35, 0.15);
-  auto* pp = Mat("G4_POLYPROPYLENE");
+  // Материал стенки — из поля пресета (умолчание маринелли — полипропилен, :410),
+  // а не литерал: иначе ключ wall_mat молча не действовал бы на маринелли.
+  auto* pp = Mat(v.wallMaterial);
 
   // Пластик: обечайка, дно кольцом (вокруг колодца), крышка, гильза колодца,
   // донце колодца.
@@ -580,7 +603,7 @@ void G1SDetector::BuildHead(G4LogicalVolume* w) {
 
   // Амортизатор «резина 2 мм» — ТОЛЬКО радиально (оператор: на торце резины
   // нет вовсе)
-  Ring("Rubber2_side", rCan, rRub, zPmtBot, zRubTop, Mat("G4_RUBBER_NATURAL"),
+  Ring("Rubber2_side", rCan, rRub, zPmtBot, zRubTop, Mat(h.rubberMaterial),
        w, cRub);
 
   // Наружный корпус: бок Al 1,5 по всей длине, крышка торца Al 2,0.

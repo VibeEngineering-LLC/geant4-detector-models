@@ -12,7 +12,8 @@ const COLORS = ["--ch-photo", "--ch-compt_esc1", "--ch-pair_esc1", "--ch-brems_e
 const RANGES = { all: [0, 3000], low: [0, 600], alpha: [200, 500], high: [500, 3000] };
 const M = { l: 78, r: 14, t: 36, b: 34 };
 const LOW_FWHM_KEV = 238;
-const MARKERS = [ { E: 349.8, t: "измерено RC-103G (экземпляр 1): 349,8" }, { E: 356.5, t: "максимум модели 356,5" } ];
+const MARKERS = [ { E: 349.8, t: "измерено RC-103G (экземпляр 1): 349,8", short: "измерено 349,8" },
+                  { E: 356.5, t: "максимум модели 356,5", short: "модель 356,5" } ];
 
 const state = { scale: "log", smear: "on", unit: "rate", range: "all", zoom: null,
   on: {}, showTotal: true, cursor: null, drag: { active: false, kind: "", x0: 0, x1: 0 },
@@ -269,33 +270,17 @@ function drawChart() {
     }
   }
 
-  const markerLabels = [];
-  for (let m of MARKERS) {
-    if (m.E >= xlo && m.E <= xhi) {
-      const x = X(m.E);
-      let row = 0;
-      let lastEnd = -100;
-      for (let i = 0; i < markerLabels.length; i++) {
-        if (markerLabels[i].x + markerLabels[i].w < x - 6) continue;
-        if (markerLabels[i].row === 0) { row = 1; lastEnd = markerLabels[i].x + markerLabels[i].w; }
-        else if (markerLabels[i].row === 1 && x - 6 > lastEnd) { row = 1; lastEnd = markerLabels[i].x + markerLabels[i].w; }
-        else { row = -1; break; }
-      }
-      if (row !== -1) {
-        const text = m.t;
-        g.textAlign = "center";
-        g.textBaseline = "bottom";
-        g.fillStyle = css("--dim");
-        g.font = "11px monospace";
-        const w = g.measureText(text).width;
-        markerLabels.push({ x, y: y0 - 5 - row * 13, text, w, row });
-      }
-    }
-  }
-
-  for (let m of markerLabels) {
-    g.fillText(m.text, m.x, m.y);
-  }
+  // Подписи маркеров — ВНУТРИ графика: левая линия подписывается слева, правая — справа (не пересекаются).
+  g.font = "11px monospace"; g.textBaseline = "top"; g.fillStyle = css("--dim");
+  MARKERS.forEach((m, k) => {
+    if (m.E < xlo || m.E > xhi) return;
+    const x = X(m.E), w = g.measureText(m.short).width;
+    let left = (k === 0), yy = y0 + 4;
+    if (left && x - 4 - w < x0 + 2) { left = false; yy = y0 + 18; }
+    if (!left && x + 4 + w > x1 - 2) { left = true; yy = y0 + 18; }
+    g.textAlign = left ? "right" : "left";
+    g.fillText(m.short, left ? x - 4 : x + 4, yy);
+  });
 
   g.textAlign = "right";
   g.textBaseline = "middle";

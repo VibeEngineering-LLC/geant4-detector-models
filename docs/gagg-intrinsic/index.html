@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Собственный фон GAGG</title>
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/gagg.css">
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="title">
+      <p class="eyebrow">RadiaCode-103G · GAGG 10×10×10 мм · модель Geant4 11.4.2</p>
+      <h1>Собственный фон кристалла GAGG</h1>
+      <p class="stand">Модельный спектр собственной радиоактивности голого куба GAGG 6,63 г и его разложение на
+      12 компонент (шаблоны на распад родителя, свёртка с разрешением RC-103G). Шкала — энергия в
+      кэВ-эквиваленте γ-шкалы. Живое время для пересчёта в отсчёты — <b>668 023,5 с</b>.</p>
+      <p class="stand" id="status">Протяжка мышью по графику — приближение к выделенной области, двойной клик — весь диапазон.</p>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="toolbar" role="toolbar" aria-label="Что показывать">
+      <span class="seg-label">Отсчёты</span>
+      <div class="seg" id="ctl-scale" role="group" aria-label="шкала по вертикали">
+        <button type="button" class="btn" data-v="log" aria-pressed="true">Лог</button>
+        <button type="button" class="btn" data-v="lin" aria-pressed="false">Лин</button>
+      </div>
+      <span class="seg-label">Разрешение</span>
+      <div class="seg" id="ctl-smear" role="group" aria-label="размытие">
+        <button type="button" class="btn" data-v="on" aria-pressed="true">Размытый</button>
+        <button type="button" class="btn" data-v="off" aria-pressed="false">Без размытия</button>
+      </div>
+      <span class="seg-label">Единицы</span>
+      <div class="seg" id="ctl-unit" role="group" aria-label="единицы">
+        <button type="button" class="btn" data-v="rate" aria-pressed="true">отсч./(с·кэВ)</button>
+        <button type="button" class="btn" data-v="counts" aria-pressed="false">за 668 023,5 с</button>
+      </div>
+      <span class="seg-label">Измерение</span>
+      <div class="seg" id="ctl-meas" role="group" aria-label="показывать измерение">
+        <button type="button" class="btn" data-v="on" aria-pressed="true">Показывать</button>
+        <button type="button" class="btn" data-v="off" aria-pressed="false">Скрыть</button>
+      </div>
+      <span class="sp"></span>
+      <span class="seg-label">Энергия</span>
+      <div class="seg" id="ctl-range" role="group" aria-label="диапазон энергии">
+        <button type="button" class="btn" data-v="all" aria-pressed="true">0–3000</button>
+        <button type="button" class="btn" data-v="low" aria-pressed="false">0–600</button>
+        <button type="button" class="btn" data-v="alpha" aria-pressed="false">200–500</button>
+        <button type="button" class="btn" data-v="high" aria-pressed="false">500–3000 кэВ</button>
+      </div>
+    </div>
+    <div class="m1-wrap">
+      <h2 class="sec-h">Спектр и разложение</h2>
+      <p class="method-lede">Линия — сумма компонент с весом 1; заливка — те же компоненты стопкой (снизу — крупнейшая).
+      Пунктир — ¹⁷⁶Lu: шаблон построен, но в сумму не входит (вес 0), по умолчанию выключен. Затенено ниже 238 кэВ:
+      закон разрешения там не подтверждён линиями.</p>
+      <div class="legendbar" id="legend-main"></div>
+      <div class="plotwrap" id="wrap-main"><div class="plotbox">
+        <canvas id="cv-main" tabindex="0" role="img" aria-label="Модельный спектр собственного фона GAGG · протяжка мышью — приближение к выделенной области, двойной клик — весь диапазон"></canvas>
+        <div class="chart-tip" id="tip-main" hidden></div>
+      </div></div>
+
+      <h2 class="sec-h">Остаток: измерение − модель</h2>
+      <p class="method-lede">Ступенчатая линия на главном графике — измеренный спектр RC-103G (экземпляр 1) в свинцовом домике
+      (22–30.12.2024, живое время 668 023,5 с), шкала файла проверена по линии Pb-212 238,6 кэВ. Ниже — остаток: измерение минус
+      сумма модели собственного фона (компоненты с весом 1); серая полоса — ±1σ статистики измерения. Зум общий для обоих графиков.</p>
+      <div class="plotwrap res" id="wrap-res"><div class="plotbox">
+        <canvas id="cv-res" tabindex="0" role="img" aria-label="Остаток: измерение минус модель · протяжка мышью — приближение, двойной клик — весь диапазон"></canvas>
+        <div class="chart-tip" id="tip-res" hidden></div>
+      </div></div>
+
+      <h2 class="sec-h">Компоненты в видимом диапазоне</h2>
+      <p class="method-lede" id="table-range"></p>
+      <div class="scroll" id="comp-table"></div>
+      <p class="method-lede">Скорость — интеграл по бинам 1 кэВ видимого диапазона, с⁻¹; отсчёты — скорость × 668 023,5 с.
+      Таблица пересчитывается при зуме и при переключении «размытый / без размытия».</p>
+
+      <h2 class="sec-h">Оговорки</h2>
+      <ul class="notes">
+        <li><b>Активности — чужого кристалла.</b> Нормировка по Belli et al., J. Phys. G 53 (2026) 045101, табл. 1
+        (кристалл Epic-Crystal); у RC-103G активности не измерены. Особенно ¹⁷⁶Lu и ¹⁴⁷Sm — примеси конкретного
+        производителя, у RC-103G могут отличаться в разы или отсутствовать.</li>
+        <li><b>¹⁷⁶Lu вне суммы.</b> Шаблон есть, вес 0 — до проверки по спектру RC-103G (пики 202/307 кэВ на β-континууме).</li>
+        <li><b>Пока без фона.</b> Внешний фон (защита, помещение, космика) не моделируется.</li>
+        <li><b>Непропорциональность GAGG не моделируется</b>: световой выход e⁻/γ принят 1:1 к энерговыделению.</li>
+        <li><b>Гашение α</b> — по Belli ур. (7): α/γ = 0,13597 + 0,01143·E + 0,00032·E² (E_α в МэВ). Ядра отдачи дают 0 света (допущение).</li>
+        <li><b>Разрешение</b> — закон ПШПВ = √(a + bE + cE²), a = 75,402 кэВ², b = 2,4752 кэВ, c = 3,9295·10⁻⁴, подогнан по линиям
+        238–2614 кэВ одного прибора (RC-103G (экземпляр 2)). Ниже 238 кэВ закон не подтверждён — экстраполяция.</li>
+        <li><b>Голый куб без корпуса</b>: SiPM, плата и корпус RC-103G в геометрии отсутствуют.</li>
+        <li><b>Окно слипания импульсов 1 мкс</b> — допущение: формирование сигнала RC-103G не известно.</li>
+        <li><b>Находка, не истолкована.</b> Максимум суммы в зоне α — 356,5 кэВ (пики ¹⁵²Gd 347 и ¹⁴⁷Sm 367 кэВ в равных
+        долях); у RC-103G (экземпляр 1) измерено 349,8 кэВ.</li>
+        <li><b>Остаток — не чистый внешний фон.</b> Активности модели взяты у чужого кристалла (Belli), поэтому
+        «измерение − модель» содержит и расхождение собственного фона нашего кристалла с моделью.</li>
+        <li><b>Ниже ~238 кэВ разрешение не подтверждено</b> — форма модели там экстраполяция, остаток в этой зоне не толкуется.</li>
+        <li><b>Разные приборы.</b> Измерение — RC-103G (экземпляр 1), закон ПШПВ модели — по прибору RC-103G (экземпляр 2).</li>
+        <li><b>Около 352 кэВ</b> γ-линия Pb-214 (351,9 кэВ) совпадает по положению с α-пиком кристалла — в этой зоне их не разделить.</li>
+        <li><b>Шкала измерения проверена одним репером.</b> Из шести кандидатов измеритель SpectraVibe принял только Pb-212 238,6 кэВ
+        (невязка шкалы файла +2,1 кэВ при допуске ±5,1 кэВ); сдвиг проверен в одной точке, наклон и кривизна шкалы — нет.</li>
+      </ul>
+    </div>
+  </div>
+  <footer class="bot">
+    <p>Расчёт Geant4 11.4.2 (G4EmStandardPhysics_option4 + G4RadioactiveDecayPhysics, 10⁶ распадов родителя на шаблон);
+    нормировка активностей — Belli et al., J. Phys. G 53 (2026) 045101, табл. 1; гашение α — там же, ур. (7).
+    Числа на странице выгружены из расчёта, вручную не набирались · 18.09.2026 ·
+    <a href="../">все страницы проекта</a></p>
+  </footer>
+</div>
+<script src="gagg-data.js"></script>
+<script src="gagg-meas.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

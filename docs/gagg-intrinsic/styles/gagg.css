@@ -1,0 +1,8 @@
+/* Дополнения к базовому стилю styles/base.css. */
+body{background:var(--paper); color:var(--ink)}
+#cv-main{cursor:crosshair}
+#comp-table table.big tr.off td{opacity:.6}
+#comp-table table.big td.n{text-align:right; font-variant-numeric:tabular-nums}
+#comp-table table.big .sw{margin-right:.45rem; vertical-align:-1px}
+.notes li{margin:.25rem 0; line-height:1.5}
+@media (max-width:640px){ .toolbar{gap:.5rem} .seg .btn{padding:.45rem .45rem} }

@@ -4,5 +4,13 @@ body{background:var(--paper); color:var(--ink)}
 #comp-table table.big tr.off td{opacity:.6}
 #comp-table table.big td.n{text-align:right; font-variant-numeric:tabular-nums}
 #comp-table table.big .sw{margin-right:.45rem; vertical-align:-1px}
+#comp-table table.big .ln{margin-right:.45rem; vertical-align:-2px}
+#comp-table table.big .lt{color:var(--dim); font-size:.85em}
+#comp-table table.big .srcnote{display:block; margin-left:1.35rem; color:var(--dim); font-size:.78em; font-weight:400; line-height:1.3}
+table.src{width:100%; border-collapse:collapse; margin:.5rem 0 1rem}
+table.src th,table.src td{padding:.35rem .6rem; text-align:left; vertical-align:top; border-bottom:1px solid var(--rule-soft,#c9c4b4)}
+table.src th{font-size:.8em; text-transform:uppercase; letter-spacing:.05em}
+table.src td.n{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+.steps li{margin:.45rem 0; line-height:1.55}
 .notes li{margin:.25rem 0; line-height:1.5}
 @media (max-width:640px){ .toolbar{gap:.5rem} .seg .btn{padding:.45rem .45rem} }

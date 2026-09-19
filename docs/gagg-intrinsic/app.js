@@ -1,5 +1,14 @@
 (function () { "use strict";
 
+// разделы «Исходный состав» и «Что и как считалось» — отдельные фрагменты, вставляются перед «Оговорками»
+[["sec-composition", "sec-composition.html"], ["sec-method", "sec-method.html"]].forEach(([id, file]) => {
+  const box = document.getElementById(id);
+  if (!box) return;
+  fetch(file).then(r => { if (!r.ok) throw new Error(String(r.status)); return r.text(); })
+    .then(t => box.insertAdjacentHTML("beforeend", t))
+    .catch(() => { box.textContent = "раздел не загрузился"; });
+});
+
 const D = window.GAGG_MODEL;
 if (!D) {
   document.getElementById("status").textContent = "Нет данных: файл gagg-data.js не загрузился.";
@@ -12,8 +21,10 @@ const COLORS = ["--ch-photo", "--ch-compt_esc1", "--ch-pair_esc1", "--ch-brems_e
 const RANGES = { all: [0, 3000], low: [0, 600], alpha: [200, 500], high: [500, 3000] };
 const M = { l: 78, r: 14, t: 36, b: 34 };
 const LOW_FWHM_KEV = 238;
+// максимум размытой суммы в окне 300–400 кэВ — из данных страницы (model_sum_B2.json), не набран руками
+const PK = (() => { let b = E.findIndex(e => e >= 300); for (let i = b; i < E.length && E[i] <= 400; i++) if (D.total[i] > D.total[b]) b = i; return E[b]; })();
 const MARKERS = [ { E: 349.8, t: "измерено RC-103G (экземпляр 1): 349,8", short: "измерено 349,8" },
-                  { E: 356.5, t: "максимум модели 356,5", short: "модель 356,5" } ];
+                  { E: PK, t: `максимум модели ${fmt(PK, 1)}`, short: `модель ${fmt(PK, 1)}` } ];
 
 const state = { scale: "log", smear: "on", unit: "rate", range: "all", zoom: null,
   on: {}, showTotal: true, cursor: null, drag: { active: false, kind: "", x0: 0, x1: 0 },
@@ -38,10 +49,24 @@ COMPS.forEach(c => {
   state.on[c.id] = c.inSum;
 });
 
+// Основание нормировки активности каждого шаблона (Belli = Belli et al., J. Phys. G 53 (2026) 045101, табл. 1)
+const SRC = {
+  T1: "расчёт: природный Gd, доля Gd-152 0,20 % (IUPAC), T½ 3,408·10²¹ с",
+  T2: "Belli: сумма Gd-152 + Sm-147 = 1555 мБк/кг минус расчёт Gd-152 (примесь конкретного кристалла)",
+  T3: "верхний предел по измерению RC-103G; у Belli 11 026 мБк/кг",
+  T4: "Belli, табл. 1",
+  T5: "= Th-228 (допущение; Belli для Ra-228: ≤ 4 мБк/кг)",
+  T6: "Belli, табл. 1",
+  T7: "Belli, табл. 1",
+  T8: "Belli, табл. 1",
+  T9: "Belli, табл. 1",
+  T10: "Belli, табл. 1",
+  T11: "Belli, табл. 1 (верхний предел)",
+  T12: "Belli, табл. 1"
+};
+
 const cv = document.getElementById("cv-main");
 const tip = document.getElementById("tip-main");
-const res = document.getElementById("cv-res");
-const tipRes = document.getElementById("tip-res");
 
 function currentRange() { return state.zoom ? [state.zoom.lo, state.zoom.hi] : RANGES[state.range]; }
 function css(name, fallback) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback; }
@@ -86,6 +111,8 @@ function visibleIdx() {
   return idx;
 }
 
+function visRate(c) { let s = 0; for (const i of visibleIdx()) s += arr(c)[i]; return s; }   // вклад компоненты в видимом диапазоне
+
 function unitLabel() { return state.unit === "rate" ? "отсч./(с·кэВ)" : "отсч./кэВ за 668 023,5 с"; }
 
 function drawChart() {
@@ -96,11 +123,8 @@ function drawChart() {
   const idx = visibleIdx();
   if (idx.length < 2) return;
 
-  const stackComps = COMPS.filter(c => c.inSum && state.on[c.id]).sort((a, b) => {
-    let sa = 0, sb = 0;
-    for (let i = 0; i < 3000; i++) { sa += arr(a)[i]; sb += arr(b)[i]; }
-    return sb - sa;
-  });
+  // стопка: снизу МЕНЬШИЙ вклад в видимом диапазоне, сверху крупнейший (Lu-176 не закрывает малые компоненты в лог-шкале)
+  const stackComps = COMPS.filter(c => c.inSum && state.on[c.id]).sort((a, b) => visRate(a) - visRate(b));
 
   const cum = [];
   if (stackComps.length > 0) {
@@ -343,170 +367,8 @@ function drawChart() {
   }
 }
 
-function drawRes() {
-  if (!showMeas()) {
-    const { g, w, h } = fitCanvas(res);
-    const x0 = M.l, x1 = w - M.r, y0 = M.t, y1 = h - M.b;
-    const [xlo, xhi] = currentRange();
-    const X = e => x0 + (e - xlo) / (xhi - xlo) * (x1 - x0);
-    g.textAlign = "center";
-    g.textBaseline = "middle";
-    g.fillStyle = css("--dim");
-    g.font = "13px monospace";
-    g.fillText("Измерение скрыто", (x0 + x1) / 2, (y0 + y1) / 2);
-    return;
-  }
-
-  const { g, w, h } = fitCanvas(res);
-  const x0 = M.l, x1 = w - M.r, y0 = M.t, y1 = h - M.b;
-  const [xlo, xhi] = currentRange();
-  const X = e => x0 + (e - xlo) / (xhi - xlo) * (x1 - x0);
-  const idx = visibleIdx();
-
-  let A = 0;
-  for (let i of idx) {
-    A = Math.max(A, Math.abs(MEAS.rate[i] - totalArr()[i]) * mult());
-    A = Math.max(A, MEAS.rate_sigma[i] * mult());
-  }
-  if (A === 0) A = 1;
-  A *= 1.15;
-
-  const map = v => y0 + (A - v) / (2 * A) * (y1 - y0);
-
-  if (xlo < LOW_FWHM_KEV) {
-    g.fillStyle = css("--rule-soft", "#c9c4b4");
-    g.globalAlpha = 0.18;
-    g.fillRect(X(xlo), y0, X(Math.min(LOW_FWHM_KEV, xhi)) - X(xlo), y1 - y0);
-    g.globalAlpha = 1;
-  }
-
-  const yTicks = niceTicks(-A, A, 4);
-
-  g.strokeStyle = css("--grid", "#ccc");
-  g.lineWidth = 1;
-  for (let t of yTicks) {
-    const y = map(t);
-    g.beginPath();
-    g.moveTo(x0, y);
-    g.lineTo(x1, y);
-    g.stroke();
-  }
-
-  g.fillStyle = css("--grid");
-  g.globalAlpha = 0.9;
-  g.beginPath();
-  let first = true;
-  for (let i of idx) {
-    const y = map(MEAS.rate_sigma[i] * mult());
-    if (first) { g.moveTo(X(E[i]), y); first = false; }
-    else { g.lineTo(X(E[i]), y); }
-  }
-  for (let i = idx.length - 1; i >= 0; i--) {
-    const y = map(-MEAS.rate_sigma[idx[i]] * mult());
-    g.lineTo(X(E[idx[i]]), y);
-  }
-  g.closePath();
-  g.fill();
-  g.globalAlpha = 1;
-
-  g.strokeStyle = css("--rule-soft");
-  g.lineWidth = 1;
-  g.beginPath();
-  g.moveTo(x0, map(0));
-  g.lineTo(x1, map(0));
-  g.stroke();
-
-  g.strokeStyle = css("--acc-blue");
-  g.lineWidth = 1;
-  g.beginPath();
-  first = true;   // правка автора: повторное объявление let first
-  for (let i of idx) {
-    const y = map((MEAS.rate[i] - totalArr()[i]) * mult());
-    if (first) { g.moveTo(X(E[i] - 0.5), y); first = false; }
-    else { g.lineTo(X(E[i] - 0.5), y); }
-    g.lineTo(X(E[i] + 0.5), y);
-  }
-  g.stroke();
-
-  for (let m of MARKERS) {
-    if (m.E >= xlo && m.E <= xhi) {
-      const x = X(m.E);
-      g.strokeStyle = css("--rule-soft", "#c9c4b4");
-      g.lineWidth = 1;
-      g.setLineDash([4, 3]);
-      g.beginPath();
-      g.moveTo(x, y0);
-      g.lineTo(x, y1);
-      g.stroke();
-      g.setLineDash([]);
-    }
-  }
-
-  g.textAlign = "right";
-  g.textBaseline = "middle";
-  g.fillStyle = css("--dim");
-  g.font = "11px monospace";
-  for (let t of yTicks) {
-    const y = map(t);
-    g.fillText(sci(t, 2), x0 - 6, y);
-  }
-
-  g.textAlign = "center";
-  g.textBaseline = "top";
-  const xTicks = niceTicks(xlo, xhi, w < 520 ? 4 : 7);
-  for (let t of xTicks) {
-    const x = X(t);
-    g.fillText(fmt(t, 0), x, y1 + 6);
-  }
-
-  g.textAlign = "right";
-  g.textBaseline = "bottom";
-  g.fillText("кэВ-экв.", x1, h - 2);
-
-  g.textAlign = "left";
-  g.textBaseline = "alphabetic";
-  g.fillText(unitLabel() + " · остаток = измерение − сумма модели", x0, 14);
-
-  g.strokeStyle = css("--rule");
-  g.lineWidth = 1.2;
-  g.beginPath();
-  g.moveTo(x0, y0);
-  g.lineTo(x0, y1);
-  g.lineTo(x1, y1);
-  g.stroke();
-
-  if (state.cursor !== null && !state.drag.active) {
-    const x = X(E[state.cursor]);
-    g.strokeStyle = css("--rule");
-    g.lineWidth = 1;
-    g.setLineDash([4, 3]);
-    g.globalAlpha = 0.7;
-    g.beginPath();
-    g.moveTo(x, y0);
-    g.lineTo(x, y1);
-    g.stroke();
-    g.setLineDash([]);
-    g.globalAlpha = 1;
-  }
-
-  if (state.drag.active && state.drag.kind === "res") {
-    const xa = Math.max(x0, Math.min(x1, state.drag.x0));
-    const xb = Math.max(x0, Math.min(x1, state.drag.x1));
-    g.fillStyle = css("--accent-soft");
-    g.globalAlpha = 0.22;
-    g.fillRect(xa, y0, xb - xa, y1 - y0);
-    g.globalAlpha = 1;
-    g.strokeStyle = css("--rule");
-    g.lineWidth = 1.5;
-    g.setLineDash([4, 4]);
-    g.strokeRect(xa, y0, xb - xa, y1 - y0);
-    g.setLineDash([]);
-  }
-}
-
 function drawAll() {
   drawChart();
-  drawRes();
 }
 
 // правка автора: без innerHTML, по строке на ряд; вне суммы — внутри цикла (было обращение к c вне цикла)
@@ -521,14 +383,6 @@ function fillTip(i) {
   for (let c of COMPS) if (c.inSum && state.on[c.id]) L.push(`${c.label}: ${sci(arr(c)[i] * mult(), 4)}`);
   for (let c of COMPS) if (!c.inSum && state.on[c.id]) L.push(`${c.label} (вне суммы): ${sci(arr(c)[i] * mult(), 4)}`);
   tipLines(tip, L);
-}
-
-function fillTipRes(i) {
-  tipLines(tipRes, [`E ${fmt(E[i], 1)} кэВ-экв.`,
-    `Остаток: ${sci((MEAS.rate[i] - totalArr()[i]) * mult(), 4)}`,
-    `Измерение: ${sci(MEAS.rate[i] * mult(), 4)}`,
-    `Сумма модели: ${sci(totalArr()[i] * mult(), 4)}`,
-    `σ измерения: ${sci(MEAS.rate_sigma[i] * mult(), 2)}`]);
 }
 
 function pointermove(ev) {
@@ -576,49 +430,9 @@ function dblclick() {
   render();
 }
 
-function pointermoveRes(ev) {
-  const r = res.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top;
-  if (state.drag.active && state.drag.kind === "res") {
-    state.drag.x1 = Math.max(M.l, Math.min(r.width - M.r, x));
-    drawRes();
-    return;
-  }
-  if (x < M.l || x > r.width - M.r) { hide(); return; }
-  const [xlo, xhi] = currentRange();
-  const e = xlo + (x - M.l) / (r.width - M.r - M.l) * (xhi - xlo);
-  const idx = visibleIdx();
-  let nearest = null;
-  let minDist = Infinity;
-  for (let i of idx) {
-    const dist = Math.abs(E[i] - e);
-    if (dist < minDist) { minDist = dist; nearest = i; }
-  }
-  state.cursor = nearest;
-  drawAll();
-  if (!showMeas()) return;
-  fillTipRes(nearest);
-  tipRes.hidden = false;
-  tipRes.style.left = x + "px";
-  tipRes.style.top = Math.max(0, y) + "px";
-}
-
-function pointerleaveRes() {
-  if (!state.drag.active) hide();
-}
-
-function mousedownRes(ev) {
-  const r = res.getBoundingClientRect(), x = ev.clientX - r.left;
-  if (x < M.l || x > r.width - M.r) return;
-  ev.preventDefault();
-  state.drag = { active: true, kind: "res", x0: x, x1: x };
-  tipRes.hidden = true;
-  drawRes();
-}
-
 function hide() {
   state.cursor = null;
   tip.hidden = true;
-  tipRes.hidden = true;
   drawAll();
 }
 
@@ -702,7 +516,8 @@ function buildLegend() {
   totalChip.appendChild(totalNm);
   legend.appendChild(totalChip);
 
-  for (let c of COMPS) {
+  const total = c => c.rate.reduce((s, v) => s + v, 0);
+  for (let c of COMPS.slice().sort((a, b) => (b.inSum - a.inSum) || (total(b) - total(a)))) {   // легенда — по вкладу во всём диапазоне
     const chip = document.createElement("label");
     chip.className = "chip";
     const input = document.createElement("input");
@@ -723,6 +538,21 @@ function buildLegend() {
     chip.appendChild(nm);
     legend.appendChild(chip);
   }
+}
+
+// образец линии графика для строк «Сумма» и «Измерение»: рисунок + название + тип линии словами
+function lineSample(kind, name, type) {
+  const NS = "http://www.w3.org/2000/svg", wrap = document.createElement("span");
+  const svg = document.createElementNS(NS, "svg"), p = document.createElementNS(NS, "polyline");
+  svg.setAttribute("width", "26"); svg.setAttribute("height", "12"); svg.setAttribute("class", "ln");
+  p.setAttribute("fill", "none");
+  p.setAttribute("stroke", kind === "sum" ? css("--sum-line") : css("--ink"));
+  p.setAttribute("stroke-width", kind === "sum" ? "2" : "1");
+  p.setAttribute("points", kind === "sum" ? "0,6 26,6" : "0,9 4,9 4,4 8,4 8,8 12,8 12,3 16,3 16,7 20,7 20,5 26,5");
+  svg.appendChild(p);
+  const t = document.createElement("span"); t.className = "lt"; t.textContent = ` — ${type}`;
+  wrap.append(svg, document.createTextNode(name), t);
+  return wrap;
 }
 
 function buildTable() {
@@ -752,7 +582,8 @@ function buildTable() {
   let totalRate = 0;
   let totalCounts = 0;
 
-  for (let c of COMPS) {
+  const byContribution = COMPS.slice().sort((a, b) => (b.inSum - a.inSum) || (visRate(b) - visRate(a)));   // таблица — по вкладу, крупнейший сверху
+  for (let c of byContribution) {
     const row = document.createElement("tr");
     if (!c.inSum) row.className = "off";
 
@@ -764,6 +595,12 @@ function buildTable() {
     label.textContent = c.label + (c.weight === 0 ? " (вне суммы)" : "");
     firstCell.appendChild(sw);
     firstCell.appendChild(label);
+    if (SRC[c.id]) {   // основание нормировки активности — второй строкой под названием
+      const src = document.createElement("span");
+      src.className = "srcnote";
+      src.textContent = SRC[c.id];
+      firstCell.appendChild(src);
+    }
     row.appendChild(firstCell);
 
     const actCell = document.createElement("td");
@@ -798,7 +635,7 @@ function buildTable() {
   const sumRow = document.createElement("tr");
   sumRow.className = "sum";
   const firstSumCell = document.createElement("td");
-  firstSumCell.textContent = "Сумма (вес 1)";
+  firstSumCell.appendChild(lineSample("sum", "Сумма (вес 1)", "красная сплошная линия"));
   sumRow.appendChild(firstSumCell);
 
   const actSumCell = document.createElement("td");
@@ -827,7 +664,7 @@ function buildTable() {
     const measRow = document.createElement("tr");
     measRow.className = "meas";
     const firstMeasCell = document.createElement("td");
-    firstMeasCell.textContent = `Измерение, ${MEAS.meta.serial}`;
+    firstMeasCell.appendChild(lineSample("meas", `Измерение, ${MEAS.meta.serial}`, "чёрная ступенчатая линия"));
     measRow.appendChild(firstMeasCell);
 
     const actMeasCell = document.createElement("td");
@@ -855,36 +692,6 @@ function buildTable() {
     measRow.appendChild(countMeasCell);
 
     tbody.appendChild(measRow);
-
-    const residRow = document.createElement("tr");
-    residRow.className = "meas";
-    const firstResidCell = document.createElement("td");
-    firstResidCell.textContent = "Остаток = измерение − сумма";
-    residRow.appendChild(firstResidCell);
-
-    const actResidCell = document.createElement("td");
-    actResidCell.className = "n";
-    actResidCell.textContent = "—";
-    residRow.appendChild(actResidCell);
-
-    const weightResidCell = document.createElement("td");
-    weightResidCell.className = "n";
-    weightResidCell.textContent = "—";
-    residRow.appendChild(weightResidCell);
-
-    let residRateSum = 0;
-    for (let i of idx) residRateSum += MEAS.rate[i] - totalArr()[i];
-    const rateResidCell = document.createElement("td");
-    rateResidCell.className = "n";
-    rateResidCell.textContent = sci(residRateSum, 5);
-    residRow.appendChild(rateResidCell);
-
-    const countResidCell = document.createElement("td");
-    countResidCell.className = "n";
-    countResidCell.textContent = fmt(residRateSum * LT, 1);
-    residRow.appendChild(countResidCell);
-
-    tbody.appendChild(residRow);
   }
 
   table.appendChild(tbody);
@@ -898,10 +705,9 @@ function render() {
 
 function wire(kind) {
   const canvas = document.getElementById(`cv-${kind}`);
-  const tipEl = document.getElementById(`tip-${kind}`);
-  canvas.addEventListener("pointermove", kind === "main" ? pointermove : pointermoveRes);
-  canvas.addEventListener("pointerleave", kind === "main" ? pointerleave : pointerleaveRes);
-  canvas.addEventListener("mousedown", kind === "main" ? mousedown : mousedownRes);
+  canvas.addEventListener("pointermove", pointermove);
+  canvas.addEventListener("pointerleave", pointerleave);
+  canvas.addEventListener("mousedown", mousedown);
   canvas.addEventListener("dblclick", dblclick);
   canvas.addEventListener("keydown", keydown);
   canvas.addEventListener("blur", hide);
@@ -931,7 +737,6 @@ bindSeg("ctl-meas", "meas");
 buildLegend();
 
 wire("main");
-wire("res");
 
 const hash = location.hash;
 if (hash && /zoom=([\d.]+)-([\d.]+)/.test(hash)) {

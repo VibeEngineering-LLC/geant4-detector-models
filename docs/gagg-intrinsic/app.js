@@ -1,17 +1,29 @@
 (function () { "use strict";
 
-// разделы «Исходный состав» и «Что и как считалось» — отдельные фрагменты, вставляются перед «Оговорками»
-[["sec-composition", "sec-composition.html"], ["sec-method", "sec-method.html"]].forEach(([id, file]) => {
+// язык страницы — по <html lang>; все видимые строки — в словаре gagg-i18n.js (ru — прежние строки без изменений)
+const LANG = document.documentElement.lang === "en" ? "en" : "ru";
+const T = (window.GAGG_I18N || {})[LANG];
+if (!T) {
+  document.getElementById("status").textContent = "gagg-i18n.js failed to load.";
+  return;
+}
+// подписи из gagg-data.js / gagg-meas.js (label, serial) — замены по словарю языка; для ru список пуст
+function loc(s) { for (const [a, b] of T.subs) s = s.split(a).join(b); return s; }
+const put = (tpl, v) => tpl.replace("{v}", v);
+
+// разделы «Исходный состав» и «Что и как считалось» — отдельные фрагменты, вставляются перед «Оговорками»;
+// путь относительный: фрагмент берётся из папки самой страницы (у английской — en/, там свои переводы)
+[["sec-composition", "sec-composition.html"], ["sec-method", "sec-method.html"], ["sec-refs", "sec-refs.html"]].forEach(([id, file]) => {
   const box = document.getElementById(id);
   if (!box) return;
   fetch(file).then(r => { if (!r.ok) throw new Error(String(r.status)); return r.text(); })
     .then(t => box.insertAdjacentHTML("beforeend", t))
-    .catch(() => { box.textContent = "раздел не загрузился"; });
+    .catch(() => { box.textContent = T.loadFail; });
 });
 
 const D = window.GAGG_MODEL;
 if (!D) {
-  document.getElementById("status").textContent = "Нет данных: файл gagg-data.js не загрузился.";
+  document.getElementById("status").textContent = T.noData;
   return;
 }
 
@@ -26,10 +38,10 @@ const PK = (() => { let b = E.findIndex(e => e >= 300); for (let i = b; i < E.le
 // полоса предсказаний Geant4 по 4 литературным kB и формула Belli — максимумы суммы Gd+Sm из model_sum_*.json (поле alpha_band экспорта)
 const AB = D.alpha_band || null;
 const BAND = AB ? (v => [Math.min(...v), Math.max(...v)])(["F65", "L72", "L93", "L121"].map(k => AB[k].gdsm_max_keV)) : null;
-const MARKERS = [ { E: 349.8, t: "измерено RC-103G (экземпляр 1): 349,8", short: "измерено 349,8" },
-                  { E: PK, t: `максимум модели (kB 0,0072) ${fmt(PK, 1)}`, short: `модель ${fmt(PK, 1)}` } ];
-if (AB) MARKERS.push({ E: AB.formula.gdsm_max_keV, t: `формула Belli (контроль) ${fmt(AB.formula.gdsm_max_keV, 1)}`,
-                       short: `формула Belli (контроль) ${fmt(AB.formula.gdsm_max_keV, 1)}`, row: 2, left: false });
+const MARKERS = [ { E: 349.8, t: T.mMeasT, short: T.mMeasShort },
+                  { E: PK, t: put(T.mModelT, fmt(PK, 1)), short: put(T.mModelShort, fmt(PK, 1)) } ];
+if (AB) MARKERS.push({ E: AB.formula.gdsm_max_keV, t: put(T.mBelli, fmt(AB.formula.gdsm_max_keV, 1)),
+                       short: put(T.mBelli, fmt(AB.formula.gdsm_max_keV, 1)), row: 2, left: false });
 
 const state = { scale: "log", smear: "on", unit: "rate", range: "all", zoom: null,
   on: {}, showTotal: true, cursor: null, drag: { active: false, kind: "", x0: 0, x1: 0 },
@@ -41,7 +53,7 @@ const showMeas = () => MEAS && state.meas === "on";
 let k = 0;
 const COMPS = D.components.map(c => ({
   id: c.id,
-  label: c.label,
+  label: loc(c.label),
   act: c.activity_mBq_per_kg,
   weight: c.weight,
   rate: c.rate,
@@ -55,37 +67,11 @@ COMPS.forEach(c => {
 });
 
 // Основание нормировки активности каждого шаблона (Belli = Belli et al., J. Phys. G 53 (2026) 045101, табл. 1)
-const SRC = {
-  T1: "расчёт: природный Gd, доля Gd-152 0,20 % (IUPAC), T½ 3,408·10²¹ с",
-  T2: "Belli: сумма Gd-152 + Sm-147 = 1555 мБк/кг минус расчёт Gd-152 (примесь конкретного кристалла)",
-  T3: "верхний предел по измерению RC-103G; у Belli 11 026 мБк/кг",
-  T4: "Belli, табл. 1",
-  T5: "= Th-228 (допущение; Belli для Ra-228: ≤ 4 мБк/кг)",
-  T6: "Belli, табл. 1",
-  T7: "Belli, табл. 1",
-  T8: "Belli, табл. 1",
-  T9: "Belli, табл. 1",
-  T10: "Belli, табл. 1",
-  T11: "Belli, табл. 1 (верхний предел)",
-  T12: "Belli, табл. 1"
-};
+const SRC = T.SRC;   // тексты — в gagg-i18n.js
 
 // Тип распада и что он даёт в спектре; положения — свет α при kB 0,0072 (LANL), центроиды до размытия, кэВ-экв.
 // (results/birks_decay/lines_table_kB_indep.csv, колонка L72_centroid; главный пик — максимум суммы Gd+Sm, lines_kB_indep.out)
-const PHYS = {
-  T1: ["α", "α 2146 кэВ поглощается целиком, свет гасится (Биркс) → пик ≈ 358,98"],
-  T2: ["α", "α 2248 кэВ, гашение → пик ≈ 377,5; вместе с Gd-152 дают главный пик ~367,5"],
-  T3: ["β⁻ + γ", "β⁻ на уровень 597 кэВ ¹⁷⁶Hf, каскад γ 307/202/88 поглощается в том же импульсе → широкий горб 150–850, узких пиков нет"],
-  T4: ["α", "α 4011 кэВ → ≈ 745,5; ветвь на уровень 64 кэВ — гашёная α плюс разрядка уровня (не гасится)"],
-  T5: ["β⁻ + γ", "β⁻ Ra-228 и Ac-228 с γ-каскадом в одном импульсе → континуум от нуля, вклад в пик ~12"],
-  T6: ["α, β⁻ + γ", "α Th-228, Ra-224, Rn-220, Po-216 → ≈ 1100,5 / 1170,5 / 1338,5 / 1480,5; β Pb-212, Bi-212, Tl-208 — континуум; Bi-212→Po-212 слипаются в один импульс (90,5 %), остальные Po-212 → ≈ 2104,5"],
-  T7: ["α, β⁻", "α U-238 4198 кэВ → ≈ 789,5; β Th-234 и Pa-234m — континуум от нуля, главный вклад в пик ~12"],
-  T8: ["α", "α 4774 кэВ → ≈ 931,5; ветвь на уровень 53 кэВ — гашёная α плюс разрядка уровня"],
-  T9: ["α", "α 4687 кэВ → ≈ 909,5; ветвь на уровень 68 кэВ — гашёная α плюс разрядка уровня"],
-  T10: ["α, β⁻ + γ", "α Ra-226, Rn-222, Po-218, Po-214 → ≈ 934,08 / 1117,5 / 1258,5 / 1754,5 (Po-214 не слипается, τ 236 мкс); β Pb-214, Bi-214 — континуум"],
-  T11: ["α, β⁻", "α 4397 кэВ (57 %) на уровень 205 кэВ: гашёная α ≈ 837,5 плюс 205 кэВ разрядки; β Th-231 — мягкий континуум"],
-  T12: ["α, β⁻ + γ", "α Th-227, Ra-223, Rn-219, Bi-211, Po-215 → 1131,5–1662,5 (Rn-219 ≈ 1492,5, Po-215 ≈ 1662,5); β Ac-227, Pb-211, Tl-207 — континуум"]
-};
+const PHYS = T.PHYS;   // тексты — в gagg-i18n.js
 
 const cv = document.getElementById("cv-main");
 const tip = document.getElementById("tip-main");
@@ -94,7 +80,7 @@ function currentRange() { return state.zoom ? [state.zoom.lo, state.zoom.hi] : R
 function css(name, fallback) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback; }
 function fmt(v, digits) {
   if (typeof v !== "number" || isNaN(v)) return "—";
-  return Number(v).toLocaleString("ru-RU", { minimumFractionDigits: digits, maximumFractionDigits: digits }).replace(/-/g, "−");
+  return Number(v).toLocaleString(T.numLocale, { minimumFractionDigits: digits, maximumFractionDigits: digits }).replace(/-/g, "−");
 }
 function niceTicks(lo, hi, count) {
   const raw = (hi - lo) / count, pow = Math.floor(Math.log10(raw));
@@ -135,7 +121,7 @@ function visibleIdx() {
 
 function visRate(c) { let s = 0; for (const i of visibleIdx()) s += arr(c)[i]; return s; }   // вклад компоненты в видимом диапазоне
 
-function unitLabel() { return state.unit === "rate" ? "отсч./(с·кэВ)" : "отсч./кэВ за 668 023,5 с"; }
+function unitLabel() { return state.unit === "rate" ? T.unitRate : T.unitCounts; }
 
 function drawChart() {
   const { g, w, h } = fitCanvas(cv);
@@ -200,7 +186,7 @@ function drawChart() {
     g.globalAlpha = 0.12;
     g.fillRect(a, y0, b - a, y1 - y0);
     g.globalAlpha = 1;
-    const lab = "предсказание Geant4 по 4 литературным kB", short = "4 kB";
+    const lab = T.band, short = T.bandShort;
     g.font = "11px monospace"; g.textBaseline = "bottom"; g.textAlign = "left"; g.fillStyle = css("--acc-blue", "#3b6fb6");
     g.fillText(g.measureText(lab).width + 6 < b - a ? lab : short, a + 3, y1 - 3);
   }
@@ -357,7 +343,7 @@ function drawChart() {
 
   g.textAlign = "right";
   g.textBaseline = "bottom";
-  g.fillText("кэВ-экв.", x1, h - 2);
+  g.fillText(T.keVeq, x1, h - 2);
 
   g.textAlign = "left";
   g.textBaseline = "alphabetic";
@@ -410,11 +396,11 @@ function tipLines(el, lines) {
   lines.forEach((t, j) => { const n = document.createElement(j ? "div" : "b"); n.textContent = t; el.appendChild(n); });
 }
 function fillTip(i) {
-  const L = [`E ${fmt(E[i], 1)} кэВ-экв.`];
-  if (state.showTotal) L.push(`Сумма: ${sci(totalArr()[i] * mult(), 4)}`);
-  if (showMeas()) L.push(`Измерение: ${sci(MEAS.rate[i] * mult(), 4)} ± ${sci(MEAS.rate_sigma[i] * mult(), 2)}`);
+  const L = [put(T.tipE, fmt(E[i], 1))];
+  if (state.showTotal) L.push(`${T.sum}: ${sci(totalArr()[i] * mult(), 4)}`);
+  if (showMeas()) L.push(`${T.meas}: ${sci(MEAS.rate[i] * mult(), 4)} ± ${sci(MEAS.rate_sigma[i] * mult(), 2)}`);
   for (let c of COMPS) if (c.inSum && state.on[c.id]) L.push(`${c.label}: ${sci(arr(c)[i] * mult(), 4)}`);
-  for (let c of COMPS) if (!c.inSum && state.on[c.id]) L.push(`${c.label} (вне суммы): ${sci(arr(c)[i] * mult(), 4)}`);
+  for (let c of COMPS) if (!c.inSum && state.on[c.id]) L.push(`${c.label} (${T.outSum}): ${sci(arr(c)[i] * mult(), 4)}`);
   tipLines(tip, L);
 }
 
@@ -543,7 +529,7 @@ function buildLegend() {
   totalSw.className = "sw sum";
   const totalNm = document.createElement("span");
   totalNm.className = "nm";
-  totalNm.textContent = "Сумма";
+  totalNm.textContent = T.sum;
   totalChip.appendChild(totalInput);
   totalChip.appendChild(totalSw);
   totalChip.appendChild(totalNm);
@@ -565,7 +551,7 @@ function buildLegend() {
     sw.style.backgroundColor = css(c.color, "#888");
     const nm = document.createElement("span");
     nm.className = "nm";
-    nm.textContent = c.label + (c.weight === 0 ? " · вне суммы" : "");
+    nm.textContent = c.label + (c.weight === 0 ? ` · ${T.outSum}` : "");
     chip.appendChild(input);
     chip.appendChild(sw);
     chip.appendChild(nm);
@@ -597,12 +583,11 @@ function buildTable() {
   const idx = visibleIdx();
 
   const rangeText = document.getElementById("table-range");
-  rangeText.textContent = `Диапазон: ${fmt(lo, 1)}–${fmt(hi, 1)} кэВ-экв., размытие: ${state.smear === "on" ? "да" : "нет"}`;
+  rangeText.textContent = `${T.range}: ${fmt(lo, 1)}–${fmt(hi, 1)} ${T.keVeq}, ${T.smearing}: ${state.smear === "on" ? T.yes : T.no}`;
 
   const thead = document.createElement("thead");
   const tr = document.createElement("tr");
-  const ths = ["Нуклид / подцепочка", "Активность, мБк/кг", "Вес", "Скорость, с⁻¹", "Отсчёты за 668 023,5 с"];
-  for (let t of ths) {
+  for (let t of T.ths) {
     const th = document.createElement("th");
     th.textContent = t;
     tr.appendChild(th);
@@ -625,7 +610,7 @@ function buildTable() {
     sw.className = "sw";
     sw.style.backgroundColor = css(c.color, "#888");
     const label = document.createElement("span");
-    label.textContent = c.label + (c.weight === 0 ? " (вне суммы)" : "");
+    label.textContent = c.label + (c.weight === 0 ? ` (${T.outSum})` : "");
     firstCell.appendChild(sw);
     firstCell.appendChild(label);
     if (PHYS[c.id]) {   // тип распада — метка у названия, механизм — строкой ниже
@@ -673,7 +658,7 @@ function buildTable() {
   const sumRow = document.createElement("tr");
   sumRow.className = "sum";
   const firstSumCell = document.createElement("td");
-  firstSumCell.appendChild(lineSample("sum", "Сумма (вес 1)", "красная сплошная линия"));
+  firstSumCell.appendChild(lineSample("sum", T.sumRow, T.sumLine));
   sumRow.appendChild(firstSumCell);
 
   const actSumCell = document.createElement("td");
@@ -702,7 +687,7 @@ function buildTable() {
     const measRow = document.createElement("tr");
     measRow.className = "meas";
     const firstMeasCell = document.createElement("td");
-    firstMeasCell.appendChild(lineSample("meas", `Измерение, ${MEAS.meta.serial}`, "чёрная ступенчатая линия"));
+    firstMeasCell.appendChild(lineSample("meas", `${T.meas}, ${loc(MEAS.meta.serial)}`, T.measLine));
     measRow.appendChild(firstMeasCell);
 
     const actMeasCell = document.createElement("td");

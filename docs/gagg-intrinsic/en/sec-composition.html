@@ -1,0 +1,21 @@
+<h2 class="sec-h" id="composition">Initial composition of the crystal</h2>
+<table class="src">
+<thead><tr><th>Quantity</th><th>Value</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td>Formula</td><td>Gd₃Al₂Ga₃O₁₂ (:Ce)</td><td>P. Belli et al., J. Phys. G 53 (2026) 045101, p. 3, <a href="https://doi.org/10.1088/1361-6471/ae4d66">https://doi.org/10.1088/1361-6471/ae4d66</a></td></tr>
+<tr><td>Number of atoms</td><td>Gd 3 · Al 2 · Ga 3 · O 12</td><td>the formula above</td></tr>
+<tr><td>Mass fractions (without Ce)</td><td>Gd 50.897% · Ga 22.567% · O 20.714% · Al 5.822%</td><td>calculated from the stoichiometry and the IUPAC atomic masses (Gd 157.25; Al 26.9815385; Ga 69.723; O 15.999); cross-check: Belli et al. give a Gd fraction of 50.9% (p. 4)</td></tr>
+<tr><td>Molar mass</td><td>926.870 g/mol</td><td>the same calculation</td></tr>
+<tr><td>Density</td><td>6.63 g/cm³ (cube mass 6.63 g)</td><td>nominal: Z. Wang (IHEP), “Performance study of GAGG:Ce crystal,” CHEF 2019, Fukuoka, 25–29.11.2019; from the mass and nominal dimensions of the Belli crystal (285.746 g; cylinder 38.1 mm in diameter and 38.1 mm in length → 43.4375 cm³) one obtains 6.578 g/cm³ (our calculation; Belli et al. do not give the density itself), which is 0.8% lower than the nominal density</td></tr>
+<tr><td>Cerium</td><td>not included in the model; the Ce fraction in the RC-103G is unknown</td><td>for Ce/(Gd+Ce) = 1% (by number of atoms), the mass fraction of Gd is 50.416% and of Ce 0.454%, and the others change in the third significant digit — this has practically no effect on the radiation transport (not quantified)</td></tr>
+<tr><td>Intrinsic-background isotopes</td><td>¹⁵²Gd — 0.20% of natural Gd (IUPAC), T½ 3.408·10²¹ s</td><td>Geant4 decay data, RadioactiveDecay 6.1.2, z64.a152</td></tr>
+<tr><td>Manufacturer and doping of the RC-103G</td><td>not established</td><td>the page <a href="https://radiacode.com/knowledge/differences-between-radiacode-models-103-and-103g">https://radiacode.com/knowledge/differences-between-radiacode-models-103-and-103g</a> names only “GAGG”</td></tr>
+</tbody>
+</table>
+<p class="method-lede">The impurity activities (¹⁷⁶Lu, ¹⁴⁷Sm, the U and Th chains) are taken from a different crystal — Belli, Table 1 (Epic-Crystal, 285.746 g); the basis for each row is given in the “Components” table; the exact composition of the RC-103G cannot be established from open data; according to Belli et al. (footnote 13), the radioactive contamination of GAGG:Ce crystals from different manufacturers differs strongly.</p>
+<p class="method-lede"><b>Where the uranium, thorium, and the rest in the composition come from.</b> U, Th, Lu, and Sm are trace impurities: 41 mBq/kg of ²³⁸U corresponds to
+about 3·10⁻⁹ g of uranium per gram of crystal (≈ 3 ppb by mass), and 14 mBq/kg of ²³²Th to ≈ 3.5 ppb (our conversion using the specific activities of ²³⁸U and ²³²Th). They are not included in the mass fractions of the table
+(which reflect only the stoichiometry of the host material) and do not affect the radiation transport, but they are what produces the intrinsic background. Their activities
+are mostly not calculated but were measured by Belli et al. (in the model: ¹⁷⁶Lu — the upper limit from the RC-103G measurement, ¹⁴⁷Sm — the remainder of the Belli sum of 1555 minus the calculated ¹⁵²Gd, ²²⁸Ra taken equal to ²²⁸Th, ²³⁵U — an upper limit) on a 285.7 g GAGG:Ce crystal over 1336 h (Table 1): by fitting the α spectrum (the α events being separated by pulse
+shape; ¹⁵²Gd + ¹⁴⁷Sm, the U and Th chains), by time-amplitude selection of fast decay pairs, by delayed coincidences of
+²¹²Bi–²¹²Po, and by fitting the β/γ spectrum (¹⁷⁶Lu; the pure α emitters ¹⁴⁷Sm and ¹⁵²Gd are not part of this fit). ¹⁵²Gd is not an impurity — it is a natural isotope of gadolinium (0.20%), and its activity is calculated from the composition.</p>

@@ -1,6 +1,8 @@
 /* Дополнения к базовому стилю styles/base.css. */
 body{background:var(--paper); color:var(--ink)}
 #cv-main{cursor:crosshair}
+.toolbar .grp{display:inline-flex; align-items:center; white-space:nowrap}   /* подпись не отрывается от своих кнопок при переносе */
+@media (max-width:640px){ .toolbar .grp{white-space:normal; max-width:100%} .toolbar .grp .seg{flex-wrap:wrap} }
 #comp-table table.big tr.off td{opacity:.6}
 #comp-table table.big td.n{text-align:right; font-variant-numeric:tabular-nums}
 #comp-table table.big .sw{margin-right:.45rem; vertical-align:-1px}

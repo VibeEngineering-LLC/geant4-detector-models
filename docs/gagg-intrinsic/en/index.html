@@ -13,32 +13,31 @@
     <div class="title">
       <p class="eyebrow">RadiaCode-103G · GAGG 10×10×10 mm · Geant4 11.4.2 model</p>
       <h1>Intrinsic background of the GAGG crystal</h1>
-      <p class="stand">Model spectrum of the intrinsic radioactivity of a bare 6.63 g GAGG cube and its decomposition into
-      12 components (templates normalized per parent decay, convolved with the RC-103G resolution). The scale shows energy in
-      electron-equivalent keV (keVee) on the γ energy scale. The live time used to convert to counts is <b>668,023.5 s</b>.</p>
-      <p class="stand" id="status">Drag the mouse over the plot to zoom in on the selected region; double-click to restore the full range.</p>
+      <p class="stand">Total model spectrum of the intrinsic radioactivity of a GAGG cube without housing, of mass 6.63 g, and its decomposition into
+      12 components (response spectra per decay of the parent nuclide; convolved with a Gaussian instrument function — broadening of the lines according to the energy resolution of the RC-103G). The energy axis shows the scintillation response of the event — the amplitude of the scintillation signal expressed in electron-equivalent energy: a value in keVee is the energy of an electron or γ photon that gives the same scintillation response; for α particles it is lower than their energy because of the ionization quenching of the scintillation. The live time used to convert to counts is <b>668,023.5 s</b>.</p>
+      <p class="stand" id="status">Dragging the mouse over the plot zooms in on the selected region; a double-click restores the full range.</p>
       <p class="stand"><a href="../" hreflang="ru" lang="ru">Русский</a></p>
     </div>
   </div>
   <div class="panel">
     <div class="toolbar" role="toolbar" aria-label="What to show">
       <span class="grp"><span class="seg-label">Counts</span>
-      <div class="seg" id="ctl-scale" role="group" aria-label="vertical scale">
+      <div class="seg" id="ctl-scale" role="group" aria-label="vertical axis scale">
         <button type="button" class="btn" data-v="log" aria-pressed="true">Log</button>
         <button type="button" class="btn" data-v="lin" aria-pressed="false">Lin</button>
       </div></span>
       <span class="grp"><span class="seg-label">Resolution</span>
-      <div class="seg" id="ctl-smear" role="group" aria-label="smearing">
-        <button type="button" class="btn" data-v="on" aria-pressed="true">Smeared</button>
-        <button type="button" class="btn" data-v="off" aria-pressed="false">Unsmeared</button>
+      <div class="seg" id="ctl-smear" role="group" aria-label="broadening">
+        <button type="button" class="btn" data-v="on" aria-pressed="true">With broadening</button>
+        <button type="button" class="btn" data-v="off" aria-pressed="false">Without broadening</button>
       </div></span>
       <span class="grp"><span class="seg-label">Units</span>
       <div class="seg" id="ctl-unit" role="group" aria-label="units">
         <button type="button" class="btn" data-v="rate" aria-pressed="true">counts/(s·keV)</button>
         <button type="button" class="btn" data-v="counts" aria-pressed="false">over 668,023.5 s</button>
       </div></span>
-      <span class="grp"><span class="seg-label">Measurement</span>
-      <div class="seg" id="ctl-meas" role="group" aria-label="show the measurement">
+      <span class="grp"><span class="seg-label">Measured spectrum</span>
+      <div class="seg" id="ctl-meas" role="group" aria-label="show the measured spectrum">
         <button type="button" class="btn" data-v="on" aria-pressed="true">Show</button>
         <button type="button" class="btn" data-v="off" aria-pressed="false">Hide</button>
       </div></span>
@@ -53,30 +52,30 @@
     </div>
     <div class="m1-wrap">
       <h2 class="sec-h">Spectrum and decomposition</h2>
-      <p class="method-lede">The solid red line is the sum of the components with weight 1; the colored fill shows the same components stacked
-      (smallest contribution in the visible range at the bottom, largest at the top; the table below lists them in order of decreasing contribution).
-      The black stepped line is the RC-103G spectrum (unit 1) measured in a lead shield (22–30.12.2024, live time
-      668,023.5 s); the energy scale of the file was checked at a single point, the ²¹²Pb 238.6 keV line (the slope was not verified; see “Limitations and caveats”).
-      ¹⁷⁶Lu is included in the sum at its upper-limit activity (4.3 Bq/kg; see “Limitations and caveats”), so the sum is
+      <p class="method-lede">The solid red line is the sum of the components with weighting factor 1; the colored fill shows the same components stacked
+      (smallest contribution in the displayed energy range at the bottom, largest at the top; the table below lists them in order of decreasing contribution).
+      The black stepped line is the RC-103G measured spectrum (unit 1) in a lead shield (22–30.12.2024, live time
+      668,023.5 s); the energy calibration from the file was checked at a single point, the ²¹²Pb 238.6 keV line (the slope was not verified; see “Limitations and caveats”).
+      ¹⁷⁶Lu is included in the sum at the specific activity of its upper limit (4.3 Bq/kg; see “Limitations and caveats”), so the sum is
       an upper estimate with respect to lutetium. The region below 238 keV is shaded:
-      the resolution function there is not confirmed by lines.
-      The main curve uses the Birks parameter kB = 0.0072 (LANL, GAGG High Yield): kB itself was not fitted, but of the four literature values, the one closest to the measurement was chosen for it; hence the closeness of the main curve to the measurement is not a test of the model. The independent
+      the energy dependence of the FWHM (energy resolution) there is not confirmed by lines.
+      The main curve uses the Birks parameter kB = 0.0072 (LANL, GAGG High Yield): kB itself was not fitted, but of the four literature values, the one closest to the measured spectrum was chosen for it; hence the closeness of the main curve to the measured spectrum is not a test of the model. The independent
       prediction is the light-blue band spanning all 4 literature kB values (maximum of the ¹⁵²Gd+¹⁴⁷Sm sum for kB from 0.0121 to 0.0065); the dashed
-      lines mark the measurement, the model maximum, and the Belli formula (comparison).</p>
+      lines mark the measured peak position, the model maximum, and the Belli formula (cross-check).</p>
       <div class="legendbar" id="legend-main"></div>
       <div class="plotwrap" id="wrap-main"><div class="plotbox">
-        <canvas id="cv-main" tabindex="0" role="img" aria-label="Model spectrum of the intrinsic background of GAGG · drag the mouse to zoom in on the selected region, double-click for the full range"></canvas>
+        <canvas id="cv-main" tabindex="0" role="img" aria-label="Total model spectrum of the intrinsic background of GAGG · dragging the mouse zooms in on the selected region, double-click for the full range"></canvas>
         <div class="chart-tip" id="tip-main" hidden></div>
       </div></div>
 
-      <h2 class="sec-h">Components in the visible range</h2>
+      <h2 class="sec-h">Components in the displayed range</h2>
       <p class="method-lede" id="table-range"></p>
       <div class="scroll" id="comp-table"></div>
-      <p class="method-lede">The rate is the integral over the 1 keV bins of the visible range, in s⁻¹; the counts are the rate × 668,023.5 s.
-      The table is recalculated when the plot is zoomed and when “smeared / unsmeared” is toggled.
+      <p class="method-lede">The count rate is the sum over the histogram channels 1 keV wide in the displayed range, in s⁻¹; the counts are the count rate × 668,023.5 s.
+      The table is recalculated when the plot is zoomed and when “with broadening / without broadening” is toggled.
       The frame around a name indicates the decay type; the first line under the name states what produces the peak or continuum (positions in keVee,
-      α light yield at kB 0.0072 (LANL), before smearing, histogram step 1 keV; “centroid” in this table is taken from the peak bin, and the true centroid may
-      differ by up to 0.4 keV); the second line gives the basis of the activity. A β particle mostly loses its energy in the crystal (the range of low-energy β particles is
+      scintillation response of the α particle at kB 0.0072 (LANL), before broadening, histogram channel width 1 keV; the position in this table is the midpoint of the peak-maximum channel, and the centroid (the center of gravity of the peak) may
+      differ from it by up to 0.4 keV); the second line gives the justification of the specific activity value. A β particle mostly loses its energy in the crystal (the range of low-energy β particles is
       much less than 1 cm — an estimate, not checked separately); the accompanying γ rays are registered in the same pulse if
       they are absorbed (some escape from the cube), so β decays yield a continuum rather than pure γ peaks.</p>
 
@@ -85,70 +84,70 @@
 
       <h2 class="sec-h" id="caveats">Limitations and caveats</h2>
       <ul class="notes">
-        <li><b>The activities are those of a different crystal.</b> The normalization follows Belli et al., J. Phys. G 53 (2026) 045101, Table 1
-        (a crystal from Epic-Crystal); the activities of the RC-103G crystal were not measured (except for the upper limit for ¹⁷⁶Lu, which was taken from the RC-103G measurement). In particular, ¹⁷⁶Lu and ¹⁴⁷Sm are probably impurities specific to a
+        <li><b>The specific activities are those of a different crystal.</b> The normalization follows Belli et al., J. Phys. G 53 (2026) 045101, Table 1
+        (a crystal from Epic-Crystal); the specific activities of the RC-103G crystal were not measured (except for the upper limit for ¹⁷⁶Lu, which was taken from the measured spectrum of the RC-103G). In particular, ¹⁷⁶Lu and ¹⁴⁷Sm are probably impurities specific to a
         given manufacturer and in the RC-103G crystal may differ severalfold or be absent. There are two further departures from Table 1 (besides ¹⁷⁶Lu, ¹⁵²Gd, and ¹⁴⁷Sm; see “Initial composition of the crystal”): ²²⁸Ra is taken equal to
         ²²⁸Th (11.52 mBq/kg; an assumption of equilibrium), whereas Belli et al. give only an upper limit, ≤ 4 mBq/kg, for ²²⁸Ra — in the model
         ²²⁸Ra is 2.9 times as high as this limit; ²³⁵U (2 mBq/kg) is the upper limit of Belli et al., not a measured value.</li>
-        <li><b>¹⁷⁶Lu is included in the sum at its upper limit.</b> Belli et al. give 11 Bq/kg, but this level is incompatible with the RC-103G measurement: in
-        each of the four 100 keV windows in the 400–800 keV range, lutetium alone would give 2.1–2.5 times more counts than the instrument recorded there in total. If the whole residual
-        “measurement − model” in the 600–700 keV window is attributed to lutetium, the limit is ≤ 0.39 of the Belli level, that is,
-        ≤ 4.3 Bq/kg (4309 mBq/kg). ¹⁷⁶Lu is included in the sum with this activity. The limit is an overestimate: the residual also contains
-        the external background of the shield. In the model, lutetium inside the crystal has no narrow 202/307 keV peaks — the β particle and the absorbed part of the γ cascade
-        fall into one pulse, which produces a broad hump at 150–850 keV.</li>
-        <li><b>No external background yet.</b> The external background (shielding, room, cosmic rays) is not modeled.</li>
-        <li><b>The nonproportionality of GAGG is not modeled</b>: the light yield of e⁻/γ is taken to be 1:1 with the energy deposition.</li>
-        <li><b>The α light yield follows Birks’ law with a literature kB; kB is not fitted.</b> Geant4 provides no kB for GAGG; the values are taken from measurements with accelerator beams:
+        <li><b>¹⁷⁶Lu is included in the sum at its upper limit.</b> Belli et al. give 11 Bq/kg, but this level is incompatible with the measured spectrum of the RC-103G: in
+        each of the four 100 keV windows in the 400–800 keV range, lutetium alone would give 2.1–2.5 times more counts than the instrument recorded there in total. If the whole difference spectrum
+        “measured spectrum − model” in the 600–700 keV window is attributed to lutetium, the limit is ≤ 0.39 of the Belli level, that is,
+        ≤ 4.3 Bq/kg (4309 mBq/kg). ¹⁷⁶Lu is included in the sum with this specific activity. The limit is an overestimate: the difference spectrum also contains
+        the external background of the lead shield. In the model, lutetium inside the crystal has no narrow 202/307 keV peaks — the β particle and the absorbed part of the γ cascade
+        fall into one pulse, which produces a broad maximum at 150–850 keV.</li>
+        <li><b>No external background yet.</b> The external background (shielding, room, cosmic radiation) is not modeled.</li>
+        <li><b>The nonproportionality of the scintillation response of GAGG is not modeled</b>: the scintillation response to e⁻/γ is taken as proportional to the energy deposition (in the ratio 1:1).</li>
+        <li><b>The scintillation response of the α particle follows Birks’ law with a literature kB; kB is not fitted.</b> Geant4 provides no kB for GAGG; the values are taken from measurements with accelerator beams:
         0.0065 g·MeV⁻¹·cm⁻² (Furuno et al., JINST 16 (2021) P10012) and 0.0072 / 0.0093 / 0.0121 (Espinoza et al., IEEE Trans. Nucl. Sci. 71 (2024) 2102,
-        LANL; GAGG types High Yield / Standard / Fast Decay, Advatech crystals). kB is not fitted to the α particles of the intrinsic background or to the RC-103G measurement. However, the main curve was selected using the measurement: of the four literature values, the one closest to it was taken,
-        kB = 0.0072, so its deviation from the measurement (+17.7 keV) is the smallest of the four; it is neither a blind prediction nor
+        LANL; GAGG types High Yield / Standard / Fast Decay, Advatech crystals). kB is not fitted to the α particles of the intrinsic background or to the measured spectrum of the RC-103G. However, the main curve was selected using the measured spectrum: of the four literature values, the one closest to it was taken,
+        kB = 0.0072, so its deviation from the measured spectrum (+17.7 keV) is the smallest of the four; it is neither a blind prediction nor
         a test of the model. The GAGG type in the RC-103G is unknown, so the independent prediction is the entire band of the four kB values, not a single number.
-        Recoil nuclei are assigned a light yield of 0 (an assumption; not calculated).</li>
-        <li><b>The scale S and the transfer of kB are unverified assumptions.</b> S is derived from the response to 662 keV γ rays, where the electron light yield is quenched
-        by the same law, whereas in the decays the electrons are not quenched (1:1); the two scales are matched only at the 662 keV point, and the shift of the α line near 350 keV
+        Recoil nuclei: scintillation response 0 (an assumption; not calculated).</li>
+        <li><b>The normalization factor S and the applicability of the kB values are unverified assumptions.</b> S is derived from the scintillation response to the full absorption of 662 keV γ rays, where the scintillation response of electrons is subject to quenching
+        by the same law, whereas in the decays the quenching of electrons is not taken into account (1:1); the scintillation response scales are matched only at the 662 keV point, and the shift of the α peak near 350 keV
         has not been estimated. The authors’ kB values were obtained using stopping powers: Furuno — SRIM, LANL — SRIM and ESTAR/PSTAR; in our calculation we use G4EmCalculator (ComputeElectronicDEDX), without recalculating kB.
-        Birks’ law is extrapolated beyond the measured dE/dx interval (up to 200 MeV·cm²·g⁻¹ in Furuno): for α particles of 2–9 MeV, dE/dx is higher at the end of their range.</li>
-        <li><b>Resolution</b> — the FWHM function = √(a + bE + cE²), a = 75.402 keV², b = 2.4752 keV, c = 3.9295·10⁻⁴, was fitted to the lines
-        at 238.6–2614.5 keV of a single instrument (RC-103G (unit 2)). Below 238 keV the function is not confirmed; it is an extrapolation.</li>
-        <li><b>Bare cube without housing</b>: the SiPM, the board, and the housing of the RC-103G are absent from the geometry.</li>
+        Birks’ law is extrapolated beyond the measured range of the mass stopping power (up to 200 MeV·cm²·g⁻¹ in Furuno): for α particles of 2–9 MeV, the stopping power is higher at the end of their range.</li>
+        <li><b>Energy resolution</b> — the energy dependence of the FWHM (full width at half maximum) = √(a + bE + cE²), a = 75.402 keV², b = 2.4752 keV, c = 3.9295·10⁻⁴, was fitted to the lines
+        at 238.6–2614.5 keV of a single instrument (RC-103G (unit 2)). Below 238 keV the dependence is not confirmed; it is an extrapolation.</li>
+        <li><b>Cube without housing</b>: the SiPM, the board, and the housing of the RC-103G are absent from the geometry.</li>
         <li><b>The 1 µs pulse pile-up window</b> is an assumption: the signal formation in the RC-103G is not known.</li>
-        <li><b>How the α peak of the model was obtained.</b> Geant4 calculates the α light yield step by step according to Birks’ law (section “What was calculated and how”, step 6);
-        the Belli formula is not part of the calculation. At kB = 0.0072, the centroid of the ¹⁵²Gd line in the templates is 358.98 keVee (peak bin 358.5),
-        and the peak bin of ¹⁴⁷Sm is 377.5; the maximum of the Gd+Sm sum after smearing is 367.5 keV (midpoints of 1 keV bins; the same value
-        is labeled on the plot, and the label is taken from the data). The activities are 792.8 mBq/kg for Gd (calculated from natural gadolinium) and 762 mBq/kg
-        for Sm (the remainder up to the Belli sum of 1555), i.e., almost 1:1, so the maximum of the sum lies between the lines. A peak at
+        <li><b>How the α peak of the model was obtained.</b> Geant4 calculates the scintillation response of the α particle in steps of the trajectory calculation (particle transport steps: at each step the ionization energy losses and the scintillation response they create are computed) according to Birks’ law (section “What was calculated and how”, item 6);
+        the Belli formula is not part of the calculation. At kB = 0.0072, the centroid of the ¹⁵²Gd line in the response spectra is 358.98 keVee (midpoint of the peak-maximum channel 358.5),
+        the midpoint of the peak-maximum channel of ¹⁴⁷Sm is 377.5; the maximum of the Gd+Sm sum after broadening is 367.5 keV (midpoints of histogram channels 1 keV wide; the same value
+        is labeled on the plot, and the label is taken from the data). The specific activities are 792.8 mBq/kg for Gd (calculated from natural gadolinium) and 762 mBq/kg
+        for Sm (the difference up to the Belli sum of 1555), i.e., almost 1:1, so the maximum of the sum lies between the lines. A peak at
         349.8 keV was observed with the RC-103G (unit 1). It is interpreted as the maximum of an unresolved Gd+Sm mixture, on the grounds that the count rate is close to the Gd+Sm sum of the model; however, the peak width
-        (31.5 keV) is closer to that of a single line (in the formula template, the mixture gives 43.0 keV and Gd alone 31.4 keV; for kB 0.0072, 41.4 and 31.9 keV, our recalculation), and this is an open question. Therefore
-        the comparison of the maximum of the sum with 349.8 keV (+17.7 keV) is tentative; moreover, the histogram step is 1 keV, the statistical uncertainty
-        of the positions was not calculated, and the energy scale of the instrument near 350 keV is uncertain by approximately 5 keV (gain drift of the same instrument between
+        (31.5 keV) is closer to that of a single line (in the calculation by the Belli formula, the mixture gives 43.0 keV and Gd alone 31.4 keV; for kB 0.0072, 41.4 and 31.9 keV, our recalculation), and this is an open question. Therefore
+        the comparison of the maximum of the sum with 349.8 keV (+17.7 keV) is tentative; moreover, the histogram channel width is 1 keV, the statistical uncertainty
+        of the positions was not calculated, and the uncertainty of the energy calibration of the instrument near 350 keV is approximately 5 keV (gain drift of the same instrument between
         July and December 2024). For the four literature kB values, the maximum of the sum ranges from 239.5 keV (kB 0.0121) to 398.5 keV (kB 0.0065),
-        and is 298.5 keV at 0.0093; no value gives 349.8 keV, and reproducing it would require kB ≈ 0.0077 (an estimate by linear interpolation between
-        0.0072 and 0.0093, not a run; for details see <a href="#method">“What was calculated and how”</a>, step 6).</li>
-        <li><b>Disagreement with the Belli formula.</b> The Belli formula (Eq. 7) is defined for α energies of 2.1–7.4 MeV; the comparison is made with the formula
-        template — the formula applied to the same decays. In this range, no literature kB agrees with the formula
+        and is 298.5 keV at 0.0093; no value gives 349.8 keV, and agreement with the measured value would be obtained at kB ≈ 0.0077 (an estimate by linear interpolation between
+        0.0072 and 0.0093, not a calculation result; for details see <a href="#method">“What was calculated and how”</a>, item 6).</li>
+        <li><b>Disagreement with the Belli formula.</b> The Belli formula (Eq. 7) is defined for α energies of 2.1–7.4 MeV; the comparison is made with the calculation
+        by the Belli formula — the formula applied to the same decays. In this range, no literature kB agrees with the formula
         simultaneously for ¹⁵²Gd (2.15 MeV) and for ²¹⁵Po (7.39 MeV): at kB 0.0065, +12.09% and +2.02%; at 0.0072, +3.30% and −5.35%.
-        ²¹⁴Po (7.69 MeV) and ²¹²Po (8.79 MeV) lie outside the range of the formula, so for them this is an extrapolation of the formula: α/γ increases from ¹⁵²Gd to ²¹²Po
-        by a factor of 1.42–1.48 in the model and by a factor of 1.61 according to the extended formula. In Belli et al., the α scale above ~2 MeV on the γ scale is distorted by saturation
-        of the digitizer (footnote 8, caption of Fig. 6), but for ²¹²Po (8.79 MeV) they reconstructed the signal shape and obtained a peak at
-        ≈ 2.25 MeV on the γ scale, “in agreement with the α/γ ratio (see equation (7))” (caption of Fig. 10): that is, there is a measurement at this point,
-        and it is closer to the formula (2293.5 keVee) than to the literature kB values 0.0072–0.0121 (−8 … −38% from the formula); kB 0.0065 (2264.5 keVee, −1.3%) is closer still to the measurement, and the accuracy of reading the peak from the figure has not been estimated; the disagreement here is not merely an extrapolation.
+        ²¹⁴Po (7.69 MeV) and ²¹²Po (8.79 MeV) lie outside the range of the formula, so for them this is an extrapolation of the formula: α/γ (the ratio of the scintillation response of an α particle to the response of a γ photon of the same energy) increases from ¹⁵²Gd to ²¹²Po
+        by a factor of 1.42–1.48 in the model and by a factor of 1.61 according to the extrapolated formula. In Belli et al., the energy calibration of the α above ~2 MeV in units of γ energy is distorted by saturation
+        of the digitizer (ADC) (footnote 8, caption of Fig. 6), but for ²¹²Po (8.79 MeV) they reconstructed the signal shape and obtained a peak at
+        ≈ 2.25 MeV on the γ energy scale, “in agreement with the α/γ ratio (see equation (7))” (caption of Fig. 10): that is, there is a measurement at this point,
+        and it is closer to the formula (2293.5 keVee) than to the literature kB values 0.0072–0.0121 (−8 … −38% from the formula); kB 0.0065 (2264.5 keVee, −1.3%) is closer still to the measured value, and the accuracy of reading the peak from the figure has not been estimated; the disagreement here is not merely an extrapolation.
         The maximum of the Gd+Sm sum by the Belli formula is 356.5 keV (the dashed line
-        “Belli formula (comparison)” on the plot; the formula was derived on a different crystal). The table of lines is in the section “What was
-        calculated and how”, step 6.</li>
-        <li><b>Limit on the α step and the recoil energy.</b> The α step in the crystal is limited to 0.05 µm; because of this, the templates are not bitwise identical
-        to the earlier ones (the stream of random numbers shifts); statistical equivalence to the earlier templates was not verified. The recoil energy
-        in the “raw” column of the template files is overestimated (T2: 94.7 keV per decay for a kinetic energy of 62.9 keV); the cause has not been established — an open
-        question. By construction, the effect on the α light yield is expected to be zero (the light yield of recoil nuclei is taken to be 0 — an assumption), but in the check of the earlier
-        fit variants, the distribution of the light yield of T2 did not scale strictly with S — a shift of 0.3–0.5 keV of undetermined origin.</li>
-        <li><b>The difference between the measurement and the model is not purely external background.</b> The model activities are taken from a different crystal (Belli), so
-        the “measurement − model” difference also contains the disagreement between the intrinsic background of our crystal and the model.</li>
-        <li><b>Below ~238 keV the resolution is not confirmed</b> — the shape of the model there is an extrapolation; a comparison with the measurement in this region is not interpreted.</li>
-        <li><b>Different instruments.</b> The measurement is from the RC-103G (unit 1); the FWHM function of the model is based on the RC-103G (unit 2).</li>
+        “Belli formula (cross-check)” on the plot; the formula was derived on a different crystal). The table of lines is in the section “What was
+        calculated and how”, item 6.</li>
+        <li><b>Limit on the α transport step and the recoil energy.</b> The transport step of the α particle in the crystal (the Geant4 particle transport step, at which the ionization energy losses and the scintillation response they create are computed) is limited to 0.05 µm so that Birks’ law is applied to locally almost constant energy losses per unit path length; because of this limit, the response spectra are not bitwise identical
+        to the earlier ones (the sequence of random numbers shifts); statistical equivalence to the earlier response spectra was not verified. The recoil energy
+        in the “raw” energy-deposition column of the response-spectrum files is overestimated (T2: 94.7 keV per decay for a kinetic energy of 62.9 keV); the cause has not been established — an open
+        question. By construction, the effect on the scintillation response of the α is expected to be zero (the scintillation response of recoil nuclei is taken to be 0 — an assumption), but in the check of the earlier
+        fit variants, the distribution of the scintillation response of T2 did not scale strictly with S — a shift of 0.3–0.5 keV of undetermined origin.</li>
+        <li><b>The difference between the measured spectrum and the model is not purely external background.</b> The specific activities of the model are taken from a different crystal (Belli), so
+        the “measured spectrum − model” difference also contains the disagreement between the intrinsic background of our crystal and the model.</li>
+        <li><b>Below ~238 keV the resolution is not confirmed</b> — the shape of the model there is an extrapolation; a comparison with the measured spectrum in this region is not interpreted.</li>
+        <li><b>Different instruments.</b> The measured spectrum is from the RC-103G (unit 1); the energy dependence of the FWHM of the model is based on the RC-103G (unit 2).</li>
         <li><b>Near 352 keV</b> the γ line of ²¹⁴Pb (351.9 keV) coincides in position with the α peak of the crystal; they cannot be separated in this region.</li>
-        <li><b>The energy scale of the measurement was checked at only one point.</b> The SpectraVibe measurement tool accepted a single γ reference line in this file —
-        ²¹²Pb 238.6 keV (the residual of the file scale is +2.1 keV against a tolerance of ±5.1 keV); the offset was checked at one point, and the slope and curvature of the scale
-        were not verified, so the scale cannot be considered verified. Between July and December 2024, the α peak of the same instrument shifted by
-        ~2 channels with identical calibration coefficients in the files — the scale near 350 keV is uncertain by approximately 5 keV.</li>
+        <li><b>The energy calibration of the measured spectrum was checked at only one point.</b> The SpectraVibe program accepted a single reference γ line in this file —
+        ²¹²Pb 238.6 keV (the deviation of the reference line position from the tabulated energy is +2.1 keV against a permissible deviation of ±5.1 keV); the offset was checked at one point, and the slope and curvature of the calibration
+        were not verified, so the calibration cannot be considered verified. Between July and December 2024, the α peak of the same instrument shifted by
+        ~2 channels with identical calibration coefficients in the files — the uncertainty of the energy calibration near 350 keV is approximately 5 keV.</li>
         <li><b>Instrument name in the file.</b> In the measurement file, the instrument is named “RadiaCode-110” (probably a software profile), while the instrument
         itself is an RC-103G (unit 1).</li>
       </ul>
@@ -156,9 +155,9 @@
     </div>
   </div>
   <footer class="bot">
-    <p>Geant4 11.4.2 calculation (G4EmStandardPhysics_option4 + G4RadioactiveDecayPhysics, 10⁶ parent decays per template);
-    normalization of the activities — Belli et al., J. Phys. G 53 (2026) 045101, Table 1; α light yield — Birks’ law in Geant4 with literature kB (Furuno et al. 2021, Espinoza et al. 2024);
-    the Belli formula (Eq. 7) serves only for comparison. The numbers in the plot and in the “Components” table are exported from the calculation; the numbers in the table of lines
+    <p>Geant4 11.4.2 calculation (G4EmStandardPhysics_option4 + G4RadioactiveDecayPhysics, 10⁶ decays of the parent nuclide per response spectrum);
+    normalization of the specific activities — Belli et al., J. Phys. G 53 (2026) 045101, Table 1; scintillation response of the α particle — Birks’ law in Geant4 with literature kB (Furuno et al. 2021, Espinoza et al. 2024);
+    the Belli formula (Eq. 7) serves only as a cross-check. The numbers in the plot and in the “Components” table are exported from the calculation; the numbers in the table of lines
     were checked against lines_table_kB_indep.csv; the texts of the sections were checked in independent passes on 19.09.2026, the comments
     were incorporated, and some statements remain not fully proven (the reports are in the working files of the project) · 19.09.2026 ·
     <a href="../../">all project pages</a></p>

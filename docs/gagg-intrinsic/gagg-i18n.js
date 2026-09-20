@@ -43,18 +43,18 @@ window.GAGG_I18N = {
       T12: "Belli, табл. 1"
     },
     PHYS: {
-      T1: ["α", "α 2146 кэВ полностью поглощается, сцинтилляционный отклик подвержен ионизационному гашению (закон Биркса) → центроид ≈ 358,98 (середина канала максимума 358,5)"],
+      T1: ["α", "α 2146 кэВ полностью поглощается, сцинтилляционный отклик подвержен ионизационному гашению (закон Биркса) → центроид ≈ 358,89 (середина канала максимума 358,5)"],
       T2: ["α", "α 2248 кэВ, ионизационное гашение → середина канала максимума пика ≈ 377,5; вместе с Gd-152 дают главный пик ~367,5"],
       T3: ["β⁻ + γ", "β⁻ на уровень 597 кэВ ¹⁷⁶Hf, каскад γ 307/202/88 (данные Geant4) — поглощённая часть в том же импульсе → широкий максимум 150–850, узких пиков нет"],
       T4: ["α", "α 4011 кэВ → ≈ 745,5; ветвь на уровень 64 кэВ — α с ионизационным гашением плюс разрядка уровня (без гашения)"],
       T5: ["β⁻ + γ", "β⁻ Ra-228 и Ac-228 с γ-каскадом в одном импульсе → континуум от нуля, вклад в пик суммы вблизи 12 кэВ"],
-      T6: ["α, β⁻ + γ", "α Th-228, Ra-224, Rn-220, Po-216 → ≈ 1100,5 / 1170,5 / 1338,5 / 1480,5; β Pb-212, Bi-212, Tl-208 — континуум; Bi-212→Po-212 накладываются в один импульс (90,5 %), остальные Po-212 → ≈ 2104,5"],
+      T6: ["α, β⁻ + γ", "α Th-228, Ra-224, Rn-220, Po-216 → ≈ 1099,5 / 1170,5 / 1338,5 / 1479,8; β Pb-212, Bi-212, Tl-208 — континуум; Bi-212→Po-212 накладываются в один импульс (90,5 %), остальные Po-212 → ≈ 2103,5"],
       T7: ["α, β⁻", "α U-238 4198 кэВ → ≈ 789,5; β Th-234 и Pa-234m — континуум от нуля, главный вклад в пик суммы вблизи 12 кэВ"],
       T8: ["α", "α 4774 кэВ → ≈ 931,5; ветвь на уровень 53 кэВ — α с ионизационным гашением плюс разрядка уровня"],
       T9: ["α", "α 4687 кэВ → ≈ 909,5; ветвь на уровень 68 кэВ — α с ионизационным гашением плюс разрядка уровня"],
-      T10: ["α, β⁻ + γ", "α Ra-226, Rn-222, Po-218, Po-214 → ≈ 934,08 / 1117,5 / 1258,5 / 1754,5 (Po-214 практически не накладывается, τ 236 мкс); β Pb-214, Bi-214 — континуум"],
+      T10: ["α, β⁻ + γ", "α Ra-226, Rn-222, Po-218, Po-214 → ≈ 933,5 / 1117,5 / 1257,5 / 1754,0 (Po-214 практически не накладывается, τ 236 мкс); β Pb-214, Bi-214 — континуум"],
       T11: ["α, β⁻", "α 4397 кэВ (57 %) на уровень 205 кэВ: α с ионизационным гашением ≈ 837,5 плюс 205 кэВ разрядки; β Th-231 — мягкий континуум"],
-      T12: ["α, β⁻ + γ", "α Th-227, Ra-223, Rn-219, Bi-211, Po-215 → 1131,5–1662,5 (Rn-219 ≈ 1492,5, Po-215 ≈ 1662,5); β Ac-227, Pb-211, Tl-207 — континуум"]
+      T12: ["α, β⁻ + γ", "α Th-227, Ra-223, Rn-219, Bi-211, Po-215 → 1131,0–1661,5 (Rn-219 ≈ 1491,9, Po-215 ≈ 1661,5); β Ac-227, Pb-211, Tl-207 — континуум"]
     }
   },
   en: {
@@ -99,18 +99,18 @@ window.GAGG_I18N = {
       T12: "Belli, Table 1"
     },
     PHYS: {
-      T1: ["α", "α (2146 keV) is fully absorbed, and its scintillation response is subject to ionization quenching (Birks’ law) → centroid ≈ 358.98 (midpoint of the peak-maximum channel 358.5)"],
+      T1: ["α", "α (2146 keV) is fully absorbed, and its scintillation response is subject to ionization quenching (Birks’ law) → centroid ≈ 358.89 (midpoint of the peak-maximum channel 358.5)"],
       T2: ["α", "α 2248 keV, ionization quenching → midpoint of the peak-maximum channel ≈ 377.5; together with Gd-152 they give the main peak at ~367.5"],
       T3: ["β⁻ + γ", "β⁻ to the 597 keV level of ¹⁷⁶Hf, γ cascade 307/202/88 keV (Geant4 data) — the absorbed part is in the same pulse → broad maximum at 150–850 keV, no narrow peaks"],
       T4: ["α", "α (4011 keV) → ≈ 745.5; branch to the 64 keV level — α with ionization quenching plus the de-excitation of the level (without quenching)"],
       T5: ["β⁻ + γ", "β⁻ of Ra-228 and Ac-228 with the γ cascade in one pulse → continuum from zero, contribution to the peak of the sum near 12 keV"],
-      T6: ["α, β⁻ + γ", "α of Th-228, Ra-224, Rn-220, Po-216 → ≈ 1100.5 / 1170.5 / 1338.5 / 1480.5; β of Pb-212, Bi-212, Tl-208 — continuum; Bi-212→Po-212 pile up into one pulse (90.5%), the remaining Po-212 → ≈ 2104.5"],
+      T6: ["α, β⁻ + γ", "α of Th-228, Ra-224, Rn-220, Po-216 → ≈ 1099.5 / 1170.5 / 1338.5 / 1479.8; β of Pb-212, Bi-212, Tl-208 — continuum; Bi-212→Po-212 pile up into one pulse (90.5%), the remaining Po-212 → ≈ 2103.5"],
       T7: ["α, β⁻", "α of U-238 (4198 keV) → ≈ 789.5; β of Th-234 and Pa-234m — continuum from zero, main contribution to the peak of the sum near 12 keV"],
       T8: ["α", "α (4774 keV) → ≈ 931.5; branch to the 53 keV level — α with ionization quenching plus the de-excitation of the level"],
       T9: ["α", "α (4687 keV) → ≈ 909.5; branch to the 68 keV level — α with ionization quenching plus the de-excitation of the level"],
-      T10: ["α, β⁻ + γ", "α of Ra-226, Rn-222, Po-218, Po-214 → ≈ 934.08 / 1117.5 / 1258.5 / 1754.5 (Po-214 practically does not pile up, τ 236 µs); β of Pb-214, Bi-214 — continuum"],
+      T10: ["α, β⁻ + γ", "α of Ra-226, Rn-222, Po-218, Po-214 → ≈ 933.5 / 1117.5 / 1257.5 / 1754.0 (Po-214 practically does not pile up, τ 236 µs); β of Pb-214, Bi-214 — continuum"],
       T11: ["α, β⁻", "α 4397 keV (57%) to the 205 keV level: α with ionization quenching ≈ 837.5 plus 205 keV of de-excitation; β of Th-231 — soft continuum"],
-      T12: ["α, β⁻ + γ", "α of Th-227, Ra-223, Rn-219, Bi-211, Po-215 → 1131.5–1662.5 (Rn-219 ≈ 1492.5, Po-215 ≈ 1662.5); β of Ac-227, Pb-211, Tl-207 — continuum"]
+      T12: ["α, β⁻ + γ", "α of Th-227, Ra-223, Rn-219, Bi-211, Po-215 → 1131.0–1661.5 (Rn-219 ≈ 1491.9, Po-215 ≈ 1661.5); β of Ac-227, Pb-211, Tl-207 — continuum"]
     }
   }
 };

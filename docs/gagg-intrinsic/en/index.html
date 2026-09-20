@@ -112,12 +112,12 @@
         <li><b>Cube without housing</b>: the SiPM, the board, and the housing of the RC-103G are absent from the geometry.</li>
         <li><b>The 1 µs pulse pile-up window</b> is an assumption: the signal formation in the RC-103G is not known.</li>
         <li><b>How the α peak of the model was obtained.</b> Geant4 calculates the scintillation response of the α particle in steps of the trajectory calculation (particle transport steps: at each step the ionization energy losses and the scintillation response they create are computed) according to Birks’ law (section “What was calculated and how”, item 6);
-        the Belli formula is not part of the calculation. At kB = 0.0072, the centroid of the ¹⁵²Gd line in the response spectra is 358.98 keVee (midpoint of the peak-maximum channel 358.5),
+        the Belli formula is not part of the calculation. At kB = 0.0072, the centroid of the ¹⁵²Gd line in the response spectra is 358.89 keVee (midpoint of the peak-maximum channel 358.5),
         the midpoint of the peak-maximum channel of ¹⁴⁷Sm is 377.5; the maximum of the Gd+Sm sum after broadening is 367.5 keV (midpoints of histogram channels 1 keV wide; the same value
         is labeled on the plot, and the label is taken from the data). The specific activities are 792.8 mBq/kg for Gd (calculated from natural gadolinium) and 762 mBq/kg
         for Sm (the difference up to the Belli sum of 1555), i.e., almost 1:1, so the maximum of the sum lies between the lines. A peak at
         349.8 keV was observed with the RC-103G (unit 1). It is interpreted as the maximum of an unresolved Gd+Sm mixture, on the grounds that the count rate is close to the Gd+Sm sum of the model; however, the peak width
-        (31.5 keV) is closer to that of a single line (in the calculation by the Belli formula, the mixture gives 43.0 keV and Gd alone 31.4 keV; for kB 0.0072, 41.4 and 31.9 keV, our recalculation), and this is an open question. Therefore
+        (31.5 keV) is closer to that of a single line (in the calculation by the Belli formula, the mixture gives 43.0 keV and Gd alone 31.4 keV; for kB 0.0072, 41.2 and 31.9 keV, our recalculation), and this is an open question. Therefore
         the comparison of the maximum of the sum with 349.8 keV (+17.7 keV) is tentative; moreover, the histogram channel width is 1 keV, the statistical uncertainty
         of the positions was not calculated, and the uncertainty of the energy calibration of the instrument near 350 keV is approximately 5 keV (gain drift of the same instrument between
         July and December 2024). For the four literature kB values, the maximum of the sum ranges from 239.5 keV (kB 0.0121) to 398.5 keV (kB 0.0065),
@@ -125,9 +125,9 @@
         0.0072 and 0.0093, not a calculation result; for details see <a href="#method">“What was calculated and how”</a>, item 6).</li>
         <li><b>Disagreement with the Belli formula.</b> The Belli formula (Eq. 7) is defined for α energies of 2.1–7.4 MeV; the comparison is made with the calculation
         by the Belli formula — the formula applied to the same decays. In this range, no literature kB agrees with the formula
-        simultaneously for ¹⁵²Gd (2.15 MeV) and for ²¹⁵Po (7.39 MeV): at kB 0.0065, +12.09% and +2.02%; at 0.0072, +3.30% and −5.35%.
+        simultaneously for ¹⁵²Gd (2.15 MeV) and for ²¹⁵Po (7.39 MeV): at kB 0.0065, +12.09% and +1.99%; at 0.0072, +3.28% and −5.41%.
         ²¹⁴Po (7.69 MeV) and ²¹²Po (8.79 MeV) lie outside the range of the formula, so for them this is an extrapolation of the formula: α/γ (the ratio of the scintillation response of an α particle to the response of a γ photon of the same energy) increases from ¹⁵²Gd to ²¹²Po
-        by a factor of 1.42–1.48 in the model and by a factor of 1.61 according to the extrapolated formula. In Belli et al., the energy calibration of the α above ~2 MeV in units of γ energy is distorted by saturation
+        by a factor of 1.42–1.47 in the model and by a factor of 1.61 according to the extrapolated formula. In Belli et al., the energy calibration of the α above ~2 MeV in units of γ energy is distorted by saturation
         of the digitizer (ADC) (footnote 8, caption of Fig. 6), but for ²¹²Po (8.79 MeV) they reconstructed the signal shape and obtained a peak at
         ≈ 2.25 MeV on the γ energy scale, “in agreement with the α/γ ratio (see equation (7))” (caption of Fig. 10): that is, there is a measurement at this point,
         and it is closer to the formula (2293.5 keVee) than to the literature kB values 0.0072–0.0121 (−8 … −38% from the formula); kB 0.0065 (2264.5 keVee, −1.3%) is closer still to the measured value, and the accuracy of reading the peak from the figure has not been estimated; the disagreement here is not merely an extrapolation.
@@ -158,8 +158,8 @@
     <p>Geant4 11.4.2 calculation (G4EmStandardPhysics_option4 + G4RadioactiveDecayPhysics, 10⁶ decays of the parent nuclide per response spectrum);
     normalization of the specific activities — Belli et al., J. Phys. G 53 (2026) 045101, Table 1; scintillation response of the α particle — Birks’ law in Geant4 with literature kB (Furuno et al. 2021, Espinoza et al. 2024);
     the Belli formula (Eq. 7) serves only as a cross-check. The numbers in the plot and in the “Components” table are exported from the calculation; the numbers in the table of lines
-    were checked against lines_table_kB_indep.csv; the texts of the sections were checked in independent passes on 19.09.2026, the comments
-    were incorporated, and some statements remain not fully proven (the reports are in the working files of the project) · 19.09.2026 ·
+    were checked against lines_table_kB_indep_maxq.csv; the texts of the sections were checked in independent passes on 19.09.2026, the numbers changed in the recalculation of 20.09.2026 were recomputed in an independent pass, the comments
+    were incorporated, and some statements remain not fully proven (the reports are in the working files of the project) · 20.09.2026 ·
     <a href="../../">all project pages</a></p>
   </footer>
 </div>

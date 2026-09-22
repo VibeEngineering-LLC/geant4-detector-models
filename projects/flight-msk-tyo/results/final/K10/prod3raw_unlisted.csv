@@ -1,0 +1,7 @@
+E_keV,net_cph,sigma_cph,signif,origin
+48.5,1449.6658092990767,210.71307654547925,6.879809421728927,gamma/primary/World 79.9%; gamma/eBrem/Skin 5.2%; gamma/neutronInelastic/Pax 2.0%
+146.5,661.8723419109779,140.59591661239668,4.7076213723593945,gamma/primary/World 48.2%; gamma/eBrem/Floor 12.1%; gamma/annihil/Skin 8.7%
+211.5,510.47948842584765,97.07052927093733,5.258851396606982,gamma/primary/World 49.0%; gamma/eBrem/Skin 11.2%; gamma/annihil/Floor 9.9%
+223.5,391.37390815292974,90.24152740959676,4.336960148918191,gamma/primary/World 43.4%; gamma/eBrem/Pax 14.9%; gamma/annihil/Trim 7.8%
+300.5,271.4860136874751,63.41613999826543,4.281023942720274,gamma/primary/World 62.9%; gamma/eBrem/Pax 10.2%; gamma/nCapture/Pax 9.8%
+995.5,77.50683346966949,17.25859347337044,4.490912517828322,neutron/primary/World 37.8%; gamma/eBrem/Skin 22.1%; mu+-/primary/World 5.5%

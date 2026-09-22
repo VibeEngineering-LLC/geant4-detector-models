@@ -1,0 +1,235 @@
+import sys
+import math
+import pandas as pd
+
+sys.stdout.reconfigure(encoding="utf-8")
+sys.stderr.reconfigure(encoding="utf-8")
+
+def read_bench(path):
+    with open(path, encoding="utf-8") as f:
+        line1 = f.readline().strip()
+        line2 = f.readline().strip()
+        line3 = f.readline().strip()
+    
+    if not line1.startswith("#"):
+        raise ValueError("Invalid header")
+    
+    header = {}
+    for token in line1[1:].split():
+        k, v = token.split("=", 1)
+        header[k] = v
+    
+    if not line2.startswith("capture,"):
+        raise ValueError("Expected capture line")
+    
+    counts = list(map(int, line2[8:].split(",")))
+    return counts, header
+
+def read_expected(data_dir, symbols, top_n):
+    prompt_path = f"{data_dir}/promptgammas.xls"
+    isotope_path = f"{data_dir}/isotope.xls"
+    
+    df_prompt = pd.read_excel(prompt_path, header=None, skiprows=2)
+    df_isotope = pd.read_excel(isotope_path, header=None, skiprows=2)
+    
+    df_prompt[5] = pd.to_numeric(df_prompt[5], errors="coerce")
+    df_prompt[7] = pd.to_numeric(df_prompt[7], errors="coerce")
+    df_prompt = df_prompt.dropna(subset=[5, 7])
+    
+    df_isotope[5] = pd.to_numeric(df_isotope[5], errors="coerce")
+    df_isotope[0] = df_isotope[0].fillna(method="ffill")
+    df_isotope = df_isotope.dropna(subset=[5])
+    
+    isotope_abundances = dict(zip(df_isotope[1], df_isotope[5]))
+    
+    expected_lines = {}
+    
+    for symbol in symbols:
+        expected_lines[symbol] = []
+    
+    for _, row in df_prompt.iterrows():
+        product_label = row[1]
+        energy = row[5]
+        sigma_gamma = row[7]
+        
+        if not isinstance(energy, (int, float)) or not isinstance(sigma_gamma, (int, float)):
+            continue
+            
+        if math.isnan(energy) or math.isnan(sigma_gamma):
+            continue
+        
+        if energy < 30 or energy > 11500:
+            continue
+            
+        try:
+            Ap, elem = product_label.split("-")
+            Ap = int(Ap)
+            target_label = f"{Ap-1}-{elem}"
+        except:
+            continue
+            
+        if elem not in expected_lines:
+            continue
+            
+        abundance = isotope_abundances.get(target_label, None)
+        if abundance is None:
+            continue
+            
+        w = (abundance / 100.0) * sigma_gamma
+        expected_lines[elem].append((energy, w))
+    
+    for symbol in symbols:
+        expected_lines[symbol].sort(key=lambda x: x[1], reverse=True)
+        expected_lines[symbol] = expected_lines[symbol][:top_n]
+    
+    return expected_lines
+
+def merge_close_lines(lines, threshold=0.3):
+    if not lines:
+        return []
+        
+    merged = [lines[0]]
+    
+    for energy, w in lines[1:]:
+        found = False
+        for i, (e, w_sum) in enumerate(merged):
+            if abs(e - energy) < threshold:
+                merged[i] = ((e * w_sum + energy * w) / (w_sum + w), w_sum + w)
+                found = True
+                break
+        if not found:
+            merged.append((energy, w))
+    
+    return merged
+
+def analyse(hist, expected):
+    results = []
+    ref_areas = {}
+    
+    for symbol, lines in expected.items():
+        if not lines:
+            continue
+            
+        ref_w = lines[0][1]
+        ref_areas[symbol] = ref_w
+        
+        for energy, w in lines:
+            hw = 3 + 0.0006 * energy
+            start_bin = int(max(0, energy - hw))
+            end_bin = int(min(len(hist), energy + hw))
+            
+            peak_sum = sum(hist[start_bin:end_bin])
+            
+            base_start1 = max(0, start_bin - 8)
+            base_end1 = start_bin
+            base_start2 = end_bin
+            base_end2 = min(len(hist), end_bin + 8)
+            
+            side_bins = list(range(base_start1, base_end1)) + list(range(base_start2, base_end2))
+            
+            if not side_bins:
+                base_per_bin = 0.0
+            else:
+                total_base = sum(hist[i] for i in side_bins)
+                base_per_bin = total_base / len(side_bins)
+            
+            peak_bins_count = end_bin - start_bin
+            area = peak_sum - base_per_bin * peak_bins_count
+            
+            sigma_area = math.sqrt(peak_sum + (base_per_bin ** 2 * len(side_bins) ** 2) / max(1, len(side_bins)))
+            
+            centroid = 0.0
+            total_weighted = 0.0
+            for i in range(start_bin, end_bin):
+                bin_center = i + 0.5
+                count = hist[i]
+                adjusted_count = max(0, count - base_per_bin)
+                total_weighted += bin_center * adjusted_count
+            if total_weighted > 0:
+                centroid = total_weighted / sum(max(0, hist[i] - base_per_bin) for i in range(start_bin, end_bin))
+            else:
+                centroid = float('nan')
+            
+            exp_rel = w / ref_w
+            
+            results.append((symbol, energy, exp_rel, area, sigma_area, centroid))
+    
+    return results, ref_areas
+
+def main():
+    if len(sys.argv) < 4:
+        print("Usage: python analyze_lines.py <bench_csv> <elements> <data_dir> [top_n]", file=sys.stderr)
+        sys.exit(2)
+    
+    bench_csv = sys.argv[1]
+    elements_str = sys.argv[2]
+    data_dir = sys.argv[3]
+    top_n = int(sys.argv[4]) if len(sys.argv) > 4 else 12
+    
+    try:
+        hist, header = read_bench(bench_csv)
+        symbols = [s.strip() for s in elements_str.split(",")]
+        expected = read_expected(data_dir, symbols, top_n)
+        results, ref_areas = analyse(hist, expected)
+        
+        print(f"# file={bench_csv} elements={elements_str} hp_mode={header.get('hp_mode', 'unknown')} n_capture_gamma={header.get('n_capture_gamma', 'unknown')}")
+        
+        for symbol, energy, exp_rel, area, sigma_area, centroid in results:
+            obs_rel = area / ref_areas[symbol] if ref_areas[symbol] > 0 else 0.0
+            obs_over_exp = obs_rel / exp_rel if exp_rel > 0 else float('nan')
+            dE_keV = centroid - energy
+            
+            print(f"{symbol} | {energy:.4g} | {exp_rel:.4g} | {area:.4g} | {sigma_area:.4g} | {obs_rel:.4g} | {obs_over_exp:.4g} | {centroid:.4g} | {dE_keV:.4g}")
+        
+        for symbol in symbols:
+            lines = expected[symbol]
+            if not lines:
+                continue
+                
+            detected_count = 0
+            obs_over_exp_values = []
+            
+            for energy, w in lines:
+                hw = 3 + 0.0006 * energy
+                start_bin = int(max(0, energy - hw))
+                end_bin = int(min(len(hist), energy + hw))
+                
+                peak_sum = sum(hist[start_bin:end_bin])
+                
+                base_start1 = max(0, start_bin - 8)
+                base_end1 = start_bin
+                base_start2 = end_bin
+                base_end2 = min(len(hist), end_bin + 8)
+                
+                side_bins = list(range(base_start1, base_end1)) + list(range(base_start2, base_end2))
+                
+                if not side_bins:
+                    base_per_bin = 0.0
+                else:
+                    total_base = sum(hist[i] for i in side_bins)
+                    base_per_bin = total_base / len(side_bins)
+                
+                peak_bins_count = end_bin - start_bin
+                area = peak_sum - base_per_bin * peak_bins_count
+                
+                sigma_area = math.sqrt(peak_sum + (base_per_bin ** 2 * len(side_bins) ** 2) / max(1, len(side_bins)))
+                
+                if area > 3 * sigma_area:
+                    detected_count += 1
+                    
+                    ref_area = ref_areas[symbol]
+                    obs_rel = area / ref_area if ref_area > 0 else 0.0
+                    exp_rel = w / ref_areas[symbol] if ref_areas[symbol] > 0 else 0.0
+                    obs_over_exp = obs_rel / exp_rel if exp_rel > 0 else float('nan')
+                    obs_over_exp_values.append(obs_over_exp)
+            
+            median_obs_over_exp = float('nan') if not obs_over_exp_values else sorted(obs_over_exp_values)[len(obs_over_exp_values)//2]
+            
+            print(f"SUMMARY {symbol} lines={len(lines)} detected={detected_count} median_obs_over_exp={median_obs_over_exp:.4g}")
+            
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(2)
+
+if __name__ == "__main__":
+    main()

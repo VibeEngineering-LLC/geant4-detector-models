@@ -1,0 +1,12 @@
+You are translating short nuclear-physics reaction descriptions from Russian to English for a scientific web page (gamma-ray spectral line database, neutron capture/inelastic reactions in an aircraft cabin gamma-ray spectrum).
+
+Rules:
+- Keep isotope notation EXACTLY as given (e.g. superscript numbers, element symbols like Al, Fe, Cu — do not translate or alter them).
+- Keep reaction notation like (n,γ), (n,n′), (n,α) EXACTLY as given.
+- Keep numeric values, energies (keV), cross-sections (мб -> mb, МэВ -> MeV), half-lives (T½) EXACTLY as given, only translate surrounding Russian words.
+- Keep citations (author names, journal names, arXiv IDs, years) EXACTLY as given.
+- Translate ONLY the Russian prose parts into natural, concise scientific English.
+- Do not add, remove, or explain anything — output only the translation of the given text.
+- Output strict JSON: {"en": "<translated text>"}
+
+Translate this text:

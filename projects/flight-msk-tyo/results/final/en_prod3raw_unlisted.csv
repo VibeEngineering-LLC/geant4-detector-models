@@ -1,0 +1,10 @@
+E_keV,net_cph,sigma_cph,signif,origin
+44.5,1027.8997932468117,183.39150316388708,5.604947751195611,gamma/primary/World 66.2%; gamma/eBrem/Pax 12.4%; gamma/annihil/Pax 4.9%
+96.5,843.3788299016469,182.11884794677073,4.630925570911517,gamma/eBrem/Skin 28.9%; gamma/eBrem/Pax 16.2%; gamma/annihil/Skin 8.1%
+364.5,205.35316331066446,43.6945649054764,4.699741575523202,neutron/primary/World 48.3%; gamma/primary/World 21.1%; gamma/annihil/Pax 9.6%
+435.5,216.93910102292492,33.27259739000128,6.520053077915615,gamma/primary/World 55.7%; neutron/primary/World 15.8%; gamma/annihil/Pax 8.2%
+453.5,209.19764882385502,30.34422758575855,6.894149743394283,neutron/primary/World 44.3%; gamma/primary/World 34.1%; gamma/annihil/Pax 6.4%
+537.5,89.0763814458934,21.50741176052897,4.141659742125223,neutron/primary/World 69.0%; gamma/RadioactiveDecay/Pax 7.5%; gamma/eBrem/Skin 6.1%
+657.5,142.43925564574695,19.50593498500569,7.302354681036347,neutron/primary/World 71.8%; gamma/primary/World 14.1%; e+-/conv/Pax 5.2%
+837.5,74.19614502165018,16.082771756978644,4.613392899109878,gamma/primary/World 47.3%; neutron/primary/World 25.2%; gamma/annihil/Pax 8.0%
+1457.5,55.90310122870456,11.276682556205216,4.9574066619391335,gamma/RadioactiveDecay/Pax 67.8%; gamma/primary/World 25.8%; e+-/primary/World 1.9%

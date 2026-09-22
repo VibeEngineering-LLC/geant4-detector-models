@@ -1,0 +1,14 @@
+seed=5
+T_sim_s=753.396
+T_flight_s=4800
+table=0
+kB=0
+events_read=0
+draws=400000
+used=400000
+records_replayed=400000
+sum_weight_replayed=400000
+triggers=0
+sum_trigger_weight=0
+below_1keV=0
+exhausted=1

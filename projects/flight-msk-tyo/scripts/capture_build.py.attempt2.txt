@@ -1,0 +1,213 @@
+import sys
+import os
+from collections import deque
+
+sys.stdout.reconfigure(encoding="utf-8")
+sys.stderr.reconfigure(encoding="utf-8")
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from capture_levels import read_levels, normalise
+from capture_data import read_masses, sn_keV, read_targets, read_prompt, merge_lines, product_label
+
+def classify_lines(levels, Sn, sigma0, lines, tol_a, tol_b, M):
+    primary = {}
+    secondary = set()
+    records = []
+    for E, y in lines:
+        if y <= 0:
+            continue
+        Lt = Sn - E - E * E / (2 * M)
+        dist_min = float('inf')
+        j_min = None
+        for j, level in levels.items():
+            dist = abs(level["E"] - Lt)
+            if dist < dist_min:
+                dist_min = dist
+                j_min = j
+        tol = tol_a + tol_b * E
+        is_primary_candidate = dist_min <= tol
+        is_secondary_candidate = any(abs(Eg - E) <= tol for j0, trans in levels.items() for d, Eg, _, _ in trans["trans"])
+        is_primary = False
+        if E >= 0.5 * Sn:
+            is_primary = is_primary_candidate
+        elif is_primary_candidate and not is_secondary_candidate:
+            is_primary = True
+        records.append((E, y, is_primary, j_min))
+        if is_primary and j_min is not None:
+            primary[j_min] = primary.get(j_min, 0) + y
+    return records, primary
+
+def propagate_yields(levels, primary, Sn, M):
+    v = {j: 0.0 for j in levels}
+    for j, w in primary.items():
+        v[j] = w
+    model_yields = []
+    level_order = sorted(levels.keys(), key=lambda j: levels[j]["E"], reverse=True)
+    for j in level_order:
+        if not levels[j]["trans"]:
+            continue
+        for d, Eg, prob, alpha in levels[j]["trans"]:
+            flow = v[j] * prob
+            yield_gamma = flow / (1 + alpha)
+            model_yields.append((Eg, yield_gamma))
+            v[d] += flow
+    for j, w in primary.items():
+        E_primary = Sn - levels[j]["E"] - (Sn - levels[j]["E"]) ** 2 / (2 * M)
+        model_yields.append((E_primary, w))
+    return merge_lines(model_yields)
+
+def reachable_levels(levels, primary):
+    reachable = set()
+    queue = list(primary.keys())
+    while queue:
+        j = queue.pop(0)
+        if j in reachable:
+            continue
+        reachable.add(j)
+        for d, _, _, _ in levels[j]["trans"]:
+            if d not in reachable:
+                queue.append(d)
+    if 0 in levels and 0 not in reachable:
+        reachable.add(0)
+    return sorted(reachable)
+
+def process_isotope(Z, A_target, masses, targets, prompt, tol_a, tol_b):
+    symbol = targets[0][0]
+    A = A_target
+    Sn = sn_keV(masses, Z, A)
+    if Sn is None or Sn <= 0:
+        return {"skip": "no Sn"}
+    try:
+        path = os.path.join(levels_dir, f"z{Z}.a{A+1}")
+        levels = normalise(read_levels(path))
+    except Exception as e:
+        return {"skip": f"no level file: {e}"}
+    product = product_label(symbol, A)
+    if product not in prompt:
+        return {"skip": "no PGAA lines"}
+    sigma0 = targets[0][3]
+    if sigma0 <= 0:
+        return {"skip": "sigma0 <= 0"}
+    lines = [(E, sigma_gamma / sigma0) for E, sigma_gamma in prompt[product]]
+    M = (A + 1) * 931494.0
+    records, primary = classify_lines(levels, Sn, sigma0, lines, tol_a, tol_b, M)
+    reachable = reachable_levels(levels, primary)
+    model_yields = propagate_yields(levels, primary, Sn, M)
+    Wp = sum(primary.values())
+    if Wp > 1.0:
+        for j in primary:
+            primary[j] /= Wp
+        Wp = 1.0
+    n_check = 0
+    n_within2 = 0
+    unexplained = []
+    for E, y, is_primary, _ in records:
+        if is_primary or y < 0.005:
+            continue
+        closest_model = None
+        min_dist = float('inf')
+        model_yield = 0.0
+        for E_m, y_m in model_yields:
+            dist = abs(E - E_m)
+            if dist < min_dist:
+                min_dist = dist
+                closest_model = (E_m, y_m)
+        if closest_model is not None and min_dist <= tol_a + tol_b * E:
+            n_check += 1
+            model_yield = closest_model[1]
+            if 0.5 <= model_yield / y <= 2.0:
+                n_within2 += 1
+        else:
+            n_check += 1
+        if y >= 0.02 and (model_yield == 0 or model_yield < y / 2):
+            unexplained.append((E, y, model_yield))
+    return {
+        "Z": Z,
+        "A": A,
+        "Sn": Sn,
+        "sigma0": sigma0,
+        "Wp": Wp,
+        "primary": primary,
+        "levels": levels,
+        "reachable": reachable,
+        "unexplained": unexplained,
+        "n_check": n_check,
+        "n_within2": n_within2
+    }
+
+def write_db(results, out_db, elements):
+    lines = []
+    for r in results:
+        if not r.get("skip"):
+            Z, A, Sn, sigma0, Wp, primary, levels, reachable = r["Z"], r["A"], r["Sn"], r["sigma0"], r["Wp"], r["primary"], r["levels"], r["reachable"]
+            lines.append(f"ISO {Z} {A} {Sn:.4f} {sigma0:.6g} {Wp:.6f} {len(reachable)} {len(primary)}")
+            for j in sorted(primary.keys()):
+                lines.append(f"PRI {j} {primary[j]:.6f}")
+            for j in reachable:
+                level = levels[j]
+                lines.append(f"LEV {j} {level['E']:.4f} {len(level['trans'])}")
+                for d, Eg, prob, alpha in level["trans"]:
+                    lines.append(f"TR {d} {Eg:.4f} {prob:.6f} {alpha:.6g}")
+            lines.append("END")
+    with open(out_db, "w", encoding="utf-8", newline="\n") as f:
+        f.write(f"# capture_db v1 targets={len(lines)//7} elements={elements}\n")
+        f.write("\n".join(lines))
+
+def write_report(results, out_report, elements):
+    table = []
+    skipped = 0
+    unexplained_lines = []
+    for r in results:
+        if r.get("skip"):
+            skipped += 1
+            continue
+        Z, A, Sn, sigma0, Wp, n_check, n_within2, unexplained = r["Z"], r["A"], r["Sn"], r["sigma0"], r["Wp"], r["n_check"], r["n_within2"], r["unexplained"]
+        table.append(f"{Z}-{A} | {Sn:.3f} | {sigma0:.4g} | - | {len(r['primary'])} | {Wp:.4f} | {1-Wp:.4f} | {n_check} | {n_within2}")
+        if unexplained:
+            unexplained_lines.append(f"- {Z}-{A}:")
+            for E, y, model_yield in unexplained:
+                unexplained_lines.append(f"  - E={E:.3f}, y={y:.3f}, model={model_yield:.3f}")
+    with open(out_report, "w", encoding="utf-8") as f:
+        f.write("# Capture Database Report\n\n")
+        f.write("| isotope | Sn (keV) | sigma0 (barn) | PGAA lines | primaries | Wp | fallback 1-Wp | check | within2x |\n")
+        f.write("|---------|----------|---------------|------------|-----------|----|----------------|-------|----------|\n")
+        for row in table:
+            f.write(f"| {row} |\n")
+        if unexplained_lines:
+            f.write("\n## Unexplained Lines\n\n")
+            f.write("\n".join(unexplained_lines))
+        f.write("\n## Skipped Isotopes\n\n")
+        for r in results:
+            if r.get("skip"):
+                f.write(f"- {r['Z']}-{r['A']}: {r['skip']}\n")
+    print(f"DONE isotopes={len(results)-skipped} skipped={skipped}")
+
+def main():
+    if len(sys.argv) < 6:
+        print("Usage: python capture_build.py <data_dir> <levels_dir> <elements> <out_db> <out_report> [tol_a=1.5] [tol_b=3.0e-4]", file=sys.stderr)
+        sys.exit(2)
+    data_dir = sys.argv[1]
+    levels_dir = sys.argv[2]
+    elements = sys.argv[3].split(",")
+    out_db = sys.argv[4]
+    out_report = sys.argv[5]
+    tol_a = float(sys.argv[6]) if len(sys.argv) > 6 else 1.5
+    tol_b = float(sys.argv[7]) if len(sys.argv) > 7 else 3e-4
+    masses = read_masses(os.path.join(data_dir, "mass.mas20.txt"))
+    targets = read_targets(os.path.join(data_dir, "isotope.xls"))
+    prompt = read_prompt(os.path.join(data_dir, "promptgammas.xls"))
+    results = []
+    for symbol in elements:
+        if symbol not in targets:
+            continue
+        for Z, A_target, abundance_percent, sigma0_barn in targets[symbol]:
+            r = process_isotope(Z, A_target, masses, targets[symbol], prompt, tol_a, tol_b)
+            if not r.get("skip"):
+                results.append(r)
+                print(f"ISO {Z}-{A_target} Sn={r['Sn']:.3f} sigma0={r['sigma0']:.4g} Wp={r['Wp']:.4f} primaries={len(r['primary'])} levels={len(r['reachable'])} check={r['n_check']} within2x={r['n_within2']}")
+    write_db(results, out_db, ",".join(elements))
+    write_report(results, out_report, ",".join(elements))
+
+if __name__ == "__main__":
+    main()

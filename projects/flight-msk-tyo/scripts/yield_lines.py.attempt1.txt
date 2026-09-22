@@ -1,0 +1,126 @@
+import sys
+import math
+import pandas as pd
+
+sys.stdout.reconfigure(encoding="utf-8")
+sys.stderr.reconfigure(encoding="utf-8")
+
+def read_bench(path):
+    with open(path, encoding="utf-8") as f:
+        line1 = f.readline().strip()
+        line2 = f.readline().strip()
+        line3 = f.readline().strip()
+    assert line1.startswith("# ")
+    assert line2.startswith("capture,")
+    assert line3.startswith("inelastic,")
+    d = {}
+    for token in line1[2:].split():
+        k, v = token.split("=")
+        d[k] = v
+    counts = list(map(int, line2[9:].split(",")))
+    return d, counts
+
+def read_expected(data_dir, element, Sn_keV):
+    prompt_path = f"{data_dir}/promptgammas.xls"
+    isotope_path = f"{data_dir}/isotope.xls"
+    df_prompt = pd.read_excel(prompt_path, header=None, skiprows=2)
+    df_isotope = pd.read_excel(isotope_path, header=None, skiprows=2)
+    df_prompt = df_prompt[[1, 5, 7]]
+    df_prompt.columns = ["label", "E_keV", "sigma_gamma"]
+    df_prompt["label"] = df_prompt["label"].astype(str).str.strip()
+    df_prompt["E_keV"] = pd.to_numeric(df_prompt["E_keV"], errors="coerce")
+    df_prompt["sigma_gamma"] = pd.to_numeric(df_prompt["sigma_gamma"], errors="coerce")
+    df_prompt = df_prompt.dropna()
+    df_isotope["label"] = df_isotope[1].astype(str).str.strip()
+    df_isotope["element"] = df_isotope[0].ffill()
+    df_isotope = df_isotope[df_isotope["element"] == element]
+    df_isotope = df_isotope[[1, 5, 8]]
+    df_isotope.columns = ["label", "abundance_percent", "sigma0"]
+    df_isotope["sigma0"] = pd.to_numeric(df_isotope["sigma0"], errors="coerce")
+    df_isotope = df_isotope.dropna()
+    df_isotope["abundance_percent"] = pd.to_numeric(df_isotope["abundance_percent"], errors="coerce")
+    df_isotope = df_isotope.dropna()
+    df = df_prompt.merge(df_isotope, on="label", how="left")
+    df["Y"] = 100 * df["sigma_gamma"] / df["sigma0"]
+    df["num"] = df["abundance_percent"] / 100 * df["sigma_gamma"]
+    df["den"] = df["abundance_percent"] / 100 * df["sigma0"]
+    num_total = df["num"].sum()
+    den_total = df["den"].sum()
+    Y_el = 100 * num_total / den_total
+    df["Y_el"] = Y_el
+    df = df[(df["E_keV"] >= 50) & (df["E_keV"] <= 11500)]
+    df = df.sort_values("Y_el", ascending=False)
+    return df
+
+def main(bench_csv, element, Sn_keV, data_dir, top_n=10):
+    d, counts = read_bench(bench_csv)
+    df = read_expected(data_dir, element, Sn_keV)
+    Ncap = sum((j + 0.5) * counts[j] for j in range(len(counts))) / Sn_keV
+    if Ncap <= 0:
+        print("Ошибка: Ncap <= 0", file=sys.stderr)
+        sys.exit(2)
+    df = df.head(top_n)
+    if len(df) == 0:
+        print("Ошибка: нет ожидаемых линий", file=sys.stderr)
+        sys.exit(2)
+    results = []
+    for _, row in df.iterrows():
+        E = row["E_keV"]
+        Y_exp = row["Y_el"]
+        hw = 3 + 0.0006 * E
+        peak_bins = [j for j in range(len(counts)) if abs(j + 0.5 - E) <= hw]
+        side_bins = []
+        for j in range(len(counts)):
+            if abs(j + 0.5 - E) > hw and abs(j + 0.5 - E) <= hw + 8:
+                side_bins.append(j)
+        peak_sum = sum(counts[j] for j in peak_bins)
+        baseline = sum(counts[j] for j in side_bins) / len(side_bins) if side_bins else 0
+        area = peak_sum - baseline * len(peak_bins)
+        sigma = math.sqrt(max(peak_sum, 1))
+        obs_per100 = 100 * area / Ncap if Ncap > 0 else float("nan")
+        obs_over_exp = obs_per100 / Y_exp if Y_exp > 0 else float("nan")
+        centroid = 0
+        total_counts = 0
+        for j in peak_bins:
+            c = counts[j] - baseline
+            if c > 0:
+                total_counts += c
+                centroid += (j + 0.5) * c
+        if total_counts > 0:
+            centroid /= total_counts
+        else:
+            centroid = float("nan")
+        dE = centroid - E if not math.isnan(centroid) else float("nan")
+        results.append((E, Y_exp, area, obs_per100, sigma, obs_over_exp, dE))
+    print(f"# file={bench_csv} element={element} hp_mode={d['hp_mode']} n_capture_gamma={d['n_capture_gamma']} Ncap_est={Ncap:.6g}")
+    for E, Y_exp, area, obs_per100, sigma, obs_over_exp, dE in results:
+        print(f"{E:.4g} | {Y_exp:.4g} | {area:.4g} | {obs_per100:.4g} | {sigma:.4g} | {obs_over_exp:.4g if not math.isnan(obs_over_exp) else 'nan'} | {dE:.4g}")
+    ok_count = 0
+    ratios = []
+    for _, row in df.iterrows():
+        E = row["E_keV"]
+        Y_exp = row["Y_el"]
+        hw = 3 + 0.0006 * E
+        peak_bins = [j for j in range(len(counts)) if abs(j + 0.5 - E) <= hw]
+        peak_sum = sum(counts[j] for j in peak_bins)
+        sigma = math.sqrt(max(peak_sum, 1))
+        area = peak_sum - baseline * len(peak_bins) if side_bins else 0
+        obs_per100 = 100 * area / Ncap if Ncap > 0 else float("nan")
+        obs_over_exp = obs_per100 / Y_exp if Y_exp > 0 else float("nan")
+        if (0.5 <= obs_over_exp <= 2.0) and (area > 3 * sigma):
+            ok_count += 1
+        if area > 3 * sigma:
+            ratios.append(obs_over_exp)
+    median_ratio = float("nan") if not ratios else sorted(ratios)[len(ratios)//2]
+    print(f"VERDICT lines={len(results)} ok={ok_count} median_ratio={median_ratio:.4g}")
+
+if __name__ == "__main__":
+    if len(sys.argv) < 5:
+        print("Использование: python yield_lines.py <bench_csv> <element> <Sn_keV> <data_dir> [top_n]", file=sys.stderr)
+        sys.exit(2)
+    bench_csv = sys.argv[1]
+    element = sys.argv[2]
+    Sn_keV = float(sys.argv[3])
+    data_dir = sys.argv[4]
+    top_n = int(sys.argv[5]) if len(sys.argv) > 5 else 10
+    main(bench_csv, element, Sn_keV, data_dir, top_n)

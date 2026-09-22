@@ -1,0 +1,302 @@
+import sys
+import math
+import os
+import re
+import pandas as pd
+
+sys.stdout.reconfigure(encoding="utf-8")
+sys.stderr.reconfigure(encoding="utf-8")
+
+def read_masses(path):
+    mass_excess = {}
+    with open(path, "r", encoding="utf-8", errors="replace") as f:
+        for line in f:
+            if len(line) < 43 or line[0] not in " 01":
+                continue
+            try:
+                N = int(line[4:9])
+                Z = int(line[9:14])
+                A = int(line[14:19])
+                me = float(line[28:42].strip().replace("#", "."))
+                mass_excess[(Z, A)] = me
+            except:
+                continue
+    return mass_excess
+
+def read_isotopes(path):
+    df = pd.read_excel(path, header=None, skiprows=2)
+    df[1] = df[1].str.strip()
+    df[0] = df[0].ffill()
+    df = df.dropna(subset=[5])
+    df[5] = pd.to_numeric(df[5], errors="coerce")
+    df = df[df[5] > 0]
+    df[8] = pd.to_numeric(df[8], errors="coerce")
+    df = df[df[8] > 0]
+    isotopes = {}
+    for _, row in df.iterrows():
+        symbol = row[0]
+        label = row[1]
+        abundance = row[5]
+        sigma0 = row[8]
+        A = int(label.split("-")[0])
+        Z = {"H":1, "He":2, "Li":3, "Be":4, "B":5, "C":6, "N":7, "O":8, "F":9, "Ne":10, "Na":11, "Mg":12, "Al":13, "Si":14, "P":15, "S":16, "Cl":17, "Ar":18, "K":19, "Ca":20, "Sc":21, "Ti":22, "V":23, "Cr":24, "Mn":25, "Fe":26, "Co":27, "Ni":28, "Cu":29, "Zn":30, "Ga":31, "Ge":32, "As":33, "Se":34, "Br":35, "Kr":36, "Rb":37, "Sr":38, "Y":39, "Zr":40, "Nb":41, "Mo":42, "Tc":43, "Ru":44, "Rh":45, "Pd":46, "Ag":47, "Cd":48, "In":49, "Sn":50, "Sb":51, "Te":52, "I":53, "Xe":54, "Cs":55, "Ba":56, "La":57, "Ce":58, "Pr":59, "Nd":60, "Pm":61, "Sm":62, "Eu":63, "Gd":64, "Tb":65, "Dy":66, "Ho":67, "Er":68, "Tm":69, "Yb":70, "Lu":71, "Hf":72, "Ta":73, "W":74, "Re":75, "Os":76, "Ir":77, "Pt":78, "Au":79, "Hg":80, "Tl":81, "Pb":82, "Bi":83, "Po":84, "At":85, "Rn":86, "Fr":87, "Ra":88, "Ac":89, "Th":90, "Pa":91, "U":92}[symbol]
+        isotopes[(Z, A)] = (abundance, sigma0)
+    return isotopes
+
+def read_prompt(path):
+    df = pd.read_excel(path, header=None, skiprows=2)
+    df[1] = df[1].str.strip()
+    df[5] = pd.to_numeric(df[5], errors="coerce")
+    df[7] = pd.to_numeric(df[7], errors="coerce")
+    df = df.dropna(subset=[5, 7])
+    df = df[df[7] > 0]
+    prompt = {}
+    for _, row in df.iterrows():
+        label = row[1]
+        A = int(label.split("-")[0])
+        E = row[5]
+        sigma_gamma = row[7]
+        if label not in prompt:
+            prompt[label] = []
+        prompt[label].append((E, sigma_gamma))
+    return prompt
+
+def read_levels(path):
+    levels = {}
+    with open(path, "r", encoding="utf-8", errors="replace") as f:
+        for line in f:
+            parts = line.split()
+            if len(parts) < 6 or not re.match(r"^\d+$", parts[1]):
+                continue
+            idx = int(parts[0])
+            E_level = float(parts[2])
+            Jpi = parts[4]
+            n_gamma = int(parts[5])
+            levels[idx] = (E_level, [])
+            if n_gamma == 0:
+                continue
+            for _ in range(n_gamma):
+                line = next(f)
+                parts = line.split()
+                if len(parts) < 7:
+                    continue
+                daughter_idx = int(parts[0])
+                Eg = float(parts[1])
+                Irel = float(parts[2])
+                alpha = float(parts[6]) if len(parts) > 6 else 0.0
+                weight = Irel * (1 + alpha)
+                levels[idx][1].append((daughter_idx, Eg, weight, alpha))
+    return levels
+
+def classify_primary(levels, Sn, sigma0, prompt_lines, Z, A):
+    M = (A + 1) * 931494.0
+    primary_levels = {}
+    used_lines = set()
+    for i, (E, y) in enumerate(prompt_lines):
+        Lt = Sn - E - E * E / (2 * M)
+        tol = 1.5 + 3e-4 * E
+        closest_level = None
+        min_dist = float("inf")
+        for j, (E_level, _) in levels.items():
+            dist = abs(E_level - Lt)
+            if dist < min_dist:
+                min_dist = dist
+                closest_level = j
+        is_primary = min_dist <= tol
+        is_secondary = False
+        if is_primary:
+            for _, _, weight, _ in levels[closest_level][1]:
+                if abs(weight - E) <= tol:
+                    is_secondary = True
+                    break
+        if (E >= 0.5 * Sn and is_primary) or (E < 0.5 * Sn and is_primary and not is_secondary):
+            if closest_level not in primary_levels:
+                primary_levels[closest_level] = 0.0
+            primary_levels[closest_level] += y
+            used_lines.add(i)
+    Wp = sum(primary_levels.values())
+    if Wp > 1.0:
+        scale = 1.0 / Wp
+        for k in primary_levels:
+            primary_levels[k] *= scale
+        Wp = 1.0
+    return primary_levels, Wp, used_lines
+
+def propagate(levels, primary_levels):
+    visit_prob = {}
+    for idx in levels:
+        visit_prob[idx] = 0.0
+    visit_prob[0] = 1.0
+    for idx in sorted(levels.keys()):
+        if idx == 0:
+            continue
+        E_level, transitions = levels[idx]
+        for parent_idx, _, weight, alpha in transitions:
+            prob = weight / (1 + alpha)
+            visit_prob[parent_idx] += visit_prob[idx] * prob
+    return visit_prob
+
+def main(data_dir, levels_dir, elements_str, out_db, out_report):
+    mass_path = os.path.join(data_dir, "mass.mas20.txt")
+    isotope_path = os.path.join(data_dir, "isotope.xls")
+    prompt_path = os.path.join(data_dir, "promptgammas.xls")
+    mass_excess = read_masses(mass_path)
+    isotopes = read_isotopes(isotope_path)
+    prompt_lines = read_prompt(prompt_path)
+    elements = [e.strip() for e in elements_str.split(",")]
+    targets = []
+    for Z, A in sorted(isotopes.keys()):
+        symbol = ""
+        for name, z in {"H":1, "He":2, "Li":3, "Be":4, "B":5, "C":6, "N":7, "O":8, "F":9, "Ne":10, "Na":11, "Mg":12, "Al":13, "Si":14, "P":15, "S":16, "Cl":17, "Ar":18, "K":19, "Ca":20, "Sc":21, "Ti":22, "V":23, "Cr":24, "Mn":25, "Fe":26, "Co":27, "Ni":28, "Cu":29, "Zn":30, "Ga":31, "Ge":32, "As":33, "Se":34, "Br":35, "Kr":36, "Rb":37, "Sr":38, "Y":39, "Zr":40, "Nb":41, "Mo":42, "Tc":43, "Ru":44, "Rh":45, "Pd":46, "Ag":47, "Cd":48, "In":49, "Sn":50, "Sb":51, "Te":52, "I":53, "Xe":54, "Cs":55, "Ba":56, "La":57, "Ce":58, "Pr":59, "Nd":60, "Pm":61, "Sm":62, "Eu":63, "Gd":64, "Tb":65, "Dy":66, "Ho":67, "Er":68, "Tm":69, "Yb":70, "Lu":71, "Hf":72, "Ta":73, "W":74, "Re":75, "Os":76, "Ir":77, "Pt":78, "Au":79, "Hg":80, "Tl":81, "Pb":82, "Bi":83, "Po":84, "At":85, "Rn":86, "Fr":87, "Ra":88, "Ac":89, "Th":90, "Pa":91, "U":92}.items():
+            if z == Z:
+                symbol = name
+                break
+        if symbol in elements:
+            targets.append((Z, A))
+    skipped = []
+    written = 0
+    report_lines = ["# Report\n", "| Isotope | Sn (keV) | sigma0 (barn) | PGAA lines | Primaries | Wp | Fallback | Check | Within2x |\n|---------|----------|---------------|------------|-----------|----|----------|-------|----------|\n"]
+    with open(out_db, "w", encoding="utf-8") as db:
+        db.write(f"# capture_db v1 targets={len(targets)} elements={elements_str}\n")
+        for Z, A in targets:
+            T = (Z, A)
+            P = (Z, A + 1)
+            if T not in mass_excess or P not in mass_excess:
+                skipped.append((T, "missing mass"))
+                continue
+            if P not in isotopes:
+                skipped.append((T, "no isotope data"))
+                continue
+            abundance, sigma0 = isotopes[P]
+            if sigma0 <= 0:
+                skipped.append((T, "zero sigma0"))
+                continue
+            label = f"{A}-{['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U'][Z-1]}")
+            if label not in prompt_lines:
+                skipped.append((T, "no PGAA lines"))
+                continue
+            Sn = mass_excess[T] + mass_excess[(0, 1)] - mass_excess[P]
+            path = os.path.join(levels_dir, f"z{Z}.a{A+1}")
+            if not os.path.exists(path):
+                skipped.append((T, "no level file"))
+                continue
+            levels = read_levels(path)
+            prompt_lines_for_isotope = [(E, y) for E, y in prompt_lines[label]]
+            primary_levels, Wp, used_lines = classify_primary(levels, Sn, sigma0, prompt_lines_for_isotope, Z, A)
+            visit_prob = propagate(levels, primary_levels)
+            reachable = set()
+            queue = list(primary_levels.keys())
+            while queue:
+                idx = queue.pop(0)
+                reachable.add(idx)
+                for daughter_idx, _, _, _ in levels[idx][1]:
+                    if daughter_idx not in reachable:
+                        queue.append(daughter_idx)
+            db.write(f"ISO {Z} {A} {Sn:.4f} {sigma0:.6g} {Wp:.6f} {len(reachable)} {len(primary_levels)}\n")
+            for idx in sorted(primary_levels.keys()):
+                db.write(f"PRI {idx} {primary_levels[idx]:.6f}\n")
+            for idx in sorted(reachable):
+                E_level, transitions = levels[idx]
+                db.write(f"LEV {idx} {E_level:.4f} {len(transitions)}\n")
+                if not transitions:
+                    continue
+                total_weight = sum(w for _, _, w, _ in transitions)
+                if total_weight > 0:
+                    for daughter_idx, Eg, weight, alpha in transitions:
+                        prob = weight / total_weight
+                        db.write(f"TR {daughter_idx} {Eg:.4f} {prob:.6f} {alpha:.6g}\n")
+            db.write("END\n")
+            written += 1
+            # Check model
+            n_check = 0
+            n_within2 = 0
+            for i, (E, y) in enumerate(prompt_lines_for_isotope):
+                if i in used_lines:
+                    continue
+                if y < 0.005:
+                    continue
+                Lt = Sn - E - E * E / (2 * (A + 1) * 931494.0)
+                tol = 1.5 + 3e-4 * E
+                closest_level = None
+                min_dist = float("inf")
+                for j, (E_level, _) in levels.items():
+                    dist = abs(E_level - Lt)
+                    if dist < min_dist:
+                        min_dist = dist
+                        closest_level = j
+                if closest_level is not None and min_dist <= tol:
+                    model_yield = 0.0
+                    for idx in sorted(levels.keys()):
+                        E_level, transitions = levels[idx]
+                        if abs(E_level - Lt) <= tol:
+                            for daughter_idx, Eg, weight, alpha in transitions:
+                                prob = weight / (1 + alpha)
+                                if abs(Eg - E) <= tol:
+                                    model_yield += visit_prob[idx] * prob
+                    if model_yield > 0 and 0.5 <= model_yield / y <= 2.0:
+                        n_within2 += 1
+                    n_check += 1
+            report_lines.append(f"| {label} | {Sn:.3f} | {sigma0:.4g} | {len(prompt_lines_for_isotope)} | {len(primary_levels)} | {Wp:.4f} | {1-Wp:.4f} | {n_check} | {n_within2} |\n")
+    with open(out_report, "w", encoding="utf-8") as f:
+        f.write("# Report\n\n")
+        f.writelines(report_lines)
+        f.write("\n## Unexplained lines (y >= 0.02)\n\n")
+        for Z, A in targets:
+            T = (Z, A)
+            P = (Z, A + 1)
+            if T not in mass_excess or P not in mass_excess:
+                continue
+            if P not in isotopes:
+                continue
+            abundance, sigma0 = isotopes[P]
+            if sigma0 <= 0:
+                continue
+            label = f"{A}-{['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr', 'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe', 'Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn', 'Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U'][Z-1]}")
+            if label not in prompt_lines:
+                continue
+            path = os.path.join(levels_dir, f"z{Z}.a{A+1}")
+            if not os.path.exists(path):
+                continue
+            levels = read_levels(path)
+            prompt_lines_for_isotope = [(E, y) for E, y in prompt_lines[label]]
+            primary_levels, Wp, used_lines = classify_primary(levels, Sn, sigma0, prompt_lines_for_isotope, Z, A)
+            visit_prob = propagate(levels, primary_levels)
+            f.write(f"### {label}\n\n")
+            for i, (E, y) in enumerate(prompt_lines_for_isotope):
+                if i in used_lines:
+                    continue
+                if y < 0.02:
+                    continue
+                Lt = Sn - E - E * E / (2 * (A + 1) * 931494.0)
+                tol = 1.5 + 3e-4 * E
+                closest_level = None
+                min_dist = float("inf")
+                for j, (E_level, _) in levels.items():
+                    dist = abs(E_level - Lt)
+                    if dist < min_dist:
+                        min_dist = dist
+                        closest_level = j
+                if closest_level is not None and min_dist <= tol:
+                    model_yield = 0.0
+                    for idx in sorted(levels.keys()):
+                        E_level, transitions = levels[idx]
+                        if abs(E_level - Lt) <= tol:
+                            for daughter_idx, Eg, weight, alpha in transitions:
+                                prob = weight / (1 + alpha)
+                                if abs(Eg - E) <= tol:
+                                    model_yield += visit_prob[idx] * prob
+                    if model_yield > 0 and model_yield / y < 0.5:
+                        f.write(f"- {E:.3f} keV, y={y:.4f}\n")
+            f.write("\n")
+        f.write("## Skipped isotopes\n\n")
+        for T, reason in skipped:
+            Z, A = T
+            symbol = ["H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe", "Cs", "Ba", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn", "Fr", "Ra", "Ac", "Th", "Pa", "U"][Z-1]
+            f.write(f"- {symbol}{A} ({reason})\n")
+    print(f"DONE isotopes={written} skipped={len(skipped)}")
+
+if __name__ == "__main__":
+    if len(sys.argv) != 6:
+        sys.stderr.write("Usage: python build_capture_db.py <data_dir> <levels_dir> <elements> <out_db> <out_report>\n")
+        sys.exit(2)
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])

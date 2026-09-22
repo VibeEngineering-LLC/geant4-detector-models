@@ -1,0 +1,207 @@
+#include "parma_source.hh"
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <random>
+#include <algorithm>
+#include <cmath>
+#include <numeric>
+#include <iomanip>
+
+int main(int argc, char* argv[]) {
+    if (argc != 5) {
+        std::cerr << "Usage: " << argv[0] << " <table_file> <N_events> <radius_cm> <seed>\n";
+        return 2;
+    }
+
+    std::string table_file = argv[1];
+    long long N = std::stoll(argv[2]);
+    double radius_cm = std::stod(argv[3]);
+    unsigned int seed = static_cast<unsigned int>(std::stoll(argv[4]));
+
+    ParmaSource src;
+    std::string err;
+    if (!src.Load(table_file, err)) {
+        std::cerr << "err\n";
+        return 2;
+    }
+
+    std::mt19937_64 gen(seed);
+    std::uniform_real_distribution<double> u01(0.0, 1.0);
+    auto rand01 = [&]() { return u01(gen); };
+
+    struct Event {
+        double e_MeV;
+        double u, v, w;
+        double x_cm, y_cm, z_cm;
+        double cos_down;
+    };
+
+    std::vector<Event> events(N);
+    for (long long i = 0; i < N; ++i) {
+        events[i] = src.Sample(radius_cm, rand01);
+    }
+
+    // Check A
+    long long geom_violations = 0;
+    for (const auto& ev : events) {
+        double d = std::sqrt(ev.u*ev.u + ev.v*ev.v + ev.w*ev.w);
+        if (std::abs(d - 1.0) > 1e-9) {
+            ++geom_violations;
+            continue;
+        }
+
+        double p_dot_d = ev.x_cm * ev.u + ev.y_cm * ev.v + ev.z_cm * ev.w;
+        if (std::abs(p_dot_d + radius_cm) > 1e-6 * radius_cm) {
+            ++geom_violations;
+            continue;
+        }
+
+        double cross_x = ev.y_cm * ev.w - ev.z_cm * ev.v;
+        double cross_y = ev.z_cm * ev.u - ev.x_cm * ev.w;
+        double cross_z = ev.x_cm * ev.v - ev.y_cm * ev.u;
+        double cross_mag = std::sqrt(cross_x*cross_x + cross_y*cross_y + cross_z*cross_z);
+        if (cross_mag > radius_cm * (1.0 + 1e-9)) {
+            ++geom_violations;
+            continue;
+        }
+    }
+
+    std::cout << "CHECK A geometry violations=" << geom_violations << " ";
+    if (geom_violations == 0) {
+        std::cout << "PASS\n";
+    } else {
+        std::cout << "FAIL\n";
+        return 1;
+    }
+
+    // Check B
+    int nebin = src.NEBin();
+    const auto& edges = src.EdgesMeV();
+    std::vector<double> expected(nebin, 0.0);
+    for (int k = 0; k < nebin; ++k) {
+        expected[k] = src.EnergyBinProb(k + 1);
+    }
+
+    int ngroups = nebin / 20;
+    if (nebin % 20 != 0) ++ngroups;
+
+    std::vector<double> obs_groups(ngroups, 0.0);
+    std::vector<double> exp_groups(ngroups, 0.0);
+
+    for (const auto& ev : events) {
+        auto it = std::lower_bound(edges.begin(), edges.end(), ev.e_MeV);
+        int k = static_cast<int>(it - edges.begin());
+        if (k >= nebin || (k < nebin && ev.e_MeV == edges[k])) {
+            // If exactly equal to edge, assign to the bin with that edge
+        } else {
+            --k;
+        }
+        if (k < 0) k = 0;
+        int group = k / 20;
+        if (group >= ngroups) group = ngroups - 1;
+
+        obs_groups[group] += 1.0;
+        exp_groups[group] += expected[k];
+    }
+
+    double chi2 = 0.0;
+    int ndf = 0;
+    double max_z = 0.0;
+
+    for (int i = 0; i < ngroups; ++i) {
+        if (exp_groups[i] >= 25.0) {
+            double z = (obs_groups[i] - exp_groups[i]) / std::sqrt(exp_groups[i]);
+            chi2 += z * z;
+            max_z = std::max(max_z, std::abs(z));
+            ++ndf;
+        }
+    }
+
+    std::cout << "CHECK B energy groups=" << ndf << " max_abs_z=" << std::setprecision(6) << max_z << " chi2_ndf=" << std::setprecision(6) << (ndf > 0 ? chi2 / ndf : 0.0) << " ";
+    if (ndf > 0 && max_z < 4.5 && chi2 / ndf < 1.6) {
+        std::cout << "PASS\n";
+    } else {
+        std::cout << "FAIL\n";
+        return 1;
+    }
+
+    // Check C
+    int nabin = src.NABin();
+    std::vector<double> expected_cos(nabin, 0.0);
+    for (int ia = 0; ia < nabin; ++ia) {
+        expected_cos[ia] = src.CosBinProbMarginal(ia + 1);
+    }
+
+    std::vector<double> obs_cos(nabin, 0.0);
+    std::vector<double> exp_cos(nabin, 0.0);
+
+    for (const auto& ev : events) {
+        int ia = static_cast<int>(std::floor((ev.cos_down + 1.0) * nabin / 2.0)) + 1;
+        ia = std::max(1, std::min(nabin, ia));
+        --ia; // Convert to 0-based index
+
+        obs_cos[ia] += 1.0;
+        exp_cos[ia] += expected_cos[ia];
+    }
+
+    chi2 = 0.0;
+    ndf = 0;
+    max_z = 0.0;
+
+    for (int i = 0; i < nabin; ++i) {
+        if (exp_cos[i] >= 25.0) {
+            double z = (obs_cos[i] - exp_cos[i]) / std::sqrt(exp_cos[i]);
+            chi2 += z * z;
+            max_z = std::max(max_z, std::abs(z));
+            ++ndf;
+        }
+    }
+
+    std::cout << "CHECK C cosine bins=" << ndf << " max_abs_z=" << std::setprecision(6) << max_z << " chi2_ndf=" << std::setprecision(6) << (ndf > 0 ? chi2 / ndf : 0.0) << " ";
+    if (ndf > 0 && max_z < 4.5 && chi2 / ndf < 1.6) {
+        std::cout << "PASS\n";
+    } else {
+        std::cout << "FAIL\n";
+        return 1;
+    }
+
+    // Check D
+    if (src.IE511() > 0) {
+        double e_511 = 0.51099895;
+        long long obs_511 = 0;
+        for (const auto& ev : events) {
+            if (ev.e_MeV == e_511) ++obs_511;
+        }
+
+        double exp_511 = N * src.EnergyBinProb(src.IE511()) * src.LineFrac();
+        double z = 0.0;
+
+        if (exp_511 < 25.0) {
+            std::cout << "CHECK D line511 SKIP\n";
+        } else {
+            z = (obs_511 - exp_511) / std::sqrt(exp_511);
+            std::cout << "CHECK D line511 obs=" << obs_511 << " exp=" << std::setprecision(6) << exp_511 << " z=" << std::setprecision(6) << z << " ";
+            if (std::abs(z) < 4.5) {
+                std::cout << "PASS\n";
+            } else {
+                std::cout << "FAIL\n";
+                return 1;
+            }
+        }
+    } else {
+        std::cout << "CHECK D line511 n/a\n";
+    }
+
+    // Info
+    double sum_cos = 0.0, sum_e = 0.0;
+    for (const auto& ev : events) {
+        sum_cos += ev.cos_down;
+        sum_e += ev.e_MeV;
+    }
+    std::cout << "INFO mean_cos_down=" << std::setprecision(6) << sum_cos / N << " mean_energy_MeV=" << std::setprecision(6) << sum_e / N << "\n";
+
+    std::cout << "SELFTEST PASS\n";
+    return 0;
+}

@@ -1,0 +1,40 @@
+#_____________ QUERY RESULTS SUMMARY ___________________________________
+#        STATION: OULU
+#     START TIME: 2026-09-08 00:00:00 UTC
+#       END TIME: 2026-09-20 00:00:00 UTC
+#     NMDB TABLE: 1 hour validated
+#      DATA TYPE: corr_for_efficiency(1HCOR_E)
+#      AVERAGING: Yes / 1 day
+#   ORIGINAL RES: 60 min
+#_______________________________________________________________________
+#
+# Timestamps always correspond to the beginning of the time interval 
+#_______________________________________________________________________
+#
+# ____________________________________________________________________________________________________
+#|                                                                                                    |
+#| Data retrieved via NMDB are the property of the individual data providers. These data are free for |
+#| non commercial use to within the restriction imposed by the providers. If you use such data for    |
+#| your research or applications, please acknowledge the origin by a sentence like 'We acknowledge    |
+#| the NMDB database (www.nmdb.eu) founded under the European Union's FP7 programme (contract no. 213 |
+#| 007), and the PIs of individual neutron monitors at: Oulu (Sodankyla Geophysical Observatory of th |
+#| e University of Oulu, Finland)                                                                     |
+#|____________________________________________________________________________________________________|
+#
+  start_date_time   1HCOR_E
+2026-09-08 00:00:00; 99.302
+2026-09-09 00:00:00; 99.441
+2026-09-10 00:00:00; 99.489
+2026-09-11 00:00:00; 99.912
+2026-09-12 00:00:00;100.443
+2026-09-13 00:00:00;100.692
+2026-09-14 00:00:00;101.398
+2026-09-15 00:00:00;101.067
+2026-09-16 00:00:00; 99.535
+2026-09-17 00:00:00; 99.202
+2026-09-18 00:00:00;100.217
+2026-09-19 00:00:00;100.356
+2026-09-20 00:00:00;100.875
+
+
+

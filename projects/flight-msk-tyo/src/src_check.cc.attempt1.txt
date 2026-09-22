@@ -1,0 +1,170 @@
+#include "parma_primary.hh"
+#include "FTFP_BERT.hh"
+
+#include "G4RunManagerFactory.hh"
+#include "G4VUserDetectorConstruction.hh"
+#include "G4UserSteppingAction.hh"
+#include "G4Box.hh"
+#include "G4Orb.hh"
+#include "G4LogicalVolume.hh"
+#include "G4PVPlacement.hh"
+#include "G4NistManager.hh"
+#include "G4SystemOfUnits.hh"
+#include "G4Step.hh"
+#include "G4Track.hh"
+#include "G4StepPoint.hh"
+#include "Randomize.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4UImanager.hh"
+#include "G4ios.hh"
+
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
+
+struct Hist {
+    std::vector<long long> E_hist;
+    std::vector<long long> C_hist;
+    long long underflow = 0;
+    long long overflow = 0;
+} hist;
+
+class Det : public G4VUserDetectorConstruction {
+public:
+    G4VPhysicalVolume* Construct() override {
+        auto nist = G4NistManager::Instance();
+        auto world_mat = nist->FindOrBuildMaterial("G4_Galactic");
+        auto probe_mat = nist->FindOrBuildMaterial("G4_Galactic");
+
+        auto world_solid = new G4Box("World", R_cm * cm + 50 * cm, R_cm * cm + 50 * cm, R_cm * cm + 50 * cm);
+        auto world_log = new G4LogicalVolume(world_solid, world_mat, "World");
+        auto world_phys = new G4PVPlacement(nullptr, G4ThreeVector(), world_log, "World", nullptr, false, 0);
+
+        auto probe_solid = new G4Orb("Probe", probe_r_cm * cm);
+        auto probe_log = new G4LogicalVolume(probe_solid, probe_mat, "Probe");
+        new G4PVPlacement(nullptr, G4ThreeVector(), probe_log, "Probe", world_log, false, 0);
+
+        probe_log_ = probe_log;
+        return world_phys;
+    }
+
+    G4LogicalVolume* GetProbeLog() { return probe_log_; }
+
+private:
+    G4LogicalVolume* probe_log_;
+    double R_cm;
+    double probe_r_cm;
+};
+
+class Step : public G4UserSteppingAction {
+public:
+    void UserSteppingAction(const G4Step* step) override {
+        auto pre = step->GetPreStepPoint();
+        auto track = step->GetTrack();
+
+        if (pre->GetPhysicalVolume()->GetLogicalVolume() == probe_log_ &&
+            pre->GetStepStatus() == fGeomBoundary &&
+            track->GetParentID() == 0) {
+
+            double E = pre->GetKineticEnergy() / MeV;
+            double cos_down = -pre->GetMomentumDirection().z();
+
+            auto& edges = src.EdgesMeV();
+            auto it = std::lower_bound(edges.begin(), edges.end(), E);
+            int bin = it - edges.begin();
+            if (bin >= src.NEBin()) {
+                hist.overflow++;
+            } else if (bin <= 0) {
+                hist.underflow++;
+            } else {
+                hist.E_hist[bin]++;
+            }
+
+            double c_bin = std::floor((cos_down + 1) * src.NABin() / 2);
+            int ibin = static_cast<int>(c_bin) + 1;
+            if (ibin < 1) ibin = 1;
+            if (ibin > src.NABin()) ibin = src.NABin();
+            hist.C_hist[ibin - 1]++;
+        }
+    }
+
+private:
+    G4LogicalVolume* probe_log_;
+};
+
+int main(int argc, char** argv) {
+    if (argc != 7) {
+        std::cerr << "Usage: " << argv[0] << " <table_file> <particle> <N_events> <R_cm> <probe_r_cm> <seed> <out_csv>\n";
+        return 2;
+    }
+
+    const char* table_file = argv[1];
+    const char* particle = argv[2];
+    int N_events = std::atoi(argv[3]);
+    double R_cm = std::atof(argv[4]);
+    double probe_r_cm = std::atof(argv[5]);
+    long long seed = std::atoll(argv[6]);
+    const char* out_csv = argv[7];
+
+    ParmaSource src;
+    if (!src.Load(table_file)) {
+        std::cerr << "err\n";
+        return 2;
+    }
+
+    G4Random::setTheSeed(seed);
+
+    auto runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Serial);
+    runManager->SetUserInitialization(new FTFP_BERT(0));
+
+    auto det = new Det();
+    det->R_cm = R_cm;
+    det->probe_r_cm = probe_r_cm;
+    runManager->SetUserInitialization(det);
+
+    auto step = new Step();
+    step->probe_log_ = det->GetProbeLog();
+    runManager->SetUserAction(step);
+
+    auto primary = new ParmaPrimary(&src, particle, R_cm);
+    runManager->SetUserAction(primary);
+
+    G4UImanager::GetUIpointer()->ApplyCommand("/run/verbose 0");
+    G4UImanager::GetUIpointer()->ApplyCommand("/event/verbose 0");
+    G4UImanager::GetUIpointer()->ApplyCommand("/tracking/verbose 0");
+
+    hist.E_hist.resize(src.NEBin(), 0);
+    hist.C_hist.resize(src.NABin(), 0);
+
+    runManager->Initialize();
+    runManager->BeamOn(N_events);
+
+    std::ofstream f(out_csv, std::ios::binary);
+    if (!f.is_open()) {
+        return 2;
+    }
+
+    double total_hits = 0;
+    for (auto x : hist.E_hist) total_hits += x;
+    for (auto x : hist.C_hist) total_hits += x;
+    total_hits += hist.underflow + hist.overflow;
+
+    f << "# N=" << N_events << " hits=" << static_cast<long long>(total_hits)
+      << " underflow=" << hist.underflow << " overflow=" << hist.overflow
+      << " TotalFlux=" << src.TotalFlux() << " R_cm=" << R_cm
+      << " probe_r_cm=" << probe_r_cm << " seed=" << seed
+      << " particle=" << particle << "\n";
+
+    f << "E_hist";
+    for (auto x : hist.E_hist) f << "," << x;
+    f << "\n";
+
+    f << "C_hist";
+    for (auto x : hist.C_hist) f << "," << x;
+    f << "\n";
+
+    return 0;
+}

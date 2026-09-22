@@ -1,0 +1,2 @@
+g4setup: GEANT4_ROOT=C:\geant4-11.4.2, данные=C:\geant4-11.4.2\share\data
+rc=0

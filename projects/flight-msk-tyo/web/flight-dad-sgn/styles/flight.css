@@ -1,0 +1,18 @@
+:root{--axis:var(--rule); --text:var(--ink)}
+.btn.active{background:var(--accent-soft); color:#16140f}
+.toolbar .grp{display:inline-flex; align-items:center; white-space:nowrap; gap:.4rem}
+#cv{display:block; width:100%; height:420px; cursor:crosshair}
+#readout{min-height:1.4em; font:.85rem var(--mono); padding:.3rem 0; overflow-wrap:anywhere}
+#readout b{display:block; margin-bottom:.2rem}
+#readout ul{margin:0; padding-left:1.1rem}
+#readout li{margin:.1rem 0}
+.series-group h3{margin:.3rem 0; font-size:.8em; text-transform:uppercase; letter-spacing:.05em}
+.series-row{display:inline-flex; align-items:center; margin:.15rem .9rem .15rem 0; font-size:.9rem}
+.color-swatch{display:inline-block; width:.9rem; height:.9rem; margin-right:.4rem; border:1px solid var(--rule)}
+table{width:100%; border-collapse:collapse; margin:.5rem 0 1rem; font-size:.88rem}
+th,td{padding:.35rem .6rem; text-align:left; vertical-align:top; border-bottom:1px solid var(--rule-soft)}
+td.num{text-align:center}
+th{font-size:.78em; text-transform:uppercase; letter-spacing:.05em}
+#lines-table tbody tr,#unlisted-table tbody tr{cursor:pointer}
+.doc{max-width:64rem; margin:0 auto; padding:0 16px 3rem} .doc li{margin:.35rem 0; line-height:1.55}
+.toolbar .grp{white-space:normal; flex-wrap:wrap; max-width:100%} .seg{flex-wrap:wrap} .title{min-width:0} .top{gap:1rem}

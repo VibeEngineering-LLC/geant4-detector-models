@@ -1,0 +1,9 @@
+E_keV,net_cph,sigma_cph,signif,origin
+48.5,1562.47227694027,218.84998330554424,7.1394671973031265,gamma/primary/World 71.8%; gamma/eBrem/Skin 11.2%; gamma/eBrem/Pax 4.0%
+146.5,722.2664881070658,143.58162852380872,5.030354478722879,gamma/primary/World 55.5%; gamma/eBrem/Floor 14.0%; e+-/conv/Pax 3.1%
+209.5,512.9772815164428,103.16659171232565,4.972319750049043,gamma/primary/World 31.3%; neutron/primary/World 26.3%; gamma/eBrem/Pax 15.3%
+256.5,329.2211080668544,78.1648798870004,4.211880176145542,gamma/primary/World 51.2%; gamma/eBrem/Skin 20.2%; gamma/neutronInelastic/Floor 8.8%
+417.5,159.55163659798438,39.56571614622386,4.032572947961462,gamma/eBrem/Skin 39.4%; gamma/annihil/Skin 17.8%; gamma/eBrem/Trim 12.7%
+433.5,161.21170199212693,40.27131509699851,4.003139743607289,gamma/primary/World 52.6%; neutron/primary/World 17.8%; e+-/primary/World 8.7%
+727.5,96.05918112220915,22.706331060343036,4.2305020950733,gamma/primary/World 77.4%; gamma/eBrem/Floor 6.2%; gamma/neutronInelastic/Pax 6.2%
+766.5,107.09861196423606,24.461936600571267,4.378173883491095,e+-/primary/World 26.5%; neutron/primary/World 18.7%; gamma/eBrem/Pax 15.4%

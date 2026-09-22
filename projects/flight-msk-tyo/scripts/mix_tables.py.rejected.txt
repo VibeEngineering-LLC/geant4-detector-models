@@ -1,0 +1,133 @@
+import sys
+sys.stdout.reconfigure(encoding="utf-8")
+sys.stderr.reconfigure(encoding="utf-8")
+
+def read_table(path):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            lines = [line.strip() for line in f.readlines()]
+    except Exception as e:
+        sys.stderr.write(f"Ошибка чтения файла {path}: {e}\n")
+        sys.exit(2)
+    
+    if not lines or not lines[0].startswith("#"):
+        sys.stderr.write(f"Неверный формат файла {path}\n")
+        sys.exit(2)
+        
+    comment = lines[0]
+    try:
+        nebin, nabin, ie511, flux511_cont, flux511_line, total_flux = map(float, lines[1].split())
+        nebin, nabin, ie511 = int(nebin), int(nabin), int(ie511)
+    except Exception as e:
+        sys.stderr.write(f"Ошибка чтения заголовка файла {path}: {e}\n")
+        sys.exit(2)
+        
+    try:
+        ehigh = list(map(float, lines[2].split()))
+    except Exception as e:
+        sys.stderr.write(f"Ошибка чтения энергетических границ файла {path}: {e}\n")
+        sys.exit(2)
+        
+    D = []
+    for i in range(nebin):
+        try:
+            line = lines[3 + i]
+            D.append(list(map(float, line.split())))
+        except Exception as e:
+            sys.stderr.write(f"Ошибка чтения данных файла {path}: {e}\n")
+            sys.exit(2)
+            
+    return {
+        "comment": comment,
+        "nebin": nebin,
+        "nabin": nabin,
+        "ie511": ie511,
+        "flux511_cont": flux511_cont,
+        "flux511_line": flux511_line,
+        "total_flux": total_flux,
+        "ehigh": ehigh,
+        "D": D
+    }
+
+def main():
+    if len(sys.argv) < 3:
+        sys.stderr.write("Недостаточно аргументов\n")
+        sys.exit(2)
+        
+    out_file = sys.argv[1]
+    args = sys.argv[2:]
+    
+    inputs = []
+    weights = []
+    
+    for arg in args:
+        try:
+            last_colon = arg.rindex(":")
+            path = arg[:last_colon]
+            weight = float(arg[last_colon+1:])
+            inputs.append(path)
+            weights.append(weight)
+        except Exception as e:
+            sys.stderr.write(f"Неверный аргумент: {arg}\n")
+            sys.exit(2)
+            
+    tables = [read_table(p) for p in inputs]
+    
+    # Проверка согласованности
+    first = tables[0]
+    for i, t in enumerate(tables):
+        if t["nebin"] != first["nebin"]:
+            sys.stderr.write(f"Несовпадение nebin в файле {inputs[i]}\n")
+            sys.exit(2)
+        if t["nabin"] != first["nabin"]:
+            sys.stderr.write(f"Несовпадение nabin в файле {inputs[i]}\n")
+            sys.exit(2)
+        if t["ie511"] != first["ie511"]:
+            sys.stderr.write(f"Несовпадение ie511 в файле {inputs[i]}\n")
+            sys.exit(2)
+        if abs(t["ehigh"][k] - first["ehigh"][k]) > 1e-8 for k in range(len(first["ehigh"]))):
+            sys.stderr.write(f"Несовпадение энергетических границ в файле {inputs[i]}\n")
+            sys.exit(2)
+            
+    # Вычисление смеси
+    nebin, nabin = first["nebin"], first["nabin"]
+    ie511 = first["ie511"]
+    ehigh = first["ehigh"]
+    
+    flux511_cont_mix = sum(w * t["flux511_cont"] for w, t in zip(weights, tables))
+    flux511_line_mix = sum(w * t["flux511_line"] for w, t in zip(weights, tables))
+    total_flux_mix = sum(w * t["total_flux"] for w, t in zip(weights, tables))
+    
+    D_mix = [[0.0] * nabin for _ in range(nebin)]
+    for i in range(nebin):
+        for j in range(nabin):
+            for w, t in zip(weights, tables):
+                D_mix[i][j] += w * t["D"][i][j]
+    
+    # Запись результата
+    try:
+        with open(out_file, "w", encoding="utf-8", newline="\n") as f:
+            ip = first["comment"].split("ip=")[1].split()[0] if "ip=" in first["comment"] else "0"
+            weights_str = ",".join(f"{w:.9f}" for w in weights)
+            sum_w = sum(weights)
+            f.write(f"# mix ip={ip} n_inputs={len(inputs)} weights={weights_str} sum_w={sum_w:.9f}\n")
+            f.write(f"{nebin} {nabin} {ie511} {flux511_cont_mix:.9e} {flux511_line_mix:.9e} {total_flux_mix:.9e}\n")
+            f.write(" ".join(f"{x:.9e}" for x in ehigh) + "\n")
+            for row in D_mix:
+                f.write(" ".join(f"{x:.9e}" for x in row) + "\n")
+    except Exception as e:
+        sys.stderr.write(f"Ошибка записи файла {out_file}: {e}\n")
+        sys.exit(2)
+        
+    # Вывод на stdout
+    continuum_check = 0.0
+    for k in range(nebin):
+        de = ehigh[k+1] - ehigh[k]
+        for ia in range(nabin):
+            continuum_check += D_mix[k][ia] * de
+            
+    print(f"total_flux_mix={total_flux_mix:.9e}")
+    print(f"continuum_check={continuum_check:.9e}")
+
+if __name__ == "__main__":
+    main()

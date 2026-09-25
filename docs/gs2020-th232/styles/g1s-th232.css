@@ -99,7 +99,7 @@ body{
    текст — по ширине, не рваным правым краем. text-wrap:pretty (где
    браузер поддерживает) не даёт короткой "сиротской" строке в конце
    абзаца — ровно то, от чего предостерегал оператор. */
-p{margin:0 0 .9em; text-align:left; text-wrap:pretty}
+p{margin:0 0 .9em; text-align:justify; text-wrap:pretty}
 p:last-child{margin-bottom:0}
 a{color:var(--ink); text-decoration-thickness:2px; text-underline-offset:2px}
 a:hover{background:var(--accent-soft)}
@@ -720,7 +720,7 @@ footer.bot button:hover{background:var(--accent-soft)}
    оформительский приём, а не как отметка о недостоверности. */
 .guard-note{
   margin:0 0 1.2rem; font:13px/1.5 var(--serif); color:var(--dim);
-  text-align:left; text-wrap:pretty}
+  text-align:justify; text-wrap:pretty}
 
 /* Переключатель состава библиотеки — отдельной строкой над сводкой. */
 #libseg{margin:0 0 .9rem}
@@ -767,136 +767,4 @@ footer.bot button:hover{background:var(--accent-soft)}
   border-top:2px solid var(--rule); padding:.4rem .7rem;
   font:600 12px/1.3 var(--mono); font-variant-numeric:tabular-nums;
   min-height:1.9rem; background:var(--sunk); color:var(--ink);
-}
-
-
-/* ── специфические селекторы страницы «Алтайское Зло» ──────────
-   Донор (Th-232/Ra-226/AmTiCsEu) рисует ОДИН спектр canvas'ом с боковой
-   легендой и вкладками m1/m2/cmp. У этой страницы структура другая
-   (сохранена как есть — переоформляется только вид, не функциональность):
-   три отдельных SVG-графика (raw/fit/res, рисуются inline-SVG в app.js,
-   НЕ canvas), сводка активности, таблица сходимости путей, список
-   ограничений, сворачиваемая таблица по каналам — без вкладок. Ниже —
-   только то, чего не хватает базовым классам донора; сама разметка
-   переиспользует .app/.top/.title/.panel/.toolbar/.seg/.btn/.summary/
-   table.big/.scroll/.sec-h/.method-lede/footer.bot донора как есть. */
-
-/* Алиасы старых CSS-переменных страницы: app.js строит инлайн-стили
-   SVG-графика строками вида var(${s.color})/var(--shade) и т.п. — саму
-   логику графика (JS) не трогаем, поэтому имена переменных остаются
-   старыми, а их ЗНАЧЕНИЯ отображены на готовую палитру плаката. Доктрина
-   плаката (шапка файла выше): измеренное — чернота, сумма/модель —
-   красная --sum-line; компонентам (Cs-137/K-40) отданы готовые
-   --acc-blue/--acc-orange (цвета методов 1/2 на других страницах),
-   нового цвета не заводим. */
-.app{
-  --s-meas: var(--ink);
-  --s-model: var(--sum-line);
-  --s-cs: var(--acc-blue);
-  --s-k: var(--acc-orange);
-  --s-bg: var(--faint);
-  --shade: var(--sunk);
-  --axis: var(--rule-soft);
-  --muted: var(--dim);
-  --ink-2: var(--dim);
-  --surface: var(--paper);
-  --font-mono: var(--mono);
-}
-
-/* Три канвы-графика (id cv-raw/cv-fit/cv-res, 17.09 v6) — по образцу
-   .m1-wrap донора: легенда-лента сверху в рамке, канва заполняет .plotbox. */
-.app .legendbar{border:2px solid var(--rule); border-bottom:none; margin:.4rem 0 0}
-.app .plotwrap{height:clamp(20rem, 44vh, 30rem); padding:.7rem 0 .3rem;
-  border:2px solid var(--rule); margin:0 0 1.3rem}
-.app .plotwrap.res{height:clamp(11rem, 24vh, 15rem); margin-top:.4rem}
-.app .plotbox{inset:.7rem .6rem .3rem}
-.app .plotbox canvas{cursor:crosshair}
-.app .plotbox canvas:focus-visible{outline:3px solid var(--accent-soft); outline-offset:1px}
-.app .chart-tip b{display:block}
-
-/* Подсказка под курсором на SVG-графике (div.tip, создаётся в app.js
-   showAt()) — тот же приём, что .chart-tip/.readout донора, но имя
-   класса "tip" и вложенные .head/.row/.key/.v/.n заданы в JS и не
-   переименовываются (правка минимальна — только под новую разметку). */
-.tip{
-  position:absolute; pointer-events:none;
-  background:var(--paper); color:var(--ink);
-  border:2px solid var(--rule); border-radius:0; box-shadow:var(--shadow);
-  padding:.5rem .65rem; font:12px/1.5 var(--mono); min-width:11rem; z-index:5;
-}
-.tip .head{
-  font:700 11px/1.3 var(--mono); color:var(--dim); margin-bottom:.35em;
-  border-bottom:1.5px solid var(--rule-soft); padding-bottom:.3em;
-}
-.tip .row{display:grid; grid-template-columns:.9rem 1fr auto; gap:.5rem; align-items:center}
-.tip .row .key{width:.9rem; height:3px; display:inline-block}
-.tip .row .v{font-family:var(--mono); font-weight:700; text-align:right}
-.tip .row .n{color:var(--dim)}
-
-/* Легенда рядов графика (ul.legend, создаётся в app.js buildLegend) —
-   свотч 3px высотой, а не квадрат .ch .sw донора: ряды на графике
-   рисуются ЛИНИЯМИ, а не заливкой, квадратная плашка соврала бы про
-   форму отметки. */
-.legend{
-  display:flex; flex-wrap:wrap; gap:.4rem 1.1rem;
-  font:700 12px/1.3 var(--sans); color:var(--dim);
-  list-style:none; margin:.3rem 0 0; padding:0;
-}
-.legend li{display:inline-flex; align-items:center; gap:.5rem}
-.legend .key{width:1.1rem; height:3px; display:inline-block}
-
-/* Подпись группы переключателей в toolbar — донор такого класса не даёт
-   (там переключатели одни, у нас три независимые группы: датасет/шкала/
-   энергия, нужна метка перед каждой). */
-.seg-label{
-  font:800 10px/1 var(--sans); letter-spacing:.1em; text-transform:uppercase;
-  color:var(--faint); align-self:center; margin-right:.3rem;
-}
-
-/* Числовые ячейки таблиц (класс "n" — из старой вёрстки и из app.js
-   buildTable(), тот же класс, не переименован). */
-td.n{
-  font:600 12.5px/1.4 var(--mono); font-variant-numeric:tabular-nums;
-  text-align:right; white-space:nowrap;
-}
-/* Опорная строка (паспорт/путь 3) в таблице сходимости путей — жирная
-   и с чёрной плашкой слева, по смыслу как .cmp-pass у донора (опорное
-   значение, с которым сравнивают остальные пути). */
-tr.best td{font-weight:800}
-tr.best td:first-child{border-left:4px solid var(--rule); padding-left:.45rem}
-
-/* Список ограничений — обычный текстовый список; донор такого класса не
-   даёт (у него только .note — цельная жёлтая плашка, не список). */
-.notes{
-  margin:.3rem 0 0; padding-left:1.3rem; display:grid; gap:.5rem;
-  font:15px/1.55 var(--sans); color:var(--dim);
-}
-.notes li::marker{color:var(--faint)}
-
-/* Предупреждение про шифр/массу в шапке файла — по смыслу НЕ .ai-note
-   донора (та — про происхождение сборки страницы, эта — про дефект в
-   самих данных измерения), поэтому свой класс; чёрная линейка слева, а
-   не цветная — у плаката нет цветов, кроме жёлтого акцента. */
-.warn{
-  font:13px/1.5 var(--sans); color:var(--dim);
-  border-left:3px solid var(--rule); padding-left:.7rem; margin:.6rem 0 0;
-  max-width:58rem;
-}
-
-/* Сворачиваемая таблица по каналам: высота ограничена, чтобы таблица на
-   сотни каналов не растягивала страницу — тот же приём, что у
-   #viewM2 .scroll донора (там для длинной библиотеки линий метода 2). */
-#channel-table{max-height:26rem; overflow:auto; margin-top:.6rem}
-
-/* Раскрывающийся блок таблицы по каналам — плакатная рамка вместо
-   прежней карточки со скруглением; донор элемент <details> не
-   использует, оформление по аналогии с .panel (рамка 2px, без тени —
-   деталь второго плана, не отдельная панель). */
-details{border:2px solid var(--rule); padding:1rem 1.1rem; margin:1.5rem 0 0}
-details summary{
-  cursor:pointer; font:800 12px/1 var(--sans); letter-spacing:.05em;
-  text-transform:uppercase;
-}
-details[open] summary{
-  margin-bottom:.7rem; padding-bottom:.6rem; border-bottom:2px solid var(--rule-soft);
 }

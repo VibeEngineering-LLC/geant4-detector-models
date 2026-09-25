@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f2ea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161511" media="(prefers-color-scheme: dark)">
+<title>GS2020 · Th-232 в Маринелли</title>
+<link rel="stylesheet" href="styles/g1s-th232.css">
+<style>
+body,p,li,td,th,figcaption,caption{text-align:left}
+p,li{max-width:78ch;text-wrap:pretty}
+.note p,.warn li,.warn p{max-width:74ch}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.st{display:inline-block;padding:0 .45em;border:2px solid var(--ink);font-weight:700;font-size:12px}
+.st-done{background:var(--accent-soft)} .st-rejected{text-decoration:line-through}
+.st-work{background:var(--ink);color:var(--paper)} .st-wait{opacity:.55}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top"><div class="title">
+    <p class="eyebrow">Atom GS2020 PRO MAX · NaI(Tl) Capescint 51×51 · Маринелли 1 л</p>
+    <h1>КИ Th-232 в Маринелли: разложение спектра по методу</h1>
+    <p class="stand" id="meta"></p>
+  </div></div>
+
+  <h2 class="sec-h">Итог: активность цепочки Th-232 в равновесии</h2>
+  <p class="method-lede" id="res-lede"></p>
+  <p class="warn"><b>Итог не установлен (25.09.2026).</b> Фон S31_18 снят без сосуда; при вычете его целиком пики и континуум
+  модели расходятся (~19 %), при ослаблении фона сосудом по линии K-40 (T = 0,828) — сходятся, но активность растёт до
+  1243–1261 Бк. Площади из таблицы пиков прибора дают не более 900–1016 Бк. Назначены замеры: фон с водой в том же сосуде и
+  KCl (проверка эффективности модели по K-40). Числа ниже — рабочие, не результат.</p>
+  <div class="scroll"><table class="big"><thead><tr><th>Метод</th><th>Шаблоны</th><th class="num">A2 ± σ (Бирге), Бк</th>
+  <th class="num">E1, Бк</th><th class="num">к паспорту</th><th class="num">χ²/ν</th></tr></thead>
+  <tbody id="res-rows"></tbody></table></div>
+  <div class="warn"><ul>
+    <li>Метод 2 не учитывает рентгеновское и характеристическое излучение (#M2-1); окно подгонки обоих методов 150–2900 кэВ.</li>
+    <li>Модель метода 2 не содержит тормозного излучения β-частиц, линий слабее 0,5 % и истинного суммирования каскадов
+    (кроме 7 сумм-пиков) — поэтому на 1 Бк она ниже модели метода 1, и подгонка завышает активность.</li>
+    <li>Фон S31_18 снят без сосуда, вычтен фиксированным k по живому времени; самоэкранирование фона матрицей не учтено.</li>
+    <li>Равновесие цепочки не измерено, принято. Звенья Ra-224 и Pb-212 в поузловой подгонке вырождены — их числа
+    ниже не толковать.</li>
+  </ul></div>
+  <h3 class="sec-h">Звенья цепочки (поузловая подгонка)</h3>
+  <div class="scroll"><table class="big"><thead><tr><th>Метод</th><th>Звено</th><th class="num">A2 ± σ, Бк</th>
+  <th class="num">эквивалент цепочки, Бк</th></tr></thead><tbody id="res-links"></tbody></table></div>
+  <h3 class="sec-h">Нетто против моделей (активность цепочки — из подгонки)</h3>
+  <div class="toolbar" role="toolbar" aria-label="Шкала">
+    <span class="seg-label">Отсчёты</span>
+    <div class="seg" id="ctl-fitscale" role="group"><button data-v="log">лог</button><button data-v="lin">лин</button></div>
+    <span class="seg-label" style="text-transform:none;letter-spacing:0">диапазон энергии общий со спектрами ниже · протяжка — приближение, двойной клик — весь диапазон</span>
+  </div>
+  <div class="plotwrap"><div class="plotbox">
+    <canvas id="cv-fit" tabindex="0" role="img" aria-label="Нетто и модели М1, М2 · протяжка — приближение, двойной клик — весь диапазон"></canvas>
+    <div class="chart-tip" id="tip-fit" hidden></div>
+  </div></div>
+  <div class="plotwrap"><div class="plotbox">
+    <canvas id="cv-ratio" tabindex="0" role="img" aria-label="Отношение нетто к модели по бинам 25 кэВ"></canvas>
+  </div></div>
+
+  <h2 class="sec-h">Этапы</h2>
+  <div class="scroll"><table class="big"><thead><tr><th>#</th><th>Этап</th><th>Статус</th><th>Примечание</th></tr></thead>
+  <tbody id="stages"></tbody></table></div>
+
+  <h2 class="sec-h">Эффективность (Geant4, объёмный источник в сосуде)</h2>
+  <p class="method-lede">Пик — узкое окно ±1 кэВ сырой гистограммы (полное поглощение), полная — любое
+  отложение в кристалле. Погрешность — только статистика прогона.</p>
+  <div class="scroll"><table class="big"><thead><tr><th>Нуклид</th><th class="num">E, кэВ</th>
+  <th class="num">ε пика, %</th><th class="num">ε полная, %</th><th class="num">событий</th><th class="num">GeomNav1002</th></tr></thead>
+  <tbody id="eff"></tbody></table></div>
+  <div class="plotwrap"><div class="plotbox"><canvas id="cv-eff" role="img" aria-label="Эффективность от энергии"></canvas></div></div>
+
+  <h2 class="sec-h">Спектр: измерение и фон</h2>
+  <div class="toolbar" role="toolbar" aria-label="Что показывать">
+    <span class="seg-label">Отсчёты</span>
+    <div class="seg" id="ctl-scale" role="group"><button data-v="log">лог</button><button data-v="lin">лин</button></div>
+    <span class="seg-label">Энергия</span>
+    <div class="seg" id="ctl-range" role="group"><button data-v="all">0–3000</button><button data-v="low">0–800</button><button data-v="high">1300–2800</button></div>
+    <span class="seg-label" style="text-transform:none;letter-spacing:0">протяжка по графику — приближение, двойной клик — весь диапазон</span>
+  </div>
+  <p class="method-lede">Фон S31_18 приведён фиксированным k = T<sub>КИ</sub>/T<sub>фон</sub>; снят без сосуда —
+  самоэкранирование фона матрицей не учтено (систематика, названа в итоге).</p>
+  <div class="plotwrap"><div class="plotbox">
+    <canvas id="cv-raw" tabindex="0" role="img" aria-label="Измерение и фон · протяжка — приближение, двойной клик — весь диапазон"></canvas>
+    <div class="chart-tip" id="tip-raw" hidden></div>
+  </div></div>
+
+  <h2 class="sec-h">Нетто = измерение − k·фон</h2>
+  <div class="plotwrap"><div class="plotbox">
+    <canvas id="cv-net" tabindex="0" role="img" aria-label="Нетто · протяжка — приближение, двойной клик — весь диапазон"></canvas>
+    <div class="chart-tip" id="tip-net" hidden></div>
+  </div></div>
+</div>
+<script>document.write('<script src="data.js?t='+Date.now()+'"><\/script><script src="result.js?t='+Date.now()+'"><\/script><script src="progress.js?t='+Date.now()+'"><\/script><script src="result_view.js?t='+Date.now()+'"><\/script>')</script>
+</body>
+</html>

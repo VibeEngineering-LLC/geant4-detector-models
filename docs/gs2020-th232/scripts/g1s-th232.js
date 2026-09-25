@@ -519,7 +519,7 @@
                + signedPct(m2.A_Bq / pass.A_Bq) + ")")
         + cell("χ²/ν", num(m2.chi2_ndof, 2))
         + cell("линий в модели", cnt(m2.n_lines) + " + " + cnt(m2.n_sum_peaks)
-               + " сумм-пиков (суммы 860+2614 = 3475 кэВ в библиотеке нет); рентген не учтён (#M2-1)")
+               + " сумм-пиков (суммы 860+2614 = 3475 кэВ в библиотеке нет); рентген K/L учтён в числе линий (#XR-1)")
         + cell("каналов в подгонке", cnt(m2.n_channels_fit))
         + cell(CONT_LAB, num(m2.bg_amplitude, 2), false, CONT_HINT);
     }

@@ -812,7 +812,7 @@
       + num(100 * (m.bg_real_s - m.bg_live_s) / m.bg_real_s, 3) + "</td></tr>"
       + "<tr><td>степень полинома E(канал)</td><td class='num'>"
       + m.cal_sample.order + "</td><td class='num'>" + m.cal_bg.order + "</td></tr>"
-      + "<tr><td>коэффициенты</td><td>" + coefsHtml(m.cal_sample.coefs)
+      + "<tr><td>коэффициенты своей шкалы (по реперам этого спектра)</td><td>" + coefsHtml(m.cal_sample.coefs)
       + "</td><td>" + coefsHtml(m.cal_bg.coefs) + "</td></tr>"
       + "<tr><td>масштаб фона (t_обр / t_фон)</td>"
       + "<td class='num' colspan='2'>" + num(m.bg_scale_time, 4) + "</td></tr>"

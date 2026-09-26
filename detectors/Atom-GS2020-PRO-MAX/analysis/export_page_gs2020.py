@@ -2,8 +2,9 @@
 r"""Выгрузка данных страницы GS2020 Th-232 в КОНТРАКТЕ донорской страницы Гамма-1С Th-232 (web-th232: g1s-th232.js,
 build_page.py) — оформление и интерактив берутся у донора без правок (оператор 25.09: «всё в едином согласованном стиле»).
 Источник чисел — JSON подгонок out_v5. Переключатель донора «закон ПШПВ» (lines | cs) здесь означает фон:
-lines — фон S31_18 как снят (без сосуда), cs — фон по реальному второму замеру (тот же сосуд Маринелли
-с дист. водой вместо тория, промежуточный — набор статистики продолжается), не модельная поправка T(E).
+lines — фон S31_18 как снят (без сосуда), cs — фон реального измерения «Маринелли 1 л + дист. вода» (оператор 26.09,
+GS_BG_WATER=1, промежуточный замер 11,7 ч) — заменил прежнее модельное ослабление сосудом (GS_BG_T), которое
+хуже описывало форму (χ²/ν хуже во всех трёх подгонках).
 Спека: scripts\specs\SPEC-export_page_gs2020.md. Запуск: python export_page_gs2020.py"""
 
 import sys
@@ -25,11 +26,10 @@ DST = os.path.join(PAGE, "gs2020_th232_data.json")
 DONOR_CFG = os.path.join(REPO_ROOT, "detectors", "Gamma-1S", "web-th232", "configs", "th232.yaml")
 LIB2_CFG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "th232_gs2020_full_xray.yaml")   # #XR-1: донор + рентген, не голый DONOR_CFG
 LIB05_CFG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "th232_gs2020_lib05.yaml")
-BGT = "_bgT0.6_5.62"   # T(1461) = 0,838 ± 0,009 по K-40, центроиды в каждом спектре свои (cal/bg_transmission_k40.py, 25.09 после #CAL-1)
 FILES = {"m1": "fit_m1.json", "m2": "fit_m2.json", "m2f": "fit_m2_lib05.json"}
 N_PER_BR = 5.5e7
 N_EFF_MIN = 4.0
-PASSPORT = {"A_Bq": m1.PASSPORT_BQ, "dA_Bq": m1.PASSPORT_BQ * m1.PASSPORT_UNC, "Bq_per_kg": 910.0, "unc_pct": 6.0, "mass_g": 1052.0, "date_certified": "паспорт КИ (дата не указана)", "date_measured": "2026-09-25", "decay_factor": 1.0}
+PASSPORT = {"A_Bq": m1.PASSPORT_BQ, "dA_Bq": m1.PASSPORT_BQ * m1.PASSPORT_UNC, "Bq_per_kg": 910.0, "unc_pct": 6.0, "mass_g": 1052.0, "date_certified": "образец с известной активностью (дата не указана)", "date_measured": "2026-09-25", "decay_factor": 1.0}
 
 import fit_gs2020_th232_m2 as m2    # ed.SUM_PEAKS: (E1, E2, нуклид, I1 %, I2 %, примечание, fb %) — выходы пар сумм-пиков
 SUM_I = {(round(t[0], 3), round(t[1], 3)): (t[3], t[4]) for t in m2.ed.SUM_PEAKS}
@@ -38,8 +38,8 @@ SUM_I = {(round(t[0], 3), round(t[1], 3)): (t[3], t[4]) for t in m2.ed.SUM_PEAKS
 def load(name):
     return json.load(open(os.path.join(OUT, name), encoding="utf-8"))
 
-def bgt(name):
-    return name.replace(".json", BGT + ".json")
+def bgw(name):
+    return name.replace(".json", "_bgw.json")
 
 def r4(a):
     return [round(float(x), 4) for x in a]
@@ -143,9 +143,9 @@ def main():
     jm1 = load(FILES["m1"])
     jm2 = load(FILES["m2"])
     jm2f = load(FILES["m2f"])
-    cm1 = load(bgt(FILES["m1"]))
-    cm2 = load(bgt(FILES["m2"]))
-    cm2f = load(bgt(FILES["m2f"]))
+    cm1 = load(bgw(FILES["m1"]))
+    cm2 = load(bgw(FILES["m2"]))
+    cm2f = load(bgw(FILES["m2f"]))
 
     all_jsons = [jm1, jm2, jm2f, cm1, cm2, cm2f]
     ref_e = np.array(jm1["e"])
@@ -199,7 +199,7 @@ def main():
     nuclides = []
     for n in donor_cfg_data["nuclides"]:
         nuclides.append({"key": n["key"], "label_ru": n["label_ru"], "label_en": n["label_en"], "color": n["color"], "note": n.get("note_ru", ""), "branching": n["br"]})
-    nuclides.append({"key": "BG", "label_ru": "фон (приведён)", "label_en": "background", "color": "#b8b2a2", "note": "фон лаборатории × отношение живых времён; в режиме «ослабленный сосудом» × T(E)", "branching": 1.0})
+    nuclides.append({"key": "BG", "label_ru": "фон (приведён)", "label_en": "background", "color": "#b8b2a2", "note": "фон лаборатории × отношение живых времён; в альтернативном режиме — прямое измерение фона в сосуде Маринелли с дист. водой (промежуточный замер 11,7 ч), × отношение живых времён", "branching": 1.0})
     nuclides.append({"key": "XRAY", "label_ru": "K-рентген", "label_en": "K X-rays", "color": "#6b5f4a",
                       "note": "в методе 1 отдельно не выделяется (рождается внутри общего шаблона звена, "
                               "не отделим без нового прогона); в методе 2 — сумма строк библиотеки #XR-1", "branching": 1.0})
@@ -224,10 +224,25 @@ def main():
     contrib = {k: float(np.sum(v)) for k, v in jm1["chain"]["stack"].items()}
     contrib["BG"] = float(np.sum(bg_arr))
     nuclides.sort(key=lambda n: (n["key"] == "XRAY", -contrib.get(n["key"], 0.0)))
-    m1.BG_T = [float(x) for x in BGT.replace("_bgT", "").split("_")]   # тот же T(E), что в подгонках с суффиксом BGT
-    bg_att = bg_arr * np.array([m1.bg_transmission(E) for E in e_of_ch])
-    m1.BG_T = None
+    # Панель «cs»: фон — реальное измерение «Маринелли 1 л + дист. вода» (оператор 26.09), не модельное ослабление.
+    bw = m1.Spec(m1.bm.read(m1.CAL.BKG_WATER_XML)[0], "bgw")
+    k_bg_w = s.live_time / bw.live_time
+    ebw = np.array([bw.channel_to_energy(i) for i in range(len(bw.counts))])
+    bg_water_arr = np.interp(es, ebw, np.asarray(bw.counts, float) / np.gradient(ebw)) * np.gradient(es) * k_bg_w
     fw = fwhm_cal()
+
+    # Оператор 26.09 «спектр на всех картинках на 3000 обрежь»: массивы по каналам (длина n_full, реально до
+    # ~4774 кэВ) обрезаются для ОТОБРАЖЕНИЯ; окно подгонки LO..HI=150..3600 (#SUM-1) не меняется — обрезка
+    # чисто визуальная, χ² считается по полному окну.
+    n_full = len(es)
+    n_show = int(np.searchsorted(es, 3000.0, side="right"))
+
+    def crop_spec(obj):
+        if isinstance(obj, list):
+            return obj[:n_show] if len(obj) == n_full else obj
+        if isinstance(obj, dict):
+            return {k: crop_spec(v) for k, v in obj.items()}
+        return obj
 
     data = {
         "meta": meta,
@@ -235,12 +250,12 @@ def main():
         "passport": PASSPORT,
         "nuclides": nuclides,
         "channels": [],
-        "spectrum": dict({"e_of_ch": r4(e_of_ch), "counts": counts, "bg_counts": bg_counts}, **spectrum_block(jm1, jm2, jm2f, bg_arr)),
+        "spectrum": crop_spec(dict({"e_of_ch": r4(e_of_ch), "counts": counts, "bg_counts": bg_counts}, **spectrum_block(jm1, jm2, jm2f, bg_arr))),
         "cs": {
             "method1": method1_block(cm1),
             "method2": method2_block(cm2, n2),
             "method2_full": method2_block(cm2f, n05),
-            "spectrum": spectrum_block(cm1, cm2, cm2f, bg_att)
+            "spectrum": crop_spec(spectrum_block(cm1, cm2, cm2f, bg_water_arr))
         },
         "method1": method1_block(jm1),
         "method2": method2_block(jm2, n2),

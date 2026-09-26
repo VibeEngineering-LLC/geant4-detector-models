@@ -30,6 +30,14 @@ if not os.environ.get("GS2020_REF") or not os.environ.get("GS2020_OUT"):
 REF = os.environ["GS2020_REF"]
 XML_SAMPLE = os.path.join(REF, "Калибровка Th-232 (без вычета фона).xml")
 XML_BG = os.path.join(REF, "Фон лаба S31_18.xml")
+BG_TAG = "bg"
+# GS_BG_WATER=1 (оператор 26.09: «КИ с торием считать именно с фоном с водой»): фон — Маринелли 1 л с дист. водой,
+# своя шкала по его реперам (тег "bgw" в cal/gs2020_calib.py); модельное ослабление GS_BG_T при этом запрещено.
+BG_WATER = os.environ.get("GS_BG_WATER") == "1"
+if BG_WATER:
+    if os.environ.get("GS_BG_T"):
+        raise SystemExit("ОТКАЗ: GS_BG_WATER=1 и GS_BG_T несовместимы — фон с водой уже ослаблен сосудом физически")
+    XML_BG, BG_TAG = CAL.BKG_WATER_XML, "bgw"
 OUT = os.environ["GS2020_OUT"]  # статистика n/BR = 5,5e7 (оператор 25.09)
 LO, HI = 150.0, 3600.0   # #SUM-1: верх окна 3600 захватывает сумм-пики Tl-208 3197 и 3475 кэВ.
 # #XR-1 (25.09): попытка опустить LO до 25 кэВ ОТВЕРГНУТА — модель не описывает зону <150 кэВ:
@@ -100,8 +108,8 @@ def main():
         raise SystemExit(f"ОТКАЗ: нет файла {XML_BG}")
 
     s = Spec(bm.read(XML_SAMPLE)[0])
-    b = Spec(bm.read(XML_BG)[0], "bg")
-    for tg in ("sample", "bg"):
+    b = Spec(bm.read(XML_BG)[0], BG_TAG)
+    for tg in ("sample", BG_TAG):
         print("#CAL-2 шкала %s — своя: " % tg + "; ".join("%.1f→%.1f (без него %+.2f)" % (q["mu_file"], q["E_lib"], q["resid_keV"]) for q in CAL_OWN[tg]["refs"]))
     if BG_T:  # экранирование фона сосудом: фон снят без сосуда (оператор 25.09 «делай»)
         b.counts = [c * bg_transmission(b.channel_to_energy(i)) for i, c in enumerate(b.counts)]
@@ -109,7 +117,7 @@ def main():
             BG_T[0], BG_T[1], *[bg_transmission(x) for x in (238.6, 583.2, 1460.8, 2614.5)]))
 
     print("Проверка калибровки:")
-    for tg in ("sample", "bg"):
+    for tg in ("sample", BG_TAG):
         for q in CAL_OWN[tg]["refs"]:
             print(f"  {tg}: File: {q['mu_file']:.3f}, Lib: {q['E_lib']:.3f}, Resid (leave-one-out): {q['resid_keV']:+.3f}")
 
@@ -196,7 +204,7 @@ def main():
     issues = []
     
     # (a) any PEAK_TABLE residual after correction |>0.5| keV
-    for tg in ("sample", "bg"):
+    for tg in ("sample", BG_TAG):
         for q in CAL_OWN[tg]["refs"]:
             if not q["ok"]:
                 issues.append(f"{tg}: невязка калибровки {q['resid_keV']:+.2f} кэВ у репера {q['E_lib']} выше 0,25·ПШПВ")
@@ -312,7 +320,7 @@ def main():
         "chain": chain_fit
     }
 
-    json_path = os.path.join(OUT, "fit_m1%s%s.json" % ("_pw%g" % PW if PW > 0 else "", "_bgT%g_%g" % tuple(BG_T) if BG_T else ""))
+    json_path = os.path.join(OUT, "fit_m1%s%s.json" % ("_pw%g" % PW if PW > 0 else "", "_bgT%g_%g" % tuple(BG_T) if BG_T else ("_bgw" if BG_WATER else "")))
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(result_json, f, ensure_ascii=False, indent=1)
 

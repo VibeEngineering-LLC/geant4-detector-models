@@ -33,7 +33,7 @@ BR = {"Ac228":1.0,"Ra224":1.0,"Pb212":1.0,"Bi212":1.0,"Tl208":0.3594}
 
 def main():
     s = m1.Spec(m1.bm.read(m1.XML_SAMPLE)[0])
-    b = m1.Spec(m1.bm.read(m1.XML_BG)[0], "bg")   # #CAL-2: своя шкала фона по его реперам
+    b = m1.Spec(m1.bm.read(m1.XML_BG)[0], m1.BG_TAG)   # #CAL-2: своя шкала фона по его реперам
     if m1.BG_T:  # тот же режим ослабления фона сосудом, что в методе 1 (GS_BG_T="f,rhot")
         b.counts = [c * m1.bg_transmission(b.channel_to_energy(i)) for i, c in enumerate(b.counts)]
         print("ФОН ОСЛАБЛЕН сосудом: f=%g, ρt=%g г/см²" % tuple(m1.BG_T))
@@ -219,7 +219,7 @@ def main():
         "chain": chain_fit
     }
 
-    with open(os.path.join(m1.OUT, "fit_m2%s%s%s.json" % ("_lib05" if "lib05" in os.environ.get("GS_M2_CONFIG", "") else "", "_pw%g" % PW if PW > 0 else "", "_bgT%g_%g" % tuple(m1.BG_T) if m1.BG_T else "")), "w", encoding="utf-8") as f:
+    with open(os.path.join(m1.OUT, "fit_m2%s%s%s.json" % ("_lib05" if "lib05" in os.environ.get("GS_M2_CONFIG", "") else "", "_pw%g" % PW if PW > 0 else "", "_bgT%g_%g" % tuple(m1.BG_T) if m1.BG_T else ("_bgw" if m1.BG_WATER else ""))), "w", encoding="utf-8") as f:
         json.dump(out_data, f, ensure_ascii=False, indent=1)
 
 if __name__ == "__main__":

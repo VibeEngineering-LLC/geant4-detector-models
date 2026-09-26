@@ -8,6 +8,10 @@ DONOR = os.path.join(REPO_ROOT, "detectors", "Gamma-1S", "web-th232")
 PAGE = os.environ.get("GS2020_PAGE_WORK", os.path.join(REPO_ROOT, ".work", "gs2020-th232-page"))
 sys.path.insert(0, DONOR)
 import build_page as bp
+# #CHART-1 (оператор 26.09 «сделай увеличение по выделению мышью»): донор не имел drag-zoom на графиках
+# метода 1/2 (только на вкладке "калибровка") — пробел донора, не дефект переноса. Патч сгенерирован
+# ступенью 2 (Ollama qwen3.6:27b, SPEC-gs2020-zoom-patch.md).
+ZOOM_JS = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "patches", "gs2020_zoom.js"), encoding="utf-8").read().rstrip("\n")
 TERMS = {"g1s-th232.js": [('cell("против паспорта"', 'cell("к известной активности"', 2),
                           ("<th class='num'>к паспорту</th>", "<th class='num'>к известной активности</th>", 1),
                           ('lab: "паспорт"', 'lab: "известная"', 1), ('row("cmp-pass", "паспорт"', 'row("cmp-pass", "известная активность"', 1),
@@ -27,7 +31,19 @@ TERMS = {"g1s-th232.js": [('cell("против паспорта"', 'cell("к и�
                           ("      fillRuns(vec, [[0, e.length - 1]], order[oi].nuc.color);\n    }",
                            "      fillRuns(vec, [[0, e.length - 1]], order[oi].nuc.color);\n      strokeLayer(oi);\n    }", 1),
                           ("    for (var oj = 0; oj < order.length; oj++) {\n      var ks = order[oj].nuc.key;",
-                           "    function strokeLayer(oj) {\n      var ks = order[oj].nuc.key;", 1)]}
+                           "    function strokeLayer(oj) {\n      var ks = order[oj].nuc.key;", 1),
+                          # #CHART-1: zoom-aware диапазон отображения (drawSpectrum) вместо жёстких 0..e[last]
+                          ("    var xLo = 0, xHi = e[e.length - 1];",
+                           "    var xLo = ST.zoom ? ST.zoom.xLo : 0, xHi = ST.zoom ? ST.zoom.xHi : e[e.length - 1];", 1),
+                          # #CHART-1: курсор-подсказка (attachCursor) — тоже с учётом zoom
+                          ("      var e = D.spectrum.e_of_ch;\n      var xHi = e[e.length - 1];\n      if (x < m.l || x > r.width - m.r) ST.cursorE = null;\n      else ST.cursorE = ((x - m.l) / (r.width - m.r - m.l)) * xHi;",
+                           "      var e = D.spectrum.e_of_ch;\n      var xLo = ST.zoom ? ST.zoom.xLo : 0, xHi = ST.zoom ? ST.zoom.xHi : e[e.length - 1];\n      if (x < m.l || x > r.width - m.r) ST.cursorE = null;\n      else ST.cursorE = xLo + ((x - m.l) / (r.width - m.r - m.l)) * (xHi - xLo);", 1),
+                          # #CHART-1: сами функции zEfromX/wireZoom — вставлены перед комментарием "перерисовка"
+                          ("  /* ── перерисовка активной вкладки ───────────────────────────── */",
+                           ZOOM_JS + "\n\n  /* ── перерисовка активной вкладки ───────────────────────────── */", 1),
+                          # #CHART-1: подключение wireZoom к обеим канвам (метод 1, метод 2) — синхронный zoom (ST.zoom общий)
+                          ('    attachCursor("cvM1", "m1-tip", function () {',
+                           '    wireZoom("cvM1"); wireZoom("cvM2");\n    attachCursor("cvM1", "m1-tip", function () {', 1)]}
 sha = lambda p: hashlib.sha256(open(p, "rb").read()).hexdigest()
 for rel in (("styles", "g1s-th232.css"), ("scripts", "g1s-th232.js")):
     src, dst = os.path.join(DONOR, "src", *rel), os.path.join(PAGE, "src", *rel)

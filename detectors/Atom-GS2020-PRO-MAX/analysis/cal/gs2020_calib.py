@@ -7,7 +7,19 @@ REFS = {
     "sample": [(238.632, 30), (338.320, 30), (583.187, 45), (727.330, 45), (911.204, 55), (1460.822, 80), (2614.511, 150)],   # K-40 (фон во время замера) — единственный репер между 911 и 2614; Ac-228 1459/1496 слабее на порядок
     "bg":     [(238.632, 30), (351.932, 25), (609.312, 40), (1460.822, 80), (2614.511, 150)],   # Bi-214 1120/1764 слиты с соседями Bi-214 — не реперы
 }
-PATHS = {"sample": s.SAMPLE_XML, "bg": s.BKG_XML}
+# bgw (Маринелли+вода, промежуточный замер 11,7 ч) — СВОЯ калибровка по пикам невозможна (W-147, оператор 26.09
+# «911, 1461 не на месте»): за 11,7 ч в спектре нет разрешимых пиков вообще, фит по REFS подгонял бы шум/континуум.
+# Оператор (26.09, п.1) выбрал: наследовать калибровку от "bg" (7 сут, тот же прибор без сосуда) — заводские
+# file_coeffs у bg и bgw СОВПАДАЮТ (проверка в calibrate_bgw_from_bg), т.е. шкала прибора между замерами не менялась.
+def calibrate_bgw_from_bg():
+    d_bg = s.read_atomspectra_xml(PATHS["bg"]); d_bgw = s.read_atomspectra_xml(PATHS["bgw"])
+    if list(d_bg["coeffs"]) != list(d_bgw["coeffs"]):
+        raise SystemExit("ОТКАЗ: file_coeffs bg %s != bgw %s — наследование калибровки запрещено, нужна своя"
+                          % (d_bg["coeffs"], d_bgw["coeffs"]))
+    r = dict(calibrate("bg")); r["tag"] = "bgw"; r["inherited_from"] = "bg"
+    return r
+BKG_WATER_XML = os.environ.get("GS2020_BG_WATER_XML", os.path.join(os.path.dirname(s.BKG_XML), "Фон Маринелли 1 л вода дист (промеж 11,7 ч, 24.09).xml"))
+PATHS = {"sample": s.SAMPLE_XML, "bg": s.BKG_XML, "bgw": BKG_WATER_XML}
 REPR_ORDER = 4
 OUT_JSON = os.path.join(os.environ.get("GS2020_OUT", r"C:\g4work\gs2020\run_marinelli\out_v5"), "cal_own.json")
 
@@ -50,6 +62,7 @@ def energy_axis(tag, n_channels=None):
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
     res = {tag: calibrate(tag) for tag in ("sample", "bg")}
+    res["bgw"] = calibrate_bgw_from_bg()
     any_fail = False
     for tag, r in res.items():
         print("== %s: коэффициенты файла %s" % (tag, ", ".join("%.6g" % c for c in r["file_coeffs"])))

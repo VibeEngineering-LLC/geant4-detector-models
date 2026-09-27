@@ -3,7 +3,7 @@
 <meta name="theme-color" content="#e6e0d0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0e0c08" media="(prefers-color-scheme: dark)">
 <title>Atom GS2020 PRO MAX: прибор, Geant4-модель, спектры</title>
-<link rel="stylesheet" href="styles/g1s-th232.css?v=1790526972">
+<link rel="stylesheet" href="styles/g1s-th232.css?v=1790547064">
 <style>
 .dev{border-bottom:3px solid var(--rule); padding:1.1rem 0 1.3rem}
 .dev p,.dev li,.dev td,.dev th,.dev figcaption{text-align:left}
@@ -112,6 +112,19 @@
     box.addEventListener("click", close);
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !box.hidden) close(); });
   })();
+  window.addEventListener("load", function () {   // #GS-21: пики вылета иода из data.detector_lines (экспорт)
+    var t = document.getElementById("tblDet"), L = (window.G1S || {}).detector_lines;
+    if (!t || !L) return;
+    function f(x, d) { return x.toFixed(d).replace(".", ","); }
+    var P = "%", h = "<thead><tr><th>линия</th><th>нуклид</th><th class='num'>вылет Kα</th>"
+      + "<th class='num'>доля Kα</th><th class='num'>вылет Kβ</th><th class='num'>доля Kβ</th></tr></thead><tbody>";
+    L.forEach(function (r) {
+      h += "<tr><td>" + f(r.E_keV, 1) + " кэВ</td><td>" + r.nuclide + "</td><td class='num'>" + f(r.E_esc_ka, 1)
+        + " кэВ</td><td class='num'>" + f(100 * r.frac_ka, 2) + " " + P + "</td><td class='num'>" + f(r.E_esc_kb, 1)
+        + " кэВ</td><td class='num'>" + f(100 * r.frac_kb, 2) + " " + P + "</td></tr>";
+    });
+    t.innerHTML = h + "</tbody>";
+  });
   </script>
 
   <div class="top spec-top">
@@ -130,12 +143,14 @@
       сумм-пиков каскадного совпадения. Разрешение прибора — степенной
       закон ПШПВ(E) = 0,606·E<sup>0,6690</sup> кэВ по 6
       линиям таблицы пиков самого прибора.</p>
-      <p class="warn"><b>Вывод ниже — предварительный, идёт пересчёт.</b> В геометрии с
-      уровнем на 1 см ниже края найдены две ошибки: плотность пробы осталась прежней
-      (масса пробы в модели меньше реальной), а над пробой вместо воздуха оказался
-      полипропилен сосуда. Числа на этой странице посчитаны на этой геометрии и будут
-      заменены после пересчёта.</p>
-      <p class="warn"><b>Причина завышения активности в прежней редакции (предварительно).</b>
+      <p class="warn"><b>Мягкая зона (ниже 150 кэВ) — идёт пересчёт.</b> Модель там выше
+      измерения, одинаково во всех трёх методах: площадь пика K-рентгена 72–90 кэВ в модели
+      заметно больше измеренной. Вероятная причина — наполнитель в матрице пробы:
+      в модели эпоксид без наполнителя, а у насыпных источников этого типа матрица
+      с железом (материал ОИСН-10 из документации ЛСРМ, железа 49 % по массе). Окно подгонки
+      начинается со 150 кэВ, поэтому на активность это почти не влияет; числа будут
+      обновлены после пересчёта шаблонов на такой матрице.</p>
+      <p class="warn"><b>Причина завышения активности в прежней редакции.</b>
       Геометрия считала жидкость с источником заполненной до самого края сосуда;
       реально уровень на 1 см ниже (сосуд на 1 л не доходит до края). С этой
       поправкой метод 1 (фон с водой) даёт активность, близкую к известной
@@ -239,6 +254,12 @@
           <button type="button" class="btn" data-sort="energy" aria-pressed="false">по энергии</button>
         </div>
         <div class="scroll"><table class="big" id="tblM2"></table></div>
+        <p class="guard-note"><b>Собственные линии детектора.</b> После фотопоглощения
+        в кристалле K-рентген иода (28,5 и 32,3 кэВ) иногда выходит наружу, и событие
+        регистрируется ниже фотопика на эту энергию — пик вылета. В библиотеку линий такие
+        пики не вносятся: они рождаются в отклике Geant4 каждой линии. Доли ниже посчитаны
+        по откликам сетки (энерговыделение до размытия, подложка вычтена по боковым окнам).</p>
+        <div class="scroll"><table class="big" id="tblDet"></table></div>
       </div>
     </div>
 
@@ -316,8 +337,8 @@
 <div class="scrim" id="scrim" hidden></div>
 <div class="pop" id="pop" hidden role="dialog" aria-modal="true" aria-labelledby="popTitle"></div>
 
-<script src="data.js?v=1790526972"></script>
-<script src="scripts/g1s-th232.js?v=1790526972"></script>
+<script src="data.js?v=1790547064"></script>
+<script src="scripts/g1s-th232.js?v=1790547064"></script>
 
 <!-- ==================== всплывающие пояснения ==================== -->
 
@@ -370,9 +391,9 @@
     <div><dt>Нуклид</dt><dd>Th-232</dd></div>
     <div><dt>Удельная активность</dt><dd>910 Бк/кг (6,0 %)</dd></div>
     <div><dt>Масса</dt><dd>1052 г</dd></div>
-    <div><dt>Плотность в модели</dt><dd>ρ&nbsp;=&nbsp;0,80&nbsp;г/см³
-      — масса, делённая на полный объём сосуда. Ошибка: при уровне на 1&nbsp;см ниже края
-      объём пробы меньше, плотность должна быть выше; исправляется пересчётом</dd></div>
+    <div><dt>Плотность в модели</dt><dd>ρ&nbsp;=&nbsp;0,91&nbsp;г/см³
+      — масса, делённая на объём пробы при уровне на 1&nbsp;см ниже края сосуда;
+      над пробой — воздух. Состав в модели — эпоксид (C, H, O) без наполнителя</dd></div>
     <div><dt>Полная активность</dt><dd>957 Бк ± 57 Бк</dd></div>
   </dl>
   <p>Равновесие ветви не измерено, принято. Распадом Th-232 за время от

@@ -97,7 +97,9 @@ for rel in (("styles", "g1s-th232.css"), ("scripts", "g1s-th232.js")):
     open(dst, "w", encoding="utf-8", newline="").write(txt)
     print("донорский %s sha256 %s, замен терминов %d" % ("/".join(rel), sha(src)[:16], len(TERMS.get(rel[1], ()))))
 # #GS-7: паспортные величины прибора (не расчёт) — источник README-референсы.md §8, сайт Gammaspectacular 27.09.
-DEV = {"dev_res_mfr": "менее 7,5 % (паспорт; вариант с CsI(Tl) — менее 7,0 %)"}
+DEV = {"dev_res_mfr": "менее 7,5 % (паспорт; вариант с CsI(Tl) — менее 7,0 %)",
+       # #GS-22: состав материала ОИСН-10, документация ЛСРМ (README-референсы, «Материал ОИСН-10»)
+       "dev_oisn_fe": "49 %"}
 _make_fill = bp.make_fill
 def _fill_dev(d):
     f = _make_fill(d)

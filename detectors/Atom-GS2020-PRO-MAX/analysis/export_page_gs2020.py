@@ -45,6 +45,33 @@ SUM_I = {(round(t[0], 3), round(t[1], 3)): (t[3], t[4]) for t in m2.ed.SUM_PEAKS
 def load(name):
     return json.load(open(os.path.join(OUT, name), encoding="utf-8"))
 
+def sample_rho():
+    # плотность пробы — из шапки шаблона той же папки (W-153: была зашита 0,7987 при шаблонах 0,9061)
+    for l in open(os.path.join(OUT, "mix_Tl208_npsmoff.csv"), encoding="utf-8"):
+        if l.startswith("sample_rho_g_cm3,"):
+            return float(l.split(",")[1])
+    raise SystemExit("ОТКАЗ: нет sample_rho_g_cm3 в шаблоне " + OUT)
+
+def detector_lines():
+    # #GS-21 (оператор 27.09 «да»): собственные линии детектора — пики вылета I Kα (E−28,5) и Kβ (E−32,3) в откликах
+    # сетки Geant4 (энерговыделение до размытия), доля от фотопика; подложка — среднее боковых окон
+    L = [(74.815, "Pb-212 (Bi Kα2)"), (77.108, "Pb-212 (Bi Kα1)"), (238.632, "Pb-212"), (338.32, "Ac-228"),
+         (583.187, "Tl-208"), (911.204, "Ac-228"), (2614.511, "Tl-208")]
+    out = []
+    for E, nk in L:
+        e, c = [], []
+        for l in open(os.path.join(OUT, "grid_mar_E%s.csv" % E), encoding="utf-8"):
+            p = l.split(",")
+            try: e.append(float(p[0])); c.append(float(p[1]))
+            except ValueError: pass
+        e, c = np.array(e), np.array(c)
+        pk = c[np.floor(e) == math.floor(E)].sum()
+        bg = c[((e >= E - 38) & (e < E - 35)) | ((e >= E - 25) & (e < E - 22))].mean()
+        exc = lambda a, b: float((c[(e >= E - b) & (e < E - a)] - bg).sum()) / pk
+        out.append({"E_keV": E, "nuclide": nk, "E_esc_ka": round(E - 28.5, 1), "frac_ka": round(exc(27.4, 29.6), 5),
+                    "E_esc_kb": round(E - 32.3, 1), "frac_kb": round(exc(31.2, 33.4), 5)})
+    return out
+
 def bgw(name):
     # "_bgw" встраивается сразу после метода/lib05-префикса, до хвоста (_tail.../_fwscale...) — не в конце строки,
     # см. факт. имя файла fit_m1_bgw_tail0_fwscale_calsl4_calsum.json (порядок из fit_gs2020_th232_m1.py:391).
@@ -229,8 +256,8 @@ def main():
             "cal_bg": {"coefs": m1.CAL_OWN["bg"]["coeffs"], "order": len(m1.CAL_OWN["bg"]["coeffs"]) - 1, "n_channels": len(b.counts)},
             "sys_floor_pct": 0.0, "xray_span_lo_keV": 0.0, "xray_span_hi_keV": 0.0,
             "template_decays": [{"nuclide": k, "n": int(round(N_PER_BR * br))} for k, br in m1.CHAIN],
-            "nuclide_list_ru": ", ".join(k for k, _ in m1.CHAIN), "matrix_name": "Epoxy_crumb", "matrix_density_g_cm3": 0.7987,
-            "matrix_composition": [], "template_source": "Geant4, стенд gs2020_marinelli, out_v5"}
+            "nuclide_list_ru": ", ".join(k for k, _ in m1.CHAIN), "matrix_name": "Epoxy_crumb", "matrix_density_g_cm3": sample_rho(),
+            "matrix_composition": [], "template_source": "Geant4, стенд gs2020_marinelli, " + os.path.basename(OUT.rstrip("\\/"))}
 
     # #CAL-1: у фона своя шкала — плотность отсчётов фона на кэВ переносится на сетку образца по энергии
     eb, es = np.array([b.channel_to_energy(i) for i in range(len(b.counts))]), np.asarray(e_of_ch, float)
@@ -280,7 +307,8 @@ def main():
         "method2": method2_block(jm2, n2),
         "method2_full": method2_block(jm2f, n05),
         "library": {"i_threshold_pct": 2.0, "fixed_n": n2, "full_n": n05, "full_threshold_pct": 0.0},
-        "reference_lines": reference_lines
+        "reference_lines": reference_lines,
+        "detector_lines": detector_lines()
     }
 
     os.makedirs(PAGE, exist_ok=True)

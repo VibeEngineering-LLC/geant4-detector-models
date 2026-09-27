@@ -769,6 +769,6 @@ footer.bot button:hover{background:var(--accent-soft)}
   min-height:1.9rem; background:var(--sunk); color:var(--ink);
 }
 
-/* #GS-10: предел длины строки на всей странице, ставится сборщиком */
+/* #GS-16: текст на всю ширину страницы, ставится сборщиком */
 body,p,li,figcaption,caption,dd{text-align:left}
-.app p,.app li,.app figcaption,.pop p,.pop li,.pop dd{max-width:78ch !important; text-wrap:pretty}
+.app p,.app li,.app figcaption,.pop p,.pop li,.pop dd{max-width:none !important; text-wrap:pretty}

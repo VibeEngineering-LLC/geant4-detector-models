@@ -62,9 +62,11 @@ TERMS = {"g1s-th232.css": [("text-align:justify; text-wrap:pretty}", "text-align
 # #GS-10 (оператор 27.09 «опять с шириной текста проблемы. исправь и запомни»; скилл web-publish §3): донорский CSS
 # снимает предел строки (`max-width:none` у .stand/.ai-note/.method-lede) — абзацы шли во всю ширину. Предел ставит
 # СБОРЩИК на ВСЕ абзацы и пункты страницы, а не автор раздела; проверка — MEASURE_CHECK ниже и замер в браузере.
-MEASURE_CSS = ("\n/* #GS-10: предел длины строки на всей странице, ставится сборщиком */\n"
+# #GS-16 (оператор 27.09 «текст должен быть по ширине страницы»): #GS-10 было прочитано НЕВЕРНО (W-152) — оператор
+# хотел текст на всю ширину, а не предел 78 знаков. Сборщик снимает любые пределы ширины у текстовых блоков.
+MEASURE_CSS = ("\n/* #GS-16: текст на всю ширину страницы, ставится сборщиком */\n"
                "body,p,li,figcaption,caption,dd{text-align:left}\n"
-               ".app p,.app li,.app figcaption,.pop p,.pop li,.pop dd{max-width:78ch !important; text-wrap:pretty}\n")
+               ".app p,.app li,.app figcaption,.pop p,.pop li,.pop dd{max-width:none !important; text-wrap:pretty}\n")
 sha = lambda p: hashlib.sha256(open(p, "rb").read()).hexdigest()
 for rel in (("styles", "g1s-th232.css"), ("scripts", "g1s-th232.js")):
     src, dst = os.path.join(DONOR, "src", *rel), os.path.join(PAGE, "src", *rel)

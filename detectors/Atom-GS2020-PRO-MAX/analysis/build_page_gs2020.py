@@ -33,6 +33,13 @@ TERMS = {"g1s-th232.js": [('cell("против паспорта"', 'cell("к и�
                            "      fillRuns(vec, [[0, e.length - 1]], order[oi].nuc.color);\n      strokeLayer(oi);\n    }", 1),
                           ("    for (var oj = 0; oj < order.length; oj++) {\n      var ks = order[oj].nuc.key;",
                            "    function strokeLayer(oj) {\n      var ks = order[oj].nuc.key;", 1),
+                          # #GS-8 (оператор 27.09 «часть шаблонов уехали за график»): заливки слоёв (fillRuns/
+                          # segPath) рисуются по ПОЛНОМУ диапазону каналов без обрезки по xLo/xHi — при xLo=0
+                          # (донорский дефолт) это не было заметно (e[0]~0 совпадало с левым краем), но #GS-5
+                          # ниже подвинул xLo на 25 кэВ, и каналы e<25 стали рисоваться ЛЕВЕЕ границы графика.
+                          # Обрезка (clip) области построения — до заливок и до финального strokeRect в конце.
+                          ('    g.fillText("энергия, кэВ", (m.l + W - m.r) / 2, H - 2);\n\n    g.strokeStyle = p.rule; g.lineWidth = 2;\n    g.strokeRect(m.l, m.t, W - m.r - m.l, H - m.b - m.t);\n\n    // Заливки',
+                           '    g.fillText("энергия, кэВ", (m.l + W - m.r) / 2, H - 2);\n\n    g.strokeStyle = p.rule; g.lineWidth = 2;\n    g.strokeRect(m.l, m.t, W - m.r - m.l, H - m.b - m.t);\n    g.save(); g.beginPath(); g.rect(m.l, m.t, W - m.r - m.l, H - m.b - m.t); g.clip();\n\n    // Заливки', 1),
                           # #CHART-1: zoom-aware диапазон отображения (drawSpectrum) вместо жёстких 0..e[last]
                           # #GS-5 (оператор 27.09 «нижний порог отображения сделай от 25 кэВ»): дефолт (без zoom) —
                           # 25 кэВ, порог прибора, а не 0 (окно ПОДГОНКИ 150-3600 кэВ #SUM-1 не меняется, это чисто вид).
@@ -44,7 +51,7 @@ TERMS = {"g1s-th232.js": [('cell("против паспорта"', 'cell("к и�
                           # #GS-4 (оператор 27.09 «не подсвечивается зона выбора мышью»): рамка выделения во время
                           # протяжки — эталон донора CAL.drag (ra226.js:791-800), портировано на ST.drag.
                           ("    if (ST.cursorE !== null) {\n      var xC = mapX(ST.cursorE, xLo, xHi, m.l, W - m.r);\n      g.strokeStyle = p.rule; g.lineWidth = 1; g.setLineDash([4, 4]);\n      g.beginPath(); g.moveTo(xC, m.t); g.lineTo(xC, H - m.b); g.stroke();\n      g.setLineDash([]);\n    }\n    g.strokeStyle = p.rule; g.lineWidth = 2;",
-                           "    if (ST.cursorE !== null) {\n      var xC = mapX(ST.cursorE, xLo, xHi, m.l, W - m.r);\n      g.strokeStyle = p.rule; g.lineWidth = 1; g.setLineDash([4, 4]);\n      g.beginPath(); g.moveTo(xC, m.t); g.lineTo(xC, H - m.b); g.stroke();\n      g.setLineDash([]);\n    }\n    if (ST.drag) {\n      var xa3 = mapX(Math.min(ST.drag.e0, ST.drag.e1), xLo, xHi, m.l, W - m.r);\n      var xb3 = mapX(Math.max(ST.drag.e0, ST.drag.e1), xLo, xHi, m.l, W - m.r);\n      g.fillStyle = \"rgba(246,211,28,.22)\";\n      g.fillRect(xa3, m.t, xb3 - xa3, H - m.b - m.t);\n      g.strokeStyle = \"#16140f\"; g.lineWidth = 1.5; g.setLineDash([4, 4]);\n      g.strokeRect(xa3, m.t, xb3 - xa3, H - m.b - m.t);\n      g.setLineDash([]);\n    }\n    g.strokeStyle = p.rule; g.lineWidth = 2;", 1),
+                           "    if (ST.cursorE !== null) {\n      var xC = mapX(ST.cursorE, xLo, xHi, m.l, W - m.r);\n      g.strokeStyle = p.rule; g.lineWidth = 1; g.setLineDash([4, 4]);\n      g.beginPath(); g.moveTo(xC, m.t); g.lineTo(xC, H - m.b); g.stroke();\n      g.setLineDash([]);\n    }\n    if (ST.drag) {\n      var xa3 = mapX(Math.min(ST.drag.e0, ST.drag.e1), xLo, xHi, m.l, W - m.r);\n      var xb3 = mapX(Math.max(ST.drag.e0, ST.drag.e1), xLo, xHi, m.l, W - m.r);\n      g.fillStyle = \"rgba(246,211,28,.22)\";\n      g.fillRect(xa3, m.t, xb3 - xa3, H - m.b - m.t);\n      g.strokeStyle = \"#16140f\"; g.lineWidth = 1.5; g.setLineDash([4, 4]);\n      g.strokeRect(xa3, m.t, xb3 - xa3, H - m.b - m.t);\n      g.setLineDash([]);\n    }\n    g.restore();\n    g.strokeStyle = p.rule; g.lineWidth = 2;", 1),
                           # #CHART-1: сами функции zEfromX/wireZoom — вставлены перед комментарием "перерисовка"
                           ("  /* ── перерисовка активной вкладки ───────────────────────────── */",
                            ZOOM_JS + "\n\n  /* ── перерисовка активной вкладки ───────────────────────────── */", 1),

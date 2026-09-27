@@ -212,6 +212,7 @@
 
     g.strokeStyle = p.rule; g.lineWidth = 2;
     g.strokeRect(m.l, m.t, W - m.r - m.l, H - m.b - m.t);
+    g.save(); g.beginPath(); g.rect(m.l, m.t, W - m.r - m.l, H - m.b - m.t); g.clip();
 
     // Заливки — НЕЗАВИСИМЫМ НАЛОЖЕНИЕМ, каждая от нижней границы окна до
     // СВОЕГО значения. Прежде здесь был накопительный стек: слой рисовался
@@ -374,6 +375,7 @@
       g.strokeRect(xa3, m.t, xb3 - xa3, H - m.b - m.t);
       g.setLineDash([]);
     }
+    g.restore();
     g.strokeStyle = p.rule; g.lineWidth = 2;
     g.strokeRect(m.l, m.t, W - m.r - m.l, H - m.b - m.t);
     return { m: m, W: W, H: H, xLo: xLo, xHi: xHi, Y: Y };

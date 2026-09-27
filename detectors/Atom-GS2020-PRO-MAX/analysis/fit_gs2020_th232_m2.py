@@ -219,7 +219,11 @@ def main():
         "chain": chain_fit
     }
 
-    with open(os.path.join(m1.OUT, "fit_m2%s%s%s" % ("_lib05" if "lib05" in os.environ.get("GS_M2_CONFIG", "") else "", "_pw%g" % PW if PW > 0 else "", "_bgT%g_%g" % tuple(m1.BG_T) if m1.BG_T else ("_bgw" if m1.BG_WATER else "")) + ("_tail%g" % m1.TAIL if m1.TAIL is not None else "") + ".json"), "w", encoding="utf-8") as f:
+    # #M2FULL-ALL: суффикс имени по КОНФИГУ (basename без расширения), не по подстроке "lib05" — иначе
+    # full_noThresh.yaml перезаписал бы выход lib05 (оба содержат "th232_gs2020_" в пути).
+    _cfg_base = os.path.splitext(os.path.basename(os.environ.get("GS_M2_CONFIG", FULL_XRAY_CFG)))[0]
+    _cfg_suf = "_" + _cfg_base.replace("th232_gs2020_", "") if _cfg_base != "th232_gs2020_full_xray" else ""
+    with open(os.path.join(m1.OUT, "fit_m2%s%s%s" % (_cfg_suf, "_pw%g" % PW if PW > 0 else "", "_bgT%g_%g" % tuple(m1.BG_T) if m1.BG_T else ("_bgw" if m1.BG_WATER else "")) + ("_tail%g" % m1.TAIL if m1.TAIL is not None else "") + ".json"), "w", encoding="utf-8") as f:
         json.dump(out_data, f, ensure_ascii=False, indent=1)
 
 if __name__ == "__main__":

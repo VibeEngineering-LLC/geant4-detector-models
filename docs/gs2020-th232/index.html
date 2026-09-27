@@ -3,7 +3,7 @@
 <meta name="theme-color" content="#e6e0d0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0e0c08" media="(prefers-color-scheme: dark)">
 <title>Atom GS2020 PRO MAX: прибор, Geant4-модель, спектры</title>
-<link rel="stylesheet" href="styles/g1s-th232.css?v=1790526374">
+<link rel="stylesheet" href="styles/g1s-th232.css?v=1790526972">
 <style>
 .dev{border-bottom:3px solid var(--rule); padding:1.1rem 0 1.3rem}
 .dev p,.dev li,.dev td,.dev th,.dev figcaption{text-align:left}
@@ -124,9 +124,9 @@
       независимых метода, что на странице Гамма-1С: метод 1 — подгонка
       полного спектра МК-шаблонами полного распада звеньев ветви; метод 2 —
       моноэнергетическая сетка Geant4 × библиотека выходов γ-линий
-      (62 линий донорской библиотеки либо 84 линий
-      ENSDF из API IAEA Live Chart с порогом в половину процента — не все
-      известные линии, слабые отброшены; переключением) плюс 8
+      (62 линий донорской библиотеки — метод 2, либо все известные
+      линии ENSDF из API IAEA Live Chart, 342 линий без порога
+      по интенсивности — метод 2-2; переключением) плюс 8
       сумм-пиков каскадного совпадения. Разрешение прибора — степенной
       закон ПШПВ(E) = 0,606·E<sup>0,6690</sup> кэВ по 6
       линиям таблицы пиков самого прибора.</p>
@@ -211,14 +211,13 @@
         отдельные строки (#XR-1); окно подгонки начинается выше их области
         (150 кэВ), поэтому на итоговую активность они не влияют.
         Переключатель библиотеки: 62 линий донорской библиотеки
-        (I<sub>γ</sub> ≥ 2 %) или 84 линий ENSDF,
-        выгруженных через API IAEA Live Chart of Nuclides, с порогом в
-        половину процента. Это не полный набор: линии слабее порога (их
-        сотни, вместе заметная доля выхода) в модель не входят — полная
-        библиотека требует отдельного узла сетки Geant4 на каждую линию.</p>
+        (I<sub>γ</sub> ≥ 2 %) или 342 линий ENSDF,
+        выгруженных через API IAEA Live Chart of Nuclides, — все известные
+        γ-линии звеньев в окне подгонки без порога по интенсивности (метод 2-2),
+        на каждую линию — свой узел сетки Geant4.</p>
         <div class="seg" id="libseg" role="group" aria-label="состав библиотеки линий">
-          <button type="button" class="btn" data-lib="fixed" aria-pressed="true">донорская библиотека</button>
-          <button type="button" class="btn" data-lib="full" aria-pressed="false">ENSDF (API IAEA), порог в полпроцента</button>
+          <button type="button" class="btn" data-lib="fixed" aria-pressed="true">метод 2: донорская библиотека</button>
+          <button type="button" class="btn" data-lib="full" aria-pressed="false">метод 2-2: все известные линии ENSDF</button>
         </div>
         <div class="summary" id="sumM2"></div>
         <div class="legendbar" id="legendM2"></div>
@@ -317,8 +316,8 @@
 <div class="scrim" id="scrim" hidden></div>
 <div class="pop" id="pop" hidden role="dialog" aria-modal="true" aria-labelledby="popTitle"></div>
 
-<script src="data.js?v=1790526374"></script>
-<script src="scripts/g1s-th232.js?v=1790526374"></script>
+<script src="data.js?v=1790526972"></script>
+<script src="scripts/g1s-th232.js?v=1790526972"></script>
 
 <!-- ==================== всплывающие пояснения ==================== -->
 

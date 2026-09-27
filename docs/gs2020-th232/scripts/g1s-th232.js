@@ -1284,15 +1284,16 @@ function wireZoom(cvId) {
     return [
       { lab: "известная", A: D.passport.A_Bq, dA: D.passport.dA_Bq, col: p.ink },
       { lab: "метод 1", A: M1().A_Bq, dA: M1().dA_Bq, col: "#0f5aa8" },
-      { lab: "метод 2", A: M2().A_Bq, dA: M2().dA_Bq, col: "#c8541c" }
+      { lab: "метод 2", A: SRC().method2.A_Bq, dA: SRC().method2.dA_Bq, col: "#c8541c" },
+      { lab: "метод 2-2", A: SRC().method2_full.A_Bq, dA: SRC().method2_full.dA_Bq, col: "#7a3b12" }
     ];
   }
 
   function fillCmpTable() {
     var el = document.getElementById("cmpTable");
     if (!el) return;
-    var pass = D.passport, m1 = M1(), m2 = M2();
-    var libTxt = ST.lib === "full" ? "ENSDF, порог в полпроцента" : "донорская библиотека";
+    var pass = D.passport, m1 = M1(), m2 = SRC().method2, m2f = SRC().method2_full;
+    var libTxt = ST.lib === "full" ? "метод 2-2: все известные линии ENSDF" : "донорская библиотека";
     var modeTxt = ST.fwhmLaw === "cs" ? "фон: Маринелли+вода"
                                       : "фон как снят (без сосуда)";
     // Удельная активность — та же масса заливки для всех трёх строк
@@ -1325,10 +1326,14 @@ function wireZoom(cvId) {
           num(m2.A_Bq / pass.A_Bq, 3) + " известной, "
           + signedPct(m2.A_Bq / pass.A_Bq) + "; χ²/ν = " + num(m2.chi2_ndof, 2)
           + " на " + cnt(m2.n_channels_fit) + " каналах окон пиков; "
-          + libTxt + ", " + modeTxt)
+          + "донорская библиотека, " + modeTxt)
+    + row("cmp-m2", "метод 2-2: функция ПП + все известные линии ENSDF, " + cnt(m2f.n_lines) + " линий",
+          m2f.A_Bq, m2f.dA_Bq,
+          num(m2f.A_Bq / pass.A_Bq, 3) + " известной, " + signedPct(m2f.A_Bq / pass.A_Bq)
+          + "; χ²/ν = " + num(m2f.chi2_ndof, 2) + " на " + cnt(m2f.n_channels_fit) + " каналах окон пиков; " + modeTxt)
     + "<div class='cmp-row'><span class='cmp-lab'>расхождение методов</span>"
       + "<span class='cmp-val big-num'>" + signedPct(m1.A_Bq / m2.A_Bq)
-      + "</span><span class='cmp-note'>метод 1 относительно метода 2 при "
+      + "</span><span class='cmp-note'>метод 1 относительно метода 2 (донорская библиотека) при "
       + "текущих переключателях</span></div>";
   }
 

@@ -24,7 +24,8 @@ PAGE = r"D:\GoogleDrive\Рабочая папка ИИ\GEANT4\web\gs2020-th232-p
 DST = os.path.join(PAGE, "gs2020_th232_data.json")
 DONOR_CFG = r"D:\Claude_files\repos\geant4-detector-models\detectors\Gamma-1S\web-th232\configs\th232.yaml"
 LIB2_CFG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "th232_gs2020_full_xray.yaml")   # #XR-1: донор + рентген, не голый DONOR_CFG
-LIB05_CFG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "th232_gs2020_lib05.yaml")
+# #GS-19 (оператор 27.09: «2-2 это все известные линии»): метод 2-2 = библиотека ENSDF БЕЗ порога (342 линии)
+LIB05_CFG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "th232_gs2020_full_noThresh.yaml")
 # Суффикс подгонки — та же формула, что в fit_gs2020_th232_m1.py:391 / fit_gs2020_th232_m2.py:222 (постановка
 # #SHAPE-1, оператор 27.09: гаусс + шкала SL+сумма + ПШПВ SpectraLine×1,05, уровень заполнения -1см).
 _M1_SUFFIX = (("_blur%g" % m1.BLUR if m1.BLUR != 1.0 else "") + ("_k40" if m1.FWHM_K40 else "") +
@@ -32,7 +33,7 @@ _M1_SUFFIX = (("_blur%g" % m1.BLUR if m1.BLUR != 1.0 else "") + ("_k40" if m1.FW
               ("_cfw" if m1.FWHM_CFW else "") + ("_fwscale" if m1.FWHM_SCALE else "") +
               ("_calsl%d" % m1.CAL_SL_DEG if m1.CAL_SL else "") + ("_calsum" if m1.CAL_SUM else ""))
 _TAIL_SUF = ("_tail%g" % m1.TAIL) if m1.TAIL is not None else ""
-FILES = {"m1": "fit_m1%s.json" % _M1_SUFFIX, "m2": "fit_m2%s.json" % _TAIL_SUF, "m2f": "fit_m2_lib05%s.json" % _TAIL_SUF}
+FILES = {"m1": "fit_m1%s.json" % _M1_SUFFIX, "m2": "fit_m2%s.json" % _TAIL_SUF, "m2f": "fit_m2_full_noThresh%s.json" % _TAIL_SUF}
 N_PER_BR = 5.5e7
 N_EFF_MIN = 4.0
 PASSPORT = {"A_Bq": m1.PASSPORT_BQ, "dA_Bq": m1.PASSPORT_BQ * m1.PASSPORT_UNC, "Bq_per_kg": 910.0, "unc_pct": 6.0, "mass_g": 1052.0, "date_certified": "образец с известной активностью (дата не указана)", "date_measured": "2026-09-25", "decay_factor": 1.0}
@@ -47,7 +48,7 @@ def load(name):
 def bgw(name):
     # "_bgw" встраивается сразу после метода/lib05-префикса, до хвоста (_tail.../_fwscale...) — не в конце строки,
     # см. факт. имя файла fit_m1_bgw_tail0_fwscale_calsl4_calsum.json (порядок из fit_gs2020_th232_m1.py:391).
-    for prefix in ("fit_m2_lib05", "fit_m2", "fit_m1"):
+    for prefix in ("fit_m2_full_noThresh", "fit_m2_lib05", "fit_m2", "fit_m1"):
         if name.startswith(prefix):
             return prefix + "_bgw" + name[len(prefix):]
     raise SystemExit("ОТКАЗ: неизвестный префикс имени файла подгонки: " + name)
@@ -278,7 +279,7 @@ def main():
         "method1": method1_block(jm1),
         "method2": method2_block(jm2, n2),
         "method2_full": method2_block(jm2f, n05),
-        "library": {"i_threshold_pct": 2.0, "fixed_n": n2, "full_n": n05, "full_threshold_pct": 0.5},
+        "library": {"i_threshold_pct": 2.0, "fixed_n": n2, "full_n": n05, "full_threshold_pct": 0.0},
         "reference_lines": reference_lines
     }
 

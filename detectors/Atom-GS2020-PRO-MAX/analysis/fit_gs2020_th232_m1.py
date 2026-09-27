@@ -10,24 +10,18 @@ import numpy as np
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-# REPO_ROOT — корень geant4-detector-models (этот файл лежит в detectors/Atom-GS2020-PRO-MAX/analysis/).
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-if not os.environ.get("SPECTRAVIBE_ROOT"):
-    raise RuntimeError("Переменная окружения SPECTRAVIBE_ROOT не установлена")
-sys.path.insert(0, os.path.join(REPO_ROOT, "common", "py"))
+os.environ.setdefault("SPECTRAVIBE_ROOT", r"D:\GoogleDrive\Дозиметрия\ИИ\1 Скилы\0_Work\gamma-spectrum-analysis")
+sys.path.insert(0, r"D:\Claude_files\repos\geant4-detector-models\common\py")
 import becqmoni as bm
 
-sys.path.insert(0, os.path.join(REPO_ROOT, "detectors", "Gamma-1S", "analysis"))
+sys.path.insert(0, r"D:\Claude_files\repos\geant4-detector-models\detectors\Gamma-1S\analysis")
 import mix_unfold_core as muc
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "cal"))
 import gs2020_calib as CAL
 CAL_OWN = json.load(open(CAL.OUT_JSON, encoding="utf-8")) if os.path.exists(CAL.OUT_JSON) else None
 muc.g1s.FINE_E_MAX = 4800.0   # #SUM-1 (оператор 25.09): сетка размытия донора кончалась на 3300 кэВ и срезала сумм-пики Tl-208 3197/3475
 
-# GS2020_REF/GS2020_OUT — вне репозитория: сырые измерения прибора и рабочая директория расчётов Geant4 (машинно-специфичны, обязательны).
-if not os.environ.get("GS2020_REF") or not os.environ.get("GS2020_OUT"):
-    raise RuntimeError("Переменные окружения GS2020_REF и GS2020_OUT не установлены (см. README.md)")
-REF = os.environ["GS2020_REF"]
+REF = r"D:\GoogleDrive\Дозиметрия\Спектры\Atom GS2020 PRO MAX\Референсы"
 XML_SAMPLE = os.path.join(REF, "Калибровка Th-232 (без вычета фона).xml")
 XML_BG = os.path.join(REF, "Фон лаба S31_18.xml")
 BG_TAG = "bg"
@@ -38,7 +32,7 @@ if BG_WATER:
     if os.environ.get("GS_BG_T"):
         raise SystemExit("ОТКАЗ: GS_BG_WATER=1 и GS_BG_T несовместимы — фон с водой уже ослаблен сосудом физически")
     XML_BG, BG_TAG = CAL.BKG_WATER_XML, "bgw"
-OUT = os.environ["GS2020_OUT"]  # статистика n/BR = 5,5e7 (оператор 25.09)
+OUT = os.environ.get("GS_OUT", r"C:\g4work\gs2020\run_marinelli\out_v5")  # #GS-3: GS_OUT — папка шаблонов (MgO 0,8 → out_v5_mgo08)
 LO, HI = 150.0, 3600.0   # #SUM-1: верх окна 3600 захватывает сумм-пики Tl-208 3197 и 3475 кэВ.
 # #XR-1 (25.09): попытка опустить LO до 25 кэВ ОТВЕРГНУТА — модель не описывает зону <150 кэВ:
 # Ra224 уходит на 9303 Бк (×9,7 паспорта), Rn220 2533±1173 (ошибка ~= значению), χ²/ν подгонки 15,6
@@ -72,12 +66,29 @@ def true_energy(e_file, table=None):
     return e_file + np.interp(e_file, xs, ds)
 
 
+# GS_CAL_SL=<степень> — шкала образца по каналам пиков СпектраЛайн (оператор 26.09, скрин «Параметры пиков»): канал → E_lib
+CAL_SL_DEG = int(os.environ.get("GS_CAL_SL", "0"))
+CAL_SL = CAL_SL_DEG > 0
+SL_PEAKS = [(543.253, 238.632), (1297.795, 583.187), (1986.459, 911.204), (2098.076, 964.766),
+            (2106.831, 968.971), (3129.695, 1460.822), (5537.873, 2614.511)]
+# GS_CAL_SUM="6765:3187" — репер выше 2614: горб суммирования Tl-208 (канал — центр в измерении, энергия — центр
+# того же горба в шаблоне Geant4 цепочки; оба не зависят от шкалы). Шкала файла ставит этот канал на ~3400 кэВ.
+CAL_SUM = [tuple(float(x) for x in p.split(":")) for p in os.environ.get("GS_CAL_SUM", "").split(",") if p]
+
+
 class Spec:
     def __init__(self, sp, tag="sample"):
         self.counts = list(sp.n)
         self.live_time = float(sp.live)
         self.n_channels = len(sp.n)
         self._e = CAL.energy_axis(tag, len(sp.n))   # #CAL-2: своя шкала КАЖДОГО спектра по его реперам (cal/gs2020_calib.py)
+        if tag == "sample" and CAL_SL:              # #CAL-0: центроиды из таблицы пиков СпектраЛайн (README-референсы.md)
+            pts = SL_PEAKS + CAL_SUM
+            p = np.polyfit([q[0] for q in pts], [q[1] for q in pts], CAL_SL_DEG)
+            self._e = np.polyval(p, np.arange(len(sp.n), dtype=float))
+            print("#CAL-0 шкала образца по СпектраЛайн, степень %d: " % CAL_SL_DEG + "; ".join(
+                "%.1f %+.2f" % (lib, np.polyval(p, c) - lib) for c, lib in pts)
+                + "; E(кан 342)=%.1f E(кан 7016)=%.1f" % (np.polyval(p, 342.0), np.polyval(p, 7016.0)))
 
     def channel_to_energy(self, c):
         return float(self._e[int(c)])
@@ -94,11 +105,63 @@ def bg_transmission(e):
     return 1.0 - BG_T[0] * (1.0 - math.exp(-mu * BG_T[1]))
 
 
+# Оператор 26.09 «с калибровкой по ПШПВ что-то не так»: фоновая K-40 (68,5 кэВ — уже закона ~79) шла в точки
+# размытия, хотя страница заявляет её исключённой. GS_FWHM_K40=1 — прежнее поведение (для сверки); GS_BLUR — множитель ширины.
+FWHM_K40 = os.environ.get("GS_FWHM_K40") == "1"
+BLUR = float(os.environ.get("GS_BLUR", "1.0"))
+# GS_TAIL — параметр левого хвоста ядра (донор Гамма-1С: TAIL_T=0.75, mix_unfold_g1s.py:24); не задан — донорский
+TAIL = float(os.environ["GS_TAIL"]) if os.environ.get("GS_TAIL") else None
+
+
+# ПШПВ по таблице СпектраЛайн (оператор 26.09 «точнее сделал»; README-референсы.md, скрин рядом) — по умолчанию.
+# GS_FWHM_OLD=1 — прежние ПШПВ из PEAK_TABLE (таблица прибора 25.09; 2614: 121,205 против 107,420).
+FWHM_SL = {238.632: 24.073, 583.187: 40.624, 911.204: 57.351, 964.766: 59.686, 968.971: 59.867,
+           1460.822: 70.963, 2614.511: 107.420}
+FWHM_OLD = os.environ.get("GS_FWHM_OLD") == "1"
+# GS_FWHM_SCALE="238.632:1.05,583.187:1.12" — поточечные множители ПШПВ (#SHAPE-1: кривая из минимумов невязки формы)
+FWHM_SCALE = {float(k): float(v) for k, v in (p.split(":") for p in os.environ.get("GS_FWHM_SCALE", "").split(",") if p)}
+
+
+# GS_FWHM_CFW=1 — гладкий закон СпектраЛайн из Референсы\Calibr.cfw, секция [Calibration]: ПШПВ = Σ cᵢ·(√E)ⁱ
+FWHM_CFW = os.environ.get("GS_FWHM_CFW") == "1"
+
+
+def cfw_law():
+    txt = open(os.path.join(REF, "Calibr.cfw"), encoding="cp1251").read()
+    c = [float(x) for x in txt.split("[Calibration]")[1].split("Coeff=")[1].split()[0].split(",")]
+    return lambda E: sum(ci * math.sqrt(E) ** i for i, ci in enumerate(c))
+
+
 def write_fwhm_csv(path):
     with open(path, "w", encoding="utf-8") as f:
         f.write("E_keV,fwhm_keV\n")
-        for _, e_lib, fwhm in PEAK_TABLE:
+        if FWHM_CFW:
+            law = cfw_law()
+            for E in np.arange(30.0, 4001.0, 10.0):
+                f.write(f"{E},{law(E):.4f}\n")
+            return
+        for _, e_lib, fwhm_old in PEAK_TABLE:
+            fwhm = (fwhm_old if FWHM_OLD else FWHM_SL[e_lib]) * FWHM_SCALE.get(e_lib, 1.0)
+            if e_lib == 1460.822 and not FWHM_K40:
+                continue
             f.write(f"{e_lib},{fwhm}\n")
+
+
+SHAPE_PEAKS = [238.632, 338.32, 583.187, 727.33, 911.204, 968.971, 1592.5, 2614.511]
+
+
+def shape_residual(e, net, var, model, fwhm_f):
+    """#SHAPE-1: невязка ФОРМЫ пиков. В окне ±1,5 ПШПВ модель подгоняется к нетто как a·модель + b + c·(E−E0)
+    (площадь и подложка свободны) — остаётся только форма. Возвращает ({E0: χ²/ν окна}, общий χ²/ν окон)."""
+    out, X2, NU = {}, 0.0, 0
+    for E0 in SHAPE_PEAKS:
+        m = np.abs(e - E0) < 1.5 * fwhm_f(E0)
+        w = 1.0 / np.sqrt(np.maximum(var[m], 1.0))
+        A = np.vstack([model[m], np.ones(int(m.sum())), e[m] - E0]).T
+        p = np.linalg.lstsq(A * w[:, None], net[m] * w, rcond=None)[0]
+        x2 = float((((net[m] - A @ p) * w) ** 2).sum()); nu = int(m.sum()) - 3
+        out[E0] = x2 / nu; X2 += x2; NU += nu
+    return out, X2 / NU
 
 
 def main():
@@ -132,7 +195,7 @@ def main():
 
     bg_e = np.array([b.channel_to_energy(i) for i in range(b.n_channels)])
 
-    r = muc.unfold(s, b, templates, fwhm_csv, lo=LO, hi=HI, bg_energy_of_ch=bg_e, verbose=True)
+    r = muc.unfold(s, b, templates, fwhm_csv, lo=LO, hi=HI, bg_energy_of_ch=bg_e, verbose=True, blur=BLUR, tail=TAIL)
 
     names = r["names"]
     activities_A2 = r["activities"]
@@ -260,11 +323,15 @@ def main():
     # ГЛАВНЫЙ результат (оператор 25.09: «цепочка в равновесии»): один столбец — шаблон всей цепочки,
     # сумма сырых гистограмм звеньев при одинаковом n/BR (merge_templates_gs2020.py). Поузловая — диагностика.
     rc = muc.unfold(s, b, [("Th232chain", os.path.join(OUT, "mix_Th232chain_npsmoff.csv"))], fwhm_csv,
-                    lo=LO, hi=HI, bg_energy_of_ch=bg_e, verbose=False)
+                    lo=LO, hi=HI, bg_energy_of_ch=bg_e, verbose=False, blur=BLUR, tail=TAIL)
     mc = rc["cols"][0] * rc["coef"][0]
     chi2c = float(np.sum((mc[rc["sel"]] - rc["net"][rc["sel"]]) ** 2 / rc["var"][rc["sel"]]))
     ndofc = int(rc["sel"].sum()) - 1
     birgec = math.sqrt(max(chi2c / ndofc, 1.0))
+    shp, shp_all = shape_residual(np.asarray(rc["e"]), np.asarray(rc["net"]), np.asarray(rc["var"]), mc,
+                                  muc.g1s.make_fwhm(fwhm_csv))
+    print("ФОРМА ПИКОВ (#SHAPE-1, χ²/ν в окнах ±1,5 ПШПВ): всего %.3f; " % shp_all
+          + "; ".join("%.1f → %.2f" % (k, v) for k, v in shp.items()))
     Ac, dAc = float(rc["activities"][0]), float(rc["sd"][0] / s.live_time)
     Ae1 = float(rc["e1"]["activities"][0])
     print("\nЦЕПОЧКА В РАВНОВЕСИИ (метод 1): A2 %.1f ± %.1f (стат) ± %.1f (Бирге %.2f) Бк; E1 %.1f Бк; паспорт %.1f ± %.1f; "
@@ -275,7 +342,7 @@ def main():
     PW = float(os.environ.get("GS_PEAKWIN", "0"))
     if PW > 0:
         import yaml
-        cfg = os.path.join(REPO_ROOT, "detectors", "Gamma-1S", "web-th232", "configs", "th232.yaml")
+        cfg = r"D:\Claude_files\repos\geant4-detector-models\detectors\Gamma-1S\web-th232\configs\th232.yaml"
         with open(cfg, encoding="utf-8") as fh:
             lines = [float(l["e_kev"]) for l in yaml.safe_load(fh)["library"]["lines"]]
         fw = muc.g1s.make_fwhm(fwhm_csv)
@@ -317,10 +384,12 @@ def main():
         "model": [round(float(x), 3) for x in model],
         "model_by_link": model_by_link,
         "sel": [bool(x) for x in sel],
-        "chain": chain_fit
+        "chain": chain_fit,
+        "shape": {"all": shp_all, "peaks": {str(k): v for k, v in shp.items()}}
     }
 
-    json_path = os.path.join(OUT, "fit_m1%s%s.json" % ("_pw%g" % PW if PW > 0 else "", "_bgT%g_%g" % tuple(BG_T) if BG_T else ("_bgw" if BG_WATER else "")))
+    json_path = os.path.join(OUT, "fit_m1%s%s%s.json" % ("_pw%g" % PW if PW > 0 else "", "_bgT%g_%g" % tuple(BG_T) if BG_T else ("_bgw" if BG_WATER else ""),
+                                  ("_blur%g" % BLUR if BLUR != 1.0 else "") + ("_k40" if FWHM_K40 else "") + ("_tail%g" % TAIL if TAIL is not None else "") + ("_fwold" if FWHM_OLD else "") + ("_cfw" if FWHM_CFW else "") + ("_fwscale" if FWHM_SCALE else "") + ("_calsl%d" % CAL_SL_DEG if CAL_SL else "") + ("_calsum" if CAL_SUM else "")))
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(result_json, f, ensure_ascii=False, indent=1)
 

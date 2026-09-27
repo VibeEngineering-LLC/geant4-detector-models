@@ -3,14 +3,13 @@ r"""Сборка страницы GS2020 Th-232 донорским build_page.py
 CSS — побайтно донорский; в JS заменены только видимые подписи «паспорт» (список TERMS, число вхождений сверяется). Запуск: python build_page_gs2020.py"""
 import hashlib, os, shutil, sys
 sys.stdout.reconfigure(encoding="utf-8")
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-DONOR = os.path.join(REPO_ROOT, "detectors", "Gamma-1S", "web-th232")
-PAGE = os.environ.get("GS2020_PAGE_WORK", os.path.join(REPO_ROOT, ".work", "gs2020-th232-page"))
+DONOR = r"D:\Claude_files\repos\geant4-detector-models\detectors\Gamma-1S\web-th232"
+PAGE = r"D:\GoogleDrive\Рабочая папка ИИ\GEANT4\web\gs2020-th232-page"
 sys.path.insert(0, DONOR)
 import build_page as bp
 # #CHART-1 (оператор 26.09 «сделай увеличение по выделению мышью»): донор не имел drag-zoom на графиках
-# метода 1/2 (только на вкладке "калибровка") — пробел донора, не дефект переноса. Патч сгенерирован
-# ступенью 2 (Ollama qwen3.6:27b, SPEC-gs2020-zoom-patch.md).
+# метода 1/2 (только на вкладке "калибровка") — пробел донора, не дефект переноса (сверено grep-ом по
+# mousedown в g1s-th232.js). Патч сгенерирован ступенью 2 (Ollama qwen3.6:27b, SPEC-gs2020-zoom-patch.md).
 ZOOM_JS = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "patches", "gs2020_zoom.js"), encoding="utf-8").read().rstrip("\n")
 TERMS = {"g1s-th232.js": [('cell("против паспорта"', 'cell("к известной активности"', 2),
                           ("<th class='num'>к паспорту</th>", "<th class='num'>к известной активности</th>", 1),
@@ -21,11 +20,13 @@ TERMS = {"g1s-th232.js": [('cell("против паспорта"', 'cell("к и�
                           ('"корневой закон по записи цезия"', '"корневой закон через ту же точку 662 кэВ"', 1),
                           ('"ПШПВ по модели (цезий)"', '"фон: Маринелли+вода, промежуточный замер"', 1),
                           ('"ПШПВ по линиям спектра"', '"фон как снят (без сосуда)"', 1),
-                          ('fwhmLaw: "lines", // закон ширины линии: lines (по спектру) | cs (цезий)',
-                           'fwhmLaw: "cs", // #PAGE-фон-без-сосуда (26.09): единственный вариант — фон Маринелли+вода', 1),
                           ('"все известные линии"', '"ENSDF, порог в полпроцента"', 1),
                           ('"отобранная библиотека"', '"донорская библиотека"', 1),
                           ('"<tr><td>коэффициенты</td><td>"', '"<tr><td>коэффициенты своей шкалы (по реперам этого спектра)</td><td>"', 1),
+                          # оператор 26.09 «фон без сосуда убери»: кнопка "lines" снята из разметки (index.html),
+                          # дефолт состояния синхронизирован на единственный оставшийся вариант "cs".
+                          ('fwhmLaw: "lines", // закон ширины линии: lines (по спектру) | cs (цезий)',
+                           'fwhmLaw: "cs", // #PAGE-фон-без-сосуда (26.09): единственный вариант — фон Маринелли+вода', 1),
                           # #PAGE-3 (оператор 25.09 «убери просвечивающие линии»): контур слоя — сразу после ЕГО заливки,
                           # следующий (меньший) слой его перекрывает; отдельный проход контуров поверх всех заливок снят.
                           ("      fillRuns(vec, [[0, e.length - 1]], order[oi].nuc.color);\n    }",

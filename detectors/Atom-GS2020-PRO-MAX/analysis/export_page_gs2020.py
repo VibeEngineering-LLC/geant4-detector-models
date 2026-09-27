@@ -4,7 +4,7 @@ build_page.py) — оформление и интерактив берутся �
 Источник чисел — JSON подгонок out_v5. Переключатель донора «закон ПШПВ» (lines | cs) здесь означает фон:
 lines — фон S31_18 как снят (без сосуда), cs — фон реального измерения «Маринелли 1 л + дист. вода» (оператор 26.09,
 GS_BG_WATER=1, промежуточный замер 11,7 ч) — заменил прежнее модельное ослабление сосудом (GS_BG_T), которое
-хуже описывало форму (χ²/ν хуже во всех трёх подгонках).
+хуже описывало форму (χ²/ν хуже во всех трёх подгонках, см. RESULT-2026-09-26-lsrm-selfabsorption.md §8).
 Спека: scripts\specs\SPEC-export_page_gs2020.md. Запуск: python export_page_gs2020.py"""
 
 import sys
@@ -19,14 +19,20 @@ sys.stdout.reconfigure(encoding="utf-8")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fit_gs2020_th232_m1 as m1      # bm, Spec, true_energy, XML_SAMPLE, XML_BG, PEAK_TABLE, CHAIN, PASSPORT_BQ, PASSPORT_UNC, LO, HI
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 OUT = m1.OUT
-PAGE = os.environ.get("GS2020_PAGE_WORK", os.path.join(REPO_ROOT, ".work", "gs2020-th232-page"))
+PAGE = r"D:\GoogleDrive\Рабочая папка ИИ\GEANT4\web\gs2020-th232-page"
 DST = os.path.join(PAGE, "gs2020_th232_data.json")
-DONOR_CFG = os.path.join(REPO_ROOT, "detectors", "Gamma-1S", "web-th232", "configs", "th232.yaml")
+DONOR_CFG = r"D:\Claude_files\repos\geant4-detector-models\detectors\Gamma-1S\web-th232\configs\th232.yaml"
 LIB2_CFG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "th232_gs2020_full_xray.yaml")   # #XR-1: донор + рентген, не голый DONOR_CFG
 LIB05_CFG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "th232_gs2020_lib05.yaml")
-FILES = {"m1": "fit_m1.json", "m2": "fit_m2.json", "m2f": "fit_m2_lib05.json"}
+# Суффикс подгонки — та же формула, что в fit_gs2020_th232_m1.py:391 / fit_gs2020_th232_m2.py:222 (постановка
+# #SHAPE-1, оператор 27.09: гаусс + шкала SL+сумма + ПШПВ SpectraLine×1,05, уровень заполнения -1см).
+_M1_SUFFIX = (("_blur%g" % m1.BLUR if m1.BLUR != 1.0 else "") + ("_k40" if m1.FWHM_K40 else "") +
+              ("_tail%g" % m1.TAIL if m1.TAIL is not None else "") + ("_fwold" if m1.FWHM_OLD else "") +
+              ("_cfw" if m1.FWHM_CFW else "") + ("_fwscale" if m1.FWHM_SCALE else "") +
+              ("_calsl%d" % m1.CAL_SL_DEG if m1.CAL_SL else "") + ("_calsum" if m1.CAL_SUM else ""))
+_TAIL_SUF = ("_tail%g" % m1.TAIL) if m1.TAIL is not None else ""
+FILES = {"m1": "fit_m1%s.json" % _M1_SUFFIX, "m2": "fit_m2%s.json" % _TAIL_SUF, "m2f": "fit_m2_lib05%s.json" % _TAIL_SUF}
 N_PER_BR = 5.5e7
 N_EFF_MIN = 4.0
 PASSPORT = {"A_Bq": m1.PASSPORT_BQ, "dA_Bq": m1.PASSPORT_BQ * m1.PASSPORT_UNC, "Bq_per_kg": 910.0, "unc_pct": 6.0, "mass_g": 1052.0, "date_certified": "образец с известной активностью (дата не указана)", "date_measured": "2026-09-25", "decay_factor": 1.0}
@@ -39,7 +45,12 @@ def load(name):
     return json.load(open(os.path.join(OUT, name), encoding="utf-8"))
 
 def bgw(name):
-    return name.replace(".json", "_bgw.json")
+    # "_bgw" встраивается сразу после метода/lib05-префикса, до хвоста (_tail.../_fwscale...) — не в конце строки,
+    # см. факт. имя файла fit_m1_bgw_tail0_fwscale_calsl4_calsum.json (порядок из fit_gs2020_th232_m1.py:391).
+    for prefix in ("fit_m2_lib05", "fit_m2", "fit_m1"):
+        if name.startswith(prefix):
+            return prefix + "_bgw" + name[len(prefix):]
+    raise SystemExit("ОТКАЗ: неизвестный префикс имени файла подгонки: " + name)
 
 def r4(a):
     return [round(float(x), 4) for x in a]
@@ -224,11 +235,13 @@ def main():
     contrib = {k: float(np.sum(v)) for k, v in jm1["chain"]["stack"].items()}
     contrib["BG"] = float(np.sum(bg_arr))
     nuclides.sort(key=lambda n: (n["key"] == "XRAY", -contrib.get(n["key"], 0.0)))
+
     # Панель «cs»: фон — реальное измерение «Маринелли 1 л + дист. вода» (оператор 26.09), не модельное ослабление.
     bw = m1.Spec(m1.bm.read(m1.CAL.BKG_WATER_XML)[0], "bgw")
     k_bg_w = s.live_time / bw.live_time
     ebw = np.array([bw.channel_to_energy(i) for i in range(len(bw.counts))])
     bg_water_arr = np.interp(es, ebw, np.asarray(bw.counts, float) / np.gradient(ebw)) * np.gradient(es) * k_bg_w
+
     fw = fwhm_cal()
 
     # Оператор 26.09 «спектр на всех картинках на 3000 обрежь»: массивы по каналам (длина n_full, реально до

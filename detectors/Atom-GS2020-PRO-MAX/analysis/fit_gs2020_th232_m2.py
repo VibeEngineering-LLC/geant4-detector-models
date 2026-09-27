@@ -9,13 +9,11 @@ import sys, os, json, math
 import numpy as np
 sys.stdout.reconfigure(encoding="utf-8")
 HERE = os.path.dirname(os.path.abspath(__file__))
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))   # detectors/Atom-GS2020-PRO-MAX/analysis → корень репо
-DONOR = os.path.join(REPO_ROOT, "detectors", "Gamma-1S", "web-th232")
+DONOR = r"D:\Claude_files\repos\geant4-detector-models\detectors\Gamma-1S\web-th232"
 # GS_M2_CONFIG — своя библиотека (th232_gs2020_lib05.yaml, порог 0,5 %); по умолчанию конфиг донора (порог 2 %)
 FULL_XRAY_CFG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "th232_gs2020_full_xray.yaml")
 os.environ["G4MODELS_SOURCE_CONFIG"] = os.environ.get("GS_M2_CONFIG", FULL_XRAY_CFG)   # #XR-1: 2%-библиотека + рентген, не голый донор
-if not os.environ.get("SPECTRAVIBE_ROOT"):
-    raise RuntimeError("Переменная окружения SPECTRAVIBE_ROOT не установлена")
+os.environ.setdefault("SPECTRAVIBE_ROOT", r"D:\GoogleDrive\Дозиметрия\ИИ\1 Скилы\0_Work\gamma-spectrum-analysis")
 sys.path.insert(0, HERE)
 import fit_gs2020_th232_m1 as m1          # Spec, true_energy, write_fwhm_csv, XML_SAMPLE, XML_BG, OUT, LO, HI, PASSPORT_BQ, PASSPORT_UNC, CHAIN, bm, muc
 sys.path.insert(0, DONOR)
@@ -25,6 +23,8 @@ import export_ra226_data as erd           # erd.run_method2
 import mix_unfold_g1s as g1s              # g1s.make_fwhm(csv_path) -> fwhm(E) function
 import crit_bench as crb                  # crb.fit_E1
 import crit_bench_m2 as cbm2              # cbm2.fit_A2V
+if m1.TAIL is not None:                   # GS_TAIL — тот же хвост ядра, что в М1 (grid_response → g1s.broaden)
+    g1s.TAIL_T = m1.TAIL
 eam.BUILD_OUT = m1.OUT                    # our grid runs grid_mar_E*.csv live here
 ed.E_FIT_HI = m1.HI                       # #SUM-1: run_method2 отбрасывает суммы выше E_FIT_HI донора (его конфиг), у нас окно до m1.HI
 
@@ -219,7 +219,7 @@ def main():
         "chain": chain_fit
     }
 
-    with open(os.path.join(m1.OUT, "fit_m2%s%s%s.json" % ("_lib05" if "lib05" in os.environ.get("GS_M2_CONFIG", "") else "", "_pw%g" % PW if PW > 0 else "", "_bgT%g_%g" % tuple(m1.BG_T) if m1.BG_T else ("_bgw" if m1.BG_WATER else ""))), "w", encoding="utf-8") as f:
+    with open(os.path.join(m1.OUT, "fit_m2%s%s%s" % ("_lib05" if "lib05" in os.environ.get("GS_M2_CONFIG", "") else "", "_pw%g" % PW if PW > 0 else "", "_bgT%g_%g" % tuple(m1.BG_T) if m1.BG_T else ("_bgw" if m1.BG_WATER else "")) + ("_tail%g" % m1.TAIL if m1.TAIL is not None else "") + ".json"), "w", encoding="utf-8") as f:
         json.dump(out_data, f, ensure_ascii=False, indent=1)
 
 if __name__ == "__main__":

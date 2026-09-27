@@ -11,7 +11,8 @@ import build_page as bp
 # метода 1/2 (только на вкладке "калибровка") — пробел донора, не дефект переноса (сверено grep-ом по
 # mousedown в g1s-th232.js). Патч сгенерирован ступенью 2 (Ollama qwen3.6:27b, SPEC-gs2020-zoom-patch.md).
 ZOOM_JS = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "patches", "gs2020_zoom.js"), encoding="utf-8").read().rstrip("\n")
-TERMS = {"g1s-th232.js": [('cell("против паспорта"', 'cell("к известной активности"', 2),
+TERMS = {"g1s-th232.css": [("text-align:justify; text-wrap:pretty}", "text-align:left; text-wrap:pretty}", 2)],  # #GS-10
+         "g1s-th232.js": [('cell("против паспорта"', 'cell("к известной активности"', 2),
                           ("<th class='num'>к паспорту</th>", "<th class='num'>к известной активности</th>", 1),
                           ('lab: "паспорт"', 'lab: "известная"', 1), ('row("cmp-pass", "паспорт"', 'row("cmp-pass", "известная активность"', 1),
                           ('" паспорта, "', '" известной, "', 2),
@@ -58,6 +59,12 @@ TERMS = {"g1s-th232.js": [('cell("против паспорта"', 'cell("к и�
                           # #CHART-1: подключение wireZoom к обеим канвам (метод 1, метод 2) — синхронный zoom (ST.zoom общий)
                           ('    attachCursor("cvM1", "m1-tip", function () {',
                            '    wireZoom("cvM1"); wireZoom("cvM2");\n    attachCursor("cvM1", "m1-tip", function () {', 1)]}
+# #GS-10 (оператор 27.09 «опять с шириной текста проблемы. исправь и запомни»; скилл web-publish §3): донорский CSS
+# снимает предел строки (`max-width:none` у .stand/.ai-note/.method-lede) — абзацы шли во всю ширину. Предел ставит
+# СБОРЩИК на ВСЕ абзацы и пункты страницы, а не автор раздела; проверка — MEASURE_CHECK ниже и замер в браузере.
+MEASURE_CSS = ("\n/* #GS-10: предел длины строки на всей странице, ставится сборщиком */\n"
+               "body,p,li,figcaption,caption,dd{text-align:left}\n"
+               ".app p,.app li,.app figcaption,.pop p,.pop li,.pop dd{max-width:78ch !important; text-wrap:pretty}\n")
 sha = lambda p: hashlib.sha256(open(p, "rb").read()).hexdigest()
 for rel in (("styles", "g1s-th232.css"), ("scripts", "g1s-th232.js")):
     src, dst = os.path.join(DONOR, "src", *rel), os.path.join(PAGE, "src", *rel)
@@ -67,6 +74,10 @@ for rel in (("styles", "g1s-th232.css"), ("scripts", "g1s-th232.js")):
         if txt.count(old) != n:
             raise SystemExit("ОТКАЗ: в донорском %s «%s» встречается %d раз, ожидалось %d" % (rel[1], old, txt.count(old), n))
         txt = txt.replace(old, new)
+    if rel[1].endswith(".css"):
+        txt += MEASURE_CSS
+        if "justify" in txt.replace("justify-content", "").replace("justify-items", "").replace("justify-self", ""):
+            raise SystemExit("ОТКАЗ: в CSS есть выключка по ширине (web-publish §3)")
     open(dst, "w", encoding="utf-8", newline="").write(txt)
     print("донорский %s sha256 %s, замен терминов %d" % ("/".join(rel), sha(src)[:16], len(TERMS.get(rel[1], ()))))
 # #GS-7: паспортные величины прибора (не расчёт) — источник README-референсы.md §8, сайт Gammaspectacular 27.09.

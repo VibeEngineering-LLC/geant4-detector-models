@@ -14,8 +14,15 @@
 .dev-t td{border-bottom:1px solid var(--rule-soft); padding:.45rem .6rem .45rem 0; vertical-align:top; max-width:46ch}
 .dev-t td:first-child{font-weight:700; white-space:nowrap}
 .dev-fig{display:grid; grid-template-columns:repeat(auto-fit,minmax(13rem,1fr)); gap:1rem; margin-top:.8rem}
+.dev-fig{align-items:start}
 .dev-fig figure{margin:0; border:2px solid var(--rule); background:#fff}
 .dev-fig img{display:block; width:-moz-available; width:-webkit-fill-available; width:stretch; height:15rem; object-fit:contain; background:#fff}
+.dev-fig img{cursor:zoom-in}
+.dev-photo img{object-fit:cover}
+.lbox{position:fixed; inset:0; z-index:50; background:rgba(14,12,8,.88); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.6rem; padding:1rem; cursor:zoom-out}
+.lbox[hidden]{display:none}
+.lbox img{max-width:calc(100vw - 2rem); max-height:calc(100vh - 5rem); object-fit:contain; background:#fff}
+.lbox p{color:#f0ede3; font-size:13px; max-width:78ch; margin:0; text-align:center}
 .dev-fig figcaption{font-size:12px; line-height:1.45; padding:.45rem .6rem; border-top:2px solid var(--rule); background:var(--paper); color:var(--dim)}
 .spec-top{margin-top:1.2rem}
 .spec-h{font-size:clamp(1.4rem,2.2vw,1.9rem); line-height:1.05; letter-spacing:-.02em; font-weight:800; margin:0}
@@ -54,6 +61,11 @@
       target="_blank" rel="noopener">Capescint NaI-51×51</a>; в модели принят
       именно он — по 3D-модели и чертежу изготовителя пакета.</p>
     </div>
+    <div class="dev-fig dev-photo">
+      <figure><img src="img/photo_side.jpg" alt="фото прибора Atom GS2020 PRO MAX сбоку: алюминиевый цилиндр, разъём USB Type-C у основания" loading="lazy" width="1200" height="1600"><figcaption>Прибор: алюминиевый корпус Ø63&nbsp;мм, у основания — разъём USB Type-C</figcaption></figure>
+      <figure><img src="img/photo_scale.jpg" alt="фото прибора рядом с шариковой ручкой для масштаба" loading="lazy" width="1200" height="1600"><figcaption>Для масштаба — рядом шариковая ручка</figcaption></figure>
+      <figure><img src="img/photo_bottom.jpg" alt="фото прибора: торец с резьбовым отверстием под штатив" loading="lazy" width="1200" height="1600"><figcaption>Торец со стороны электроники: резьба под штатив</figcaption></figure>
+    </div>
     <table class="dev-t">
       <thead><tr><th>параметр</th><th>по данным производителя прибора</th><th>в Geant4-модели этой страницы</th></tr></thead>
       <tbody>
@@ -81,12 +93,26 @@
       target="_blank" rel="noopener">репозитории модели</a>.</p>
     </div>
     <div class="dev-fig">
-      <figure><img src="img/g4_cut34.jpg" alt="разрез Geant4-модели прибора: корпус, пакет кристалла, платы" loading="lazy" width="593" height="755"><figcaption>Geant4: разрез модели прибора (голубое — кристалл, светло-серое — отражатель, жёлтое — кварцевое окно, зелёное — платы SiPM)</figcaption></figure>
-      <figure><img src="img/g4_section.jpg" alt="сечение Geant4-модели прибора по оси, контурный рисунок" loading="lazy" width="559" height="723"><figcaption>Geant4: осевое сечение, контуры всех тел</figcaption></figure>
-      <figure><img src="img/blender_cutaway.jpg" alt="разрез сцены Blender: прибор с пакетом кристалла" loading="lazy" width="506" height="697"><figcaption>Blender: сцена-источник геометрии, четверть вырезана</figcaption></figure>
-      <figure><img src="img/g4_marinelli_cut34.jpg" alt="разрез модели: прибор в колодце сосуда Маринелли с пробой" loading="lazy" width="819" height="691"><figcaption>Geant4: прибор в сосуде Маринелли 1&nbsp;л (коричневое — проба). Рендер до поправки уровня заполнения: в расчёте уровень на 1&nbsp;см ниже края</figcaption></figure>
+      <figure><img src="img/g4_cut34.jpg" alt="разрез Geant4-модели прибора: корпус, пакет кристалла, платы" loading="lazy" width="593" height="755"><figcaption>Geant4: разрез модели прибора, кристаллом вверх (голубое — кристалл NaI(Tl), светло-серое — отражатель, жёлтое — кварцевое окно между кристаллом и SiPM, зелёное — платы SiPM, тёмно-серое сверху — поролоновая прокладка)</figcaption></figure>
+      <figure><img src="img/g4_marinelli_cut34.jpg" alt="разрез модели: прибор в колодце сосуда Маринелли с пробой" loading="lazy" width="819" height="691"><figcaption>Geant4: прибор в сосуде Маринелли 1&nbsp;л, геометрия расчёта (коричневое — проба; уровень заполнения на 1&nbsp;см ниже края сосуда)</figcaption></figure>
     </div>
   </section>
+  <div class="lbox" id="lbox" hidden role="dialog" aria-modal="true" aria-label="увеличенное изображение"><img alt=""><p></p></div>
+  <script>
+  (function () {
+    var box = document.getElementById("lbox"), big = box.querySelector("img"), cap = box.querySelector("p");
+    function close() { box.hidden = true; big.removeAttribute("src"); }
+    document.querySelectorAll(".dev-fig img").forEach(function (im) {
+      im.addEventListener("click", function () {
+        big.src = im.currentSrc || im.src; big.alt = im.alt;
+        var fc = im.parentNode.querySelector("figcaption"); cap.textContent = fc ? fc.textContent : "";
+        box.hidden = false;
+      });
+    });
+    box.addEventListener("click", close);
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !box.hidden) close(); });
+  })();
+  </script>
 
   <div class="top spec-top">
     <div class="title">

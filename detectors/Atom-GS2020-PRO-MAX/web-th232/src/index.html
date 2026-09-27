@@ -2,15 +2,96 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#e6e0d0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0e0c08" media="(prefers-color-scheme: dark)">
-<title>Atom GS2020: спектр тория-232 в маринелли, разложение по нуклидам ветви</title>
+<title>Atom GS2020 PRO MAX: прибор, Geant4-модель, спектры</title>
 <!--@styles-->
+<style>
+.dev{border-bottom:3px solid var(--rule); padding:1.1rem 0 1.3rem}
+.dev p,.dev li,.dev td,.dev th,.dev figcaption{text-align:left}
+.dev-text p{max-width:78ch; font-size:14px; line-height:1.55; color:var(--ink); margin:.55rem 0; text-wrap:pretty}
+.dev-h{font:800 12px/1.4 var(--sans); letter-spacing:.12em; text-transform:uppercase; margin:1.3rem 0 .3rem}
+.dev-t{border-collapse:collapse; margin:.9rem 0; font-size:13px; line-height:1.45; width:auto; max-width:72rem}
+.dev-t th{font:800 10px/1.3 var(--sans); letter-spacing:.12em; text-transform:uppercase; border-bottom:2px solid var(--rule); padding:.4rem .6rem .4rem 0}
+.dev-t td{border-bottom:1px solid var(--rule-soft); padding:.45rem .6rem .45rem 0; vertical-align:top; max-width:46ch}
+.dev-t td:first-child{font-weight:700; white-space:nowrap}
+.dev-fig{display:grid; grid-template-columns:repeat(auto-fit,minmax(13rem,1fr)); gap:1rem; margin-top:.8rem}
+.dev-fig figure{margin:0; border:2px solid var(--rule); background:#fff}
+.dev-fig img{display:block; width:-moz-available; width:-webkit-fill-available; width:stretch; height:15rem; object-fit:contain; background:#fff}
+.dev-fig figcaption{font-size:12px; line-height:1.45; padding:.45rem .6rem; border-top:2px solid var(--rule); background:var(--paper); color:var(--dim)}
+.spec-top{margin-top:1.2rem}
+.spec-h{font-size:clamp(1.4rem,2.2vw,1.9rem); line-height:1.05; letter-spacing:-.02em; font-weight:800; margin:0}
+@media (max-width:640px){.dev-t,.dev-t tbody,.dev-t tr,.dev-t td{display:block; width:auto} .dev-t thead{display:none} .dev-t td{border:0; padding:.15rem 0; max-width:none} .dev-t tr{border-bottom:1px solid var(--rule-soft); padding:.4rem 0} .dev-t td:first-child{white-space:normal}}
+</style>
 
 <div class="app">
 
   <div class="top">
     <div class="title">
-      <p class="eyebrow">Atom GS2020 PRO MAX · NaI(Tl) Capescint Ø51×51 · маринелли 1 л</p>
-      <h1>Разложение спектра тория-232 — рабочая страница</h1>
+      <p class="eyebrow">сцинтилляционный гамма-спектрометр · NaI(Tl) Ø51×51 · SiPM · модель Geant4</p>
+      <h1>Atom GS2020 PRO MAX — прибор, модель и спектры</h1>
+      <p class="stand">Рабочая страница прибора: описание спектрометра и его
+      Geant4-модели, затем измеренные спектры и их разложение. Сейчас на странице
+      один спектр — калибровочный образец тория-232 в маринелли 1 л.</p>
+      <p class="ai-note">Страница подготовлена с использованием
+      ассистента на базе больших языковых моделей (Claude, Anthropic) —
+      роли, ответственность и источники данных в разделах «о странице и
+      её числах» и «источники» внизу страницы.</p>
+    </div>
+  </div>
+
+  <section class="dev" aria-labelledby="devH">
+    <h2 class="sec-h" id="devH">Спектрометр</h2>
+    <div class="dev-text">
+      <p>Atom GS2020 PRO MAX — сцинтилляционный гамма-спектрометр с кристаллом
+      NaI(Tl) 2×2 дюйма (Ø50,8×50,8&nbsp;мм). Свет сцинтилляций снимает не ФЭУ,
+      а матрица кремниевых фотоумножителей (SiPM) на торце кристалла; усилитель,
+      АЦП и термостабилизация — в том же алюминиевом корпусе Ø63&nbsp;мм, связь по
+      USB Type-C. Сборка прибора — Gammaspectacular (Австралия), модель на сайте
+      производителя — <a href="https://www.gammaspectacular.com/blue/gamma-spectroscopy/gamma-spectrometers/gs-max-2020-nai-sipm"
+      target="_blank" rel="noopener">GS-MAX-2020-NAI-SIPM</a>.</p>
+      <p><b>Кристалл.</b> Изготовитель самого кристалла достоверно не известен.
+      По словам производителя прибора, характеристики кристалла очень близки к
+      пакету <a href="https://capescint.com/product/scintillation-crystal-nai-51x51/"
+      target="_blank" rel="noopener">Capescint NaI-51×51</a>; в модели принят
+      именно он — по 3D-модели и чертежу изготовителя пакета.</p>
+    </div>
+    <table class="dev-t">
+      <thead><tr><th>параметр</th><th>по данным производителя прибора</th><th>в Geant4-модели этой страницы</th></tr></thead>
+      <tbody>
+        <tr><td>кристалл</td><td>NaI(Tl) 2×2″, инкапсулированный</td><td>NaI(Tl) Ø50,8×50,8&nbsp;мм в пакете Capescint: стакан Al 1&nbsp;мм, отражатель, кварцевое окно Ø57×3&nbsp;мм — семь тел по профилю изготовителя пакета</td></tr>
+        <tr><td>фотоприёмник</td><td>SiPM</td><td>матрицы SiPM и платы — по STEP-чертежу прибора; перенос света не моделируется, считается энергия, выделенная в кристалле</td></tr>
+        <tr><td>корпус</td><td>алюминий 1,6&nbsp;мм, Ø63×82&nbsp;мм</td><td>по STEP-чертежу прибора: 41 деталь (корпус, крышка, кольца, платы, крепёж)</td></tr>
+        <tr><td>масса</td><td>550&nbsp;г</td><td>—</td></tr>
+        <tr><td>разрешение</td><td>{{dev_res_mfr}}</td><td>измерено по таблице пиков прибора: ПШПВ 24,07&nbsp;кэВ на 238&nbsp;кэВ, 40,62 на 583, 57,35 на 911, 107,42 на 2614; в свёртке модели — ПШПВ(E)&nbsp;=&nbsp;{{fw_k}}·E<sup>{{fw_p}}</sup>&nbsp;кэВ</td></tr>
+        <tr><td>каналов</td><td>до 8192</td><td>—</td></tr>
+        <tr><td>термостабилизация</td><td>встроенный датчик, −40…+50&nbsp;°C</td><td>не моделируется</td></tr>
+        <tr><td>программы</td><td>BecqMoni Atom, Impulse, Atom-Spectra (Android)</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <h3 class="dev-h">Геометрия модели</h3>
+    <div class="dev-text">
+      <p>Корпус и внутренности прибора перенесены из STEP-чертежа сборки
+      (Blender → тесселированные тела GDML), пакет кристалла — точными телами
+      вращения по профилю изготовителя. Прибор в модели стоит кристаллом вверх.
+      Приёмка геометрии — не только рендер, но и реальный прогон переноса
+      (поле K-40, миллион событий): застреваний навигатора ноль, пик 1461&nbsp;кэВ
+      на месте. Остаются мелкие наложения деталей чертежа (до 0,4&nbsp;мм) и
+      непроверенная плотность отражателя пакета — допущение модели.</p>
+      <p>Модель прибора отдельно (без пробы) и сборка с сосудом Маринелли —
+      файлы GDML в <a href="https://github.com/VibeEngineering-LLC/geant4-detector-models/tree/main/detectors/Atom-GS2020-PRO-MAX/geometry"
+      target="_blank" rel="noopener">репозитории модели</a>.</p>
+    </div>
+    <div class="dev-fig">
+      <figure><img src="img/g4_cut34.jpg" alt="разрез Geant4-модели прибора: корпус, пакет кристалла, платы" loading="lazy" width="593" height="755"><figcaption>Geant4: разрез модели прибора (голубое — кристалл, светло-серое — отражатель, жёлтое — кварцевое окно, зелёное — платы SiPM)</figcaption></figure>
+      <figure><img src="img/g4_section.jpg" alt="сечение Geant4-модели прибора по оси, контурный рисунок" loading="lazy" width="559" height="723"><figcaption>Geant4: осевое сечение, контуры всех тел</figcaption></figure>
+      <figure><img src="img/blender_cutaway.jpg" alt="разрез сцены Blender: прибор с пакетом кристалла" loading="lazy" width="506" height="697"><figcaption>Blender: сцена-источник геометрии, четверть вырезана</figcaption></figure>
+      <figure><img src="img/g4_marinelli_cut34.jpg" alt="разрез модели: прибор в колодце сосуда Маринелли с пробой" loading="lazy" width="819" height="691"><figcaption>Geant4: прибор в сосуде Маринелли 1&nbsp;л (коричневое — проба). Рендер до поправки уровня заполнения: в расчёте уровень на 1&nbsp;см ниже края</figcaption></figure>
+    </div>
+  </section>
+
+  <div class="top spec-top">
+    <div class="title">
+      <p class="eyebrow">спектр 1 · Th-232 · маринелли 1 л</p>
+      <h2 class="spec-h">Разложение спектра тория-232</h2>
       <p class="stand">Образец с известной активностью Th-232 в маринелли 1 л;
       удельная активность {{aksp}} ({{aksp_unc}}), масса
       {{mass}} — полная активность {{apass}} {{apass_dev}}. Те же два
@@ -37,10 +118,6 @@
       худшее согласие и не используется как основной. Замер воды продолжается
       для набора статистики; назначен также замер с KCl — проверка
       эффективности модели по K-40 с активностью, известной по массе.</p>
-      <p class="ai-note">Страница подготовлена с использованием
-      ассистента на базе больших языковых моделей (Claude, Anthropic) —
-      роли, ответственность и источники данных в разделах «о странице и
-      её числах» и «источники» внизу страницы.</p>
     </div>
   </div>
 
@@ -299,7 +376,9 @@
   итог не подтвердил: простой метод площадей на этом разрешении
   смещён, а после поправки на смещение, измеренной на модельном спектре с
   известным ответом, пики указывают на расхождение модели и фона — отсюда
-  вариант с фоном, измеренным в сосуде с водой. Статус — «итог не установлен».</p>
+  вариант с фоном, измеренным в сосуде с водой. Затем причина завышения
+  найдена в геометрии — уровень заполнения источника (см. вводный абзац
+  раздела о спектре тория-232).</p>
   <h3>Заявление об использовании ИИ</h3>
   <p><b>Модель и роли.</b> Работа выполнена в среде Claude Code с
   моделями семейства Claude (Anthropic). Ассистент выполнял: геометрию и

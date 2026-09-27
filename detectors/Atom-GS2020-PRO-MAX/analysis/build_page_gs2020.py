@@ -69,6 +69,19 @@ for rel in (("styles", "g1s-th232.css"), ("scripts", "g1s-th232.js")):
         txt = txt.replace(old, new)
     open(dst, "w", encoding="utf-8", newline="").write(txt)
     print("донорский %s sha256 %s, замен терминов %d" % ("/".join(rel), sha(src)[:16], len(TERMS.get(rel[1], ()))))
+# #GS-7: паспортные величины прибора (не расчёт) — источник README-референсы.md §8, сайт Gammaspectacular 27.09.
+DEV = {"dev_res_mfr": "менее 7,5 % (паспорт; вариант с CsI(Tl) — менее 7,0 %)"}
+_make_fill = bp.make_fill
+def _fill_dev(d):
+    f = _make_fill(d)
+    f.update({k: (lambda v=v: v) for k, v in DEV.items()})
+    return f
+bp.make_fill = _fill_dev
 bp.SRC, bp.DIST = os.path.join(PAGE, "src"), os.path.join(PAGE, "dist")
 bp.DATA_JSON, bp.SINGLE = os.path.join(PAGE, "gs2020_th232_data.json"), os.path.join(PAGE, "gs2020_th232.html")
 bp.main()
+# #GS-7: рендеры раздела «Спектрометр» (подготовлены из model/…png, JPG ≤1000 px) — рядом со страницей в dist/img
+os.makedirs(os.path.join(bp.DIST, "img"), exist_ok=True)
+for fn in sorted(os.listdir(os.path.join(PAGE, "img"))):
+    shutil.copy2(os.path.join(PAGE, "img", fn), os.path.join(bp.DIST, "img", fn))
+    print("картинка dist/img/%s %d КБ" % (fn, os.path.getsize(os.path.join(PAGE, "img", fn)) // 1024))

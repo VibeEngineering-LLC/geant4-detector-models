@@ -215,7 +215,12 @@ def main():
                       "note": "в методе 1 отдельно не выделяется (рождается внутри общего шаблона звена, "
                               "не отделим без нового прогона); в методе 2 — сумма строк библиотеки #XR-1", "branching": 1.0})
 
-    reference_lines = [[float(l["e_kev"]), l["nuclide"], "%s %.1f" % (l["nuclide"], float(l["e_kev"]))] for l in lib_lines(LIB2_CFG)]
+    # #GS-6 (оператор 27.09 «тик частить линиями не нужно, только значимые»): на калибровочном
+    # графике реперы — не вся библиотека (62 линии + 30 строк K/L-рентгена #XR-1 = 92 маркера,
+    # сплошная гребёнка), а линии с I >= REF_LINE_MIN_PCT % (порог как у донорской библиотеки).
+    REF_LINE_MIN_PCT = 2.0
+    reference_lines = [[float(l["e_kev"]), l["nuclide"], "%s %.1f" % (l["nuclide"], float(l["e_kev"]))]
+                        for l in lib_lines(LIB2_CFG) if float(l.get("i_pct", 0)) >= REF_LINE_MIN_PCT]
 
     meta = {"live_s": s.live_time, "real_s": float(sp.real), "bg_live_s": b.live_time, "bg_real_s": float(bsp.real), "bg_scale_time": k_bg,
             "cal_sample": {"coefs": m1.CAL_OWN["sample"]["coeffs"], "order": len(m1.CAL_OWN["sample"]["coeffs"]) - 1,   # #CAL-2: своя шкала, не полином файла

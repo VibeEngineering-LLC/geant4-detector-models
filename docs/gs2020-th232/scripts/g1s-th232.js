@@ -158,7 +158,7 @@
     var m = { l: 62, r: 14, t: 12, b: 34 };
     var e = D.spectrum.e_of_ch;
     var yy = D.spectrum.counts;
-    var xLo = ST.zoom ? ST.zoom.xLo : 0, xHi = ST.zoom ? ST.zoom.xHi : e[e.length - 1];
+    var xLo = ST.zoom ? ST.zoom.xLo : 25, xHi = ST.zoom ? ST.zoom.xHi : e[e.length - 1];
 
     var vMax = 1;
     for (var i0 = 0; i0 < e.length; i0++) {
@@ -363,6 +363,15 @@
       var xC = mapX(ST.cursorE, xLo, xHi, m.l, W - m.r);
       g.strokeStyle = p.rule; g.lineWidth = 1; g.setLineDash([4, 4]);
       g.beginPath(); g.moveTo(xC, m.t); g.lineTo(xC, H - m.b); g.stroke();
+      g.setLineDash([]);
+    }
+    if (ST.drag) {
+      var xa3 = mapX(Math.min(ST.drag.e0, ST.drag.e1), xLo, xHi, m.l, W - m.r);
+      var xb3 = mapX(Math.max(ST.drag.e0, ST.drag.e1), xLo, xHi, m.l, W - m.r);
+      g.fillStyle = "rgba(246,211,28,.22)";
+      g.fillRect(xa3, m.t, xb3 - xa3, H - m.b - m.t);
+      g.strokeStyle = "#16140f"; g.lineWidth = 1.5; g.setLineDash([4, 4]);
+      g.strokeRect(xa3, m.t, xb3 - xa3, H - m.b - m.t);
       g.setLineDash([]);
     }
     g.strokeStyle = p.rule; g.lineWidth = 2;
@@ -692,7 +701,7 @@
       var x = ev.clientX - r.left, y = ev.clientY - r.top;
       var m = { l: 62, r: 14 };
       var e = D.spectrum.e_of_ch;
-      var xLo = ST.zoom ? ST.zoom.xLo : 0, xHi = ST.zoom ? ST.zoom.xHi : e[e.length - 1];
+      var xLo = ST.zoom ? ST.zoom.xLo : 25, xHi = ST.zoom ? ST.zoom.xHi : e[e.length - 1];
       if (x < m.l || x > r.width - m.r) ST.cursorE = null;
       else ST.cursorE = xLo + ((x - m.l) / (r.width - m.r - m.l)) * (xHi - xLo);
       onMove();
@@ -713,7 +722,7 @@
 
 function zEfromX(x, rectWidth) {
   var e = D.spectrum.e_of_ch;
-  var xLo = ST.zoom ? ST.zoom.xLo : 0;
+  var xLo = ST.zoom ? ST.zoom.xLo : 25;
   var xHi = ST.zoom ? ST.zoom.xHi : e[e.length - 1];
   var m = { l: 62, r: 14 };
   return xLo + ((x - m.l) / (rectWidth - m.r - m.l)) * (xHi - xLo);
@@ -733,6 +742,8 @@ function wireZoom(cvId) {
     ev.preventDefault();
     dragging = true;
     dragState = { x0: x, x1: x, w: r.width };
+    ST.drag = { e0: zEfromX(x, r.width), e1: zEfromX(x, r.width) };
+    redraw();
   });
 
   document.addEventListener("mousemove", function (ev) {
@@ -742,6 +753,8 @@ function wireZoom(cvId) {
     if (x < m.l) x = m.l;
     if (x > r.width - m.r) x = r.width - m.r;
     dragState.x1 = x;
+    ST.drag.e1 = zEfromX(x, r.width);
+    redraw();
   });
 
   document.addEventListener("mouseup", function () {
@@ -749,7 +762,8 @@ function wireZoom(cvId) {
     dragging = false;
     var x0 = dragState.x0, x1 = dragState.x1, w = dragState.w;
     dragState = null;
-    if (Math.abs(x1 - x0) < 6) return;
+    ST.drag = null;
+    if (Math.abs(x1 - x0) < 6) { redraw(); return; }
     ST.zoom = { xLo: Math.max(0, zEfromX(Math.min(x0, x1), w)),
                 xHi: zEfromX(Math.max(x0, x1), w) };
     redraw();

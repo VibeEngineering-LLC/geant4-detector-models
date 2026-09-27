@@ -1,6 +1,6 @@
 function zEfromX(x, rectWidth) {
   var e = D.spectrum.e_of_ch;
-  var xLo = ST.zoom ? ST.zoom.xLo : 0;
+  var xLo = ST.zoom ? ST.zoom.xLo : 25;
   var xHi = ST.zoom ? ST.zoom.xHi : e[e.length - 1];
   var m = { l: 62, r: 14 };
   return xLo + ((x - m.l) / (rectWidth - m.r - m.l)) * (xHi - xLo);
@@ -20,6 +20,8 @@ function wireZoom(cvId) {
     ev.preventDefault();
     dragging = true;
     dragState = { x0: x, x1: x, w: r.width };
+    ST.drag = { e0: zEfromX(x, r.width), e1: zEfromX(x, r.width) };
+    redraw();
   });
 
   document.addEventListener("mousemove", function (ev) {
@@ -29,6 +31,8 @@ function wireZoom(cvId) {
     if (x < m.l) x = m.l;
     if (x > r.width - m.r) x = r.width - m.r;
     dragState.x1 = x;
+    ST.drag.e1 = zEfromX(x, r.width);
+    redraw();
   });
 
   document.addEventListener("mouseup", function () {
@@ -36,7 +40,8 @@ function wireZoom(cvId) {
     dragging = false;
     var x0 = dragState.x0, x1 = dragState.x1, w = dragState.w;
     dragState = null;
-    if (Math.abs(x1 - x0) < 6) return;
+    ST.drag = null;
+    if (Math.abs(x1 - x0) < 6) { redraw(); return; }
     ST.zoom = { xLo: Math.max(0, zEfromX(Math.min(x0, x1), w)),
                 xHi: zEfromX(Math.max(x0, x1), w) };
     redraw();

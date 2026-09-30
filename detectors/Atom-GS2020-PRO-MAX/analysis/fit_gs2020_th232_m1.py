@@ -10,18 +10,21 @@ import numpy as np
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-os.environ.setdefault("SPECTRAVIBE_ROOT", r"D:\GoogleDrive\Дозиметрия\ИИ\1 Скилы\0_Work\gamma-spectrum-analysis")
-sys.path.insert(0, r"D:\Claude_files\repos\geant4-detector-models\common\py")
+os.environ.setdefault("SPECTRAVIBE_ROOT", r"D:\cloud-folder\Дозиметрия\ИИ\1 Скилы\0_Work\gamma-spectrum-analysis")
+sys.path.insert(0, r"D:\repos-folder\repos\geant4-detector-models\common\py")
 import becqmoni as bm
 
-sys.path.insert(0, r"D:\Claude_files\repos\geant4-detector-models\detectors\Gamma-1S\analysis")
+sys.path.insert(0, r"D:\repos-folder\repos\geant4-detector-models\detectors\Gamma-1S\analysis")
 import mix_unfold_core as muc
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "cal"))
 import gs2020_calib as CAL
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gs2020_extra_components as gx   # #GS-42: IB β⁻-звеньев в шаблоны М1 (β уже в распаде иона); GS_EXTRA=0 — без него
 CAL_OWN = json.load(open(CAL.OUT_JSON, encoding="utf-8")) if os.path.exists(CAL.OUT_JSON) else None
+print("ШКАЛА: %s" % CAL.OUT_JSON)   # #GS-28: какой файл своих шкал взят (база / гибрид) — артефакт в логе каждой подгонки
 muc.g1s.FINE_E_MAX = 4800.0   # #SUM-1 (оператор 25.09): сетка размытия донора кончалась на 3300 кэВ и срезала сумм-пики Tl-208 3197/3475
 
-REF = r"D:\GoogleDrive\Дозиметрия\Спектры\Atom GS2020 PRO MAX\Референсы"
+REF = r"D:\cloud-folder\Дозиметрия\Спектры\Atom GS2020 PRO MAX\Референсы"
 XML_SAMPLE = os.path.join(REF, "Калибровка Th-232 (без вычета фона).xml")
 XML_BG = os.path.join(REF, "Фон лаба S31_18.xml")
 BG_TAG = "bg"
@@ -41,6 +44,9 @@ LO, HI = 150.0, 3600.0   # #SUM-1: верх окна 3600 захватывает
 PASSPORT_BQ = 910.0 * 1.052
 PASSPORT_UNC = 0.06
 CHAIN = [("Th232", 1.0), ("Ac228", 1.0), ("Th228", 1.0), ("Ra224", 1.0), ("Rn220", 1.0), ("Pb212", 1.0), ("Bi212", 1.0), ("Tl208", 0.3594)]
+# #GS-42: Ra-228 — звено цепочки Th-232 в равновесии (BR 1), шаблона М1 у него нет (γ ниже окна); его β/IB входят
+# только в столбец цепочки (главный результат), в поузловую подгонку — нет (нет амплитуды).
+EXTRA_CHAIN_ONLY = [("Ra228", 1.0)]
 
 PEAK_TABLE = [
     (238.197, 238.632, 24.421),
@@ -67,7 +73,7 @@ def true_energy(e_file, table=None):
 
 
 # GS_CAL_SL=<степень> — шкала образца по каналам пиков СпектраЛайн (оператор 26.09, скрин «Параметры пиков»): канал → E_lib
-CAL_SL_DEG = int(os.environ.get("GS_CAL_SL", "0"))
+CAL_SL_DEG = 0 if CAL.SHAPE else int(os.environ.get("GS_CAL_SL", "0"))   # #GS-37: при шкале по форме SL не применяется
 CAL_SL = CAL_SL_DEG > 0
 SL_PEAKS = [(543.253, 238.632), (1297.795, 583.187), (1986.459, 911.204), (2098.076, 964.766),
             (2106.831, 968.971), (3129.695, 1460.822), (5537.873, 2614.511)]
@@ -89,6 +95,16 @@ class Spec:
             print("#CAL-0 шкала образца по СпектраЛайн, степень %d: " % CAL_SL_DEG + "; ".join(
                 "%.1f %+.2f" % (lib, np.polyval(p, c) - lib) for c, lib in pts)
                 + "; E(кан 342)=%.1f E(кан 7016)=%.1f" % (np.polyval(p, 342.0), np.polyval(p, 7016.0)))
+        if tag == "sample" and CAL.SHAPE and CAL_SUM:   # #GS-37: выше 2614 у шкалы по форме узла нет (за краем — константа),
+            ch = np.arange(len(sp.n), dtype=float)       # шкала файла там ошибается на +230 кэВ → узел горба суммы, линейно от 2614
+            c0 = float(np.interp(2614.511, self._e, ch))
+            nodes = [(c0, 0.0)] + [(c, E - float(np.interp(c, ch, self._e))) for c, E in CAL_SUM]
+            # парабола с нулевым наклоном в c0 (C¹): линейная стыковка давала излом наклона ~40 % на самом пике 2614
+            # (форма 2614: χ²/ν 0,68 → 2,17); узел горба (последний) проходится точно
+            a = nodes[-1][1] / (nodes[-1][0] - c0) ** 2
+            self._e = self._e + np.where(ch <= c0, 0.0, a * (ch - c0) ** 2)
+            print("#GS-37 шкала образца по форме + горб суммы: " + "; ".join("кан %.0f %+.1f кэВ" % q for q in nodes)
+                  + "; E(кан 7016)=%.1f" % self._e[min(7016, len(sp.n) - 1)])
 
     def channel_to_energy(self, c):
         return float(self._e[int(c)])
@@ -195,7 +211,13 @@ def main():
 
     bg_e = np.array([b.channel_to_energy(i) for i in range(b.n_channels)])
 
-    r = muc.unfold(s, b, templates, fwhm_csv, lo=LO, hi=HI, bg_energy_of_ch=bg_e, verbose=True, blur=BLUR, tail=TAIL)
+    # #GS-42: IB β⁻-звеньев — в шаблон звена (на его распад) и в шаблон цепочки (× BR); β не добавляется (уже в распаде иона)
+    comps = {k: gx.load(k, OUT, beta=False) for k, _ in CHAIN + EXTRA_CHAIN_ONLY} if gx.ENABLED else {}
+    if not gx.ENABLED:
+        print("ФИЗИКА (#GS-42): GS_EXTRA=0 — IB выключен (прежнее поведение)")
+    plan_links = {p: [(comps[k], 1.0)] for k, p in templates if k in comps and comps[k]["ib"]}
+    with gx.m1_ib(muc.g1s, plan_links):
+        r = muc.unfold(s, b, templates, fwhm_csv, lo=LO, hi=HI, bg_energy_of_ch=bg_e, verbose=True, blur=BLUR, tail=TAIL)
 
     names = r["names"]
     activities_A2 = r["activities"]
@@ -322,8 +344,11 @@ def main():
 
     # ГЛАВНЫЙ результат (оператор 25.09: «цепочка в равновесии»): один столбец — шаблон всей цепочки,
     # сумма сырых гистограмм звеньев при одинаковом n/BR (merge_templates_gs2020.py). Поузловая — диагностика.
-    rc = muc.unfold(s, b, [("Th232chain", os.path.join(OUT, "mix_Th232chain_npsmoff.csv"))], fwhm_csv,
-                    lo=LO, hi=HI, bg_energy_of_ch=bg_e, verbose=False, blur=BLUR, tail=TAIL)
+    chain_tpl = os.path.join(OUT, "mix_Th232chain_npsmoff.csv")
+    ib_items = [(k, br, comps[k]) for k, br in CHAIN + EXTRA_CHAIN_ONLY if k in comps and comps[k]["ib"]]
+    with gx.m1_ib(muc.g1s, {chain_tpl: [(c, br) for _, br, c in ib_items]} if ib_items else {}):
+        rc = muc.unfold(s, b, [("Th232chain", chain_tpl)], fwhm_csv,
+                        lo=LO, hi=HI, bg_energy_of_ch=bg_e, verbose=False, blur=BLUR, tail=TAIL)
     mc = rc["cols"][0] * rc["coef"][0]
     chi2c = float(np.sum((mc[rc["sel"]] - rc["net"][rc["sel"]]) ** 2 / rc["var"][rc["sel"]]))
     ndofc = int(rc["sel"].sum()) - 1
@@ -337,12 +362,29 @@ def main():
     print("\nЦЕПОЧКА В РАВНОВЕСИИ (метод 1): A2 %.1f ± %.1f (стат) ± %.1f (Бирге %.2f) Бк; E1 %.1f Бк; паспорт %.1f ± %.1f; "
           "отношение %.4f; χ²/ν %.3f" % (Ac, dAc, dAc * birgec, birgec, Ae1, PASSPORT_BQ, PASSPORT_BQ * PASSPORT_UNC,
                                            Ac / PASSPORT_BQ, chi2c / ndofc))
+    extra = None
+    if ib_items:   # #GS-42: IB звеньев в модели цепочки (амплитуда цепочки), окно и полосы <150, 150–400, >400 кэВ
+        cols_ib = {k: gx.fold(c, muc.g1s.broaden, rc["ch_edges"], lambda E: BLUR * rc["fwhm"](E))["ib"][0] for k, _, c in ib_items}
+        extra = {"amplitude": "цепочка, метод 1", "bands_keV": "lt150: E<150; 150_400: 150≤E<400; gt400: E≥400 (вся шкала)",
+                 "var_excess_max": gx.m1_var_excess([(br, cols_ib[k], c["ib"]["n_eff"]) for k, br, c in ib_items],
+                                                    rc["n_events"][0], rc["coef"][0], rc["var"], rc["sel"])}
+        for k, br, c in ib_items:
+            # ib_col: поканальный столбец IB звена k на сетке rc["e"]/model (та же величина, что фолдится в band_counts
+            # ниже) — для слоя IB на странице (GS-42, п.2); БЕЗ округления, чтобы Σ(ib_col[sel]) == band_counts["window"].
+            ib_col = br * cols_ib[k] * float(rc["coef"][0])
+            extra[k] = {"br": br, "ib": gx.band_counts(ib_col, rc["e"], rc["sel"]),
+                        "ib_col": [float(x) for x in ib_col],
+                        "ib_file": c["ib"]["file"], "Y": c["ib"]["Y"], "drawn": c["ib"]["drawn"]}
+        tot = sum(extra[k]["ib"]["window"] for k, _, _ in ib_items)
+        print("IB (#GS-42, метод 1, цепочка): в окне %.0f отсчётов (%.2f %% модели в окне): %s; приближение дисперсии донора ≤ %.1e"
+              % (tot, 100 * tot / mc[rc["sel"]].sum(), ", ".join("%s %.0f" % (k, extra[k]["ib"]["window"]) for k, _, _ in ib_items),
+                 extra["var_excess_max"]))
     # Диагностика GS_PEAKWIN=k: та же цепочка, но подгонка только в окнах ±k·ПШПВ вокруг 20 линий библиотеки
     # (те же окна, что у метода 2) — сравнение методов без континуума между пиками.
     PW = float(os.environ.get("GS_PEAKWIN", "0"))
     if PW > 0:
         import yaml
-        cfg = r"D:\Claude_files\repos\geant4-detector-models\detectors\Gamma-1S\web-th232\configs\th232.yaml"
+        cfg = r"D:\repos-folder\repos\geant4-detector-models\detectors\Gamma-1S\web-th232\configs\th232.yaml"
         with open(cfg, encoding="utf-8") as fh:
             lines = [float(l["e_kev"]) for l in yaml.safe_load(fh)["library"]["lines"]]
         fw = muc.g1s.make_fwhm(fwhm_csv)
@@ -387,9 +429,11 @@ def main():
         "chain": chain_fit,
         "shape": {"all": shp_all, "peaks": {str(k): v for k, v in shp.items()}}
     }
+    if extra:
+        result_json["extra_components"] = extra
 
     json_path = os.path.join(OUT, "fit_m1%s%s%s.json" % ("_pw%g" % PW if PW > 0 else "", "_bgT%g_%g" % tuple(BG_T) if BG_T else ("_bgw" if BG_WATER else ""),
-                                  ("_blur%g" % BLUR if BLUR != 1.0 else "") + ("_k40" if FWHM_K40 else "") + ("_tail%g" % TAIL if TAIL is not None else "") + ("_fwold" if FWHM_OLD else "") + ("_cfw" if FWHM_CFW else "") + ("_fwscale" if FWHM_SCALE else "") + ("_calsl%d" % CAL_SL_DEG if CAL_SL else "") + ("_calsum" if CAL_SUM else "")))
+                                  ("_blur%g" % BLUR if BLUR != 1.0 else "") + ("_k40" if FWHM_K40 else "") + ("_tail%g" % TAIL if TAIL is not None else "") + ("_fwold" if FWHM_OLD else "") + ("_cfw" if FWHM_CFW else "") + ("_fwscale" if FWHM_SCALE else "") + ("_calsl%d" % CAL_SL_DEG if CAL_SL else "") + ("_calshape" if CAL.SHAPE else "") + ("_calsum" if CAL_SUM else "")))
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(result_json, f, ensure_ascii=False, indent=1)
 

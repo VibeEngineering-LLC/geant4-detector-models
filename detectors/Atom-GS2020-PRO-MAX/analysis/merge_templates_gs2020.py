@@ -82,7 +82,7 @@ def merge_group(paths):
         seeds.append(s)
 
     # Check identical headers except specific keys
-    exclude_keys = {"seed", "n_events_requested", "n_events_processed", "n_with_edep"}
+    exclude_keys = {"seed", "n_events_requested", "n_events_processed", "n_with_edep", "killed_decay_photons", "table_drawn"}
     ref_header_dict = dict(chunks[0]["header"])
     
     for i, c in enumerate(chunks[1:], 1):
@@ -131,9 +131,11 @@ def merge_group(paths):
             new_header.append((k, str(n_proc_sum)))
         elif k == "n_with_edep":
             new_header.append((k, str(n_with_edep_sum)))
+        elif k in ("killed_decay_photons", "table_drawn"):   # #GS-32/A6: счётчики отрезков — суммируются
+            new_header.append((k, str(sum(int(dict(c["header"]).get(k, 0)) for c in chunks))))
         else:
             new_header.append((k, v))
-    
+
     new_header.append(("merged_chunks", str(len(chunks))))
 
     return (new_header, ref_bins, total_edep, total_light, n_proc_sum)
@@ -238,7 +240,8 @@ def main():
     pattern = os.path.join(chunk_dir, "*.csv")
     files = glob.glob(pattern)
     
-    regex = re.compile(r"^(grid_mar_E[0-9.]+|mix_[A-Za-z0-9]+)_s(\d+)\.csv$")
+    # #GS-32/A6 (29.09): beta_<нуклид> — β/e⁻-компонента (GS2020_BETA_ONLY), ib_<нуклид> — внутреннее тормозное (таблица KUB)
+    regex = re.compile(r"^(grid_mar_E[0-9.]+|mix_[A-Za-z0-9]+|beta_[A-Za-z0-9]+|ib_[A-Za-z0-9]+)_s(\d+)\.csv$")
     
     groups = {}
     for f in files:
@@ -284,7 +287,9 @@ def main():
         total_edep_count = sum(edep)
         print(f"Группа {group_name}: файл {out_name}, отрезков {len(paths)}, событий {n_processed}, сумма edep {total_edep_count}")
 
-    # Build chain
+    # Build chain (только если в папке есть отрезки mix_*: у beta_/ib_/grid_ своей цепочки нет)
+    if not any(g.startswith("mix_") for g in merged):
+        print("Цепочка Th-232: не собирается — групп mix_* нет"); return
     N, total_chain_edep, total_chain_light = build_chain(out_dir, merged)
     print(f"Цепочка Th-232: событий {N}, сумма edep {total_chain_edep}, сумма light {total_chain_light}")
 

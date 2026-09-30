@@ -410,7 +410,12 @@
     if (!el || el.dataset.built) return;
     el.dataset.built = "1";
     var html = "";
-    D.nuclides.forEach(function (nuc) {
+    // #GS-45 (30.09, оператор «да»): легенда по вкладу слоёв (интеграл стека), как порядок отрисовки на графике
+    var stkL = (elId === 'legendM2') ? STACK2() : STACK1();
+    var arrL = D.nuclides.map(function (n, i) { var v = stkL && stkL[n.key], s = 0;
+      if (v) for (var q = 0; q < v.length; q++) s += v[q]; return { n: n, s: s, i: i }; });
+    arrL.sort(function (a, b) { return (b.s - a.s) || (a.i - b.i); });
+    arrL.map(function (o) { return o.n; }).forEach(function (nuc) {
       // SECOND (вторичные пики) — временная сущность метода 2 (R33/R37),
       // отдельный чекбокс убран директивой R47: с переходом метода 2 на
       // полную матрицу отклика (R45) вторичные войдут в шаблон каждого

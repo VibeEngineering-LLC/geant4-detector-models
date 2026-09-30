@@ -10,14 +10,10 @@ import xml.etree.ElementTree as ET
 import numpy as np
 from scipy.optimize import curve_fit
 
-if not os.environ.get("GS2020_REF") or not os.environ.get("GS2020_OUT"):
-    raise RuntimeError("Переменные окружения GS2020_REF и GS2020_OUT не установлены (см. README.md)")
-_REF = os.environ["GS2020_REF"]
-SAMPLE_XML = os.path.join(_REF, "Калибровка Th-232 (без вычета фона).xml")
-BKG_XML = os.path.join(_REF, "Фон лаба S31_18.xml")
-GRID_DIR = os.environ["GS2020_OUT"]
-_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-ENSDF_CSV = os.path.join(_REPO_ROOT, "detectors", "Gamma-1S", "web-th232", "data", "ensdf_th232_chain_lines.csv")
+SAMPLE_XML = r"D:\cloud-folder\Дозиметрия\Спектры\Atom GS2020 PRO MAX\Референсы\Калибровка Th-232 (без вычета фона).xml"
+BKG_XML = r"D:\cloud-folder\Дозиметрия\Спектры\Atom GS2020 PRO MAX\Референсы\Фон лаба S31_18.xml"
+GRID_DIR = r"C:\g4work\gs2020\run_marinelli\out_v5"
+ENSDF_CSV = r"D:\repos-folder\repos\geant4-detector-models\detectors\Gamma-1S\web-th232\data\ensdf_th232_chain_lines.csv"
 OUT_DIR = os.path.dirname(os.path.abspath(__file__))
 OUT_TXT = os.path.join(OUT_DIR, "sa10_th232_result.txt")
 BR_BI212_TO_TL208 = 0.3594

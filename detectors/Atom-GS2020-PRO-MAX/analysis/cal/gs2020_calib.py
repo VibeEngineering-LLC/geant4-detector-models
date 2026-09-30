@@ -18,19 +18,68 @@ def calibrate_bgw_from_bg():
         raise SystemExit("ОТКАЗ: file_coeffs bg %s != bgw %s — наследование калибровки запрещено, нужна своя (оператор 26.09 п.1 предполагал совпадение)"
                           % (d_bg["coeffs"], d_bgw["coeffs"]))
     r = dict(calibrate("bg")); r["tag"] = "bgw"; r["inherited_from"] = "bg"
+    # #GS-23 (оператор 28.09 «надо откалибровать сдвиг»): замер воды 33,2 ч уплыл относительно bg в мягкой зоне
+    # (238,6: −4,1±1,0 канала; 1460: −0,5±0,6) — сдвиг bgw→bg по общим реперам, за крайними — постоянный
+    e_file = s.channel_to_energy(np.arange(len(d_bgw["counts"]), dtype=float), d_bgw["coeffs"])
+    sh = []
+    for E0, hw in REFS["bg"]:
+        fb = s.fit_peak(e_file, d_bg["counts"], E0, hw); fw = s.fit_peak(e_file, d_bgw["counts"], E0, hw)
+        if not fb or not fw or "mu" not in fb or "mu" not in fw:
+            raise SystemExit("ОТКАЗ: bgw/bg, репер %.3f кэВ — фит не сошёлся" % E0)
+        sh.append([float(fw["mu"]), float(fb["mu"] - fw["mu"]), float(math.hypot(fb["mu_err"], fw["mu_err"]))])
+    r["shift_nodes"] = sorted(sh)
     return r
 # Фон с водой: путь из GS2020_BG_WATER_XML, по умолчанию — файл в референсах (оператор 26.09: «КИ с торием считать с фоном с водой»)
 BKG_WATER_XML = os.environ.get("GS2020_BG_WATER_XML", os.path.join(os.path.dirname(s.BKG_XML), "Фон Маринелли 1 л вода дист (33,2 ч, 25-26.09).xml"))   # оператор 27.09 «обнови фон» — то же измерение, длиннее (33,2ч, конец 26.09 23:34); прежние — 22ч, 18,2 ч (26.09) и 11,7 ч (24.09)
-PATHS = {"sample": s.SAMPLE_XML, "bg": s.BKG_XML, "bgw": BKG_WATER_XML}
+PATHS = {"sample": s.SAMPLE_XML, "bg": s.BKG_XML, "bgw": BKG_WATER_XML,
+         "kcl": os.path.join(os.path.dirname(s.BKG_XML), "KCl ч 740 мл 829 г (9,3 ч, 27-28.09).xml")}
+# #GS-24: в файле KCl калибровки НЕТ (ни в xml, ни в spe) — начальная шкала от файла bgw (тот же прибор), дальше — свои
+# реперы спектра KCl (583/911/1120/1764 слиты или в шуме за 9,3 ч — не реперы, проверено 28.09)
+REFS["kcl"] = [(238.632, 30), (609.312, 40), (1460.822, 80), (2614.511, 150)]
+# #GS-23, ред. 2 (28.09): замер воды 33,2 ч калибруется ПО СВОИМ реперам (все 5 в пороге, rms 1,56 кэВ) — проще
+# наследования от bg + сдвига (calibrate_bgw_from_bg) и равнозначно ему: центры пиков по обеим шкалам совпали до 0,01 кэВ
+# (W-154: «двойной сдвиг» был ложной диагностикой — сравнивались центроиды разных методов). W-147 (11,7 ч) к 33,2 ч не относится.
+REFS["bgw"] = REFS["bg"]
+def read(tag):
+    if tag != "kcl": return s.read_atomspectra_xml(PATHS[tag])
+    import xml.etree.ElementTree as ET
+    es = ET.parse(PATHS["kcl"]).getroot().find(".//EnergySpectrum")
+    return {"live_time": float(es.find("LiveTime").text), "coeffs": s.read_atomspectra_xml(PATHS["bgw"])["coeffs"],
+            "counts": np.array([float(x.text) for x in es.find("Spectrum").findall("DataPoint")]), "path": PATHS["kcl"]}
 REPR_ORDER = 4
 OUT_JSON = r"C:\g4work\gs2020\run_marinelli\out_v5\cal_own.json"
+# #GS-28 совместная калибровка (ЛСРМ): GS_CAL_MPLET=1 — узлы из подгонки ФОРМЫ групп на шкале файла
+# (gs2020_calib_mplet.py при GS28_SCALE=file → cal_mplet_file.json) вместо одиночных гауссов реперов (609 фона — смесь
+# с Tl-208 583, смещение ~8 кэВ; 911 не был узлом). Результат — в cal_own_mplet.json; подгонки берут его при
+# GS_CAL_OWN_JSON=<путь>. Узел годен: не СЛАБО, не КРАЙ, χ²/ν ≤ 3, σ_δ ≤ 5 % ПШПВ.
+MPLET = os.environ.get("GS_CAL_MPLET") == "1"
+if MPLET: OUT_JSON = OUT_JSON.replace("cal_own.json", "cal_own_mplet.json")
+# GS_CAL_HYBRID=1 (оператор 28.09 «да»): у bg/bgw репер 609 (смесь с Tl-208 583) заменён узлом формы группы 583+609,
+# добавлен узел формы 911 (у фонов его не было); остальные реперы — одиночные гауссы, как прежде → cal_own_hybrid.json
+HYBRID = os.environ.get("GS_CAL_HYBRID") == "1"
+if HYBRID: OUT_JSON = OUT_JSON.replace("cal_own.json", "cal_own_hybrid.json")
+OUT_JSON = os.environ.get("GS_CAL_OWN_JSON", OUT_JSON)
+# #GS-37: GS_CAL_SHAPE=1 — шкала из калибровки по ФОРМЕ (gs2020_calib_shape.py → cal_shape.json): d(E_файла) кусочно-
+# линейная по узлам значимых групп спектра (либо полином), отклики Geant4, совместно по всем группам
+SHAPE_JSON = r"C:\g4work\gs2020\run_marinelli\out_v5\cal_shape.json"
+SHAPE = os.environ.get("GS_CAL_SHAPE") == "1"
+if SHAPE: OUT_JSON = SHAPE_JSON
+def mplet_nodes(tag, groups=None):
+    with open(os.path.join(os.path.dirname(OUT_JSON), "cal_mplet_file.json"), encoding="utf-8") as f: g = json.load(f)[tag]
+    return [(v["E_node"], v["delta_keV"], v["sigma_keV"]) for k, v in g.items() if groups is None or k in groups
+            if not v["weak"] and not v["edge"] and v["chi2_nu"] <= 3 and "E_node" in v
+            and v["sigma_keV"] <= 0.05 * 0.6061 * v["E_node"] ** 0.669]   # σ_δ ≤ 5 % ПШПВ (порог невязки #CAL-0 — 25 %)
 
 def calibrate(tag):
-    d = s.read_atomspectra_xml(PATHS[tag])
+    d = read(tag)
     ch = np.arange(len(d["counts"]), dtype=float)
     e_file = s.channel_to_energy(ch, d["coeffs"])
     mu_files, dEs, sigs, fwhms, E0s = [], [], [], [], []
-    for E0, hw in REFS[tag]:
+    hyb = mplet_nodes(tag, ("609", "911")) if HYBRID and tag in ("bg", "bgw") else []
+    if hyb: print("   %s: гибрид — узлы формы %s" % (tag, ", ".join("%.1f (δ %+.2f ± %.2f)" % n for n in hyb)))
+    for E0, dl, sd in (mplet_nodes(tag) if MPLET else hyb):
+        mu_files.append(E0 + dl); sigs.append(sd); fwhms.append(0.6061 * E0 ** 0.669); E0s.append(E0)
+    for E0, hw in ([] if MPLET else [r for r in REFS[tag] if not (hyb and abs(r[0] - 609.312) < 1)]):
         f = s.fit_peak(e_file, d["counts"], E0, hw)
         if f is None or "error" in f or "mu" not in f:
             raise SystemExit("ОТКАЗ: %s, репер %.3f кэВ — фит не сошёлся" % (tag, E0))
@@ -56,15 +105,25 @@ def calibrate(tag):
 def energy_axis(tag, n_channels=None):
     if not os.path.exists(OUT_JSON): raise SystemExit("ОТКАЗ: нет %s — сначала python gs2020_calib.py" % OUT_JSON)
     with open(OUT_JSON, encoding="utf-8") as f: data = json.load(f)
-    r = data[tag]; nodes = np.array(r["corr_nodes"])
-    n = n_channels if n_channels is not None else len(s.read_atomspectra_xml(PATHS[tag])["counts"])
+    r = data[tag]
+    n = n_channels if n_channels is not None else len(read(tag)["counts"])
     e_file = s.channel_to_energy(np.arange(n), r["file_coeffs"])
+    if SHAPE:   # тот же базис, что gs2020_calib_shape.basis: узлы — interp с постоянной за краями, иначе полином по u
+        th = np.asarray(r["theta"], float)
+        if r.get("knots"): return e_file + np.interp(e_file, r["knots"], th)
+        u = (e_file - 1000) / 1000.0
+        return e_file + sum(t * u ** j for j, t in enumerate(th))
+    nodes = np.array(r["corr_nodes"])
+    if r.get("shift_nodes"):   # #GS-23: bgw приводится к шкале файла bg до поправки по реперам bg
+        sn = np.array(r["shift_nodes"]); e_file = e_file + np.interp(e_file, sn[:, 0], sn[:, 1])
     return e_file + np.interp(e_file, nodes[:, 0], nodes[:, 1])
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
+    if SHAPE: raise SystemExit("ОТКАЗ: GS_CAL_SHAPE=1 — cal_shape.json пишет gs2020_calib_shape.py, не этот скрипт")
     res = {tag: calibrate(tag) for tag in ("sample", "bg")}
-    res["bgw"] = calibrate_bgw_from_bg()
+    res["bgw"] = calibrate("bgw")   # W-154: своя шкала, не calibrate_bgw_from_bg()
+    res["kcl"] = calibrate("kcl")
     any_fail = False
     for tag, r in res.items():
         print("== %s: коэффициенты файла %s" % (tag, ", ".join("%.6g" % c for c in r["file_coeffs"])))

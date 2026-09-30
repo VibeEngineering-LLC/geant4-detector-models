@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
 r"""Проверка калибровки калибровочного спектра Th-232 GS2020 PRO MAX по донору
 becqmoni.py (common/py) — #CAL-0: своя калибровка проверяется каждый раз.
-Путь к проверяемому спектру — переменная окружения GS2020_CALCHECK_XML."""
+Источник: spectrum (19).xml (папка загрузок оператора), оператор 2026-09-25,
+'референсные спектры ториевого калибровочного источника, положение прибора то же'."""
 
-import sys, os
+import sys
 sys.stdout.reconfigure(encoding="utf-8")
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-sys.path.insert(0, os.path.join(REPO_ROOT, "common", "py"))
+sys.path.insert(0, r"<REPOS>\geant4-detector-models\common\py")
 import becqmoni as bm
 
-if not os.environ.get("GS2020_CALCHECK_XML"):
-    raise RuntimeError("Переменная окружения GS2020_CALCHECK_XML не установлена")
-PATH = os.environ["GS2020_CALCHECK_XML"]
+PATH = r"<DOWNLOADS>\spectrum (19).xml"
 
 LINES = [238.632, 583.187, 727.330, 860.564, 911.204, 968.971, 1588.19, 2614.511]
 

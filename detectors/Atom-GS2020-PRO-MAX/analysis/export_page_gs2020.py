@@ -20,9 +20,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fit_gs2020_th232_m1 as m1      # bm, Spec, true_energy, XML_SAMPLE, XML_BG, PEAK_TABLE, CHAIN, PASSPORT_BQ, PASSPORT_UNC, LO, HI
 
 OUT = m1.OUT
-PAGE = r"D:\GoogleDrive\Рабочая папка ИИ\GEANT4\web\gs2020-th232-page"
+PAGE = r"D:\cloud-folder\work-folder\GEANT4\web\gs2020-th232-page"
 DST = os.path.join(PAGE, "gs2020_th232_data.json")
-DONOR_CFG = r"D:\Claude_files\repos\geant4-detector-models\detectors\Gamma-1S\web-th232\configs\th232.yaml"
+DONOR_CFG = r"D:\repos-folder\repos\geant4-detector-models\detectors\Gamma-1S\web-th232\configs\th232.yaml"
 LIB2_CFG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "th232_gs2020_full_xray.yaml")   # #XR-1: донор + рентген, не голый DONOR_CFG
 # #GS-19 (оператор 27.09: «2-2 это все известные линии»): метод 2-2 = библиотека ENSDF БЕЗ порога (342 линии)
 LIB05_CFG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "th232_gs2020_full_noThresh.yaml")
@@ -31,7 +31,8 @@ LIB05_CFG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", 
 _M1_SUFFIX = (("_blur%g" % m1.BLUR if m1.BLUR != 1.0 else "") + ("_k40" if m1.FWHM_K40 else "") +
               ("_tail%g" % m1.TAIL if m1.TAIL is not None else "") + ("_fwold" if m1.FWHM_OLD else "") +
               ("_cfw" if m1.FWHM_CFW else "") + ("_fwscale" if m1.FWHM_SCALE else "") +
-              ("_calsl%d" % m1.CAL_SL_DEG if m1.CAL_SL else "") + ("_calsum" if m1.CAL_SUM else ""))
+              ("_calsl%d" % m1.CAL_SL_DEG if m1.CAL_SL else "") + ("_calshape" if m1.CAL.SHAPE else "") +
+              ("_calsum" if m1.CAL_SUM else ""))
 _TAIL_SUF = ("_tail%g" % m1.TAIL) if m1.TAIL is not None else ""
 FILES = {"m1": "fit_m1%s.json" % _M1_SUFFIX, "m2": "fit_m2%s.json" % _TAIL_SUF, "m2f": "fit_m2_full_noThresh%s.json" % _TAIL_SUF}
 N_PER_BR = 5.5e7
@@ -83,6 +84,17 @@ def bgw(name):
 def r4(a):
     return [round(float(x), 4) for x in a]
 
+def window_sum(col, sel):
+    return float(sum(v for v, s in zip(col, sel) if s))
+
+def check_layer_sum(name, model, stack, sel, tol=1e-3):
+    """GS-42 п.2: Σ ВСЕХ слоёв стека (нуклиды+BETA+IB+XRAY+BG) в окне sel = model + слой BG (BG в stack уже
+    равен фону, отдельно его прибавлять не нужно). Та же форма допуска, что у проверки цепочки выше по файлу."""
+    m = window_sum(model, sel) + window_sum(stack["BG"], sel)
+    tot = sum(window_sum(col, sel) for col in stack.values())
+    if m > 0 and abs(m - tot) / m > tol:
+        raise SystemExit("ОТКАЗ: Σ слоёв страницы (BETA/IB/XRAY/BG) ≠ модель+фон в %s (%.3f против %.3f)" % (name, m, tot))
+
 def method1_block(j):
     c = j["chain"]
     A = c["A_Bq"]
@@ -110,6 +122,33 @@ def method2_block(j, n_lines):
             "n_lines": n_lines, "n_channels_fit": int(sum(j["sel"])), "n_sum_peaks": j["n_sum"], "n_sum_peaks_total": j["n_sum"], "n_xray_energies": 0,
             "n_nodes": j["n_nodes"], "ratio_to_passport": A / PASSPORT["A_Bq"], "d_ratio": c["dA_Bq"] / PASSPORT["A_Bq"], "lines": lines}
 
+def extra_layers(j):
+    """GS-42 п.2: слои BETA/IB подгонки j — суммы поканальных столбцов *_col из extra_components по всем нуклидам,
+    на той же сетке, что model/stack (GS_EXTRA=0 — extra_components отсутствует, слои нулевые). Возвращает
+    (beta_sum, ib_sum, {нуклид: beta_col}, {нуклид: ib_col}) — последние два нужны, чтобы вычесть вклад из
+    стека нуклида и не считать его дважды."""
+    ec = j.get("extra_components")   # extra_components — ключ ВЕРХНЕГО уровня JSON (сосед "chain"), не внутри chain
+    n = len(j["chain"]["model"])
+    beta, ib = np.zeros(n), np.zeros(n)
+    beta_by, ib_by = {}, {}
+    for k, d in (ec or {}).items():
+        if not isinstance(d, dict) or "br" not in d:
+            continue   # пропускаем служебные ключи extra_components (amplitude, bands_keV, var_excess_max, chain_only)
+        if "beta_col" in d:
+            c = np.asarray(d["beta_col"], dtype=float); beta += c; beta_by[k] = c
+        if "ib_col" in d:
+            c = np.asarray(d["ib_col"], dtype=float); ib += c; ib_by[k] = c
+    return beta, ib, beta_by, ib_by
+
+def sub_layers(stack, by_nuc):
+    """Вычесть из stack[k] столбец by_nuc[k] (уже сидит внутри слоя нуклида) — без двойного счёта при показе
+    отдельного слоя BETA/IB. Нуклид без своего stack-слоя (напр. Ra-228 в М1) — не трогаем."""
+    out = dict(stack)
+    for k, col in by_nuc.items():
+        if k in out:
+            out[k] = (np.asarray(out[k], dtype=float) - col).tolist()
+    return out
+
 def spectrum_block(jm1, jm2, jm2f, bg):
     A = jm1["chain"]["A_Bq"]
     stack = jm1["chain"]["stack"]
@@ -123,21 +162,34 @@ def spectrum_block(jm1, jm2, jm2f, bg):
     # (fit_gs2020_th232_m2.py: xray_stack = разница полного и без-рентгеновского вызова run_method2).
     xray2 = r4(jm2["chain"].get("xray_stack", zero))
     xray2f = r4(jm2f["chain"].get("xray_stack", zero))
+    # GS-42 п.2: слои BETA/IB — где вклад уже внутри слоя нуклида (IB в М1; β+IB в М2 для звеньев со своей
+    # амплитудой), он вычитается оттуда (sub_layers) во избежание двойного счёта.
+    beta1, ib1, _, ib1_by = extra_layers(jm1)             # М1: β не отделим (внутри шаблона иона), только IB
+    beta2, ib2, beta2_by, ib2_by = extra_layers(jm2)
+    beta2f, ib2f, beta2f_by, ib2f_by = extra_layers(jm2f)
+    stack_m1 = sub_layers(stack, ib1_by)
+    stack_m2 = sub_layers(sub_layers(jm2["chain"]["stack"], beta2_by), ib2_by)
+    stack_m2f = sub_layers(sub_layers(jm2f["chain"]["stack"], beta2f_by), ib2f_by)
     return {"model_counts": r4(jm1["chain"]["model"]), "model2_counts": r4(jm2["chain"]["model"]), "model2_full_counts": r4(jm2f["chain"]["model"]),
             # BG — приведённый фон отдельным слоем (оператор 25.09 «а почему фон не вычтен?»): фон ~половина спектра,
             # без слоя разрыв «измерение − модель» читается как невычтенный фон. Сумма слоёв = модель + фон.
-            "stack": dict({k: r4(v) for k, v in stack.items()}, XRAY=zero, BG=r4(bg)),
-            "trusted": dict(trusted, XRAY=[False] * len(zero), BG=[True] * len(zero)), "n_eff_min": N_EFF_MIN,
-            "noise_frac": dict(noise_frac, XRAY=0.0, BG=0.0),
-            "stack2": dict({k: r4(v) for k, v in jm2["chain"]["stack"].items()}, XRAY=xray2, BG=r4(bg)),
-            "stack2_full": dict({k: r4(v) for k, v in jm2f["chain"]["stack"].items()}, XRAY=xray2f, BG=r4(bg)),
+            "stack": dict({k: r4(v) for k, v in stack_m1.items()}, XRAY=zero, BETA=zero, IB=r4(ib1), BG=r4(bg)),
+            "trusted": dict(trusted, XRAY=[False] * len(zero), BETA=[False] * len(zero), IB=[False] * len(zero), BG=[True] * len(zero)), "n_eff_min": N_EFF_MIN,
+            "noise_frac": dict(noise_frac, XRAY=0.0, BETA=0.0, IB=0.0, BG=0.0),
+            "stack2": dict({k: r4(v) for k, v in stack_m2.items()}, XRAY=xray2, BETA=r4(beta2), IB=r4(ib2), BG=r4(bg)),
+            "stack2_full": dict({k: r4(v) for k, v in stack_m2f.items()}, XRAY=xray2f, BETA=r4(beta2f), IB=r4(ib2f), BG=r4(bg)),
             "stack2_chan": {}, "stack2_chan_full": {}}
 
 def fwhm_cal():
+    # #PUB-1 (побочная находка 28.09, W-160): раньше точки закона брались из PEAK_TABLE — таблицы СТАРОЙ прибора
+    # (2614 -> 121,2 кэВ), а свёртка каждой подгонки идёт по FWHM_SL x FWHM_SCALE (СпектраЛайн x1,05; 2614 -> 107,4 x1,05
+    # = 112,8) — подпись IDX:85 «в свёртке модели» показывала ЧУЖОЙ закон. Точки теперь = то же число, что реально
+    # подаётся в свёртку (m1.write_fwhm_csv), центроид E_file — из PEAK_TABLE (положение репера на СВОЕЙ шкале файла).
     pts = []
     used_pts = []
     for row in m1.PEAK_TABLE:
-        e_file, e_lib, fwhm = row
+        e_file, e_lib, _old_fwhm = row
+        fwhm = m1.FWHM_SL[e_lib] * m1.FWHM_SCALE.get(e_lib, 1.0)
         if e_lib == 1460.822:
             pts.append({"E_nominal": e_lib, "E_centroid": e_file, "fwhm_keV": fwhm, "d_fwhm_keV": 0.0, "res_pct": 100*fwhm/e_file,
                         "shift_keV": e_file - e_lib, "used": False, "reject": "фоновая линия K-40"})
@@ -167,7 +219,7 @@ def fwhm_cal():
     fwhm662_law = k * (661.657 ** p)
     res662_pct = 100.0 * fwhm662_law / 661.657
 
-    return {"source": "таблица пиков прибора (AtomSpectra), линии Th-232 этого спектра", "k": k, "p": p, "rms_dev_pct": rms_dev_pct, "n_used": len(used_pts), "n_anchors": len(pts),
+    return {"source": "таблица пиков СпектраЛайн x множитель свёртки (та же величина, что в подгонке), линии Th-232 этого спектра", "k": k, "p": p, "rms_dev_pct": rms_dev_pct, "n_used": len(used_pts), "n_anchors": len(pts),
             "fwhm662_law": fwhm662_law, "fwhm662_cs": fwhm662_law, "res662_pct": res662_pct, "points": pts}
 
 def lib_lines(cfg_path):
@@ -242,6 +294,13 @@ def main():
     nuclides.append({"key": "XRAY", "label_ru": "K-рентген", "label_en": "K X-rays", "color": "#6b5f4a",
                       "note": "в методе 1 отдельно не выделяется (рождается внутри общего шаблона звена, "
                               "не отделим без нового прогона); в методе 2 — сумма строк библиотеки #XR-1", "branching": 1.0})
+    # GS-42 п.2: тормозное β и внутреннее тормозное (IB) — отдельные слои спектра (цвета вне палитры звеньев/XRAY/BG).
+    nuclides.append({"key": "BETA", "label_ru": "тормозное β", "label_en": "β bremsstrahlung", "color": "#2b6cb0",
+                      "note": "в методе 1 отдельно не выделяется (уже внутри шаблона распада иона, не отделим без "
+                              "нового прогона); в методе 2 — тормозное излучение электронов β-распада (Geant4)", "branching": 1.0})
+    nuclides.append({"key": "IB", "label_ru": "внутреннее тормозное (IB)", "label_en": "internal bremsstrahlung (IB)",
+                      "color": "#c0392b", "note": "фотоны внутреннего тормозного при β-распаде по таблице KUB; "
+                              "Geant4 их не рождает, добавлены отдельно (#GS-42)", "branching": 1.0})
 
     # #GS-6 (оператор 27.09 «тик частить линиями не нужно, только значимые»): на калибровочном
     # графике реперы — не вся библиотека (62 линии + 30 строк K/L-рентгена #XR-1 = 92 маркера,
@@ -267,7 +326,9 @@ def main():
     # K-рентген (в этой модели нулевой) — последним
     contrib = {k: float(np.sum(v)) for k, v in jm1["chain"]["stack"].items()}
     contrib["BG"] = float(np.sum(bg_arr))
-    nuclides.sort(key=lambda n: (n["key"] == "XRAY", -contrib.get(n["key"], 0.0)))
+    _beta1c, _ib1c, _, _ = extra_layers(jm1)   # GS-42 п.2: BETA/IB — тоже в сортировку легенды по вкладу
+    contrib["BETA"], contrib["IB"] = float(np.sum(_beta1c)), float(np.sum(_ib1c))
+    nuclides.sort(key=lambda n: (n["key"] in ("XRAY", "BETA", "IB"), -contrib.get(n["key"], 0.0)))
 
     # Панель «cs»: фон — реальное измерение «Маринелли 1 л + дист. вода» (оператор 26.09), не модельное ослабление.
     bw = m1.Spec(m1.bm.read(m1.CAL.BKG_WATER_XML)[0], "bgw")
@@ -290,18 +351,28 @@ def main():
             return {k: crop_spec(v) for k, v in obj.items()}
         return obj
 
+    sb_m = spectrum_block(jm1, jm2, jm2f, bg_arr)
+    sb_cs = spectrum_block(cm1, cm2, cm2f, bg_water_arr)
+    for nm, mdl, stk, sel_j in [("method1 (измеренный)", sb_m["model_counts"], sb_m["stack"], jm1),
+                                 ("method2 (измеренный)", sb_m["model2_counts"], sb_m["stack2"], jm2),
+                                 ("method2_full (измеренный)", sb_m["model2_full_counts"], sb_m["stack2_full"], jm2f),
+                                 ("method1 (ослабленный фон)", sb_cs["model_counts"], sb_cs["stack"], cm1),
+                                 ("method2 (ослабленный фон)", sb_cs["model2_counts"], sb_cs["stack2"], cm2),
+                                 ("method2_full (ослабленный фон)", sb_cs["model2_full_counts"], sb_cs["stack2_full"], cm2f)]:
+        check_layer_sum(nm, mdl, stk, sel_j["sel"])
+
     data = {
         "meta": meta,
         "fwhm_cal": fw,
         "passport": PASSPORT,
         "nuclides": nuclides,
         "channels": [],
-        "spectrum": crop_spec(dict({"e_of_ch": r4(e_of_ch), "counts": counts, "bg_counts": bg_counts}, **spectrum_block(jm1, jm2, jm2f, bg_arr))),
+        "spectrum": crop_spec(dict({"e_of_ch": r4(e_of_ch), "counts": counts, "bg_counts": bg_counts}, **sb_m)),
         "cs": {
             "method1": method1_block(cm1),
             "method2": method2_block(cm2, n2),
             "method2_full": method2_block(cm2f, n05),
-            "spectrum": crop_spec(spectrum_block(cm1, cm2, cm2f, bg_water_arr))
+            "spectrum": crop_spec(sb_cs)
         },
         "method1": method1_block(jm1),
         "method2": method2_block(jm2, n2),

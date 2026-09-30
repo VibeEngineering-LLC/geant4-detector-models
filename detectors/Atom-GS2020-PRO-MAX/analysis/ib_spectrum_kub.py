@@ -3,7 +3,7 @@
 # factors SH: Konopinski & Uhlenbeck, Phys. Rev. 60, 308 (1941). No Coulomb correction in phi() (Z only in beta()).
 # Full list: audit/GS-42-method2-effects.md, section "Pervoistochniki A3-A6".
 # Formulas beta/phi/SH copied from verifier ib_calc.py, copied 2026-09-15 (copy forced: scratchpad does not survive session):
-#   (scratchpad of the 15.09.2026 session, not preserved)
+#   <scratchpad>\dr26\V_ib_verify\ib_calc.py
 # Spec: scripts/_spec_ib_template.md, part A.
 # Branches/Q from LNHB: K40_tables.txt (beta- 89.56 %, Q 1310.91 keV); Cs137_tables.txt (94.57 % Q 513.97; 5.43 % Q 1175.63; 0.0006 % Q 892.17 omitted per spec).
 # CSV grid: k_keV = centre of 1 keV bin [k-0.5, k+0.5], k = kmin+0.5, kmin+1.5, ... while k < Q_max.
@@ -62,7 +62,7 @@ def main():
     parser.add_argument('out_csv')
     parser.add_argument('--branches', default=None)
     parser.add_argument('--shape', choices=['u3', 'a'], default='u3')
-    parser.add_argument('--kmin', type=float, default=100.0)
+    parser.add_argument('--kmin', type=float, default=5.0)   # 01.10: умолчание = значению, с которым сделана рабочая таблица (было 100; аудит п.2.5)
     parser.add_argument('--band2', action='store_true')
     args = parser.parse_args()
     

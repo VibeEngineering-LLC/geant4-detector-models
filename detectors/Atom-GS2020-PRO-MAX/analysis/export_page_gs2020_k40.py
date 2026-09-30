@@ -521,6 +521,8 @@ def main():
     ]
 
     contrib = {"K40": sum(sb["stack"]["K40"]), "BG": sum(bg), "BETA": sum(sb["stack2"]["BETA"]), "IB": sum(sb["stack"]["IB"])}
+    if contrib["IB"] == 0:   # 01.10 (оператор): IB K-40 убран из расчёта до числового подтверждения — пустой слой в легенде не показываем
+        nuclides = [n for n in nuclides if n["key"] != "IB"]
     nuclides.sort(key=lambda n: (n["key"] in ("BETA", "IB"), -contrib[n["key"]]))
 
     reference_lines = []

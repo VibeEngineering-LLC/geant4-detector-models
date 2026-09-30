@@ -23,7 +23,9 @@ eam.BUILD_OUT = m1.OUT
 ed.E_FIT_HI = fk.HI
 
 import gs2020_extra_components as gx   # #GS-42: β + IB K-40 в модель нуклида; GS_EXTRA=0 — прежнее поведение
-PARTS = os.environ.get("GS_EXTRA_PARTS", "beta,ib,xr").split(",")   # #GS-45: какие добавки включены (при GS_EXTRA≠0)
+# #GS-45 (оператор 01.10: «убрать из шаблона до момента подтверждения численно»): IB K-40 по умолчанию ВЫКЛЮЧЕН (нет измерения/формулы
+# для 3-го уникального запрета); вернуть — GS_EXTRA_PARTS=beta,ib,xr. Слой IB в выгрузке при этом нулевой.
+PARTS = os.environ.get("GS_EXTRA_PARTS", "beta,xr").split(",")   # #GS-45: какие добавки включены (при GS_EXTRA≠0)
 IB_SCALE = float(os.environ.get("GS_IB_SCALE", "1"))                # #GS-45: множитель IB (вилка неопределённости)
 
 KEYS = ["K40"]
@@ -113,7 +115,7 @@ def main():
         # *_col: поканальные столбцы β/IB (та же величина, что фолдится в band_counts ниже) — для слоёв BETA/IB
         # на странице (GS-42, п.2); БЕЗ округления, чтобы Σ(col[sel]) == band_counts["window"].
         beta_col = xc["beta"][0] * a2[0]
-        ib_col = xc["ib"][0] * a2[0]
+        ib_col = IB_SCALE * float("ib" in PARTS) * xc["ib"][0] * a2[0]
         extra = {"amplitude": "K40, метод 2", "bands_keV": "lt150: E<150; 150_400: 150≤E<400; gt400: E≥400 (вся шкала)",
                  "K40": {"br": 1.0, "beta": gx.band_counts(beta_col, r["e"], sel),
                          "ib": gx.band_counts(ib_col, r["e"], sel),

@@ -33,13 +33,13 @@ def main():
     if not gx.ENABLED: print("ФИЗИКА (#GS-42): GS_EXTRA=0 — IB выключен (прежнее поведение)")
     # #GS-45 (внешний аудит 30.09, п.2.1): таблица IB уже несёт ветвь β⁻ 0,8956 на истинный распад, а A подгонки — в распадах шаблона
     # (A_ист = A_подг·K40_SCALE), поэтому вес IB в шаблоне = K40_SCALE, не 1 (при ENSDF K40_SCALE = 1, прежнее поведение).
-    IBW = K40_SCALE
+    IBW = K40_SCALE if os.environ.get("GS_K40_IB", "0") == "1" else 0.0   # 01.10 (оператор): IB K-40 выключен до числового подтверждения
     # #GS-45 (01.10, п.1 ответа аудитору): β-континуум внутри шаблона несёт β⁻ 89,14 % (схема Geant4), а база LNHB — 89,56 %·K40_SCALE на
     # распад подгонки. Недостающее (w = 0,8956·K/0,8914 − 1 ≈ +3,6 %) доливается β-шаблоном K-40 (тот же перенос e⁻ Geant4, на распад);
     # GS_M1_BETA_FIX=0 — без долива. Новый прогон Geant4 не нужен: β-шаблон (beta_K40.csv) уже есть (метод 2).
     BETA_G4, BETA_DB = 0.8914, (0.8956 if K40_DB == "lnhb" else 0.8914)
     wb = BETA_DB * K40_SCALE / BETA_G4 - 1.0 if os.environ.get("GS_M1_BETA_FIX", "1") == "1" else 0.0
-    items = [(comp, IBW)] if comp else []
+    items = [(comp, IBW)] if comp and IBW > 0 else []
     if comp and abs(wb) > 1e-9:
         items.append(({"ib": gx.load("K40", OUT, beta=True)["beta"]}, wb))
         print("ДОЛИВ β (#GS-45): вес %.4f на распад шаблона (β⁻ LNHB %.4f·%.4f против %.4f в шаблоне Geant4)" % (wb, BETA_DB, K40_SCALE, BETA_G4))

@@ -31,18 +31,21 @@ def main():
     bg_e = np.array([b.channel_to_energy(i) for i in range(b.n_channels)])
     comp = gx.load("K40", OUT, beta=False) if gx.ENABLED else None
     if not gx.ENABLED: print("ФИЗИКА (#GS-42): GS_EXTRA=0 — IB выключен (прежнее поведение)")
-    with gx.m1_ib(m1.muc.g1s, {tpl: [(comp, 1.0)]} if comp else {}):
+    # #GS-45 (внешний аудит 30.09, п.2.1): таблица IB уже несёт ветвь β⁻ 0,8956 на истинный распад, а A подгонки — в распадах шаблона
+    # (A_ист = A_подг·K40_SCALE), поэтому вес IB в шаблоне = K40_SCALE, не 1 (при ENSDF K40_SCALE = 1, прежнее поведение).
+    IBW = K40_SCALE
+    with gx.m1_ib(m1.muc.g1s, {tpl: [(comp, IBW)]} if comp else {}):
         r = m1.muc.unfold(s, b, [("K40", tpl)], fwhm_csv, lo=LO, hi=HI, bg_energy_of_ch=bg_e, verbose=False, blur=m1.BLUR, tail=m1.TAIL)
     A = float(r["activities"][0]) * K40_SCALE; dA = float(r["sd"][0]) / s.live_time * K40_SCALE
     model = (r["cols"] * r["coef"][:, None]).sum(axis=0); sel = r["sel"]; net = r["net"]; var = r["var"]; e = r["e"]
     extra = None
     if comp:   # вклад IB в модель (тот же столбец, что вошёл в шаблон через m1_ib) и оценка приближения дисперсии донора
         ib = gx.fold(comp, m1.muc.g1s.broaden, r["ch_edges"], lambda E: m1.BLUR * r["fwhm"](E))["ib"][0]
-        exc = gx.m1_var_excess([(1.0, ib, comp["ib"]["n_eff"])], r["n_events"][0], r["coef"][0], var, sel)
+        exc = gx.m1_var_excess([(IBW, ib, comp["ib"]["n_eff"])], r["n_events"][0], r["coef"][0], var, sel)
         # ib_col: поканальный столбец IB K-40 на сетке e/model (та же величина, что фолдится в band_counts ниже) —
         # для слоя IB на странице (GS-42, п.2); БЕЗ округления, чтобы Σ(ib_col[sel]) == band_counts["window"].
-        ib_col = ib * r["coef"][0]
-        extra = {"K40": {"br": 1.0, "ib": gx.band_counts(ib_col, e, sel), "ib_col": [float(x) for x in ib_col],
+        ib_col = IBW * ib * r["coef"][0]
+        extra = {"K40": {"br": IBW, "ib": gx.band_counts(ib_col, e, sel), "ib_col": [float(x) for x in ib_col],
                          "ib_file": comp["ib"]["file"],
                          "Y": comp["ib"]["Y"], "drawn": comp["ib"]["drawn"]}, "amplitude": "K40, метод 1", "var_excess_max": exc}
         print("IB K-40 (#GS-42, метод 1): в окне %.0f отсчётов (%.2f %% модели в окне); приближение дисперсии донора ≤ %.1e дисперсии канала"

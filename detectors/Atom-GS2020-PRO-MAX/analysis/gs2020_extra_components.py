@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from merge_templates_gs2020 import read_chunk   # §33: тот же разбор шаблона, что у сумматора отрезков
 
 ENABLED = os.environ.get("GS_EXTRA", "1") != "0"
+IB_OFF = os.environ.get("GS_IB", "0") != "1"   # 01.10: внутреннее тормозное (IB) по умолчанию ВЫКЛЮЧЕНО везде; GS_IB=1 — вернуть (KUB-оценка)
 ALPHA = ("Th232", "Th228", "Ra224", "Rn220")    # α-излучатели цепочки Th-232: IB β-распада у них нет
 MATCH = ("em_cut_mm", "em_deex", "em_option", "vessel", "src_mode", "sample_matrix", "sample_rho_g_cm3", "npsm_enabled")
 BANDS = (("lt150", -1e30, 150.0), ("150_400", 150.0, 400.0), ("gt400", 400.0, 1e30))   # кэВ, по всей шкале спектра
@@ -130,6 +131,8 @@ def load(nuc, folder, beta=True):
     ref = _ref(folder, nuc)
     out = {"nuc": nuc, "beta": _load_beta(nuc, folder, ref) if beta else None,
            "ib": None if nuc in ALPHA else _load_ib(nuc, folder, ref)}
+    if IB_OFF and out["ib"]:   # 01.10 (оператор «да, везде»): IB убран из расчёта до числового подтверждения — гистограмма обнуляется, структура прежняя
+        out["ib"] = dict(out["ib"], hist={k: 0.0 for k in out["ib"]["hist"]})
     tb = ("%s, распадов %d" % (out["beta"]["file"], out["beta"]["n"]) if beta
           else "не добавляется — уже в шаблоне М1 (распад иона)")
     ti = ("нет — α-излучатель" if out["ib"] is None

@@ -328,6 +328,8 @@ def main():
     contrib["BG"] = float(np.sum(bg_arr))
     _beta1c, _ib1c, _, _ = extra_layers(jm1)   # GS-42 п.2: BETA/IB — тоже в сортировку легенды по вкладу
     contrib["BETA"], contrib["IB"] = float(np.sum(_beta1c)), float(np.sum(_ib1c))
+    if os.environ.get("GS_IB", "0") != "1":   # 01.10 (оператор «да, везде»): IB убран из расчёта — пустой слой в легенде не показываем
+        nuclides = [n for n in nuclides if n["key"] != "IB"]
     nuclides.sort(key=lambda n: (n["key"] in ("XRAY", "BETA", "IB"), -contrib.get(n["key"], 0.0)))
 
     # Панель «cs»: фон — реальное измерение «Маринелли 1 л + дист. вода» (оператор 26.09), не модельное ослабление.

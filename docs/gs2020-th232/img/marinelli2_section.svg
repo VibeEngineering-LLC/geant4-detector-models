@@ -1,23 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-56 -26 280 196" width="840" height="588" font-family="Arial, sans-serif" font-size="4.2">
-  <title>Маринелли 2 — разрез модели Geant4 v3 (вода, KCl, цезий)</title>
+  <title>Маринелли 2 — разрез модели Geant4 v4 (KCl 1 л)</title>
   <rect x="-56" y="-26" width="280" height="196" fill="#ffffff"/>
   <defs>
     <marker id="a" viewBox="0 0 6 6" refX="5.5" refY="3" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
       <path d="M0,0 L6,3 L0,6 z" fill="#333"/>
     </marker>
   </defs>
-  <text x="-52" y="-18" fill="#111" font-size="5.4" font-weight="bold">Маринелли 2 — разрез модели Geant4 (вода, KCl, цезий), размеры в мм</text>
+  <text x="-52" y="-18" fill="#111" font-size="5.4" font-weight="bold">Маринелли 2 — разрез модели Geant4 (проба KCl 1 л), размеры в мм</text>
   <!-- ось -->
   <line x1="110" y1="-4" x2="110" y2="146" stroke="#999" stroke-width="0.3" stroke-dasharray="4 1.5 1 1.5"/>
-  <!-- проба KCl 740 мл: верх z=18,37 -->
-  <polygon points="40.27,41.63 179.73,41.63 178,113 152.5,113 152.5,56 67.5,56 67.5,113 42,113" fill="#f2b84b" fill-opacity="0.75"/>
+  <!-- проба KCl 1000 мл: верх z=34.78 -->
+  <polygon points="39.87,25.22 180.13,25.22 178,113 152.45,113 151.5,56 68.5,56 67.55,113 42,113" fill="#f2b84b" fill-opacity="0.75"/>
   <!-- стенка сосуда, 3 мм -->
-  <polygon points="36.5,10 39,116 70.5,116 70.5,59 149.5,59 149.5,116 181,116 183.5,10 180.5,10 178,113 152.5,113 152.5,56 67.5,56 67.5,113 42,113 39.5,10" fill="#4d5b6a"/>
+  <polygon points="36.5,10 39.07,116 70.5,116 71.45,59 148.55,59 149.5,116 180.93,116 183.5,10 180.5,10 178,113 152.45,113 151.5,56 68.5,56 67.55,113 42,113 39.5,10" fill="#4d5b6a"/>
   <!-- крышка (в модели 3 мм) -->
   <rect x="36.5" y="7" width="147" height="3" fill="none" stroke="#4d5b6a" stroke-width="0.5" stroke-dasharray="1.5 1"/>
-  <!-- уровни 1 л: замер 16,5 мм от среза (y 26,5), модель 14,7 (y 24,7) -->
-  <line x1="40.9" y1="26.5" x2="179.1" y2="26.5" stroke="#1f6fd1" stroke-width="0.55" stroke-dasharray="2 1"/>
-  <line x1="40.8" y1="24.7" x2="179.2" y2="24.7" stroke="#1f6fd1" stroke-width="0.3" stroke-dasharray="0.8 0.8"/>
+  <!-- уровни 1 л: замер 16,5 мм от среза (y 26,5), модель v4 15.2 (y 25.22) -->
+  <line x1="39.90" y1="26.5" x2="180.10" y2="26.5" stroke="#1f6fd1" stroke-width="0.55" stroke-dasharray="2 1"/>
+  <line x1="39.87" y1="25.22" x2="180.13" y2="25.22" stroke="#1f6fd1" stroke-width="0.3" stroke-dasharray="0.8 0.8"/>
   <!-- прибор: корпус Ø63, кристалл Ø50,8×50,8, верх кристалла 8,0 мм под потолком колодца -->
   <rect x="78.5" y="59" width="63" height="82" fill="none" stroke="#222" stroke-width="0.45" stroke-dasharray="2.5 1.2"/>
   <rect x="84.6" y="67" width="50.8" height="50.8" fill="#cfe3f5" fill-opacity="0.6" stroke="#5b8fc7" stroke-width="0.35"/>
@@ -33,9 +33,9 @@
     <text x="33" y="7" fill="#4d5b6a">крышка на резьбе</text>
     <text x="33" y="11.5" fill="#4d5b6a">(в модели 3 мм)</text>
     <text x="33" y="24" fill="#1f6fd1">уровень 1 л: 16,5 от среза</text>
-    <text x="33" y="28.5" fill="#1f6fd1">(замер); модель 14,7</text>
-    <text x="33" y="48.5" fill="#8a5a00">KCl 740 мл, 829 г;</text>
-    <text x="33" y="53" fill="#8a5a00">слой над колодцем 14,4</text>
+    <text x="33" y="28.5" fill="#1f6fd1">(замер); модель 15,2</text>
+    <text x="33" y="48.5" fill="#8a5a00">KCl 1000 мл, 1085 г;</text>
+    <text x="33" y="53" fill="#8a5a00">слой над колодцем 30,8</text>
     <text x="33" y="78.5" fill="#4d5b6a">пластик 3 мм везде:</text>
     <text x="33" y="83" fill="#4d5b6a">стенки, дно, колодец</text>
   </g>
@@ -63,6 +63,6 @@
   </g>
   <text x="110" y="-11" text-anchor="middle" fill="#111" font-size="5">Ø141 внутри у среза</text>
   <text x="110" y="160" text-anchor="middle" fill="#111" font-size="5">Ø136 внутри у дна</text>
-  <text x="110" y="148.5" text-anchor="middle" fill="#111" font-size="4.6">колодец: Ø79 внутри, Ø85 снаружи</text>
+  <text x="110" y="148.5" text-anchor="middle" fill="#111" font-size="4.6">колодец — конус: Ø79→Ø77 внутри, Ø85→Ø83 снаружи</text>
   <text x="-52" y="167" fill="#555" font-size="3.8">Снаружи у среза по поставщику Ø145 (поясок резьбы); модель при стенке 3 мм даёт Ø147. Корпус прибора упирается в потолок колодца.</text>
 </svg>

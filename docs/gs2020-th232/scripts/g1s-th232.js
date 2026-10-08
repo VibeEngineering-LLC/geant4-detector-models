@@ -1152,20 +1152,26 @@ function wireZoom(cvId) {
   }
 
   /* ── калибровка по разрешению: точки и степенной закон ──────── */
+  function fwSrc(q) {
+    var c = function (v, u) {
+      return "<td class='num'>" + (v == null ? "—" : num(v, 2) + (u ? " ± " + num(u, 2) : "")) + "</td>";
+    };
+    return c(q.own_keV, q.own_unc_keV) + c(q.becqmoni_keV) + c(q.fwhm_sl_keV);
+  }
   function buildFwhmTable() {
     var tbl = document.getElementById("tblFwhm");
     if (!tbl || !D.fwhm_cal) return;
     var fw = D.fwhm_cal;
     var head = "<thead><tr><th>линия, кэВ</th><th class='num'>центроида</th>"
       + "<th class='num'>ПШПВ, кэВ</th><th class='num'>разрешение</th>"
-      + "<th class='num'>линий в окне</th><th class='num'>закон k·E<sup>p</sup></th>"
+      + "<th class='num'>своя (замер в спектре)</th><th class='num'>BecqMoni</th><th class='num'>СпектраЛайн</th><th class='num'>закон k·E<sup>p</sup></th>"
       + "<th class='num'>отклонение</th><th>статус</th></tr></thead>";
     var body = "<tbody>";
     fw.points.forEach(function (q) {
       if (!q.used) {
         body += "<tr class='row-dirty'><td>" + num(q.E_nominal, 1) + "</td>"
-          + "<td class='num'>—</td><td class='num'>—</td><td class='num'>—</td>"
-          + "<td class='num'>—</td><td class='num'>—</td><td class='num'>—</td>"
+          + "<td class='num'>—</td><td class='num'>—</td><td class='num'>—</td>" + fwSrc(q)
+          + "<td class='num'>—</td><td class='num'>—</td>"
           + "<td>отброшена: " + esc(q.reject) + "</td></tr>";
         return;
       }
@@ -1174,20 +1180,20 @@ function wireZoom(cvId) {
         + "<td class='num'>" + num(q.fwhm_keV, 2) + " ± "
         + num(q.d_fwhm_keV, 2) + "</td>"
         + "<td class='num'>" + num(q.res_pct, 2) + " %</td>"
-        + "<td class='num'>" + q.n_lines_window + "</td>"
+        + fwSrc(q)
         + "<td class='num'>" + num(q.fwhm_model_keV, 2) + "</td>"
         + "<td class='num'>" + (q.dev_pct >= 0 ? "+" : "−")
         + num(Math.abs(q.dev_pct), 1) + " %</td>"
-        + "<td>в подгонке</td></tr>";
+        + "<td>в подгонке: " + (q.own_used ? "своя ширина" : "СпектраЛайн × множитель") + "</td></tr>";
     });
     body += "<tr class='sum'><td>степенной закон</td>"
       + "<td class='num' colspan='2'>ПШПВ = " + num(fw.k, 3) + "·E<sup>"
       + num(fw.p, 4) + "</sup></td>"
       + "<td class='num'>" + num(fw.res662_pct, 2) + " % на 662</td>"
-      + "<td class='num'>" + fw.n_used + " из " + fw.n_anchors + "</td>"
+      + "<td class='num' colspan='3'>" + fw.n_used + " из " + fw.n_anchors + " точек</td>"
       + "<td class='num'>" + num(fw.fwhm662_law, 1) + " кэВ</td>"
       + "<td class='num'>СКО " + num(fw.rms_dev_pct, 1) + " %</td>"
-      + "<td>таблица пиков прибора</td></tr>";
+      + "<td>точки свёртки: СпектраЛайн × множитель</td></tr>";
     tbl.innerHTML = head + body + "</tbody>";
   }
 

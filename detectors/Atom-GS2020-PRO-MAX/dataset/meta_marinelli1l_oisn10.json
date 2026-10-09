@@ -1,0 +1,32 @@
+{
+ "detector": "Atom GS2020 PRO MAX",
+ "vessel": "Маринелли 1 л (РАДЭК)",
+ "tag": "marinelli1l_oisn10",
+ "created": "2026-10-09T15:25:24.374375",
+ "geometry_gdml": "geometry_marinelli1l_oisn10.gdml",
+ "geometry_sha256": "0b0221b3fa913bd711b0214b9e23931f5d4cf12950ff66943df015012f9dec3b",
+ "grid_dir": "out_v5_oisn10",
+ "n_nodes": 395,
+ "E_min_keV": 12.148,
+ "E_max_keV": 3197.7,
+ "bins_keV": 1.0,
+ "n_bins": 3700,
+ "sample_matrix": "Epoxy_crumb",
+ "sample_rho_g_cm3": "0.9061",
+ "physics": {
+  "em_cut_mm": "0.05",
+  "em_deex": "deex",
+  "em_option": "opt4",
+  "particle": "gamma",
+  "npsm_enabled": "0"
+ },
+ "n_primary_min": 5000000,
+ "n_primary_max": 20000000,
+ "fep_definition": "k_fep = бин, содержащий E, + бин ниже (1 кэВ); eps_fep = k_fep/N",
+ "total_definition": "сумма бинов ≥ 1 кэВ / N",
+ "files_sha256": {
+  "efficiency": "7ee9ebf4ff8ff90667a576d60162e2b3042abea87995ccde2729b8d24fefacef",
+  "response_matrix": "3733f5a32aa64639e88cc83510b83646076ec5395d5800a734abe72877c22abe",
+  "geometry": "0b0221b3fa913bd711b0214b9e23931f5d4cf12950ff66943df015012f9dec3b"
+ }
+}

@@ -1192,7 +1192,7 @@ function wireZoom(cvId) {
       + "<td class='num' colspan='3'>" + fw.n_used + " из " + fw.n_anchors + " точек</td>"
       + "<td class='num'>" + num(fw.fwhm662_law, 1) + " кэВ</td>"
       + "<td class='num'>СКО " + num(fw.rms_dev_pct, 1) + " %</td>"
-      + "<td>точки свёртки: своя ширина там, где измерена, иначе СпектраЛайн × множитель</td></tr>";
+      + "<td>точки свёртки: калибровка тория (СпектраЛайн × множитель)</td></tr>";
     tbl.innerHTML = head + body + "</tbody>";
   }
 

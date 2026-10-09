@@ -35,9 +35,21 @@ def rebin_counts(counts, src_edges, dst_edges):
     v = np.interp(dst_edges, src_edges, cum, left=0.0, right=cum[-1])
     return np.diff(v)
 
+def template_var(hist, n_events, ch_edges, fwhm, broaden=None):
+    """#GS-63: дисперсия РАЗМЫТОГО шаблона на событие²: V_i = Σ_E N_E·f_i(E)²/n², f_i(E) — доля линии E в канале i,
+    взятая тем же g1s.broaden от одиночной линии. Прежняя формула cols/n_events верна только без размытия и после
+    свёртки ядром в сотни каналов завышала дисперсию в сотни раз (пик K-40 GS2020: √var 1452 против √N 135)."""
+    v = np.zeros(len(ch_edges) - 1)
+    for E, c in hist.items():
+        if c:
+            f = (broaden or g1s.broaden)({E: 1.0}, 1, ch_edges, fwhm)
+            v += c * f * f
+    return v / float(max(n_events, 1)) ** 2
+
 def unfold(spe, bg, templates, fwhm_points, lo=40.0, hi=1500.0,
           recalibrate=False, tail=None, bg_energy_of_ch=None, verbose=True, extra_refs=None,
-          conv="energy", blur=1.0, ch_offset=0.0, light_scale=None):
+          conv="energy", blur=1.0, ch_offset=0.0, light_scale=None, tvar=None):
+    """tvar="exact" (#GS-63) — дисперсия шаблонов template_var и подгонка cb.fit_A2V; None — прежняя cols/n_events."""
     """conv="channel" — свёртка шаблонов в КАНАЛАХ (g1s.broaden_ch), blur — множитель ширины
     (для шаблонов npsm=on: собственный разброс уже в свете, этап 5 — 0,798).
     light_scale — пара (a, b) прямой «канал = a + b·свет» (analysis/light_scale_g1s.py). Задана —
@@ -85,7 +97,7 @@ def unfold(spe, bg, templates, fwhm_points, lo=40.0, hi=1500.0,
     y = np.maximum(np.array(spec.counts) - bg_scaled, 0)
 
     # Шаг e: свёртка шаблонов
-    names, cols, n_events = [], [], []
+    names, cols, n_events, tvars = [], [], [], []
     fwhm_func = g1s.make_fwhm(fwhm_points)
     for name, path in templates:
         hist, n_events_i, npsm = g1s.read_template(path)
@@ -111,6 +123,12 @@ def unfold(spe, bg, templates, fwhm_points, lo=40.0, hi=1500.0,
                                  lambda c: float(spec.channel_to_energy(c + ch_offset)), blur)
         else:
             col = g1s.broaden(hist, n_events_i, ch_edges, lambda E: blur * fwhm_func(E))
+        if tvar == "exact":
+            if conv != "energy" or light_scale is not None:
+                raise SystemExit("ОТКАЗ: tvar='exact' реализован только для conv='energy' без шкалы света")
+            tvars.append(template_var(hist, n_events_i, ch_edges, lambda E: blur * fwhm_func(E)))
+        elif tvar is not None:
+            raise ValueError("tvar должен быть None или 'exact', получено %r" % (tvar,))
         names.append(name)
         cols.append(col)
         n_events.append(n_events_i)
@@ -128,22 +146,26 @@ def unfold(spe, bg, templates, fwhm_points, lo=40.0, hi=1500.0,
     net = counts_arr - bg_scaled          # нетто БЕЗ обрезки нулём — его требует критерий
     # Вес канала 1/√(p + k·b + Σ aₖ²·colₖ/n_eventsₖ): дисперсия нетто плюс дисперсия шаблонов.
     # Веса зависят от искомых амплитуд, поэтому внутри шесть итераций.
-    coef, sd, _ = cb.fit_A2(cols_arr, counts_arr, bg_scaled, k_bg, n_events, sel)
+    # V[k, канал] — дисперсия шаблона k на единицу амплитуды²: точная (tvar="exact") или прежняя cols/n_events
+    V = np.array(tvars) if tvar == "exact" else cols_arr / np.asarray(n_events, dtype=float)[:, None]
+    if tvar == "exact":
+        coef, sd, _ = cb.fit_A2V(cols_arr, counts_arr, bg_scaled, k_bg, V, sel)
+    else:
+        coef, sd, _ = cb.fit_A2(cols_arr, counts_arr, bg_scaled, k_bg, n_events, sel)
     activities = coef / spec.live_time
     model = np.sum(cols_arr * coef[:, None], axis=0)
     # χ² — по дисперсии ТОГО ЖЕ критерия, которым шла подгонка: иначе χ²/n.d.f. относится к
     # одному критерию, а амплитуды к другому. Дисперсия измерения берётся у стенда (fit_A1),
     # слагаемое шаблонов — той же формулой, что внутри A2.
     var_a1 = cb.fit_A1(cols_arr, counts_arr, bg_scaled, k_bg, n_events, sel)[2]["var"]
-    var_tpl = (cols_arr[:, sel].T / np.asarray(n_events, dtype=float)[None, :]) @ (coef ** 2)
+    var_tpl = V[:, sel].T @ (coef ** 2)
     chi2 = float(np.sum((model[sel] - net[sel]) ** 2 / (var_a1 + var_tpl)))
     # Единая метрика сравнения критериев (дисперсия A1) — ею меряются все восемь в #CRIT-1.
     chi2_ref = float(np.sum((model[sel] - net[sel]) ** 2 / var_a1))
     # Дисперсия критерия НА ВСЕХ каналах — нужна долям полос. Считать вклад полосы по одним
     # весам, а делить на χ² по другим нельзя: 12.09.2026 это дало долю 120 % у полосы 40–90
     # (поймано прогоном командной строки сразу после переноса критерия).
-    var = np.maximum(counts_arr + k_bg * bg_scaled, 1.0) \
-        + (cols_arr.T / np.asarray(n_events, dtype=float)[None, :]) @ (coef ** 2)
+    var = np.maximum(counts_arr + k_bg * bg_scaled, 1.0) + V.T @ (coef ** 2)
     ndof = int(np.sum(sel)) - len(coef)   # честное ν: параметры ЭТОГО критерия (D-020, п. 4)
 
     # Вторая мера — E1: минимум полной вариации между нормированными формами при условии

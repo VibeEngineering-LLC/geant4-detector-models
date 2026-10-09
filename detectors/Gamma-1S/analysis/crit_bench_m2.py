@@ -69,12 +69,7 @@ def gate_build(d):
 
     return cols, V
 
-def fit_A2V(cols, counts, bg_scaled, k, V, sel):
-    K = cols.shape[0]
-    a1, _, ex1 = cb.fit_A1(cols, counts, bg_scaled, k, np.ones(K), sel)
-    C, p, b = cb._prep(cols, counts, bg_scaled, sel)
-    a, sd = cb._iter_template_var(C, p - b, ex1["var"], np.asarray(V)[:, sel].T, np.ones(K), a1)
-    return a, sd, {"iterations": 6}
+fit_A2V = cb.fit_A2V   # #GS-63: реализация перенесена в crit_bench (общее ядро), здесь — ссылка
 
 def noisy_nodes(d, rng):
     nodes_new = {}

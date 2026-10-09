@@ -90,6 +90,16 @@ def fit_A2(cols, counts, bg_scaled, k, n_events, sel):
     return a, sd, {"iterations": 6}
 
 
+def fit_A2V(cols, counts, bg_scaled, k, V, sel):
+    """A2 с ЯВНОЙ дисперсией шаблонов V[k, канал] на единицу амплитуды² (перенесено из crit_bench_m2, #GS-63):
+    для размытого шаблона V ≠ cols/n_events — mix_unfold_core.template_var."""
+    K = cols.shape[0]
+    a1, _, ex1 = fit_A1(cols, counts, bg_scaled, k, np.ones(K), sel)
+    C, p, b = _prep(cols, counts, bg_scaled, sel)
+    a, sd = _iter_template_var(C, p - b, ex1["var"], np.asarray(V)[:, sel].T, np.ones(K), a1)
+    return a, sd, {"iterations": 6}
+
+
 def cash_stat(a, C, p, b):
     """Статистика Кэша: 2*sum(m - p*ln m), m = C@a + b (фон в модели, не вычитается)."""
     m = C @ a + b

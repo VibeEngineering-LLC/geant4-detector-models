@@ -260,14 +260,16 @@ def fit_power_law_to_factory_fwhm(coefs, model, e_lo=50.0, e_hi=3000.0, n=60):
 
 
 
-def run_method2(library, sums, resp, e, ch_edges, keys, var_acc=None, n_of=None):
+def run_method2(library, sums, resp, e, ch_edges, keys, var_acc=None, n_of=None, var_of=None):
     """Урезанный, но физически тот же run_method2, что в export_data.py
     (F_B-депопуляция, F_B-нормировка сумм-пиков) -- без канальной
     раскладки и без диагностики peak_area_with_shelf (не нужны лёгкой
     странице).
     var_acc/n_of (13.09.2026, D-020 для метода 2, scripts/_spec_crit_bench_m2.md П1): при словаре
     var_acc накапливается дисперсия столбца от шума узлов сетки w**2 * shape / n_of(E узла).
-    Без них поведение прежнее."""
+    Без них поведение прежнее.
+    var_of(E узла) (#GS-63): ТОЧНАЯ дисперсия размытой формы узла на событие² (mix_unfold_core.template_var по сырой
+    гистограмме прогона сетки); shape/n верна только без размытия. Обе точки add() передают ровно resp(E узла)[0]."""
     if var_acc is not None and n_of is None:
         raise SystemExit("ОТКАЗ run_method2: var_acc передан без n_of (число событий узла)")
     shape_total = np.zeros_like(e)
@@ -279,7 +281,7 @@ def run_method2(library, sums, resp, e, ch_edges, keys, var_acc=None, n_of=None)
         if var_acc is not None:
             if nuc_key not in var_acc:
                 var_acc[nuc_key] = np.zeros_like(e)
-            var_acc[nuc_key] += weight ** 2 * shp / float(n_of(E_node))
+            var_acc[nuc_key] += weight ** 2 * (var_of(E_node) if var_of is not None else shp / float(n_of(E_node)))
 
     # ИСПРАВЛЕНО 09.08.2026 (аудит Б2, коммит df5d178 -- та же находка, что и
     # в export_data.py.run_method2, здесь отдельная, НЕ синхронизированная

@@ -2,11 +2,11 @@
  "detector": "Atom GS2020 PRO MAX",
  "vessel": "Маринелли 1 л (РАДЭК)",
  "tag": "marinelli1l_oisn10",
- "created": "2026-10-09T15:25:24.374375",
+ "created": "2026-10-09T22:56:28.051680",
  "geometry_gdml": "geometry_marinelli1l_oisn10.gdml",
  "geometry_sha256": "0b0221b3fa913bd711b0214b9e23931f5d4cf12950ff66943df015012f9dec3b",
- "grid_dir": "out_v5_oisn10",
- "n_nodes": 395,
+ "grid_dir": "grid_v11",
+ "n_nodes": 421,
  "E_min_keV": 12.148,
  "E_max_keV": 3197.7,
  "bins_keV": 1.0,
@@ -22,11 +22,11 @@
  },
  "n_primary_min": 5000000,
  "n_primary_max": 20000000,
- "fep_definition": "k_fep = бин, содержащий E, + бин ниже (1 кэВ); eps_fep = k_fep/N",
+ "fep_definition": "v1.1 (#GS-66): k_fep = пик без континуума — целое E: [E-1,E+1) минус бин [E-2,E-1); дробное E: бин с E минус φ·(бин ниже), φ = дробная часть E; eps_fep = k_fep/N. v1: бин с E + бин ниже (включал 1–1,5 кэВ континуума, ниже 100 кэВ +3–8 %)",
  "total_definition": "сумма бинов ≥ 1 кэВ / N",
  "files_sha256": {
-  "efficiency": "7ee9ebf4ff8ff90667a576d60162e2b3042abea87995ccde2729b8d24fefacef",
-  "response_matrix": "3733f5a32aa64639e88cc83510b83646076ec5395d5800a734abe72877c22abe",
+  "efficiency": "543f24a28c884f819d615aa3e5625dc8e8c005a57d4cb4feecee3a79736134cd",
+  "response_matrix": "0bf5aade39a2dcc583572c7f4ab8ebc7dbd124fb6c173a9141f6e8b563ee800d",
   "geometry": "0b0221b3fa913bd711b0214b9e23931f5d4cf12950ff66943df015012f9dec3b"
  }
 }

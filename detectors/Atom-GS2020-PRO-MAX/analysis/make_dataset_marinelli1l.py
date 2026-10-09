@@ -12,6 +12,7 @@ import glob
 import hashlib
 import shutil
 import csv
+import re
 import datetime
 import numpy as np
 
@@ -21,12 +22,18 @@ sys.stdout.reconfigure(encoding="utf-8")
 # Импорт функции разбора сетки
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from compare_eff_becqmoni import parse_grid_file
+from fep_def import fep_net   # #GS-66
 
 # Константы
-GRID_DIR = r"C:\g4work\gs2020\run_marinelli\out_v5_oisn10"
+GRID_DIR = os.environ.get("GS_GRID_DIR") or r"C:\g4work\gs2020\run_marinelli\out_v5_oisn10"   # v1.1: сборная папка с узлами #GS-65
 OUT_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "dataset"))   # в репозитории: analysis/ → dataset/
 GDML_SRC = r"C:\g4work\gs2020\gs20_matrix\mx_oisn10.gdml"
 TAG = "marinelli1l_oisn10"
+_canon = lambda p: re.sub(r'(\d\.\d*?)0+(?=")', r'\1', open(p, encoding="utf-8").read())   # «42.50» == «42.5»
+GDML_EQUIV = [p for p in (os.environ.get("GS_GDML_EQUIV") or "").split(";") if p]   # #GS-64: тот же GDML, иная запись чисел
+for _p in GDML_EQUIV:
+    if _canon(_p) != _canon(GDML_SRC):
+        raise SystemExit("ОТКАЗ: GDML " + _p + " не эквивалентен " + GDML_SRC)
 
 
 def sha256_file(filepath):
@@ -125,7 +132,7 @@ def main():
             gdml_path_in_file = first_line.split("GDML ")[1].strip()
         
         # Проверяем, что GDML совпадает с GDML_SRC
-        if gdml_path_in_file is not None and os.path.normcase(os.path.normpath(gdml_path_in_file)) != os.path.normcase(os.path.normpath(GDML_SRC)):
+        if gdml_path_in_file is not None and os.path.normcase(os.path.normpath(gdml_path_in_file)) not in [os.path.normcase(os.path.normpath(x)) for x in [GDML_SRC] + GDML_EQUIV]:
             raise SystemExit(f"ОТКАЗ: GDML в файле {filepath} ({gdml_path_in_file}) отличается от GDML_SRC ({GDML_SRC})")
         
         # Разбираем файл сетки
@@ -183,16 +190,11 @@ def main():
             if bin_centers_node != bin_centers:
                 raise SystemExit(f"ОТКАЗ: bin_centers отличаются в файле {filepath}")
         
-        # Вычисления на узел
-        # b = floor(E) + 0.5
-        b = int(np.floor(E)) + 0.5
-        
-        # k_fep = h.get(b, 0) + h.get(b - 1.0, 0)
-        k_fep = h.get(b, 0) + h.get(b - 1.0, 0)
-        
-        # eps_fep = k_fep / N, sig_fep = sqrt(k_fep) / N
+        # #GS-66 (v1.1): пик без континуума под ним — общее определение fep_def.fep_net (v1: окно «бин с E + бин ниже»)
+        k_fep, var_fep = fep_net(h, E)
+        k_fep = max(k_fep, 0.0)   # узлы 12–16 кэВ: пика нет, вычет не уводит ε ниже нуля
         eps_fep = k_fep / N
-        sig_fep = np.sqrt(k_fep) / N
+        sig_fep = np.sqrt(var_fep) / N
         
         # k_tot = Σ h[c] для c ≥ 1.0
         k_tot = sum(h[c] for c in h if c >= 1.0)
@@ -282,7 +284,7 @@ def main():
                 f"{node['eps_tot']:.6e}",
                 f"{node['sig_tot']:.6e}",
                 int(node["N"]),
-                int(node["k_fep"]),
+                "%.1f" % node["k_fep"],   # #GS-66: за вычетом φ·континуума — нецелое
                 int(node["k_tot"])
             ])
     
@@ -322,7 +324,7 @@ def main():
         "physics": physics_params,
         "n_primary_min": int(n_primary.min()),
         "n_primary_max": int(n_primary.max()),
-        "fep_definition": "k_fep = бин, содержащий E, + бин ниже (1 кэВ); eps_fep = k_fep/N",
+        "fep_definition": "v1.1 (#GS-66): k_fep = пик без континуума — целое E: [E-1,E+1) минус бин [E-2,E-1); дробное E: бин с E минус φ·(бин ниже), φ = дробная часть E; eps_fep = k_fep/N. v1: бин с E + бин ниже (включал 1–1,5 кэВ континуума, ниже 100 кэВ +3–8 %)",
         "total_definition": "сумма бинов ≥ 1 кэВ / N",
         "files_sha256": {}
     }

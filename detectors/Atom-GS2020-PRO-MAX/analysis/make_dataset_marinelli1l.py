@@ -324,7 +324,7 @@ def main():
         "physics": physics_params,
         "n_primary_min": int(n_primary.min()),
         "n_primary_max": int(n_primary.max()),
-        "fep_definition": "v1.1 (#GS-66): k_fep = пик без континуума — целое E: [E-1,E+1) минус бин [E-2,E-1); дробное E: бин с E минус φ·(бин ниже), φ = дробная часть E; eps_fep = k_fep/N. v1: бин с E + бин ниже (включал 1–1,5 кэВ континуума, ниже 100 кэВ +3–8 %)",
+        "fep_definition": "v1.1 (#GS-66): k_fep = пик без континуума — целое E (|E-round(E)| < 0,02 кэВ, E := round(E)): [E-1,E+1) минус бин [E-2,E-1); дробное E: бин с E минус φ·(бин ниже), φ = дробная часть E; eps_fep = k_fep/N. v1: бин с E + бин ниже (включал 1–1,5 кэВ континуума, ниже 100 кэВ +3–8 %)",
         "total_definition": "сумма бинов ≥ 1 кэВ / N",
         "files_sha256": {}
     }

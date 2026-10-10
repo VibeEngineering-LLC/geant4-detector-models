@@ -3,8 +3,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#e6e0d0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0e0c08" media="(prefers-color-scheme: dark)">
-<title>Atom GS2020 PRO MAX: instrument, Geant4 model, spectra</title>
-<link rel="stylesheet" href="../styles/g1s-th232.css?v=1791666060">
+<title>Atom GS2020 PRO MAX: spectrometer, Geant4 model, spectra</title>
+<link rel="stylesheet" href="../styles/g1s-th232.css?v=1791669193">
 <style>
 .dev{border-bottom:3px solid var(--rule); padding:1.1rem 0 1.3rem}
 .dev p,.dev li,.dev td,.dev th,.dev figcaption{text-align:left}
@@ -43,8 +43,8 @@
   <div class="top" style="position:relative"><a href="../" class="btn lang-switch" hreflang="ru" lang="ru" style="position:absolute;top:0;right:0" onclick="location.href=this.getAttribute('href')+location.hash;return false">RU</a>
     <div class="title" style="padding-right:3.6rem">
       <p class="eyebrow">scintillation gamma-ray spectrometer · NaI(Tl) Ø51×51 · SiPM · Geant4 model</p>
-      <h1>Atom GS2020 PRO MAX — instrument, model, and spectra</h1>
-      <p class="stand">This working page describes the instrument: the spectrometer and its
+      <h1>Atom GS2020 PRO MAX — spectrometer, model, and spectra</h1>
+      <p class="stand">This working page describes the spectrometer and its
       Geant4 model, followed by measured spectra and their decomposition. It reports
       three spectra measured in a Marinelli beaker of nominal volume 1&nbsp;L: a Th-232 reference sample, a potassium chloride
       (K-40) sample, and a dried blueberry sample (Cs-137 and K-40, as well as the β emitters Sr-90 and Y-90; the first sample with unknown activity). The Ra-226 spectrum will be added later.</p>
@@ -62,26 +62,26 @@
       NaI(Tl) 2×2 inch (Ø50.8×50.8&nbsp;mm) crystal. Scintillation light is read out not by a photomultiplier tube (PMT),
       but by a silicon photomultiplier (SiPM) array at the crystal end face; the amplifier,
       ADC, and thermal stabilization are housed in the same Ø63&nbsp;mm aluminum housing, with
-      USB Type-C connectivity. The instrument is assembled by Gammaspectacular (Australia); on the
+      USB Type-C connectivity. The spectrometer is assembled by Gammaspectacular (Australia); on the
       manufacturer's website it is listed as <a href="https://www.gammaspectacular.com/blue/gamma-spectroscopy/gamma-spectrometers/gs-max-2020-nai-sipm"
       target="_blank" rel="noopener">GS-MAX-2020-NAI-SIPM</a>.</p>
       <p><b>Crystal.</b> The manufacturer of the crystal itself is unknown.
-      According to the instrument manufacturer, the crystal characteristics are very close to
+      According to the spectrometer manufacturer, the crystal characteristics are very close to
       those of the <a href="https://capescint.com/product/scintillation-crystal-nai-51x51/"
       target="_blank" rel="noopener">Capescint NaI-51×51</a> assembly; the latter is adopted
       in the model — based on the 3D model and drawing of the assembly manufacturer.</p>
     </div>
     <div class="dev-fig dev-photo">
-      <figure><img src="../img/photo_side.jpg" alt="side view of the Atom GS2020 PRO MAX instrument: aluminum cylinder, USB Type-C connector at the base" loading="lazy" width="1200" height="1600"><figcaption>Instrument: Ø63&nbsp;mm aluminum housing, USB Type-C connector at the base</figcaption></figure>
-      <figure><img src="../img/photo_scale.jpg" alt="photo of the instrument next to a ballpoint pen for scale" loading="lazy" width="1200" height="1600"><figcaption>For scale — a ballpoint pen is placed next to it</figcaption></figure>
-      <figure><img src="../img/photo_bottom.jpg" alt="photo of the instrument: end face with a threaded hole for a stand" loading="lazy" width="1200" height="1600"><figcaption>End face on the electronics side: thread for a stand</figcaption></figure>
+      <figure><img src="../img/photo_side.jpg" alt="side view of the Atom GS2020 PRO MAX spectrometer: aluminum cylinder, USB Type-C connector at the base" loading="lazy" width="1200" height="1600"><figcaption>Spectrometer: Ø63&nbsp;mm aluminum housing, USB Type-C connector at the base</figcaption></figure>
+      <figure><img src="../img/photo_scale.jpg" alt="photo of the spectrometer next to a ballpoint pen for scale" loading="lazy" width="1200" height="1600"><figcaption>For scale — a ballpoint pen is placed next to it</figcaption></figure>
+      <figure><img src="../img/photo_bottom.jpg" alt="photo of the spectrometer: end face with a threaded hole for a stand" loading="lazy" width="1200" height="1600"><figcaption>End face on the electronics side: thread for a stand</figcaption></figure>
     </div>
     <table class="dev-t">
-      <thead><tr><th>parameter</th><th>per instrument manufacturer data</th><th>in the Geant4 model of this page</th></tr></thead>
+      <thead><tr><th>parameter</th><th>per spectrometer manufacturer data</th><th>in the Geant4 model of this page</th></tr></thead>
       <tbody>
         <tr><td>crystal</td><td>NaI(Tl) 2×2″, hermetically sealed in a capsule</td><td>NaI(Tl) Ø50.8×50.8&nbsp;mm in the Capescint assembly: capsule (1&nbsp;mm Al cup), reflector, Ø57×3&nbsp;mm quartz window — seven solids following the profile of the assembly manufacturer</td></tr>
-        <tr><td>photodetector</td><td>SiPM</td><td>SiPM arrays and boards — per the instrument STEP drawing; scintillation-light transport is not modeled; the energy deposited in the crystal is scored</td></tr>
-        <tr><td>housing</td><td>1.6&nbsp;mm aluminum, Ø63×82&nbsp;mm</td><td>per the instrument STEP drawing: 41 parts (housing, lid, rings, boards, fasteners); housing height in the model 83&nbsp;mm (82&nbsp;mm according to the datasheet)</td></tr>
+        <tr><td>photodetector</td><td>SiPM</td><td>SiPM arrays and boards — per the spectrometer STEP drawing; scintillation-light transport is not modeled; the energy deposited in the crystal is scored</td></tr>
+        <tr><td>housing</td><td>1.6&nbsp;mm aluminum, Ø63×82&nbsp;mm</td><td>per the spectrometer STEP drawing: 41 parts (housing, lid, rings, boards, fasteners); housing height in the model 83&nbsp;mm (82&nbsp;mm according to the datasheet)</td></tr>
         <tr><td>mass</td><td>550&nbsp;g</td><td>—</td></tr>
         <tr><td>relative energy resolution (at the 662&nbsp;keV line)</td><td>less than 7.5 % (datasheet; CsI(Tl) variant — less than 7.0 %)</td><td>from the SpectraLine “Peak Parameters” table for the thorium reference spectrum: FWHM (full width at half maximum) 24.07&nbsp;keV at 238&nbsp;keV, 40.62 at 583, 57.35 at 911, 107.42 at 2614; in the model convolution the same values are multiplied by 1.05, with log–log interpolation between the points (the power law FWHM(E)&nbsp;=&nbsp;0.788·E<sup>0.6335</sup>&nbsp;keV is their approximation)</td></tr>
         <tr><td>channels</td><td>up to 8192</td><td>—</td></tr>
@@ -91,18 +91,18 @@
     </table>
     <h3 class="dev-h">Model geometry</h3>
     <div class="dev-text">
-      <p>The housing and internals of the instrument were imported from the STEP drawing of the assembly
+      <p>The housing and internals of the spectrometer were imported from the STEP drawing of the assembly
       (Blender → tessellated GDML solids); the crystal assembly is defined by exact solids
-      of revolution per the manufacturer's profile. In the model, the instrument is oriented with the crystal facing up. Hereafter, “capsule” is the aluminum cup containing the crystal (Ø59&nbsp;mm), and “housing” is the outer shell of the instrument (Ø63&nbsp;mm).
+      of revolution per the manufacturer's profile. In the model, the spectrometer is oriented with the crystal facing up. Hereafter, “capsule” is the aluminum cup containing the crystal (Ø59&nbsp;mm), and “housing” is the outer shell of the spectrometer (Ø63&nbsp;mm).
       The geometry is validated not only by visualization but also by radiation transport calculations
       (K-40 volume source, one million events): no stuck tracks caused by geometry errors were recorded, and the 1460.8&nbsp;keV peak
       is observed at the expected energy. Minor overlaps (up to 0.4&nbsp;mm) between the volumes of drawing parts and
       the unverified density of the crystal-assembly reflector remain; they are model assumptions.</p>
       <p>GDML files for the general case:
       <a href="https://github.com/VibeEngineering-LLC/geant4-detector-models/blob/main/detectors/Atom-GS2020-PRO-MAX/geometry/GS2020_Capescint51x51.gdml"
-      target="_blank" rel="noopener">instrument model</a> (without sample) and
+      target="_blank" rel="noopener">spectrometer model</a> (without sample) and
       <a href="https://github.com/VibeEngineering-LLC/geant4-detector-models/blob/main/detectors/Atom-GS2020-PRO-MAX/geometry/GS2020_marinelli_1000ml_water.gdml"
-      target="_blank" rel="noopener">instrument with a 1&nbsp;L Marinelli beaker</a>, filled with water (sample volume — <code>LV_SourceMatrix</code>:
+      target="_blank" rel="noopener">spectrometer with a 1&nbsp;L Marinelli beaker</a>, filled with water (sample volume — <code>LV_SourceMatrix</code>:
       for your own sample, replace the material and density). Assemblies with specific samples are on the spectrum tabs; all files are in the
       <a href="https://github.com/VibeEngineering-LLC/geant4-detector-models/tree/main/detectors/Atom-GS2020-PRO-MAX/geometry"
       target="_blank" rel="noopener">model repository</a>.</p>
@@ -112,11 +112,11 @@
       conical beaker body, plastic walls 3&nbsp;mm thick; its cross-section with dimensions is shown in the drawing on the right.</p>
     </div>
     <div class="dev-fig">
-      <figure><img src="../img/g4_cut34.jpg" alt="cross-section of the Geant4 instrument model: housing, crystal assembly, boards" loading="lazy" width="593" height="755"><figcaption>Geant4: cross-section of the instrument model, crystal facing up (light blue — NaI(Tl) crystal, light gray — reflector, yellow — quartz window between the crystal and the SiPM, green — SiPM boards, dark gray on top — foam gasket)</figcaption></figure>
-      <figure><img src="../img/gs2020_section.png" alt="drawing: axial cross-section of the NaI 51×51 crystal in an aluminum capsule with dimensions" loading="lazy" width="1200" height="757"><figcaption>Crystal in capsule: axial cross-section according to the Geant4 model volumes (NaI(Tl) crystal Ø50.8×50.8&nbsp;mm, reflector, quartz window, epoxy joints, aluminum capsule Ø59&nbsp;mm; crystal assembly height 58&nbsp;mm)</figcaption></figure>
-      <figure><img src="../img/gs2020_assembly.png" alt="drawing: axial cross-section of the assembled instrument — housing, crystal assembly, boards, SiPM, clamping ring, screws" loading="lazy" width="1200" height="892"><figcaption>Assembled instrument: axial cross-section according to the model volumes (instrument housing Ø63&nbsp;mm, total height 83&nbsp;mm; under the window — SiPM on an FR4 board, below it a clamping ring, a second board, a lid, and steel screws; on top — a foam gasket)</figcaption></figure>
-      <figure><img src="../img/g4_marinelli_cut34.jpg" alt="model cross-section: instrument in the re-entrant well of a Marinelli beaker with a sample" loading="lazy" width="819" height="691"><figcaption>Geant4: instrument in Marinelli&nbsp;1 (thorium reference sample), cut in half (dark blue — beaker wall, orange — sample, level 1&nbsp;cm below the rim; light bluish-gray layer on top — air above the sample; in the re-entrant well — the instrument, yellow — quartz window under the crystal)</figcaption></figure>
-      <figure><img src="../img/marinelli2_section.svg" alt="drawing: cross-section of Marinelli 2 with dimensions, KCl sample, and instrument in the re-entrant well" loading="lazy" width="840" height="588"><figcaption>Marinelli&nbsp;2: cross-section with dimensions based on refined measurements of 29 September 2026 (plastic 3&nbsp;mm, re-entrant well depth 57&nbsp;mm, from the rim to the re-entrant well 46&nbsp;mm). The K-40 values on the page are calculated using this model (KCl sample 1&nbsp;L, 1085&nbsp;g, layer above the re-entrant well 30.8&nbsp;mm); the re-entrant well is conical: its outer wall Ø85&nbsp;mm at the beaker bottom → Ø83&nbsp;mm at the well bottom, its inner cavity (into which the instrument is inserted) Ø79 → Ø77&nbsp;mm</figcaption></figure>
+      <figure><img src="../img/g4_cut34.jpg" alt="cross-section of the Geant4 spectrometer model: housing, crystal assembly, boards" loading="lazy" width="593" height="755"><figcaption>Geant4: cross-section of the spectrometer model, crystal facing up (light blue — NaI(Tl) crystal, light gray — reflector, yellow — quartz window between the crystal and the SiPM, green — SiPM boards, dark gray on top — foam gasket)</figcaption></figure>
+      <figure><img src="img/gs2020_section.png" alt="drawing: axial cross-section of the NaI 51×51 crystal in an aluminum capsule with dimensions" loading="lazy" width="1200" height="757"><figcaption>Crystal in capsule: axial cross-section according to the Geant4 model volumes (NaI(Tl) crystal Ø50.8×50.8&nbsp;mm, reflector, quartz window, epoxy joints, aluminum capsule Ø59&nbsp;mm; crystal assembly height 58&nbsp;mm)</figcaption></figure>
+      <figure><img src="img/gs2020_assembly.png" alt="drawing: axial cross-section of the assembled spectrometer — housing, crystal assembly, boards, SiPM, clamping ring, screws" loading="lazy" width="1200" height="863"><figcaption>Assembled spectrometer: axial cross-section according to the model volumes (spectrometer housing Ø63&nbsp;mm, total height 83&nbsp;mm; under the window — SiPM on an FR4 board, below it a clamping ring, a second board, a lid, and steel screws; on top — a foam gasket)</figcaption></figure>
+      <figure><img src="../img/g4_marinelli_cut34.jpg" alt="model cross-section: spectrometer in the re-entrant well of a Marinelli beaker with a sample" loading="lazy" width="819" height="691"><figcaption>Geant4: spectrometer in Marinelli&nbsp;1 (thorium reference sample), cut in half (dark blue — beaker wall, orange — sample, level 1&nbsp;cm below the rim; light bluish-gray layer on top — air above the sample; in the re-entrant well — the spectrometer, yellow — quartz window under the crystal)</figcaption></figure>
+      <figure><img src="img/marinelli2_section.svg" alt="drawing: cross-section of Marinelli 2 with dimensions, KCl sample, and spectrometer in the re-entrant well" loading="lazy" width="840" height="588"><figcaption>Marinelli&nbsp;2: cross-section with dimensions based on refined measurements of 29 September 2026 (plastic 3&nbsp;mm, re-entrant well depth 57&nbsp;mm, from the rim to the re-entrant well 46&nbsp;mm). The K-40 values on the page are calculated using this model (KCl sample 1&nbsp;L, 1085&nbsp;g, layer above the re-entrant well 30.8&nbsp;mm); the re-entrant well is conical: its outer wall Ø85&nbsp;mm at the beaker bottom → Ø83&nbsp;mm at the well bottom, its inner cavity (into which the spectrometer is inserted) Ø79 → Ø77&nbsp;mm</figcaption></figure>
     </div>
   </section>
   <div class="lbox" id="lbox" hidden role="dialog" aria-modal="true" aria-label="enlarged image"><img alt=""><p></p></div>
@@ -300,7 +300,7 @@
         <p class="method-lede">Reference-sample and background spectra. The background is scaled to the live time
         of the reference sample and multiplied by the r(E) correction for attenuation of the external background by the reference sample;
         the difference is the reference-sample count minus the scaled background in each channel.
-        The energy scale is the polynomial from the instrument file with a piecewise-linear correction based on
+        The energy scale is the polynomial from the spectrometer file with a piecewise-linear correction based on
         the centroids of its peak table. Reference lines are the γ-ray lines of the Th-232 decay chain.</p>
         <div class="chartbox" id="calbox">
           <div class="ctrls" id="cal-ctrls">
@@ -330,7 +330,7 @@
         The power law FWHM(E) = k·E<sup>p</sup> is an approximation of the FWHM values used in the convolution (RMS deviation 2.5 %); at 662&nbsp;keV it yields 48.2 keV.</p>
         <div class="chartbox" id="fwbox">
           <canvas id="cvFwhm" role="img"
-            aria-label="instrument energy resolution versus energy: peak table points and power law"></canvas>
+            aria-label="spectrometer energy resolution versus energy: peak table points and power law"></canvas>
         </div>
         <div class="scroll"><table class="big" id="tblFwhm"></table></div>
       </div>
@@ -364,7 +364,7 @@
         <p class="eyebrow">spectrum 2 · K-40 · KCl in the Marinelli 2 beaker (volume 1&nbsp;L)</p>
         <h2 class="spec-h">Model efficiency verification for K-40</h2>
         <p class="stand">Potassium chloride sample, “pure” grade (Russian designation “ch.”): mass 1085 g, volume in the beaker 1000 mL
-        (bulk density 1.085 g/cm³); the same instrument; the beaker is Marinelli&nbsp;2
+        (bulk density 1.085 g/cm³); the same spectrometer; the beaker is Marinelli&nbsp;2
         (assembly geometry: <a href="https://github.com/VibeEngineering-LLC/geant4-detector-models/blob/main/detectors/Atom-GS2020-PRO-MAX/geometry/GS2020_marinelli_kcl_1000ml.gdml"
         target="_blank" rel="noopener">GDML</a>).
         The K-40 activity is known from the mass, without certification: mass × potassium fraction in KCl (0.52445) ×
@@ -373,14 +373,14 @@
         attenuation of the background by the KCl sample. The Monte Carlo template is a Geant4 calculation of the
         full decay of K-40 in a sample of the specified KCl volume and density. The energy scale is
         specific to this spectrum and determined from peak positions: the expected peaks of this spectrum are fitted with Geant4 responses (the
-        instrument file contains no calibration).</p>
+        spectrometer file contains no calibration).</p>
         <p class="stand">Method 1 (full-spectrum fit with the same convolution kernel as for thorium) gave
         17 518 ± 8 Bq (here ± is the statistical uncertainty; the summaries, tables, and the “comparison” tab give the uncertainty multiplied by the Birge ratio correction) — 0.9766 of the expected value; χ²/ν = 9.848, peak shape at 1460.8&nbsp;keV —
         χ²/ν = 2.65; a comparison variant with the tail component of the Gamma-1S model convolution kernel gives 0.9806 of the expected value. Method 2 (FEP efficiency function × line library: a single
         1460.8&nbsp;keV line with an emission probability of 10.34&nbsp;% according to LNHB-DDEP 2025, multiplied by the direct calculation of the Geant4 response to a monoenergetic γ ray in this sample,
         plus external bremsstrahlung of β particles with the same amplitude; internal bremsstrahlung is not included in the calculation)
         gave 17 497 ± 7 Bq (± is the statistical uncertainty) — 0.9754 of the expected value, χ²/ν = 10.99. The results of both methods are consistent with
-        each other; their common deviation from the expected activity is possibly due to the model (instrument, beaker, sample); its
+        each other; their common deviation from the expected activity is possibly due to the model (spectrometer, beaker, sample); its
         cause has not been established. The K-40 γ emission probability is adopted from LNHB-DDEP 2025 (10.34&nbsp;%); in ENSDF and in the
         Geant4 decay data it is 10.66&nbsp;%, and with it both methods would yield approximately 3&nbsp;% less. The decay
         template of Method 1 contains the 10.66&nbsp;% emission probability, therefore the Method 1 activity is recalculated by a factor of
@@ -391,7 +391,7 @@
         attenuates the external laboratory background more strongly than the water in the background beaker; the r(E) correction for attenuation is calculated in Geant4
         (isotropic external field, assembly with the sample relative to the assembly with water; the field spectrum is reconstructed from the water background)
         and is accounted for: the background on the page and in the fit is multiplied by r(E). After the correction, in the region of about 25–100&nbsp;keV the model is higher than the measurement, while below 25&nbsp;keV
-        the difference “measurement − background” is negative. The cause of the discrepancy has not been established; the non-proportionality of the NaI(Tl) light yield, the instrument threshold (neither effect is described in the model),
+        the difference “measurement − background” is negative. The cause of the discrepancy has not been established; the non-proportionality of the NaI(Tl) light yield, the lower-level discriminator (LLD) threshold (neither effect is described in the model),
         and residual unaccounted attenuation of the external background by the sample are being considered. The fit window starts at 150&nbsp;keV, where r(E) is close to one.</p>
       </div>
     </div>
@@ -491,7 +491,7 @@ body:has(#src-k40:not([hidden])) footer.bot:not(.k40-foot){display:none}
     <div class="cal-wrap">
       <p class="method-lede">Spectra of the KCl sample and the Marinelli + water background. The background is scaled to the live time
       of the sample; the difference is the sample count minus the scaled background in each channel. Each
-      spectrum has its own energy scale: the instrument file for KCl contains no calibration, so the scale correction is smooth (a polynomial) based on the positions
+      spectrum has its own energy scale: the spectrometer file for KCl contains no calibration, so the scale correction is smooth (a polynomial) based on the positions
       of the peak groups of this spectrum, which are determined from Geant4 responses. The table shows the polynomial
       representing the scale (deviation from it up to 0.019 keV). Reference lines are the K-40 line and background lines.</p>
       <div class="chartbox" id="k40-calbox">
@@ -514,8 +514,8 @@ body:has(#src-k40:not([hidden])) footer.bot:not(.k40-foot){display:none}
       <div class="scroll"><table class="big" id="k40-tblCal"></table></div>
 
       <h2 class="sec-h">Energy resolution calibration</h2>
-      <p class="method-lede">Peak width is a characteristic of the instrument, not a sample property: it is determined once from the
-      Th-232 reference spectrum of the same instrument and is then applied to all measurements.
+      <p class="method-lede">Peak width is a characteristic of the spectrometer, not a sample property: it is determined once from the
+      Th-232 reference spectrum of the same spectrometer and is then applied to all measurements.
       The points are obtained from the SpectraLine “Peak Parameters” table for the thorium spectrum multiplied by 1.05; between the points,
       log–log interpolation is used; at 1460.8&nbsp;keV the width in the convolution is 80.05 keV. This width is used in the convolution of templates for both
       methods. For verification, the K-40 peak width was also measured in the KCl spectrum itself: 80.87 ± 1.60&nbsp;keV (SpectraVibe width measurement: the result is accepted
@@ -526,7 +526,7 @@ body:has(#src-k40:not([hidden])) footer.bot:not(.k40-foot){display:none}
       is an approximation of the FWHM values used in the convolution (RMS deviation 2.5 %); at 662&nbsp;keV it gives 48.2 keV, at 1460.8&nbsp;keV — 79.68 keV.</p>
       <div class="chartbox" id="k40-fwbox">
         <canvas id="k40-cvFwhm" role="img"
-          aria-label="instrument energy resolution as a function of energy: FWHM values used in the convolution and power law"></canvas>
+          aria-label="spectrometer energy resolution as a function of energy: FWHM values used in the convolution and power law"></canvas>
       </div>
       <div class="scroll"><table class="big" id="k40-tblFwhm"></table></div>
     </div>
@@ -541,7 +541,7 @@ body:has(#src-k40:not([hidden])) footer.bot:not(.k40-foot){display:none}
       <div class="cmp-table" id="k40-cmpTable"></div>
       <p class="method-lede">The expected activity is calculated from mass, without certification: mass × potassium fraction in KCl × K-40 abundance × ln2/T½. Its uncertainty 0.37 % comprises the uncertainties of the K-40 abundance, the half-life, and the reagent purity tolerance; the uncertainty of the weighing (balance) is unknown and not included. Geant4 does not generate internal bremsstrahlung from β-decay; it is not included in the K-40 calculation (a KUB spectrum-based estimate would reduce the activity by approximately 1&nbsp;% and is not confirmed by measurement). The γ-ray emission probability of K-40 is adopted from LNHB-DDEP 2025 (10.34&nbsp;%); in ENSDF it is 10.66&nbsp;%.</p>
       <p class="guard-note">The Marinelli + water background was measured over a live time of 119 423 s. The KCl sample spectrum was measured in two runs (41.5&nbsp;h and 46.8&nbsp;h)
-      with a 2.4&nbsp;h pause; after the pause, the K-40 peak in the second part was located 2.2&nbsp;keV higher (apparently due to a slight increase in the instrument gain).
+      with a 2.4&nbsp;h pause; after the pause, the K-40 peak in the second part was located 2.2&nbsp;keV higher (apparently due to a slight increase in the spectrometer gain).
       Therefore, the second part was shifted to the scale of the first part before summation (based on the peak positions in each part); a simple sum
       would superimpose two peak positions and distort the scale near the threshold.</p>
       <p class="guard-note">Reasons for the large χ²/ν value. The fit criterion accounts for the statistical noise of the Geant4 template itself. The noise is accounted for exactly (including template broadening),
@@ -602,7 +602,7 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
   <div class="title">
     <p class="eyebrow">spectrum 3 · Cs-137 + K-40 · dried blueberries in the Marinelli 2 beaker (volume 1&nbsp;L)</p>
     <h2 class="spec-h">First sample of unknown activity: dried blueberries</h2>
-    <p class="stand">Sample of dried blueberries, 482 g, volume 1&nbsp;L in a Marinelli beaker (fill level −16.5 mm relative to the rim), bulk density 0.482 g/cm³; the same instrument; the beaker is Marinelli&nbsp;2
+    <p class="stand">Sample of dried blueberries, 482 g, volume 1&nbsp;L in a Marinelli beaker (fill level −16.5 mm relative to the rim), bulk density 0.482 g/cm³; the same spectrometer; the beaker is Marinelli&nbsp;2
       (assembly geometry: <a href="https://github.com/VibeEngineering-LLC/geant4-detector-models/blob/main/detectors/Atom-GS2020-PRO-MAX/geometry/GS2020_marinelli_berry_dry_1000ml.gdml"
       target="_blank" rel="noopener">GDML</a>).
       Live time of the measurement 20.2 h (9–10 October 2026). The spectrum contains lines of caesium-137 and potassium-40; the continuous component is described by the β template of strontium-90 with yttrium-90. The Marinelli + water background is subtracted, scaled to live time and multiplied by r(E):
@@ -713,7 +713,7 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
   
   <div class="stage" id="berry-viewCal" hidden>
     <div class="cal-wrap">
-      <p class="method-lede">Spectra of the sample (blueberries) and the Marinelli + water background. The background is scaled to the live time of the sample; the difference is the sample count minus the scaled background in each channel. Each spectrum has its own energy scale: the file recorded by the instrument
+      <p class="method-lede">Spectra of the sample (blueberries) and the Marinelli + water background. The background is scaled to the live time of the sample; the difference is the sample count minus the scaled background in each channel. Each spectrum has its own energy scale: the file recorded by the spectrometer
       for blueberries contains no calibration; the scale is a smooth polynomial determined from the positions of the peak groups of this spectrum, which are determined from Geant4 responses; the deviation of the polynomial representing the scale from the fit is up to 0.013 keV. Reference lines: Cs-137 (661.7 keV), K-40 (1460.8 keV), and the Tl-208 background line.</p>
       <div class="chartbox" id="berry-calbox">
         <div class="ctrls" id="berry-cal-ctrls">
@@ -735,12 +735,12 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
       <div class="scroll"><table class="big" id="berry-tblCal"></table></div>
 
       <h2 class="sec-h">Energy resolution calibration</h2>
-      <p class="method-lede">Peak width is a characteristic of the instrument, not a sample property: it is determined once from the thorium-232 reference spectrum of the same instrument
+      <p class="method-lede">Peak width is a characteristic of the spectrometer, not a sample property: it is determined once from the thorium-232 reference spectrum of the same spectrometer
       and applied to all measurements. The points are obtained from the SpectraLine “Peak Parameters” table for the thorium spectrum by multiplying by 1.05; between the points, log–log interpolation is used; at 1460.8&nbsp;keV the width in the convolution is 80.05 keV (SpectraLine: 70.96 keV).
       The power law FWHM(E)&nbsp;=&nbsp;0.788·E<sup>0.6335</sup>&nbsp;keV is an approximation of the FWHM values used in the convolution (RMS deviation 2.5 %); at 662&nbsp;keV it yields 48.2 keV, at 1460.8&nbsp;keV — 79.68 keV. No width measurement is available from the blueberry spectrum itself; this width is used in the convolution of all templates.</p>
       <div class="chartbox" id="berry-fwbox">
         <canvas id="berry-cvFwhm" role="img"
-          aria-label="instrument resolution versus energy: FWHM values used in the convolution and power law"></canvas>
+          aria-label="spectrometer resolution versus energy: FWHM values used in the convolution and power law"></canvas>
       </div>
       <div class="scroll"><table class="big" id="berry-tblFwhm"></table></div>
     </div>
@@ -770,7 +770,7 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
       <tr><td>Internal bremsstrahlung (IB)</td><td colspan="2">Geant4 does not generate it. <b>It is not accounted for in any of the methods</b> (K-40 and the Th-232 decay chain: for K-40 there is neither a measurement nor a verified formula; no signs of IB were found in the measured KCl spectrum, and no check against data was performed for the Th-232 chain; description using K-40 as an example — below). An estimate based on the KUB spectrum (Knipp–Uhlenbeck–Bloch theory, 1936) is retained in the calculation scripts as an option for uncertainty assessment</td></tr>
       <tr><td>Particle transport</td><td colspan="2">Geant4 EmStandard_option4, production cut 0.05&nbsp;mm, fluorescence, Auger electrons, atomic de-excitation (atomic relaxation) below the production cut (PIXE disabled)</td></tr>
       <tr><td>Intrinsic detector lines</td><td colspan="2">iodine K X-rays of the crystal and iodine X-ray escape peaks — generated in Geant4 (in Method 2 — in the response of each line)</td></tr>
-      <tr><td>Energy resolution</td><td colspan="2">FWHM at the reference points of the SpectraLine “Peak Parameters” table × 1.05 (log–log interpolation between the points) and a gain-spread kernel (w = 0.14 — fraction of events with an additional gain spread, s = 2.8&nbsp;% — its relative standard deviation), common to all fits of the instrument</td></tr>
+      <tr><td>Energy resolution</td><td colspan="2">FWHM at the reference points of the SpectraLine “Peak Parameters” table × 1.05 (log–log interpolation between the points) and a gain-spread kernel (w = 0.14 — fraction of events with an additional gain spread, s = 2.8&nbsp;% — its relative standard deviation), common to all fits of the spectrometer</td></tr>
       <tr><td>Energy scale</td><td colspan="2">each spectrum has its own energy calibration, determined from peak positions (centroids)</td></tr>
       <tr><td>Background</td><td colspan="2">measurement of Marinelli 2 with distilled water × ratio of live times, not fitted</td></tr>
       <tr><td>Fit</td><td colspan="2">single amplitude in the fit window (150–3600&nbsp;keV for Th-232, 150–3000&nbsp;keV for K-40 and blueberries); A2 criterion (weighted least-squares fit to the net spectrum with weights that include the Monte Carlo template variance; second criterion — E1, minimum total variation of normalized shapes); Birge ratio correction √(χ²/ν)</td></tr>
@@ -797,7 +797,7 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
     <p><b>Why IB is not included in the calculation for K-40.</b> The magnitude and shape of the IB for this transition are not confirmed by either measurement or a validated formula, and no evidence of an IB contribution was found in the measured KCl spectrum (the fit does not improve when IB is included). Consequently, IB is excluded from the model until its contribution is confirmed by a measurement or a verified formula. It may be reinstated once the following conditions are met: a formula for the third-forbidden unique transition, verification on a nuclide of the same class, comparison of calculations with and without IB against the measured spectrum, energy balance and normalization per decay, and a separate decision on electron capture.</p>
     <p><b>Not accounted for or simplified.</b> The low-energy region below 150&nbsp;keV is not included in the fit.
     Attenuation of the external background by the sample is accounted for in the calculation (r(E) correction); below 150&nbsp;keV a discrepancy between the model and the measurement remains,
-    whose sign and size depend on the sample and the energy region; its cause has not been established. The scintillation light-yield non-proportionality of NaI(Tl) and the instrument threshold are not described.
+    whose sign and size depend on the sample and the energy region; its cause has not been established. The scintillation light-yield non-proportionality of NaI(Tl) and the lower-level discriminator (LLD) threshold are not described.
     The KUB IB spectrum is derived for allowed transitions; for K-40 (third-forbidden unique), the theory for any degree of forbiddenness
     is not used in the calculation, and the shape correction and the forbidden matrix element are not accounted for — the magnitude and shape of the IB are known
     only as an estimate, and its uncertainty cannot be reduced to a single number. Internal bremsstrahlung from electron capture
@@ -849,7 +849,7 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
   it is subtracted with a fixed coefficient — the ratio of live times — and is not fitted (the multiplier for the scaled background in the summary is fixed at one).</p>
 
   <h3>Common elements of both methods</h3>
-  <p>The FWHM(E) function; the background; the energy scale; the geometry of the instrument, the beaker, and the sample — one model for all
+  <p>The FWHM(E) function; the background; the energy scale; the geometry of the spectrometer, the beaker, and the sample — one model for all
   calculations.</p>
 </template>
 
@@ -872,12 +872,12 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
 </template>
 
 <template id="k40-t-model">
-  <h2 id="k40-popTitle">Model of the instrument, beaker, and sample</h2>
-  <p>The instrument is the same Geant4 model as for thorium: NaI(Tl) Capescint crystal Ø51×51&nbsp;mm,
-  housing per the instrument STEP drawing. The beaker is Marinelli&nbsp;2 (not the one used for thorium), based on measurements from 29 September 2026: a 1&nbsp;L beaker with a conical
+  <h2 id="k40-popTitle">Model of the spectrometer, beaker, and sample</h2>
+  <p>The spectrometer is the same Geant4 model as for thorium: NaI(Tl) Capescint crystal Ø51×51&nbsp;mm,
+  housing per the spectrometer STEP drawing. The beaker is Marinelli&nbsp;2 (not the one used for thorium), based on measurements from 29 September 2026: a 1&nbsp;L beaker with a conical
   re-entrant well. Dimensions: inner cavity of the well Ø79 → Ø77&nbsp;mm, outer wall Ø85 → Ø83&nbsp;mm (from the beaker bottom to the well bottom), well depth 57&nbsp;mm, conical cavity, from Ø136&nbsp;mm
   at the bottom to Ø141&nbsp;mm at the top, inside height 103&nbsp;mm, plastic 3&nbsp;mm thick everywhere, including the lid.
-  The instrument is fully inserted into the re-entrant well (the housing rests on the well bottom). The sample is KCl
+  The spectrometer is fully inserted into the re-entrant well (the housing rests on the well bottom). The sample is KCl
   (K 52.4 %, Cl 47.6 % by mass) with a density of 1.085&nbsp;g/cm³ and a fill height corresponding to the volume
   1000 mL. Physics — Geant4, physics list EmStandard_option4, production cut 0.05&nbsp;mm, atomic de-excitation
   (atomic relaxation) enabled.</p>
@@ -939,12 +939,12 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
 </template>
 
 <template id="berry-t-model">
-  <h2 id="berry-popTitle">Instrument, beaker, and sample model</h2>
-  <p>The instrument is the same Geant4 model as for thorium: NaI(Tl) Capescint crystal Ø51×51&nbsp;mm,
-  housing according to the instrument STEP drawing. The beaker is Marinelli&nbsp;2 (not the one used for thorium), based on measurements of 29 September 2026: a 1&nbsp;L beaker with a conical
+  <h2 id="berry-popTitle">Spectrometer, beaker, and sample model</h2>
+  <p>The spectrometer is the same Geant4 model as for thorium: NaI(Tl) Capescint crystal Ø51×51&nbsp;mm,
+  housing according to the spectrometer STEP drawing. The beaker is Marinelli&nbsp;2 (not the one used for thorium), based on measurements of 29 September 2026: a 1&nbsp;L beaker with a conical
   re-entrant well. Dimensions: inner cavity of the well Ø79 → Ø77&nbsp;mm, outer wall Ø85 → Ø83&nbsp;mm (from the beaker bottom to the well bottom), well depth 57&nbsp;mm, conical cavity, from Ø136&nbsp;mm
   at the bottom to Ø141&nbsp;mm at the top, inside height 103&nbsp;mm, plastic 3&nbsp;mm thick throughout, including the lid.
-  The instrument is fully inserted into the re-entrant well (the housing rests on the well bottom). The sample is dried blueberries
+  The spectrometer is fully inserted into the re-entrant well (the housing rests on the well bottom). The sample is dried blueberries
   (H 7.1 %, C 38.6 %, N 0.5 %, O 53.2 %, K 0.6 % by mass) with a density of 0.482 g/cm³ and a fill height corresponding to a volume of
   1&nbsp;L. Physics — Geant4, physics list EmStandard_option4, production cut 0.05&nbsp;mm, atomic de-excitation
   (atomic relaxation) enabled.</p>
@@ -953,14 +953,14 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
 </template>
 
 
-<script src="data.js?v=1791666060"></script>
-<script src="scripts/g1s-th232.js?v=1791666060"></script>
-<script src="sources.js?v=1791666060"></script>
-<script src="scripts/gs-sources.js?v=1791666060"></script>
-<script src="data-k40.js?v=1791666060"></script>
-<script src="scripts/g1s-k40.js?v=1791666060"></script>
-<script src="data-berry.js?v=1791666060"></script>
-<script src="scripts/g1s-berry.js?v=1791666060"></script>
+<script src="data.js?v=1791669193"></script>
+<script src="scripts/g1s-th232.js?v=1791669193"></script>
+<script src="sources.js?v=1791669193"></script>
+<script src="scripts/gs-sources.js?v=1791669193"></script>
+<script src="data-k40.js?v=1791669193"></script>
+<script src="scripts/g1s-k40.js?v=1791669193"></script>
+<script src="data-berry.js?v=1791669193"></script>
+<script src="scripts/g1s-berry.js?v=1791669193"></script>
 
 
 
@@ -994,7 +994,7 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
   <h3>Background</h3>
   <p>The background is subtracted using a fixed
   coefficient — the ratio of live times — and is not fitted. The beaker with the reference sample attenuates
-  the external background at the instrument; therefore subtracting the spectrum of the laboratory background (recorded without the beaker) leads to over-subtraction.
+  the external background at the spectrometer; therefore subtracting the spectrum of the laboratory background (recorded without the beaker) leads to over-subtraction.
   For this reason, a different measurement is used — the Marinelli 2 beaker
   with distilled water (instead of the Marinelli 1 beaker with thorium). The background spectrum is placed on the energy scale using the reference lines of this spectrum
   and scaled to the live time of the reference sample by the same live-time ratio. The multiplier for the scaled background in the summary is fixed at one. This is a direct
@@ -1009,7 +1009,7 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
   summing is automatically accounted for in the full decay templates.</p>
 
   <h3>Common elements of both methods</h3>
-  <p>FWHM(E) function; background; energy scale; instrument geometry,
+  <p>FWHM(E) function; background; energy scale; spectrometer geometry,
   beaker, and sample density — one model for all calculations.</p>
 </template>
 
@@ -1029,11 +1029,11 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
 </template>
 
 <template id="t-model">
-  <h2 id="popTitle">Instrument and beaker model</h2>
-  <p>Instrument Atom GS2020 PRO MAX: NaI(Tl) Capescint crystal Ø51×51&nbsp;mm
-  based on the assembly manufacturer’s 3D model, housing — based on the instrument STEP drawing.
-  The instrument is oriented with the crystal upwards. The Marinelli 1 beaker (nominal volume 1&nbsp;L; polypropylene, 2&nbsp;mm thick at the bottom
-  of the well) is placed over the instrument so that the bottom of its re-entrant well rests on the housing. The instrument position in the well and wall thickness
+  <h2 id="popTitle">Spectrometer and beaker model</h2>
+  <p>Atom GS2020 PRO MAX spectrometer: NaI(Tl) Capescint crystal Ø51×51&nbsp;mm
+  based on the assembly manufacturer’s 3D model, housing — based on the spectrometer STEP drawing.
+  The spectrometer is oriented with the crystal upwards. The Marinelli 1 beaker (nominal volume 1&nbsp;L; polypropylene, 2&nbsp;mm thick at the bottom
+  of the well) is placed over the spectrometer so that the bottom of its re-entrant well rests on the housing. The spectrometer position in the well and wall thickness
   were verified by model cross-sections. Physics — Geant4, physics list
   EmStandard_option4, production cut 0.05&nbsp;mm, atomic de-excitation (atomic relaxation)
   enabled.</p>
@@ -1062,7 +1062,7 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
   for data export and page assembly, and draft explanatory text. Part of the code
   was generated by a local language model based on the assistant's specifications.</p>
   <p><b>Measurement author.</b> Problem formulation; measurement of the sample and background spectra;
-  beaker dimensions and instrument position in the re-entrant well; acceptance of the geometry based on visualizations and
+  beaker dimensions and spectrometer position in the re-entrant well; acceptance of the geometry based on visualizations and
   intermediate results. The measurement author is responsible for the published values and their
   application.</p>
   <p><b>Revision history.</b> Until 9 October 2026, the statistical noise of the Geant4 template was included in the fit criterion without accounting for template broadening;

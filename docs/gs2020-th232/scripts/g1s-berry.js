@@ -414,6 +414,7 @@
     var stkL = (elId === 'legendM2') ? STACK2() : STACK1();
     var arrL = D.nuclides.map(function (n, i) { var v = stkL && stkL[n.key], s = 0;
       if (v) for (var q = 0; q < v.length; q++) s += v[q]; return { n: n, s: s, i: i }; });
+    arrL = arrL.filter(function (o) { return !stkL || !!stkL[o.n.key]; });   // #GS-74: слои метода 2 не попадают в легенду метода 1 и наоборот
     arrL.sort(function (a, b) { return (b.s - a.s) || (a.i - b.i); });
     arrL.map(function (o) { return o.n; }).forEach(function (nuc) {
       // SECOND (вторичные пики) — временная сущность метода 2 (R33/R37),
@@ -1399,6 +1400,7 @@ function wireZoom(cvId) {
 function cmpCol(kind) {
   if (kind === "ref") return pal().ink;
   if (kind === "m1") return "#0f5aa8";
+  if (kind === "m2") return "#c8541c";
   if (kind === "area") return "#c8541c";
   if (kind === "ster") return "#7a3b12";
   return pal().ink;
@@ -1433,8 +1435,8 @@ function fillSummaries() {
   html += cell("каналов в подгонке", cnt(m1.ndof));
   html += cell("диапазон", num(m1.E_fit_lo, 0) + "–" + num(m1.E_fit_hi, 0) + " кэВ");
   el.innerHTML = html;
-  var el2 = document.getElementById(PFX + "sumM2");
-  if (el2) el2.textContent = "Метод 2 для этой пробы не считался: чисел нет.";
+  fillM2Summary();   // #GS-74: метод 2 посчитан (berry_m2_block.js)
+  buildM2Nuc();
 }
 
 function buildM1() {
@@ -1486,7 +1488,7 @@ function fillCmpTable() {
       if (it.dA != null && it.dA !== 0) val += " <em>± " + cnt(it.dA) + " Бк</em>";
       val += " <em>· " + cnt(it.A / massKg) + " Бк/кг</em>";
       var note = esc(it.note || "");
-      if (it.kind === "m1" && refA != null) {
+      if ((it.kind === "m1" || it.kind === "m2") && refA != null) {
         note += "; к Бета-1С " + num(it.A / refA, 3) + " (" + signedPct(it.A / refA) + ")";
       }
       h += "<div class='cmp-row " + cls + "'><span class='cmp-lab'>" + esc(it.lab) + "</span><span class='cmp-val big-num'>" + val + "</span><span class='cmp-note'>" + note + "</span></div>";
@@ -1560,6 +1562,65 @@ function drawCmpOne(cvId, items) {
 function drawCmp() {
   drawCmpOne("cvCmp", cmpItems());
   drawCmpOne("cvCmpK", cmpItemsK());
+}
+
+function fillM2Summary() {
+    var el = document.getElementById(PFX + "sumM2");
+    if (!el) return;
+    var m2 = D.method2;
+    var cs = m2.per_nuclide.CS137;
+    var k = m2.per_nuclide.K40;
+    var html = "";
+    html += cell("активность Cs-137", cnt(cs.A_Bq) + " Бк <em>± " + cnt(cs.dA_Bq) + " Бк</em> <em>· " + cnt(cs.per_kg) + " Бк/кг</em>", true);
+    html += cell("активность K-40, предварительно", cnt(k.A_Bq) + " Бк <em>± " + cnt(k.dA_Bq) + " Бк</em> <em>· " + cnt(k.per_kg) + " Бк/кг</em>", true);
+    html += cell("к Бета-1С (СпектраЛайн, на дату измерения)", "Cs-137 " + num(cs.ref_ratio, 3) + " (" + signedPct(cs.ref_ratio) + "); K-40 " + num(k.ref_ratio, 3) + " (" + signedPct(k.ref_ratio) + ")");
+    html += cell("χ²/ν", num(m2.chi2_ndof, 2));
+    html += cell("каналов в подгонке", cnt(m2.n_channels_fit));
+    html += cell("диапазон", num(m2.E_fit_lo, 0) + "–" + num(m2.E_fit_hi, 0) + " кэВ");
+    html += cell("линий в библиотеке", cnt(m2.n_lines) + " (из них рентген: " + cnt(m2.n_xray_energies) + ")");
+    html += cell("узлов сетки откликов", cnt(m2.n_nodes));
+    el.innerHTML = html;
+}
+
+function buildM2Nuc() {
+    var tbl = document.getElementById(PFX + "tblM2N");
+    if (!tbl) return;
+    var html = "<thead><tr><th>нуклид</th><th class='num'>амплитуда, Бк</th><th class='num'>удельная, Бк/кг</th><th class='num'>к опорному (Бета-1С)</th><th class='num'>доля в спектре</th><th class='num'>из неё тормозное β/e⁻</th><th>пояснение</th></tr></thead><tbody>";
+    var keys = ["CS137", "K40", "SRY90"];
+    for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+        var nuclide = null;
+        for (var j = 0; j < D.nuclides.length; j++) {
+            if (D.nuclides[j].key === key) {
+                nuclide = D.nuclides[j];
+                break;
+            }
+        }
+        var e = D.method2.per_nuclide[key];
+        if (!nuclide || !e) continue;
+        var ampHtml;
+        if (e.nuisance) {
+            ampHtml = "мешающий параметр, не публикуется";
+        } else if (e.dA_Bq === null) {
+            ampHtml = cnt(e.A_Bq) + " Бк";
+        } else {
+            ampHtml = cnt(e.A_Bq) + " ± " + cnt(e.dA_Bq) + " Бк";
+        }
+        var specHtml = e.per_kg == null ? "—" : cnt(e.per_kg);
+        var refHtml = e.ref_ratio == null ? "—" : num(e.ref_ratio, 3) + " (" + signedPct(e.ref_ratio) + ")";
+        var shareHtml = num(100 * e.share, 1) + " %";
+        var betaHtml = e.beta_frac == null ? "—" : num(100 * e.beta_frac, 1) + " %";
+        var noteHtml = esc(e.note_ru || "");
+        html += "<tr><td><span class='sw' style='background:" + nuclide.color + "'></span>" + esc(nuclide.label_ru) + "</td>";
+        html += "<td class='num'>" + ampHtml + "</td>";
+        html += "<td class='num'>" + specHtml + "</td>";
+        html += "<td class='num'>" + refHtml + "</td>";
+        html += "<td class='num'>" + shareHtml + "</td>";
+        html += "<td class='num'>" + betaHtml + "</td>";
+        html += "<td>" + noteHtml + "</td></tr>";
+    }
+    html += "</tbody>";
+    tbl.innerHTML = html;
 }
 
   /* ── события ────────────────────────────────────────────────── */

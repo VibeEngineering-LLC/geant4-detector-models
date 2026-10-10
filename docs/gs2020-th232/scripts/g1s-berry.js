@@ -39,7 +39,7 @@
     sum: true,        // суммарный слой (сумма отмеченных шаблонов)
     fwhmLaw: "cs", // #PAGE-фон-без-сосуда (26.09): единственный вариант — фон Маринелли+вода
     lib: "fixed",     // состав библиотеки метода 2: fixed | full
-    m2sort: "contrib",// сортировка таблицы метода 2: contrib | nuclide | energy
+    m2sort: "nuclide",// сортировка таблицы метода 2: contrib | nuclide | energy
     cursorE: null,
   };
   D.nuclides.forEach(function (n) { ST.on[n.key] = true; });
@@ -1577,7 +1577,7 @@ function fillM2Summary() {
     html += cell("χ²/ν", num(m2.chi2_ndof, 2));
     html += cell("каналов в подгонке", cnt(m2.n_channels_fit));
     html += cell("диапазон", num(m2.E_fit_lo, 0) + "–" + num(m2.E_fit_hi, 0) + " кэВ");
-    html += cell("линий в библиотеке", cnt(m2.n_lines) + " (из них рентген: " + cnt(m2.n_xray_energies) + ")");
+    html += cell("линий в библиотеке", cnt(m2.n_lines) + " (в таблице " + cnt(m2.n_lines_shown) + ": ниже 25 кэВ не показаны " + cnt(m2.n_below_25) + "; рентген в библиотеке " + cnt(m2.n_xray_energies) + ", в таблице " + cnt(m2.n_xray_shown) + ")");
     html += cell("узлов сетки откликов", cnt(m2.n_nodes));
     el.innerHTML = html;
 }

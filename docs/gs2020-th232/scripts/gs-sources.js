@@ -211,6 +211,7 @@ order.forEach(key => {
         { id: "model", label: "модель + фон", color: "#c8541c", checked: true },
         { id: "diff", label: "измерение − фон", color: "#6a6558", checked: false }
     ];
+    (spec.comps || []).forEach((c, k) => seriesConfig.push({ id: "comp" + k, label: c.label, color: c.color, checked: true }));   // #GS-70
 
     const checkboxes = {};
     
@@ -367,6 +368,7 @@ order.forEach(key => {
             if (cb.bg.checked) seriesData.push({ color: "#0f5aa8", width: 1.2, calc: (i) => spec.bg[i] });
             if (cb.model.checked) seriesData.push({ color: "#c8541c", width: 1.6, calc: (i) => spec.model[i] + spec.bg[i] });
             if (cb.diff.checked) seriesData.push({ color: "#6a6558", width: 1.2, calc: (i) => spec.meas[i] - spec.bg[i] });
+            (spec.comps || []).forEach((c, k) => { const b = cb["comp" + k]; if (b && b.checked) seriesData.push({ color: c.color, width: 1.2, calc: (i) => c.data[i] }); });   // #GS-70: слои компонентов модели (без фона)
             seriesData.forEach(s => { for (let i = iStart; i <= iEnd; i++) { const v = s.calc(i);
                 if (v < yMin) yMin = v; if (v > yMax) yMax = v; if (v > 0 && v < yPos) yPos = v; } });
             if (!isFinite(yMax)) { yMin = 0; yMax = 1; }   // все серии выключены

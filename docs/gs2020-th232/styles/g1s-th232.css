@@ -772,3 +772,5 @@ footer.bot button:hover{background:var(--accent-soft)}
 /* #GS-16: текст на всю ширину страницы, ставится сборщиком */
 body,p,li,figcaption,caption,dd{text-align:left}
 .app p,.app li,.app figcaption,.pop p,.pop li,.pop dd{max-width:none !important; text-wrap:pretty}
+/* #GS-78: регистр единиц и обозначений (Бк, кэВ, χ²/ν, Th-232, KCl) не меняется: заглавные буквы отключены */
+table.big thead th,.mini thead th,.specs dt,.summary .lab,.m2-facts .lab,.btn,.eyebrow,.pop h3,.pop .key,.sec-h,.side-head,.side-head button{text-transform:none !important; letter-spacing:.04em}

@@ -90,7 +90,7 @@ order.forEach(key => {
     
     let label = src.label || key;
     if (src.status === "soon") {
-        label += " — скоро";
+        label += " — будет добавлен";
         btn.disabled = true;
         btn.setAttribute("aria-disabled", "true");
         btn.title = "спектр будет добавлен";
@@ -207,7 +207,7 @@ order.forEach(key => {
     // Флажки серий
     const seriesConfig = [
         { id: "meas", label: "измерение", colorVar: "--ink", checked: true },
-        { id: "bg", label: "фон воды (приведён)", color: "#0f5aa8", checked: true },
+        { id: "bg", label: "фон Маринелли+вода (приведён)", color: "#0f5aa8", checked: true },
         { id: "model", label: "модель + фон", color: "#c8541c", checked: true },
         { id: "diff", label: "измерение − фон", color: "#6a6558", checked: false }
     ];
@@ -247,7 +247,7 @@ order.forEach(key => {
     logInp.addEventListener("change", () => block.draw());
     checkboxes.log = logInp;   // правка: draw() читает checkboxes.log
     logLbl.appendChild(logInp);
-    logLbl.appendChild(document.createTextNode("лог-шкала"));
+    logLbl.appendChild(document.createTextNode("логарифмическая шкала"));
     ctrlsDiv.appendChild(logLbl);
 
     // Кнопка сброса
@@ -264,7 +264,7 @@ order.forEach(key => {
     const cvMain = document.createElement("canvas");
     cvMain.className = "src-spec";
     cvMain.setAttribute("role", "img");
-    cvMain.setAttribute("aria-label", "спектр: измерение, фон, модель; протяжка мышью — приближение, двойной клик — сброс");
+    cvMain.setAttribute("aria-label", "спектр: измерение, фон, модель; выделение области мышью — масштабирование, двойной щелчок — сброс");
     
     const cvResid = document.createElement("canvas");
     cvResid.className = "src-resid";
@@ -691,7 +691,7 @@ order.forEach(key => {
 
         updateReadout(pxToE) {
             if (this.cursorE == null) {
-                this.readout.textContent = "наведи курсор на спектр; протяжка — приближение, двойной клик — весь диапазон";
+                this.readout.textContent = "наведите курсор на спектр; выделение области мышью — масштабирование, двойной щелчок — весь диапазон";
                 return;
             }
 

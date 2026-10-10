@@ -400,9 +400,9 @@
     return nf[key];
   }
   function guardHint(nf) {
-    return "шаблон набран статистикой МК: " + num(100 * (1 - nf), 1) + " %"
+    return "статистики МК-шаблона достаточно для " + num(100 * (1 - nf), 1) + " %"
       + " вклада слоя; остальное — области ниже "
-      + (D.spectrum.n_eff_min || 0) + " отсчётов МК на канал, там слой идёт "
+      + (D.spectrum.n_eff_min || 0) + " отсчётов МК на канал, там слой показан "
       + "пунктиром без заливки (доля нуклида определяется шумом шаблона)";
   }
   function buildLegend(elId) {
@@ -444,7 +444,7 @@
          + "<span class='nm'>сумма</span></label>";
     html += "<label class='chip toggle'>"
          + "<input type='checkbox' class='c-log' " + (ST.log ? "checked" : "") + ">"
-         + "<span class='sw log'></span><span class='nm'>лог</span></label>";
+         + "<span class='sw log'></span><span class='nm'>логарифмическая шкала</span></label>";
     el.innerHTML = html;
     el.querySelectorAll("label.chip[data-nuc] input").forEach(function (inp) {
       var key = inp.parentNode.getAttribute("data-nuc");
@@ -493,7 +493,7 @@
          + (big ? " big-num" : "") + "'>" + val + "</span></div>";
   }
   // Подпись и справка величины bg_amplitude. Модель обоих методов — не
-  // только нуклидные шаблоны/линии, но и измеренный фон той же геометрии
+  // только нуклидные шаблоны/линии, но и измеренный фон Маринелли+вода
   // как ВТОРОЙ, свободный столбец матрицы плана (после приведения к живому
   // времени образца). Если бы шаблоны/линии полностью объясняли континуум
   // и подложку сами, множитель этого столбца выходил бы к единице — «это
@@ -506,36 +506,36 @@
   // не термин: устоявшегося слова в словаре контура (523 записи, домен
   // gamma-spec) не нашлось, чеканить нельзя, вердикт «термина нет»
   // выносит Терминолог. Полная справка — попап «как посчитано».
-  var CONT_LAB = "поправка континуума, множитель";
-  var CONT_HINT = "коэффициент второго, не нуклидного столбца подгонки "
-                + "(приведённый фон); заметно больше единицы — заплатка "
-                + "под континуум, а не кратность реального фона. Подробнее "
-                + "— «как посчитано».";
+  var CONT_LAB = "множитель при приведённом фоне (поправка на континуум)";
+  var CONT_HINT = "коэффициент при втором, ненуклидном члене подгонки "
+                + "(приведённый фон); значение заметно больше единицы означает поправку "
+                + "на континуум, а не кратность реального фона. Подробнее "
+                + "— «как рассчитано».";
 
   function fillSummaries() {
     var m1 = M1(), m2 = M2(), pass = D.passport;
     var s1 = document.getElementById(PFX + "sumM1");
     if (s1) {
       s1.innerHTML =
-        cell("активность K-40", cnt(m1.A_Bq) + " Бк <em>± "
+        cell("активность K-40 (± с поправкой Бирге)", cnt(m1.A_Bq) + " Бк <em>± "
              + cnt(m1.dA_Bq) + " Бк</em>", true)
         + cell("к ожидаемой по массе", num(m1.A_Bq / pass.A_Bq, 3) + " ("
                + signedPct(m1.A_Bq / pass.A_Bq) + ")")
         + cell("χ²/ν", num(m1.chi2_ndof, 2))
         + cell("каналов в подгонке", cnt(m1.ndof))
-        + cell("диапазон", num(m1.E_fit_lo, 0) + "–" + num(m1.E_fit_hi, 0)
+        + cell("окно подгонки", num(m1.E_fit_lo, 0) + "–" + num(m1.E_fit_hi, 0)
                + " кэВ")
         + cell(CONT_LAB, num(m1.bg_amplitude, 2), false, CONT_HINT);
     }
     var s2 = document.getElementById(PFX + "sumM2");
     if (s2) {
       s2.innerHTML =
-        cell("активность K-40", cnt(m2.A_Bq) + " Бк <em>± "
+        cell("активность K-40 (± с поправкой Бирге)", cnt(m2.A_Bq) + " Бк <em>± "
              + cnt(m2.dA_Bq) + " Бк</em>", true)
         + cell("к ожидаемой по массе", num(m2.A_Bq / pass.A_Bq, 3) + " ("
                + signedPct(m2.A_Bq / pass.A_Bq) + ")")
         + cell("χ²/ν", num(m2.chi2_ndof, 2))
-        + cell("линий в модели", cnt(m2.n_lines) + " (у K-40 одна γ-линия, сумм-пиков нет)")
+        + cell("линий в модели", cnt(m2.n_lines) + " (1 γ-линия и " + cnt(m2.n_lines - 1) + " линии рентгеновского излучения Ar; пиков суммирования нет)")
         + cell("каналов в подгонке", cnt(m2.n_channels_fit))
         + cell(CONT_LAB, num(m2.bg_amplitude, 2), false, CONT_HINT);
     }
@@ -569,7 +569,7 @@
       body += "<tr>"
         + "<td><span class='sw' style='background:" + nuc.color + "'></span>"
         + esc(nuc.label_ru) + "</td>"
-        + "<td class='num'>" + cnt(amp) + " \u00b1 " + cnt(damp) + "</td>"
+        + "<td class='num'>" + cnt(amp) + " ± " + cnt(damp) + "</td>"
         + "<td class='num'>" + num(amp / D.passport.A_Bq, 3) + "</td>"
         + "<td class='num'>" + num(100 * sum / Math.max(grand, 1e-9), 1)
           + " %</td>"
@@ -591,8 +591,8 @@
     });
     var total = rows.reduce(function (a, r) { return a + r.sum; }, 0);
     rows.sort(function (a, b) { return b.sum - a.sum; });
-    var head = "<thead><tr><th>\u043a\u0430\u043d\u0430\u043b</th><th class='num'>\u0434\u043e\u043b\u044f</th>"
-             + "<th class='num'>\u0441\u0447\u0451\u0442</th></tr></thead>";
+    var head = "<thead><tr><th>канал</th><th class='num'>доля</th>"
+             + "<th class='num'>счёт</th></tr></thead>";
     var body = "<tbody>";
     rows.forEach(function (r) {
       var pct = total > 0 ? 100 * r.sum / total : 0;
@@ -623,37 +623,37 @@
     };
     var rows = M2().lines.slice().sort(sorters[ST.m2sort] || sorters.contrib);
     var head = "<thead><tr>"
-      + "<th>\u043b\u0438\u043d\u0438\u044f</th><th>\u043d\u0443\u043a\u043b\u0438\u0434</th>"
-      + "<th class='num'>I<sub>\u03b3</sub> \u043d\u0430 \u0440\u0430\u0441\u043f\u0430\u0434 \u043d\u0443\u043a\u043b\u0438\u0434\u0430</th>"
-      + "<th class='num'>\u03b5<sub>\u041f\u041f</sub></th>"
-      + "<th class='num'>\u043f\u0440\u0435\u0434\u0441\u043a\u0430\u0437\u0430\u043d\u043e</th><th>\u043f\u0440\u0438\u043c\u0435\u0447\u0430\u043d\u0438\u0435</th></tr></thead>";
+      + "<th>линия</th><th>нуклид</th>"
+      + "<th class='num'>выход I<sub>γ</sub> на распад нуклида</th>"
+      + "<th class='num'>ε<sub>ПП</sub></th>"
+      + "<th class='num'>по модели</th><th>примечание</th></tr></thead>";
     var body = "<tbody>";
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i];
       var lineTxt, iTxt;
       if (r.kind === "sum") {
         lineTxt = num(r.E1_keV, 1) + "+" + num(r.E2_keV, 1) + " = "
-                + num(r.E_keV, 1) + " \u043a\u044d\u0412";
-        iTxt = num(r.I1_pct, 2) + " % \u00d7 " + num(r.I2_pct, 2) + " %";
+                + num(r.E_keV, 1) + " кэВ";
+        iTxt = num(r.I1_pct, 2) + " % × " + num(r.I2_pct, 2) + " %";
       } else if (r.kind === "xray") {
-        lineTxt = "K-\u0441\u0435\u0440\u0438\u044f, \u0446\u0435\u043d\u0442\u0440 " + num(r.E_keV, 1) + " \u043a\u044d\u0412";
-        iTxt = num(r.I_gamma_pct, 1) + " % \u043d\u0430 \u0440\u0430\u0441\u043f\u0430\u0434 \u0432\u0435\u0442\u0432\u0438";
+        lineTxt = "K-серия, центр " + num(r.E_keV, 1) + " кэВ";
+        iTxt = num(r.I_gamma_pct, 1) + " % на распад нуклида";
       } else {
-        lineTxt = num(r.E_keV, 1) + " \u043a\u044d\u0412";
-        // \u0412\u044b\u0445\u043e\u0434 \u043b\u0438\u043d\u0438\u0438 \u2014 \u041d\u0410 \u0420\u0410\u0421\u041f\u0410\u0414 \u0421\u0412\u041e\u0415\u0413\u041e \u041d\u0423\u041a\u041b\u0418\u0414\u0410, \u043a\u0430\u043a \u043e\u043d \u0441\u0442\u043e\u0438\u0442 \u0432 ENSDF:
-        // \u0447\u0438\u0442\u0430\u0442\u0435\u043b\u044c \u0441\u0432\u0435\u0440\u044f\u0435\u0442 \u043a\u043e\u043b\u043e\u043d\u043a\u0443 \u0441 \u0431\u0438\u0431\u043b\u0438\u043e\u0442\u0435\u043a\u043e\u0439. \u0412\u0435\u0442\u0432\u043b\u0435\u043d\u0438\u0435 \u043e\u0442 \u0440\u043e\u0434\u0438\u0442\u0435\u043b\u044f \u0440\u044f\u0434\u0430
-        // \u2014 \u043e\u0442\u0434\u0435\u043b\u044c\u043d\u044b\u0439 \u043c\u043d\u043e\u0436\u0438\u0442\u0435\u043b\u044c, \u0432 \u043c\u043e\u0434\u0435\u043b\u044c \u043e\u043d\u043e \u0432\u0445\u043e\u0434\u0438\u0442 (export_data.py,
-        // w = BR\u00b7I/100) \u0438 \u043f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u0435\u0442\u0441\u044f \u0437\u0434\u0435\u0441\u044c \u0442\u0430\u043c, \u0433\u0434\u0435 \u043d\u0435 \u0440\u0430\u0432\u043d\u043e \u0435\u0434\u0438\u043d\u0438\u0446\u0435.
-        // \u0415\u0434\u0438\u043d\u0441\u0442\u0432\u0435\u043d\u043d\u044b\u0439 \u0442\u0430\u043a\u043e\u0439 \u043d\u0443\u043a\u043b\u0438\u0434 \u0432 \u0432\u0435\u0442\u0432\u0438 \u2014 Tl-208: \u043e\u043d \u043e\u0431\u0440\u0430\u0437\u0443\u0435\u0442\u0441\u044f \u043b\u0438\u0448\u044c \u0432
-        // \u03b1-\u0432\u0435\u0442\u043a\u0435 \u0440\u0430\u0441\u043f\u0430\u0434\u0430 Bi-212.
+        lineTxt = num(r.E_keV, 1) + " кэВ";
+        // Выход линии — НА РАСПАД СВОЕГО НУКЛИДА, как он стоит в ENSDF:
+        // читатель сверяет колонку с библиотекой. Ветвление от родителя ряда
+        // — отдельный множитель, в модель оно входит (export_data.py,
+        // w = BR·I/100) и показывается здесь там, где не равно единице.
+        // Единственный такой нуклид в ветви — Tl-208: он образуется лишь в
+        // α-ветке распада Bi-212.
         iTxt = num(r.I_gamma_pct, r.I_gamma_pct < 0.1 ? 4 : 2) + " %";
         if (typeof r.branch === "number" && r.branch < 0.999)
-          iTxt += " <em>\u00d7 " + num(100 * r.branch, 2) + " % \u0432\u0435\u0442\u0432\u044c</em>";
+          iTxt += " <em>× " + num(100 * r.branch, 2) + " % (ветвление)</em>";
       }
-      var tag = r.kind === "sum" ? " \u00b7 \u0441\u0443\u043c\u043c-\u043f\u0438\u043a"
-              : (r.kind === "xray" ? " \u00b7 \u0440\u0435\u043d\u0442\u0433\u0435\u043d" : "");
+      var tag = r.kind === "sum" ? " · пик суммирования"
+              : (r.kind === "xray" ? " · рентгеновское излучение" : "");
       var epsTxt = (typeof r.eps_peak === "number")
-        ? r.eps_peak.toExponential(3).replace(".", ",") : "\u2014";
+        ? r.eps_peak.toExponential(3).replace(".", ",") : "—";
       body += "<tr>"
         + "<td><span class='sw' style='background:"
         + (nucCol[r.nuclide] || "#999") + "'></span>" + lineTxt + "</td>"
@@ -671,7 +671,7 @@
     var el = document.getElementById(PFX + elId);
     if (!el) return;
     if (ST.cursorE === null) {
-      el.textContent = "наведи курсор на канал спектра";
+      el.textContent = "наведите курсор на канал спектра";
       return;
     }
     var e = D.spectrum.e_of_ch;
@@ -883,7 +883,7 @@ function wireZoom(cvId) {
       + num(100 * (m.bg_real_s - m.bg_live_s) / m.bg_real_s, 3) + "</td></tr>"
       + "<tr><td>степень полинома E(канал)</td><td class='num'>"
       + m.cal_sample.order + "</td><td class='num'>" + m.cal_bg.order + "</td></tr>"
-      + "<tr><td>полином, представляющий свою шкалу (калибровка по форме групп этого спектра)</td><td>" + coefsHtml(m.cal_sample.coefs)
+      + "<tr><td>полином, представляющий собственную шкалу (калибровка шкалы по форме групп пиков этого спектра)</td><td>" + coefsHtml(m.cal_sample.coefs)
       + "</td><td>" + coefsHtml(m.cal_bg.coefs) + "</td></tr>"
       + "<tr><td>масштаб фона (t_обр / t_фон)</td>"
       + "<td class='num' colspan='2'>" + num(m.bg_scale_time, 4) + "</td></tr>"
@@ -1162,9 +1162,9 @@ function wireZoom(cvId) {
     var tbl = document.getElementById(PFX + "tblFwhm");
     if (!tbl || !D.fwhm_cal) return;
     var fw = D.fwhm_cal;
-    var head = "<thead><tr><th>линия, кэВ</th><th class='num'>центроида</th>"
+    var head = "<thead><tr><th>линия, кэВ</th><th class='num'>центроид</th>"
       + "<th class='num'>ПШПВ, кэВ</th><th class='num'>разрешение</th>"
-      + "<th class='num'>своя (замер в спектре)</th><th class='num'>BecqMoni</th><th class='num'>СпектраЛайн</th><th class='num'>закон k·E<sup>p</sup></th>"
+      + "<th class='num'>собственная (измерение в спектре)</th><th class='num'>BecqMoni</th><th class='num'>СпектраЛайн</th><th class='num'>зависимость k·E<sup>p</sup></th>"
       + "<th class='num'>отклонение</th><th>статус</th></tr></thead>";
     var body = "<tbody>";
     fw.points.forEach(function (q) {
@@ -1172,7 +1172,7 @@ function wireZoom(cvId) {
         body += "<tr class='row-dirty'><td>" + num(q.E_nominal, 1) + "</td>"
           + "<td class='num'>—</td><td class='num'>—</td><td class='num'>—</td>" + fwSrc(q)
           + "<td class='num'>—</td><td class='num'>—</td>"
-          + "<td>отброшена: " + esc(q.reject) + "</td></tr>";
+          + "<td>не используется: " + esc(q.reject) + "</td></tr>";
         return;
       }
       body += "<tr><td>" + num(q.E_nominal, 1) + "</td>"
@@ -1184,16 +1184,16 @@ function wireZoom(cvId) {
         + "<td class='num'>" + num(q.fwhm_model_keV, 2) + "</td>"
         + "<td class='num'>" + (q.dev_pct >= 0 ? "+" : "−")
         + num(Math.abs(q.dev_pct), 1) + " %</td>"
-        + "<td>в подгонке: " + (q.own_used ? "своя ширина" : "СпектраЛайн × множитель") + "</td></tr>";
+        + "<td>в подгонке: " + (q.own_used ? "собственная ширина" : "СпектраЛайн × множитель") + "</td></tr>";
     });
-    body += "<tr class='sum'><td>степенной закон</td>"
+    body += "<tr class='sum'><td>степенная зависимость</td>"
       + "<td class='num' colspan='2'>ПШПВ = " + num(fw.k, 3) + "·E<sup>"
       + num(fw.p, 4) + "</sup></td>"
       + "<td class='num'>" + num(fw.res662_pct, 2) + " % на 662</td>"
       + "<td class='num' colspan='3'>" + fw.n_used + " из " + fw.n_anchors + " точек</td>"
       + "<td class='num'>" + num(fw.fwhm662_law, 1) + " кэВ</td>"
       + "<td class='num'>СКО " + num(fw.rms_dev_pct, 1) + " %</td>"
-      + "<td>точки свёртки: калибровка тория (СпектраЛайн × множитель)</td></tr>";
+      + "<td>значения ПШПВ в свёртке: опорный спектр тория (СпектраЛайн × множитель)</td></tr>";
     tbl.innerHTML = head + body + "</tbody>";
   }
 
@@ -1282,11 +1282,11 @@ function wireZoom(cvId) {
     g.font = "600 11px system-ui, sans-serif";
     g.textAlign = "left"; g.textBaseline = "top";
     g.fillStyle = "#c8541c";
-    g.fillText("точки свёртки модели (СпектраЛайн)", m.l + 10, m.t + 8);
+    g.fillText("значения ПШПВ в свёртке модели (по СпектраЛайн)", m.l + 10, m.t + 8);
     g.fillStyle = "#0f5aa8";
-    g.fillText("степенной закон k·E^p", m.l + 10, m.t + 24);
+    g.fillText("степенная зависимость ПШПВ(E)", m.l + 10, m.t + 24);
     g.fillStyle = p.faint;
-    g.fillText("корневой закон через ту же точку 662 кэВ", m.l + 10, m.t + 40);
+    g.fillText("степенной закон с показателем 0,5 через точку 662 кэВ", m.l + 10, m.t + 40);
   }
 
   /* ── сравнение ──────────────────────────────────────────────── */
@@ -1324,14 +1324,14 @@ function wireZoom(cvId) {
     + row("cmp-m1", "метод 1: МК-шаблон K-40, " + num(m1.E_fit_lo, 0) + "–"
           + num(m1.E_fit_hi, 0) + " кэВ",
           m1.A_Bq, m1.dA_Bq,
-          num(m1.A_Bq / pass.A_Bq, 3) + " ожидаемой, "
+          num(m1.A_Bq / pass.A_Bq, 3) + " от ожидаемой, "
           + signedPct(m1.A_Bq / pass.A_Bq) + "; χ²/ν = " + num(m1.chi2_ndof, 2)
-          + " на " + cnt(m1.ndof) + " каналах; " + modeTxt)
+          + " по " + cnt(m1.ndof) + " каналам; " + modeTxt)
     + row("cmp-m2", "метод 2: функция ПП + γ-линия 1460,8 кэВ",
           m2.A_Bq, m2.dA_Bq,
-          num(m2.A_Bq / pass.A_Bq, 3) + " ожидаемой, "
+          num(m2.A_Bq / pass.A_Bq, 3) + " от ожидаемой, "
           + signedPct(m2.A_Bq / pass.A_Bq) + "; χ²/ν = " + num(m2.chi2_ndof, 2)
-          + " на " + cnt(m2.n_channels_fit) + " каналах; " + modeTxt)
+          + " по " + cnt(m2.n_channels_fit) + " каналам; " + modeTxt)
     + "<div class='cmp-row'><span class='cmp-lab'>расхождение методов</span>"
       + "<span class='cmp-val big-num'>" + signedPct(m1.A_Bq / m2.A_Bq)
       + "</span><span class='cmp-note'>метод 1 относительно метода 2</span></div>";
@@ -1428,12 +1428,12 @@ function fillSummaries() {
   var cs = pn.CS137;
   var k = pn.K40;
   var html = "";
-  html += cell("активность Cs-137", cnt(cs.A_Bq) + " Бк <em>± " + cnt(cs.dA_Bq) + " Бк</em> <em>· " + cnt(cs.per_kg) + " Бк/кг</em>", true);
-  html += cell("активность K-40, предварительно", cnt(k.A_Bq) + " Бк <em>± " + cnt(k.dA_Bq) + " Бк</em> <em>· " + cnt(k.per_kg) + " Бк/кг</em>", true);
-  html += cell("к Бета-1С (СпектраЛайн; его значение пересчитано на дату нашего замера 09.10.2026)", "Cs-137 " + num(cs.ref_ratio, 3) + " (" + signedPct(cs.ref_ratio) + "); K-40 " + num(k.ref_ratio, 3) + " (" + signedPct(k.ref_ratio) + ")");
+  html += cell("активность Cs-137 (± с поправкой Бирге)", cnt(cs.A_Bq) + " Бк <em>± " + cnt(cs.dA_Bq) + " Бк</em> <em>· " + cnt(cs.per_kg) + " Бк/кг</em>", true);
+  html += cell("активность K-40, предварительно (± с поправкой Бирге)", cnt(k.A_Bq) + " Бк <em>± " + cnt(k.dA_Bq) + " Бк</em> <em>· " + cnt(k.per_kg) + " Бк/кг</em>", true);
+  html += cell("к Бета-1С (СпектраЛайн; его значение пересчитано на дату нашего измерения 09.10.2026)", "Cs-137 " + num(cs.ref_ratio, 3) + " (" + signedPct(cs.ref_ratio) + "); K-40 " + num(k.ref_ratio, 3) + " (" + signedPct(k.ref_ratio) + ")");
   html += cell("χ²/ν", num(m1.chi2_ndof, 2));
   html += cell("каналов в подгонке", cnt(m1.ndof));
-  html += cell("диапазон", num(m1.E_fit_lo, 0) + "–" + num(m1.E_fit_hi, 0) + " кэВ");
+  html += cell("окно подгонки", num(m1.E_fit_lo, 0) + "–" + num(m1.E_fit_hi, 0) + " кэВ");
   el.innerHTML = html;
   fillM2Summary();   // #GS-74: метод 2 посчитан (berry_m2_block.js)
   buildM2Nuc();
@@ -1571,13 +1571,13 @@ function fillM2Summary() {
     var cs = m2.per_nuclide.CS137;
     var k = m2.per_nuclide.K40;
     var html = "";
-    html += cell("активность Cs-137", cnt(cs.A_Bq) + " Бк <em>± " + cnt(cs.dA_Bq) + " Бк</em> <em>· " + cnt(cs.per_kg) + " Бк/кг</em>", true);
-    html += cell("активность K-40, предварительно", cnt(k.A_Bq) + " Бк <em>± " + cnt(k.dA_Bq) + " Бк</em> <em>· " + cnt(k.per_kg) + " Бк/кг</em>", true);
-    html += cell("к Бета-1С (СпектраЛайн; его значение пересчитано на дату нашего замера 09.10.2026)", "Cs-137 " + num(cs.ref_ratio, 3) + " (" + signedPct(cs.ref_ratio) + "); K-40 " + num(k.ref_ratio, 3) + " (" + signedPct(k.ref_ratio) + ")");
+    html += cell("активность Cs-137 (± с поправкой Бирге)", cnt(cs.A_Bq) + " Бк <em>± " + cnt(cs.dA_Bq) + " Бк</em> <em>· " + cnt(cs.per_kg) + " Бк/кг</em>", true);
+    html += cell("активность K-40, предварительно (± с поправкой Бирге)", cnt(k.A_Bq) + " Бк <em>± " + cnt(k.dA_Bq) + " Бк</em> <em>· " + cnt(k.per_kg) + " Бк/кг</em>", true);
+    html += cell("к Бета-1С (СпектраЛайн; его значение пересчитано на дату нашего измерения 09.10.2026)", "Cs-137 " + num(cs.ref_ratio, 3) + " (" + signedPct(cs.ref_ratio) + "); K-40 " + num(k.ref_ratio, 3) + " (" + signedPct(k.ref_ratio) + ")");
     html += cell("χ²/ν", num(m2.chi2_ndof, 2));
     html += cell("каналов в подгонке", cnt(m2.n_channels_fit));
-    html += cell("диапазон", num(m2.E_fit_lo, 0) + "–" + num(m2.E_fit_hi, 0) + " кэВ");
-    html += cell("линий в библиотеке", cnt(m2.n_lines) + " (в таблице " + cnt(m2.n_lines_shown) + ": ниже 25 кэВ не показаны " + cnt(m2.n_below_25) + "; рентген в библиотеке " + cnt(m2.n_xray_energies) + ", в таблице " + cnt(m2.n_xray_shown) + ")");
+    html += cell("окно подгонки", num(m2.E_fit_lo, 0) + "–" + num(m2.E_fit_hi, 0) + " кэВ");
+    html += cell("линий в библиотеке", cnt(m2.n_lines) + " (в таблице " + cnt(m2.n_lines_shown) + ": ниже 25 кэВ не показаны " + cnt(m2.n_below_25) + "; рентгеновских линий в библиотеке " + cnt(m2.n_xray_energies) + ", в таблице " + cnt(m2.n_xray_shown) + ")");
     html += cell("узлов сетки откликов", cnt(m2.n_nodes));
     el.innerHTML = html;
 }
@@ -1585,7 +1585,7 @@ function fillM2Summary() {
 function buildM2Nuc() {
     var tbl = document.getElementById(PFX + "tblM2N");
     if (!tbl) return;
-    var html = "<thead><tr><th>нуклид</th><th class='num'>амплитуда, Бк</th><th class='num'>удельная, Бк/кг</th><th class='num'>к опорному (Бета-1С)</th><th class='num'>доля в спектре</th><th class='num'>из неё тормозное β/e⁻</th><th>пояснение</th></tr></thead><tbody>";
+    var html = "<thead><tr><th>нуклид</th><th class='num'>амплитуда, Бк</th><th class='num'>удельная, Бк/кг</th><th class='num'>к опорному (Бета-1С)</th><th class='num'>доля в спектре</th><th class='num'>из неё тормозное излучение β/e⁻</th><th>пояснение</th></tr></thead><tbody>";
     var keys = ["CS137", "K40", "SRY90"];
     for (var i = 0; i < keys.length; i++) {
         var key = keys[i];

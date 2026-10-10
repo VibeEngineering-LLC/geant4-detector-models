@@ -23,6 +23,7 @@
     while (s.length > 3) { out = " " + s.slice(-3) + out; s = s.slice(0, -3); }
     return (neg ? "-" : "") + s + out;
   }
+  function numg(x, d) { var p = num(x, d).split(","); return cnt(p[0]) + "," + p[1]; }
   function signedPct(ratio) {
     var s = 100 * (ratio - 1);
     return (s < 0 ? "−" : "+") + num(Math.abs(s), 1) + " %";
@@ -400,7 +401,7 @@
     return nf[key];
   }
   function guardHint(nf) {
-    return "статистики МК-шаблона достаточно для " + num(100 * (1 - nf), 1) + " %"
+    return "статистики МК-шаблона достаточно для " + num(100 * (1 - nf), 1) + " %"
       + " вклада слоя; остальное — области ниже "
       + (D.spectrum.n_eff_min || 0) + " отсчётов МК на канал, там слой показан "
       + "пунктиром без заливки (доля нуклида определяется шумом шаблона)";
@@ -505,10 +506,10 @@
   // не термин: устоявшегося слова в словаре контура (523 записи, домен
   // gamma-spec) не нашлось, чеканить нельзя, вердикт «термина нет»
   // выносит Терминолог. Полная справка — попап «как посчитано».
-  var CONT_LAB = "множитель при приведённом фоне (поправка на континуум)";
-  var CONT_HINT = "коэффициент при втором, ненуклидном члене подгонки "
-                + "(приведённый фон); значение заметно больше единицы означает поправку "
-                + "на континуум, а не кратность реального фона. Подробнее "
+  var CONT_LAB = "множитель фона (зафиксирован)";
+  var CONT_HINT = "коэффициент при приведённом фоне — втором члене подгонки; "
+                + "фон не подгоняется: множитель зафиксирован и равен единице "
+                + "(фон приведён по живому времени и умножен на r(E)). Подробнее "
                 + "— «как рассчитано».";
 
   function fillSummaries() {
@@ -516,26 +517,26 @@
     var s1 = document.getElementById(PFX + "sumM1");
     if (s1) {
       s1.innerHTML =
-        cell("активность K-40 (± с поправкой Бирге)", cnt(m1.A_Bq) + " Бк <em>± "
-             + cnt(m1.dA_Bq) + " Бк</em>", true)
+        cell("активность K-40 (± — с учётом поправки Бирге)", cnt(m1.A_Bq) + " Бк <em>± "
+             + cnt(m1.dA_Bq) + " Бк</em>", true)
         + cell("к ожидаемой по массе", num(m1.A_Bq / pass.A_Bq, 3) + " ("
                + signedPct(m1.A_Bq / pass.A_Bq) + ")")
         + cell("χ²/ν", num(m1.chi2_ndof, 2))
-        + cell("каналов в подгонке", cnt(m1.ndof))
+        + cell("число степеней свободы ν", cnt(m1.ndof))
         + cell("окно подгонки", num(m1.E_fit_lo, 0) + "–" + num(m1.E_fit_hi, 0)
-               + " кэВ")
+               + " кэВ")
         + cell(CONT_LAB, num(m1.bg_amplitude, 2), false, CONT_HINT);
     }
     var s2 = document.getElementById(PFX + "sumM2");
     if (s2) {
       s2.innerHTML =
-        cell("активность K-40 (± с поправкой Бирге)", cnt(m2.A_Bq) + " Бк <em>± "
-             + cnt(m2.dA_Bq) + " Бк</em>", true)
+        cell("активность K-40 (± — с учётом поправки Бирге)", cnt(m2.A_Bq) + " Бк <em>± "
+             + cnt(m2.dA_Bq) + " Бк</em>", true)
         + cell("к ожидаемой по массе", num(m2.A_Bq / pass.A_Bq, 3) + " ("
                + signedPct(m2.A_Bq / pass.A_Bq) + ")")
         + cell("χ²/ν", num(m2.chi2_ndof, 2))
         + cell("линий в модели", cnt(m2.n_lines) + " (1 γ-линия и " + cnt(m2.n_lines - 1) + " линии рентгеновского излучения Ar; пиков суммирования нет)")
-        + cell("каналов в подгонке", cnt(m2.n_channels_fit))
+        + cell("число степеней свободы ν", cnt(m2.ndof))
         + cell(CONT_LAB, num(m2.bg_amplitude, 2), false, CONT_HINT);
     }
   }
@@ -571,7 +572,7 @@
         + "<td class='num'>" + cnt(amp) + " ± " + cnt(damp) + "</td>"
         + "<td class='num'>" + num(amp / D.passport.A_Bq, 3) + "</td>"
         + "<td class='num'>" + num(100 * sum / Math.max(grand, 1e-9), 1)
-          + " %</td>"
+          + " %</td>"
         + "<td>" + esc(nuc.note) + tag + "</td></tr>";
     });
     tbl.innerHTML = head + body + "</tbody>";
@@ -598,7 +599,7 @@
       body += "<tr>"
         + "<td><span class='sw' style='background:" + r.ch.color + "'></span>"
         + esc(r.ch.label_ru) + "</td>"
-        + "<td class='num'>" + num(pct, 1) + " %</td>"
+        + "<td class='num'>" + num(pct, 1) + " %</td>"
         + "<td class='num'>" + cnt(r.sum) + "</td></tr>";
     });
     tbl.innerHTML = head + body + "</tbody>";
@@ -632,22 +633,22 @@
       var lineTxt, iTxt;
       if (r.kind === "sum") {
         lineTxt = num(r.E1_keV, 1) + "+" + num(r.E2_keV, 1) + " = "
-                + num(r.E_keV, 1) + " кэВ";
-        iTxt = num(r.I1_pct, 2) + " % × " + num(r.I2_pct, 2) + " %";
+                + num(r.E_keV, 1) + " кэВ";
+        iTxt = (r.I1_pct == null) ? "вероятность совпадения " + (((r.note || "").match(/вероятность совпадения ([^;]+)/) || ["", "—"])[1]) : num(r.I1_pct, 2) + " % × " + num(r.I2_pct, 2) + " %";
       } else if (r.kind === "xray") {
-        lineTxt = "K-серия, центр " + num(r.E_keV, 1) + " кэВ";
-        iTxt = num(r.I_gamma_pct, 1) + " % на распад нуклида";
+        lineTxt = "K-серия, центр " + num(r.E_keV, 1) + " кэВ";
+        iTxt = num(r.I_gamma_pct, 1) + " % на распад нуклида";
       } else {
-        lineTxt = num(r.E_keV, 1) + " кэВ";
+        lineTxt = num(r.E_keV, 1) + " кэВ";
         // Выход линии — НА РАСПАД СВОЕГО НУКЛИДА, как он стоит в ENSDF:
         // читатель сверяет колонку с библиотекой. Ветвление от родителя ряда
         // — отдельный множитель, в модель оно входит (export_data.py,
         // w = BR·I/100) и показывается здесь там, где не равно единице.
         // Единственный такой нуклид в ветви — Tl-208: он образуется лишь в
         // α-ветке распада Bi-212.
-        iTxt = num(r.I_gamma_pct, r.I_gamma_pct < 0.1 ? 4 : 2) + " %";
+        iTxt = num(r.I_gamma_pct, r.I_gamma_pct < 0.1 ? 4 : 2) + " %";
         if (typeof r.branch === "number" && r.branch < 0.999)
-          iTxt += " <em>× " + num(100 * r.branch, 2) + " % (ветвление)</em>";
+          iTxt += " <em>× " + num(100 * r.branch, 2) + " % (ветвление)</em>";
       }
       var tag = r.kind === "sum" ? " · пик суммирования"
               : (r.kind === "xray" ? " · рентгеновское излучение" : "");
@@ -690,12 +691,12 @@
     var top = contribs.slice(0, 4).map(function (c) {
       return c.nuc.label_ru + " " + cnt(c.v);
     }).join(" · ");
-    var txt = num(e[i], 0) + " кэВ — измерено " + cnt(meas)
+    var txt = num(e[i], 0) + " кэВ — измерено " + cnt(meas)
             + ", модель " + cnt(stackTotal(stk, i));
     if (top) txt += " — " + top;
     el.textContent = txt;
     var tip = document.getElementById(PFX + tipId);
-    if (tip) tip.textContent = num(e[i], 0) + " кэВ · " + cnt(meas);
+    if (tip) tip.textContent = num(e[i], 0) + " кэВ · " + cnt(meas);
   }
 
   function attachCursor(cvId, tipId, onMove) {
@@ -873,16 +874,16 @@ function wireZoom(cvId) {
     var body = "<tbody>"
       + "<tr><td>каналов</td><td class='num'>" + m.cal_sample.n_channels
       + "</td><td class='num'>" + m.cal_bg.n_channels + "</td></tr>"
-      + "<tr><td>живое время, с</td><td class='num'>" + num(m.live_s, 2)
-      + "</td><td class='num'>" + num(m.bg_live_s, 2) + "</td></tr>"
-      + "<tr><td>реальное время, с</td><td class='num'>" + num(m.real_s, 2)
-      + "</td><td class='num'>" + num(m.bg_real_s, 2) + "</td></tr>"
+      + "<tr><td>живое время, с</td><td class='num'>" + numg(m.live_s, 2)
+      + "</td><td class='num'>" + numg(m.bg_live_s, 2) + "</td></tr>"
+      + "<tr><td>реальное время, с</td><td class='num'>" + numg(m.real_s, 2)
+      + "</td><td class='num'>" + numg(m.bg_real_s, 2) + "</td></tr>"
       + "<tr><td>мёртвое время, %</td><td class='num'>"
       + num(100 * (m.real_s - m.live_s) / m.real_s, 3) + "</td><td class='num'>"
       + num(100 * (m.bg_real_s - m.bg_live_s) / m.bg_real_s, 3) + "</td></tr>"
       + "<tr><td>степень полинома E(канал)</td><td class='num'>"
       + m.cal_sample.order + "</td><td class='num'>" + m.cal_bg.order + "</td></tr>"
-      + "<tr><td>полином, представляющий собственную шкалу (калибровка шкалы по форме групп пиков этого спектра)</td><td>" + coefsHtml(m.cal_sample.coefs)
+      + "<tr><td>полином, представляющий собственную шкалу (определяется по положениям групп пиков этого спектра)</td><td>" + coefsHtml(m.cal_sample.coefs)
       + "</td><td>" + coefsHtml(m.cal_bg.coefs) + "</td></tr>"
       + "<tr><td>масштаб фона (t_обр / t_фон)</td>"
       + "<td class='num' colspan='2'>" + num(m.bg_scale_time, 4) + "</td></tr>"
@@ -1091,7 +1092,7 @@ function wireZoom(cvId) {
         }
         var ref = calRefLineAt(x, y, r.width);
         if (ref) {
-          var refTxt = ref[1] + " · " + num(ref[0], 1) + " кэВ";
+          var refTxt = ref[1] + " · " + num(ref[0], 1) + " кэВ";
           ro.textContent = refTxt;
           if (tip) {
             tip.hidden = false;
@@ -1109,11 +1110,11 @@ function wireZoom(cvId) {
           if (dd < best) { best = dd; i = k; }
         }
         var smp = D.spectrum.counts[i], bgv = D.spectrum.bg_counts[i];
-        ro.textContent = num(e[i], 0) + " кэВ · образец " + cnt(smp)
+        ro.textContent = num(e[i], 0) + " кэВ · проба " + cnt(smp)
           + " · фон " + cnt(bgv) + " · разность " + cnt(smp - bgv);
         if (tip) {
           tip.hidden = false;
-          tip.textContent = num(e[i], 0) + " кэВ · " + cnt(smp);
+          tip.textContent = num(e[i], 0) + " кэВ · " + cnt(smp);
           tip.style.left = x + "px";
           tip.style.top = Math.max(0, y) + "px";
         }
@@ -1163,7 +1164,7 @@ function wireZoom(cvId) {
     var fw = D.fwhm_cal;
     var head = "<thead><tr><th>линия, кэВ</th><th class='num'>центроид</th>"
       + "<th class='num'>ПШПВ, кэВ</th><th class='num'>разрешение</th>"
-      + "<th class='num'>собственная (измерение в спектре)</th><th class='num'>BecqMoni</th><th class='num'>СпектраЛайн</th><th class='num'>зависимость k·E<sup>p</sup></th>"
+      + "<th class='num'>собственная (измерение в спектре)</th><th class='num'>BecqMoni</th><th class='num'>СпектраЛайн</th><th class='num'>аппроксимация k·E<sup>p</sup></th>"
       + "<th class='num'>отклонение</th><th>статус</th></tr></thead>";
     var body = "<tbody>";
     fw.points.forEach(function (q) {
@@ -1176,21 +1177,20 @@ function wireZoom(cvId) {
       }
       body += "<tr><td>" + num(q.E_nominal, 1) + "</td>"
         + "<td class='num'>" + num(q.E_centroid, 1) + "</td>"
-        + "<td class='num'>" + num(q.fwhm_keV, 2) + " ± "
-        + num(q.d_fwhm_keV, 2) + "</td>"
+        + "<td class='num'>" + num(q.fwhm_keV, 2) + (q.d_fwhm_keV > 0 ? " ± " + num(q.d_fwhm_keV, 2) : "") + "</td>"
         + "<td class='num'>" + num(q.res_pct, 2) + " %</td>"
         + fwSrc(q)
         + "<td class='num'>" + num(q.fwhm_model_keV, 2) + "</td>"
-        + "<td class='num'>" + (q.dev_pct >= 0 ? "+" : "−")
+        + "<td class='num'>" + (Math.abs(q.dev_pct) < 0.05 ? "" : q.dev_pct >= 0 ? "+" : "−")
         + num(Math.abs(q.dev_pct), 1) + " %</td>"
-        + "<td>в подгонке: " + (q.own_used ? "собственная ширина" : "СпектраЛайн × множитель") + "</td></tr>";
+        + "<td>в свёртке: " + (q.own_used ? "собственная ширина" : "СпектраЛайн × множитель") + "</td></tr>";
     });
-    body += "<tr class='sum'><td>степенная зависимость</td>"
+    body += "<tr class='sum'><td>степенная аппроксимация</td>"
       + "<td class='num' colspan='2'>ПШПВ = " + num(fw.k, 3) + "·E<sup>"
       + num(fw.p, 4) + "</sup></td>"
       + "<td class='num'>" + num(fw.res662_pct, 2) + " % на 662</td>"
       + "<td class='num' colspan='3'>" + fw.n_used + " из " + fw.n_anchors + " точек</td>"
-      + "<td class='num'>" + num(fw.fwhm662_law, 1) + " кэВ</td>"
+      + "<td class='num'>" + num(fw.fwhm662_law, 1) + " кэВ</td>"
       + "<td class='num'>СКО " + num(fw.rms_dev_pct, 1) + " %</td>"
       + "<td>значения ПШПВ в свёртке: опорный спектр тория (СпектраЛайн × множитель)</td></tr>";
     tbl.innerHTML = head + body + "</tbody>";
@@ -1283,9 +1283,9 @@ function wireZoom(cvId) {
     g.fillStyle = "#c8541c";
     g.fillText("значения ПШПВ в свёртке модели (по СпектраЛайн)", m.l + 10, m.t + 8);
     g.fillStyle = "#0f5aa8";
-    g.fillText("степенная зависимость ПШПВ(E)", m.l + 10, m.t + 24);
+    g.fillText("степенная аппроксимация ПШПВ(E)", m.l + 10, m.t + 24);
     g.fillStyle = p.faint;
-    g.fillText("степенной закон с показателем 0,5 через точку 662 кэВ", m.l + 10, m.t + 40);
+    g.fillText("для сравнения: зависимость с показателем 0,5 через точку 662 кэВ", m.l + 10, m.t + 40);
   }
 
   /* ── сравнение ──────────────────────────────────────────────── */
@@ -1303,34 +1303,34 @@ function wireZoom(cvId) {
     if (!el) return;
     var pass = D.passport, m1 = M1(), m2 = SRC().method2, m2f = SRC().method2_full;
     var modeTxt = ST.fwhmLaw === "cs" ? "фон: Маринелли+вода"
-                                      : "фон как снят (без сосуда)";
+                                      : "фон без сосуда";
     // Удельная активность — одна масса KCl для всех строк (ожидаемая, метод 1,
     // метод 2 относятся к одной пробе), поэтому Бк/кг сравнимы напрямую.
     var massKg = pass.mass_g / 1000;
     function row(cls, lab, A, dA, note) {
       return "<div class='cmp-row " + cls + "'>"
         + "<span class='cmp-lab'>" + lab + "</span>"
-        + "<span class='cmp-val big-num'>" + cnt(A) + " Бк <em>± "
-        + cnt(dA) + " Бк</em> <em>· " + cnt(A / massKg) + " Бк/кг ± "
-        + cnt(dA / massKg) + " Бк/кг</em></span>"
+        + "<span class='cmp-val big-num'>" + cnt(A) + " Бк <em>± "
+        + cnt(dA) + " Бк</em> <em>· " + cnt(A / massKg) + " Бк/кг ± "
+        + cnt(dA / massKg) + " Бк/кг</em></span>"
         + "<span class='cmp-note'>" + note + "</span></div>";
     }
     el.innerHTML =
       row("cmp-pass", "ожидаемая по массе",
           pass.A_Bq, pass.dA_Bq,
           "расчёт по массе KCl " + num(pass.mass_g, 0) + " г: доля калия × распространённость K-40 × ln2/T½; "
-          + "неопределённость " + num(pass.unc_pct, 2) + " % — распространённость K-40, период полураспада, чистота реактива")
+          + "неопределённость " + num(pass.unc_pct, 2) + " % — распространённость K-40, период полураспада, чистота реактива")
     + row("cmp-m1", "метод 1: МК-шаблон K-40, " + num(m1.E_fit_lo, 0) + "–"
-          + num(m1.E_fit_hi, 0) + " кэВ",
+          + num(m1.E_fit_hi, 0) + " кэВ",
           m1.A_Bq, m1.dA_Bq,
           num(m1.A_Bq / pass.A_Bq, 3) + " от ожидаемой, "
           + signedPct(m1.A_Bq / pass.A_Bq) + "; χ²/ν = " + num(m1.chi2_ndof, 2)
-          + " по " + cnt(m1.ndof) + " каналам; " + modeTxt)
+          + ", ν = " + cnt(m1.ndof) + "; " + modeTxt)
     + row("cmp-m2", "метод 2: функция ПП + γ-линия 1460,8 кэВ",
           m2.A_Bq, m2.dA_Bq,
           num(m2.A_Bq / pass.A_Bq, 3) + " от ожидаемой, "
           + signedPct(m2.A_Bq / pass.A_Bq) + "; χ²/ν = " + num(m2.chi2_ndof, 2)
-          + " по " + cnt(m2.n_channels_fit) + " каналам; " + modeTxt)
+          + ", ν = " + cnt(m2.ndof) + "; " + modeTxt)
     + "<div class='cmp-row'><span class='cmp-lab'>расхождение методов</span>"
       + "<span class='cmp-val big-num'>" + signedPct(m1.A_Bq / m2.A_Bq)
       + "</span><span class='cmp-note'>метод 1 относительно метода 2</span></div>";
@@ -1391,7 +1391,7 @@ function wireZoom(cvId) {
       g.fillText(it.lab, m.l + 6, yc - rowH * 0.28);
       g.fillStyle = p.ink;
       g.font = "12px ui-monospace, Menlo, monospace";
-      g.fillText(cnt(it.A) + " ± " + cnt(it.dA) + " Бк",
+      g.fillText(cnt(it.A) + " ± " + cnt(it.dA) + " Бк",
                  Math.min(xr + 8, W - m.r - 130), yc);
     }
   }

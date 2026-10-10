@@ -21,6 +21,7 @@
         }
         return (neg ? "−" : "") + s + out;
     }
+    function numg(x, d) { return num(x, d); }
     function signedPct(ratio) {
         var s = 100 * (ratio - 1);
         return (s < 0 ? "−" : "+") + num(Math.abs(s), 1) + " %";
@@ -353,7 +354,7 @@
         return nf[key];
     }
     function guardHint(nf) {
-        return "the MC template statistics are sufficient for " + num(100 * (1 - nf), 1) + " %"
+        return "the MC template statistics are sufficient for " + num(100 * (1 - nf), 1) + " %"
             + " of the component contribution; the remainder corresponds to regions below "
             + (D.spectrum.n_eff_min || 0) + " MC counts per channel, where the component is shown "
             + "as a dashed line without shading (the nuclide fraction is determined by template noise)";
@@ -440,36 +441,36 @@
             + lab + "</span><span class='val"
             + (big ? " big-num" : "") + "'>" + val + "</span></div>";
     }
-    var CONT_LAB = "multiplier for the background scaled to live time (continuum correction)";
-    var CONT_HINT = "coefficient for the second, non-nuclide term in the fit "
-        + "(background scaled to live time); a value markedly greater than one indicates a correction "
-        + "for the continuum, not a multiple of the actual background; details are given under "
+    var CONT_LAB = "background multiplier (fixed)";
+    var CONT_HINT = "coefficient of the scaled background, the second term of the fit; "
+        + "the background is not fitted: the multiplier is fixed at one "
+        + "(the background is scaled to live time and multiplied by r(E)); details are given under "
         + "“how it is calculated”.";
     function fillSummaries() {
         var m1 = M1(), m2 = M2(), pass = D.passport;
         var s1 = document.getElementById(PFX + "sumM1");
         if (s1) {
             s1.innerHTML =
-                cell("K-40 activity (± with Birge ratio correction)", cnt(m1.A_Bq) + " Bq <em>± "
-                    + cnt(m1.dA_Bq) + " Bq</em>", true)
+                cell("K-40 activity (± includes the Birge ratio correction)", cnt(m1.A_Bq) + " Bq <em>± "
+                    + cnt(m1.dA_Bq) + " Bq</em>", true)
                     + cell("ratio to the activity expected from the sample mass", num(m1.A_Bq / pass.A_Bq, 3) + " ("
                         + signedPct(m1.A_Bq / pass.A_Bq) + ")")
                     + cell("χ²/ν", num(m1.chi2_ndof, 2))
-                    + cell("channels in the fit", cnt(m1.ndof))
+                    + cell("number of degrees of freedom ν", cnt(m1.ndof))
                     + cell("fit window", num(m1.E_fit_lo, 0) + "–" + num(m1.E_fit_hi, 0)
-                        + " keV")
+                        + " keV")
                     + cell(CONT_LAB, num(m1.bg_amplitude, 2), false, CONT_HINT);
         }
         var s2 = document.getElementById(PFX + "sumM2");
         if (s2) {
             s2.innerHTML =
-                cell("K-40 activity (± with Birge ratio correction)", cnt(m2.A_Bq) + " Bq <em>± "
-                    + cnt(m2.dA_Bq) + " Bq</em>", true)
+                cell("K-40 activity (± includes the Birge ratio correction)", cnt(m2.A_Bq) + " Bq <em>± "
+                    + cnt(m2.dA_Bq) + " Bq</em>", true)
                     + cell("ratio to the activity expected from the sample mass", num(m2.A_Bq / pass.A_Bq, 3) + " ("
                         + signedPct(m2.A_Bq / pass.A_Bq) + ")")
                     + cell("χ²/ν", num(m2.chi2_ndof, 2))
-                    + cell("lines in the model", cnt(m2.n_lines) + " (1 γ-ray line and " + cnt(m2.n_lines - 1) + " Ar X-ray lines; no sum peaks)")
-                    + cell("channels in the fit", cnt(m2.n_channels_fit))
+                    + cell("lines in the model", cnt(m2.n_lines) + " (1 γ-ray line and " + cnt(m2.n_lines - 1) + " Ar K X-ray lines; no sum peaks)")
+                    + cell("number of degrees of freedom ν", cnt(m2.ndof))
                     + cell(CONT_LAB, num(m2.bg_amplitude, 2), false, CONT_HINT);
         }
     }
@@ -511,7 +512,7 @@
                 + "<td class='num'>" + cnt(amp) + " ± " + cnt(damp) + "</td>"
                 + "<td class='num'>" + num(amp / D.passport.A_Bq, 3) + "</td>"
                 + "<td class='num'>" + num(100 * sum / Math.max(grand, 1e-9), 1)
-                + " %</td>"
+                + " %</td>"
                 + "<td>" + esc(nuc.note) + tag + "</td></tr>";
         });
         tbl.innerHTML = head + body + "</tbody>";
@@ -542,7 +543,7 @@
             body += "<tr>"
                 + "<td><span class='sw' style='background:" + r.ch.color + "'></span>"
                 + esc(r.ch.label_ru) + "</td>"
-                + "<td class='num'>" + num(pct, 1) + " %</td>"
+                + "<td class='num'>" + num(pct, 1) + " %</td>"
                 + "<td class='num'>" + cnt(r.sum) + "</td></tr>";
         });
         tbl.innerHTML = head + body + "</tbody>";
@@ -578,16 +579,16 @@
             var lineTxt, iTxt;
             if (r.kind === "sum") {
                 lineTxt = num(r.E1_keV, 1) + "+" + num(r.E2_keV, 1) + " = "
-                    + num(r.E_keV, 1) + " keV";
-                iTxt = num(r.I1_pct, 2) + " % × " + num(r.I2_pct, 2) + " %";
+                    + num(r.E_keV, 1) + " keV";
+                iTxt = (r.I1_pct == null) ? "coincidence probability " + (((r.note || "").match(/coincidence probability ([^;]+)/) || ["", "—"])[1]) : num(r.I1_pct, 2) + " % × " + num(r.I2_pct, 2) + " %";
             }
             else if (r.kind === "xray") {
-                lineTxt = "K-series, centroid " + num(r.E_keV, 1) + " keV";
+                lineTxt = "K-series, centroid " + num(r.E_keV, 1) + " keV";
                 iTxt = num(r.I_gamma_pct, 1) + " % per decay of the nuclide";
             }
             else {
-                lineTxt = num(r.E_keV, 1) + " keV";
-                iTxt = num(r.I_gamma_pct, r.I_gamma_pct < 0.1 ? 4 : 2) + " %";
+                lineTxt = num(r.E_keV, 1) + " keV";
+                iTxt = num(r.I_gamma_pct, r.I_gamma_pct < 0.1 ? 4 : 2) + " %";
                 if (typeof r.branch === "number" && r.branch < 0.999)
                     iTxt += " <em>× " + num(100 * r.branch, 2) + " % (branching)</em>";
             }
@@ -836,16 +837,16 @@
         var body = "<tbody>"
             + "<tr><td>channels</td><td class='num'>" + m.cal_sample.n_channels
             + "</td><td class='num'>" + m.cal_bg.n_channels + "</td></tr>"
-            + "<tr><td>live time, s</td><td class='num'>" + num(m.live_s, 2)
-            + "</td><td class='num'>" + num(m.bg_live_s, 2) + "</td></tr>"
-            + "<tr><td>real time, s</td><td class='num'>" + num(m.real_s, 2)
-            + "</td><td class='num'>" + num(m.bg_real_s, 2) + "</td></tr>"
+            + "<tr><td>live time, s</td><td class='num'>" + numg(m.live_s, 2)
+            + "</td><td class='num'>" + numg(m.bg_live_s, 2) + "</td></tr>"
+            + "<tr><td>real time, s</td><td class='num'>" + numg(m.real_s, 2)
+            + "</td><td class='num'>" + numg(m.bg_real_s, 2) + "</td></tr>"
             + "<tr><td>dead time, %</td><td class='num'>"
             + num(100 * (m.real_s - m.live_s) / m.real_s, 3) + "</td><td class='num'>"
             + num(100 * (m.bg_real_s - m.bg_live_s) / m.bg_real_s, 3) + "</td></tr>"
             + "<tr><td>degree of the E(channel) polynomial</td><td class='num'>"
             + m.cal_sample.order + "</td><td class='num'>" + m.cal_bg.order + "</td></tr>"
-            + "<tr><td>polynomial representing this spectrum’s own energy calibration (from the shapes of its peak groups)</td><td>" + coefsHtml(m.cal_sample.coefs)
+            + "<tr><td>polynomial representing this spectrum’s own energy scale (determined from the positions of its peak groups)</td><td>" + coefsHtml(m.cal_sample.coefs)
             + "</td><td>" + coefsHtml(m.cal_bg.coefs) + "</td></tr>"
             + "<tr><td>background scaling factor (t_sample / t_bg)</td>"
             + "<td class='num' colspan='2'>" + num(m.bg_scale_time, 4) + "</td></tr>"
@@ -1088,7 +1089,7 @@
                 }
                 var ref = calRefLineAt(x, y, r.width);
                 if (ref) {
-                    var refTxt = ref[1] + " · " + num(ref[0], 1) + " keV";
+                    var refTxt = ref[1] + " · " + num(ref[0], 1) + " keV";
                     ro.textContent = refTxt;
                     if (tip) {
                         tip.hidden = false;
@@ -1109,7 +1110,7 @@
                     }
                 }
                 var smp = D.spectrum.counts[i], bgv = D.spectrum.bg_counts[i];
-                ro.textContent = num(e[i], 0) + " keV · sample " + cnt(smp)
+                ro.textContent = num(e[i], 0) + " keV · sample " + cnt(smp)
                     + " · background " + cnt(bgv) + " · difference " + cnt(smp - bgv);
                 if (tip) {
                     tip.hidden = false;
@@ -1170,7 +1171,7 @@
         var fw = D.fwhm_cal;
         var head = "<thead><tr><th>line, keV</th><th class='num'>centroid</th>"
             + "<th class='num'>FWHM, keV</th><th class='num'>resolution</th>"
-            + "<th class='num'>own (measured in this spectrum)</th><th class='num'>BecqMoni</th><th class='num'>SpectraLine</th><th class='num'>power law k·E<sup>p</sup></th>"
+            + "<th class='num'>own (measured in this spectrum)</th><th class='num'>BecqMoni</th><th class='num'>SpectraLine</th><th class='num'>approximation k·E<sup>p</sup></th>"
             + "<th class='num'>deviation</th><th>status</th></tr></thead>";
         var body = "<tbody>";
         fw.points.forEach(function (q) {
@@ -1183,16 +1184,15 @@
             }
             body += "<tr><td>" + num(q.E_nominal, 1) + "</td>"
                 + "<td class='num'>" + num(q.E_centroid, 1) + "</td>"
-                + "<td class='num'>" + num(q.fwhm_keV, 2) + " ± "
-                + num(q.d_fwhm_keV, 2) + "</td>"
+                + "<td class='num'>" + num(q.fwhm_keV, 2) + (q.d_fwhm_keV > 0 ? " ± " + num(q.d_fwhm_keV, 2) : "") + "</td>"
                 + "<td class='num'>" + num(q.res_pct, 2) + " %</td>"
                 + fwSrc(q)
                 + "<td class='num'>" + num(q.fwhm_model_keV, 2) + "</td>"
-                + "<td class='num'>" + (q.dev_pct >= 0 ? "+" : "−")
+                + "<td class='num'>" + (Math.abs(q.dev_pct) < 0.05 ? "" : q.dev_pct >= 0 ? "+" : "−")
                 + num(Math.abs(q.dev_pct), 1) + " %</td>"
-                + "<td>in the fit: " + (q.own_used ? "own width" : "SpectraLine × multiplier") + "</td></tr>";
+                + "<td>in the convolution: " + (q.own_used ? "own width" : "SpectraLine × multiplier") + "</td></tr>";
         });
-        body += "<tr class='sum'><td>power law</td>"
+        body += "<tr class='sum'><td>power-law approximation</td>"
             + "<td class='num' colspan='2'>FWHM = " + num(fw.k, 3) + "·E<sup>"
             + num(fw.p, 4) + "</sup></td>"
             + "<td class='num'>" + num(fw.res662_pct, 2) + " % at 662 keV</td>"
@@ -1310,9 +1310,9 @@
         g.fillStyle = "#c8541c";
         g.fillText("FWHM values used in the model convolution (from SpectraLine)", m.l + 10, m.t + 8);
         g.fillStyle = "#0f5aa8";
-        g.fillText("FWHM(E) power law", m.l + 10, m.t + 24);
+        g.fillText("power-law approximation of FWHM(E)", m.l + 10, m.t + 24);
         g.fillStyle = p.faint;
-        g.fillText("power law with exponent 0.5 through the 662 keV point", m.l + 10, m.t + 40);
+        g.fillText("for comparison: power law with exponent 0.5 through the 662 keV point", m.l + 10, m.t + 40);
     }
     function cmpItems() {
         var p = pal();
@@ -1328,13 +1328,13 @@
             return;
         var pass = D.passport, m1 = M1(), m2 = SRC().method2, m2f = SRC().method2_full;
         var modeTxt = ST.fwhmLaw === "cs" ? "background: Marinelli + water"
-            : "background as acquired (without the beaker)";
+            : "background without the beaker";
         var massKg = pass.mass_g / 1000;
         function row(cls, lab, A, dA, note) {
             return "<div class='cmp-row " + cls + "'>"
                 + "<span class='cmp-lab'>" + lab + "</span>"
-                + "<span class='cmp-val big-num'>" + cnt(A) + " Bq <em>± "
-                + cnt(dA) + " Bq</em> <em>· " + cnt(A / massKg) + " Bq/kg ± "
+                + "<span class='cmp-val big-num'>" + cnt(A) + " Bq <em>± "
+                + cnt(dA) + " Bq</em> <em>· " + cnt(A / massKg) + " Bq/kg ± "
                 + cnt(dA / massKg) + " Bq/kg</em></span>"
                 + "<span class='cmp-note'>" + note + "</span></div>";
         }
@@ -1342,12 +1342,12 @@
             row("cmp-pass", "expected (from mass)", pass.A_Bq, pass.dA_Bq, "calculation from KCl mass " + num(pass.mass_g, 0) + " g: potassium fraction × K-40 abundance × ln2/T½; "
                 + "uncertainty " + num(pass.unc_pct, 2) + " % — K-40 abundance, half-life, reagent purity")
                 + row("cmp-m1", "Method 1: K-40 MC template, " + num(m1.E_fit_lo, 0) + "–"
-                    + num(m1.E_fit_hi, 0) + " keV", m1.A_Bq, m1.dA_Bq, num(m1.A_Bq / pass.A_Bq, 3) + " of the expected value, "
+                    + num(m1.E_fit_hi, 0) + " keV", m1.A_Bq, m1.dA_Bq, num(m1.A_Bq / pass.A_Bq, 3) + " of the expected value, "
                     + signedPct(m1.A_Bq / pass.A_Bq) + "; χ²/ν = " + num(m1.chi2_ndof, 2)
-                    + " over " + cnt(m1.ndof) + " channels; " + modeTxt)
+                    + ", ν = " + cnt(m1.ndof) + "; " + modeTxt)
                 + row("cmp-m2", "Method 2: FEP efficiency function + 1460.8 keV γ-ray line", m2.A_Bq, m2.dA_Bq, num(m2.A_Bq / pass.A_Bq, 3) + " of the expected value, "
                     + signedPct(m2.A_Bq / pass.A_Bq) + "; χ²/ν = " + num(m2.chi2_ndof, 2)
-                    + " over " + cnt(m2.n_channels_fit) + " channels; " + modeTxt)
+                    + ", ν = " + cnt(m2.ndof) + "; " + modeTxt)
                 + "<div class='cmp-row'><span class='cmp-lab'>discrepancy between methods</span>"
                 + "<span class='cmp-val big-num'>" + signedPct(m1.A_Bq / m2.A_Bq)
                 + "</span><span class='cmp-note'>Method 1 relative to Method 2</span></div>";
@@ -1417,7 +1417,7 @@
             g.fillText(it.lab, m.l + 6, yc - rowH * 0.28);
             g.fillStyle = p.ink;
             g.font = "12px ui-monospace, Menlo, monospace";
-            g.fillText(cnt(it.A) + " ± " + cnt(it.dA) + " Bq", Math.min(xr + 8, W - m.r - 130), yc);
+            g.fillText(cnt(it.A) + " ± " + cnt(it.dA) + " Bq", Math.min(xr + 8, W - m.r - 130), yc);
         }
     }
     function cmpCol(kind) {
@@ -1456,11 +1456,11 @@
         var cs = pn.CS137;
         var k = pn.K40;
         var html = "";
-        html += cell("Cs-137 activity (± with Birge ratio correction)", cnt(cs.A_Bq) + " Bq <em>± " + cnt(cs.dA_Bq) + " Bq</em> <em>· " + cnt(cs.per_kg) + " Bq/kg</em>", true);
-        html += cell("K-40 activity, preliminary (± with Birge ratio correction)", cnt(k.A_Bq) + " Bq <em>± " + cnt(k.dA_Bq) + " Bq</em> <em>· " + cnt(k.per_kg) + " Bq/kg</em>", true);
+        html += cell("Cs-137 activity (± includes the Birge ratio correction)", cnt(cs.A_Bq) + " Bq <em>± " + cnt(cs.dA_Bq) + " Bq</em> <em>· " + cnt(cs.per_kg) + " Bq/kg</em>", true);
+        html += cell("K-40 activity, preliminary (± includes the Birge ratio correction)", cnt(k.A_Bq) + " Bq <em>± " + cnt(k.dA_Bq) + " Bq</em> <em>· " + cnt(k.per_kg) + " Bq/kg</em>", true);
         html += cell("ratio to Beta-1S (SpectraLine; its value decay-corrected to the date of our measurement, 9 October 2026)", "Cs-137 " + num(cs.ref_ratio, 3) + " (" + signedPct(cs.ref_ratio) + "); K-40 " + num(k.ref_ratio, 3) + " (" + signedPct(k.ref_ratio) + ")");
         html += cell("χ²/ν", num(m1.chi2_ndof, 2));
-        html += cell("channels in the fit", cnt(m1.ndof));
+        html += cell("number of degrees of freedom ν", cnt(m1.ndof));
         html += cell("fit window", num(m1.E_fit_lo, 0) + "–" + num(m1.E_fit_hi, 0) + " keV");
         el.innerHTML = html;
         fillM2Summary();
@@ -1478,7 +1478,7 @@
                 return;
             var amp;
             if (e.nuisance) {
-                amp = "nuisance parameter, not published";
+                amp = "nuisance (auxiliary) fit parameter; activity not determined";
             }
             else if (e.A_Bq === 0) {
                 amp = "0 Bq (fit amplitude is zero)";
@@ -1614,11 +1614,11 @@
         var cs = m2.per_nuclide.CS137;
         var k = m2.per_nuclide.K40;
         var html = "";
-        html += cell("Cs-137 activity (± with Birge ratio correction)", cnt(cs.A_Bq) + " Bq <em>± " + cnt(cs.dA_Bq) + " Bq</em> <em>· " + cnt(cs.per_kg) + " Bq/kg</em>", true);
-        html += cell("K-40 activity, preliminary (± with Birge ratio correction)", cnt(k.A_Bq) + " Bq <em>± " + cnt(k.dA_Bq) + " Bq</em> <em>· " + cnt(k.per_kg) + " Bq/kg</em>", true);
+        html += cell("Cs-137 activity (± includes the Birge ratio correction)", cnt(cs.A_Bq) + " Bq <em>± " + cnt(cs.dA_Bq) + " Bq</em> <em>· " + cnt(cs.per_kg) + " Bq/kg</em>", true);
+        html += cell("K-40 activity, preliminary (± includes the Birge ratio correction)", cnt(k.A_Bq) + " Bq <em>± " + cnt(k.dA_Bq) + " Bq</em> <em>· " + cnt(k.per_kg) + " Bq/kg</em>", true);
         html += cell("ratio to Beta-1S (SpectraLine; its value decay-corrected to the date of our measurement, 9 October 2026)", "Cs-137 " + num(cs.ref_ratio, 3) + " (" + signedPct(cs.ref_ratio) + "); K-40 " + num(k.ref_ratio, 3) + " (" + signedPct(k.ref_ratio) + ")");
         html += cell("χ²/ν", num(m2.chi2_ndof, 2));
-        html += cell("channels in the fit", cnt(m2.n_channels_fit));
+        html += cell("number of degrees of freedom ν", cnt(m2.ndof));
         html += cell("fit window", num(m2.E_fit_lo, 0) + "–" + num(m2.E_fit_hi, 0) + " keV");
         html += cell("lines in the library", cnt(m2.n_lines) + " (shown in the table: " + cnt(m2.n_lines_shown) + "; below 25 keV, not shown: " + cnt(m2.n_below_25) + "; X-ray lines in the library: " + cnt(m2.n_xray_energies) + ", shown in the table: " + cnt(m2.n_xray_shown) + ")");
         html += cell("nodes of the monoenergetic response grid", cnt(m2.n_nodes));
@@ -1644,7 +1644,7 @@
                 continue;
             var ampHtml;
             if (e.nuisance) {
-                ampHtml = "nuisance parameter, not published";
+                ampHtml = "nuisance (auxiliary) fit parameter; activity not determined";
             }
             else if (e.dA_Bq === null) {
                 ampHtml = cnt(e.A_Bq) + " Bq";

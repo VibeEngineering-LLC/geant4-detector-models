@@ -3,24 +3,35 @@ r"""Сборка страницы GS2020 Th-232 донорским build_page.py
 CSS — побайтно донорский; в JS заменены только видимые подписи «паспорт» (список TERMS, число вхождений сверяется). Запуск: python build_page_gs2020.py"""
 import hashlib, json, os, shutil, sys
 sys.stdout.reconfigure(encoding="utf-8")
-DONOR = r"D:\repos-folder\repos\geant4-detector-models\detectors\Gamma-1S\web-th232"
-PAGE = r"D:\cloud-folder\work-folder\GEANT4\web\gs2020-th232-page"
+DONOR = r"<REPOS>\geant4-detector-models\detectors\Gamma-1S\web-th232"
+PAGE = r"<WORKDIR>\GEANT4\web\gs2020-th232-page"
 sys.path.insert(0, DONOR)
 # #PUB-1 / #GS-39 (29.09): вкладка K-40 показала числа прежней шкалы — gs2020_sources.json не перевыгрузили после
 # подгонок. Гейт: JSON страницы новее каждой подгонки, из которой он собран, иначе ОТКАЗ со списком устаревших.
-_TH, _KC = r"C:\g4work\gs2020\run_marinelli\out_v5_oisn10", r"C:\g4work\gs2020\kcl_v4w85_83"   # KCl: Маринелли 2 v4, конус колодца (29.09)
+_TH, _KC = r"C:\g4work\gs2020\run_marinelli\out_v5_oisn10", r"C:\g4work\gs2020\kcl_1l_v4w85_83"   # KCl: Маринелли 2 v4, конус колодца (29.09)
 _FRESH = {"gs2020_th232_data.json": [_TH], "gs2020_k40_data.json": [_KC], "gs2020_sources.json": [_KC]}
 _stale = []
 for _pj, _dirs in _FRESH.items():
     _src = [os.path.join(d, f) for d in _dirs for f in os.listdir(d) if f.startswith("fit_") and f.endswith(".json")]
     _new = [s for s in _src if os.path.getmtime(s) > os.path.getmtime(os.path.join(PAGE, _pj))]
     if _new: _stale.append("%s старше %s" % (_pj, ", ".join(os.path.basename(s) for s in _new)))
+# #GS-72: черника — гейт только по двум JSON принятой подгонки (в каталоге ещё десятки вариантов fit_*.json: перебор по маске дал бы ложный отказ)
+_BY, _BJ = r"C:\g4work\gs2020\berry", ("fit_berry_bgw_R2_g014_beta.json", "fit_berry_bgw_R2_g014_beta_ib.json", "fit_berry_m2_bgw.json")
+_bn = [f for f in _BJ if os.path.getmtime(os.path.join(_BY, f)) > os.path.getmtime(os.path.join(PAGE, "gs2020_berry_data.json"))]
+if _bn: _stale.append("gs2020_berry_data.json старше " + ", ".join(_bn))
 if _stale: raise SystemExit("ОТКАЗ #PUB-1: перевыгрузите данные страницы — " + "; ".join(_stale))
 import build_page as bp
+import ru_rules as RU   # #GS-78: вычитка русского текста (patches/ru_rules.json); строки данных чистятся до сборки, повтор ничего не меняет
+for _jf in ("gs2020_th232_data.json", "gs2020_k40_data.json", "gs2020_berry_data.json", "gs2020_sources.json"):
+    RU.clean_json(os.path.join(PAGE, _jf))
 # #CHART-1 (оператор 26.09 «сделай увеличение по выделению мышью»): донор не имел drag-zoom на графиках
 # метода 1/2 (только на вкладке "калибровка") — пробел донора, не дефект переноса (сверено grep-ом по
 # mousedown в g1s-th232.js). Патч сгенерирован ступенью 2 (Ollama qwen3.6:27b, SPEC-gs2020-zoom-patch.md).
 ZOOM_JS = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "patches", "gs2020_zoom.js"), encoding="utf-8").read().rstrip("\n")
+# #GS-61: ячейки «своя / BecqMoni / СпектраЛайн» таблицы ширины (поля own_keV, own_unc_keV, becqmoni_keV, fwhm_sl_keV точки)
+FW_SRC_JS = ("  function fwSrc(q) {\n    var c = function (v, u) {\n"
+             "      return \"<td class='num'>\" + (v == null ? \"—\" : num(v, 2) + (u ? \" ± \" + num(u, 2) : \"\")) + \"</td>\";\n"
+             "    };\n    return c(q.own_keV, q.own_unc_keV) + c(q.becqmoni_keV) + c(q.fwhm_sl_keV);\n  }\n")
 TERMS = {"g1s-th232.css": [("text-align:justify; text-wrap:pretty}", "text-align:left; text-wrap:pretty}", 2)],  # #GS-10
          "g1s-th232.js": [("    D.nuclides.forEach(function (nuc) {\n      // SECOND (вторичные пики)",
                            "    // #GS-45 (30.09, оператор «да»): легенда по вкладу слоёв (интеграл стека), как порядок отрисовки на графике\n"
@@ -34,8 +45,8 @@ TERMS = {"g1s-th232.css": [("text-align:justify; text-wrap:pretty}", "text-align
                           ('lab: "паспорт"', 'lab: "известная"', 1), ('row("cmp-pass", "паспорт"', 'row("cmp-pass", "известная активность"', 1),
                           ('" паспорта, "', '" известной, "', 2),
                           ('" сумм-пиков + K-рентген")', '" сумм-пиков (суммы 860+2614 = 3475 кэВ в библиотеке нет); рентген K/L учтён в числе линий (#XR-1)")', 1),
-                          ('"<td>по цезию комплекта " + num(fw.fwhm662_cs, 1) + " кэВ</td></tr>"', '"<td>таблица пиков прибора</td></tr>"', 1),
-                          ('"корневой закон по записи цезия"', '"корневой закон через ту же точку 662 кэВ"', 1),
+                          ('"<td>по цезию комплекта " + num(fw.fwhm662_cs, 1) + " кэВ</td></tr>"', '"<td>точки свёртки: СпектраЛайн × множитель</td></tr>"', 1),
+                          ('"корневой закон по записи цезия"', '"для сравнения: зависимость с показателем 0,5 через точку 662 кэВ"', 1),
                           ('"ПШПВ по модели (цезий)"', '"фон: Маринелли+вода"', 1),
                           ('"ПШПВ по линиям спектра"', '"фон как снят (без сосуда)"', 1),
                           ('"все известные линии"', '"метод 2-2: все известные линии ENSDF"', 1),
@@ -89,7 +100,24 @@ TERMS = {"g1s-th232.css": [("text-align:justify; text-wrap:pretty}", "text-align
                           ('метод 1 относительно метода 2 при "', 'метод 1 относительно метода 2 (донорская библиотека) при "', 1),
                           # #CHART-1: подключение wireZoom к обеим канвам (метод 1, метод 2) — синхронный zoom (ST.zoom общий)
                           ('    attachCursor("cvM1", "m1-tip", function () {',
-                           '    wireZoom("cvM1"); wireZoom("cvM2");\n    attachCursor("cvM1", "m1-tip", function () {', 1)]}
+                           '    wireZoom("cvM1"); wireZoom("cvM2");\n    attachCursor("cvM1", "m1-tip", function () {', 1),
+                          # #GS-61 (оператор 09.10): в таблице ширины — своя (замер в спектре), BecqMoni, СпектраЛайн
+                          ("<th class='num'>линий в окне</th>", "<th class='num'>собственная (измерение в спектре)</th>"
+                           "<th class='num'>BecqMoni</th><th class='num'>СпектраЛайн</th>", 1),
+                          ('+ "<td class=\'num\'>" + q.n_lines_window + "</td>"', '+ fwSrc(q)', 1),
+                          ('"<td class=\'num\'>—</td><td class=\'num\'>—</td><td class=\'num\'>—</td>"\n          + "<td class=\'num\'>—</td>',
+                           '"<td class=\'num\'>—</td><td class=\'num\'>—</td><td class=\'num\'>—</td>" + fwSrc(q)\n          + "', 1),
+                          ('"<td>в подгонке</td></tr>";', '"<td>в подгонке: " + (q.own_used ? "собственная ширина" : "СпектраЛайн × множитель") + "</td></tr>";', 1),
+                          ('"<td class=\'num\'>" + fw.n_used + " из " + fw.n_anchors + "</td>"',
+                           '"<td class=\'num\' colspan=\'3\'>" + fw.n_used + " из " + fw.n_anchors + " точек</td>"', 1),
+                          ("  function buildFwhmTable() {", FW_SRC_JS + "  function buildFwhmTable() {", 1),
+                          # #GS-78 (оператор 10.10, вычитка русского текста): просторечия в строках донорского JS
+                          ("наведи курсор на канал спектра", "наведите курсор на канал спектра", 1),
+                          ("<th class='num'>центроида</th>", "<th class='num'>центроид</th>", 1),
+                          ("заметно больше единицы — заплатка ", "заметно больше единицы — поправочный член ", 1),
+                          ("под континуум, а не кратность", "на континуум, а не кратность", 1),
+                          ("— «как посчитано».", "— «как рассчитано».", 1),
+                          ('"снято с этого спектра"', '"измерено в этом спектре"', 1)]}
 # #GS-10 (оператор 27.09 «опять с шириной текста проблемы. исправь и запомни»; скилл web-publish §3): донорский CSS
 # снимает предел строки (`max-width:none` у .stand/.ai-note/.method-lede) — абзацы шли во всю ширину. Предел ставит
 # СБОРЩИК на ВСЕ абзацы и пункты страницы, а не автор раздела; проверка — MEASURE_CHECK ниже и замер в браузере.
@@ -97,7 +125,9 @@ TERMS = {"g1s-th232.css": [("text-align:justify; text-wrap:pretty}", "text-align
 # хотел текст на всю ширину, а не предел 78 знаков. Сборщик снимает любые пределы ширины у текстовых блоков.
 MEASURE_CSS = ("\n/* #GS-16: текст на всю ширину страницы, ставится сборщиком */\n"
                "body,p,li,figcaption,caption,dd{text-align:left}\n"
-               ".app p,.app li,.app figcaption,.pop p,.pop li,.pop dd{max-width:none !important; text-wrap:pretty}\n")
+               ".app p,.app li,.app figcaption,.pop p,.pop li,.pop dd{max-width:none !important; text-wrap:pretty}\n"
+               "/* #GS-78: регистр единиц и обозначений (Бк, кэВ, χ²/ν, Th-232, KCl) не меняется: заглавные буквы отключены */\n"
+               "table.big thead th,.mini thead th,.specs dt,.summary .lab,.m2-facts .lab,.btn,.eyebrow,.pop h3,.pop .key,.sec-h,.side-head,.side-head button{text-transform:none !important; letter-spacing:.04em}\n")
 sha = lambda p: hashlib.sha256(open(p, "rb").read()).hexdigest()
 for rel in (("styles", "g1s-th232.css"), ("scripts", "g1s-th232.js")):
     src, dst = os.path.join(DONOR, "src", *rel), os.path.join(PAGE, "src", *rel)
@@ -107,6 +137,8 @@ for rel in (("styles", "g1s-th232.css"), ("scripts", "g1s-th232.js")):
         if txt.count(old) != n:
             raise SystemExit("ОТКАЗ: в донорском %s «%s» встречается %d раз, ожидалось %d" % (rel[1], old, txt.count(old), n))
         txt = txt.replace(old, new)
+    if rel[1].endswith(".js"):
+        txt = RU.js(txt)   # #GS-78
     if rel[1].endswith(".css"):
         txt += MEASURE_CSS
         if "justify" in txt.replace("justify-content", "").replace("justify-items", "").replace("justify-self", ""):
@@ -124,7 +156,10 @@ _make_fill = bp.make_fill
 def _fill_dev(d):
     f = _make_fill(d)
     f.update({k: (lambda v=v: v) for k, v in DEV.items()})
-    return f
+    _td = f["tpl_decays"]   # #GS-78: обозначения нуклидов с дефисом (Th-232), как на всей странице
+    _re = __import__("re")   # #GS-78 r6: «55 000 000 для Th-232, …» вместо «55 000 000 (Th-232, …)» — без скобки в скобке
+    f["tpl_decays"] = lambda: _re.sub(r"(\d)\s\(([^)]*)\)", r"\1 для \2", _re.sub(r"([A-Z][a-z]?)(\d{2,3})\b", r"\1-\2", _td()))
+    return RU.fill(f)   # #GS-78 r6: тысячи неразрывным пробелом
 bp.make_fill = _fill_dev
 bp.SRC, bp.DIST = os.path.join(PAGE, "src"), os.path.join(PAGE, "dist")
 bp.DATA_JSON, bp.SINGLE = os.path.join(PAGE, "gs2020_th232_data.json"), os.path.join(PAGE, "gs2020_th232.html")
@@ -145,14 +180,24 @@ for p, rep in ((os.path.join(bp.DIST, "index.html"), '<script src="sources.js?v=
 # данные gs2020_k40_data.json (export_page_gs2020_k40.py), разметка src/k40-panel.html и src/k40-pops.html
 import build_page_gs2020_k40 as k40
 K40_FILES = k40.finish(bp)
-# #GS-29 (оператор 28.09 «слово КИ для данного спектрометра нигде не пиши»): гейт по собранным файлам, слово целиком
+# #GS-72: панель «Черника» — третий экземпляр (JS строится из готового g1s-k40.js, поэтому только после k40.finish)
+import build_page_gs2020_berry as berry
+K40_FILES = tuple(K40_FILES) + tuple(berry.finish(bp))
+# #GS-29 (запрещённое слово): гейт по собранным файлам, слово целиком
 import re
-KI = re.compile(r"(?<![А-ЯЁа-яё])КИ(?![А-ЯЁа-яё])")
+KI = re.compile(r"(?<![А-ЯЁа-яё])\u041a\u0418(?![А-ЯЁа-яё])")
 for fn in ("index.html", "sources.js", "data.js") + tuple(K40_FILES):
-    if KI.search(open(os.path.join(bp.DIST, fn), encoding="utf-8").read()): raise SystemExit("ОТКАЗ #GS-29: слово «КИ» в dist/" + fn)
+    if KI.search(open(os.path.join(bp.DIST, fn), encoding="utf-8").read()): raise SystemExit("ОТКАЗ #GS-29: запрещённое слово #GS-29 в dist/" + fn)
 print("источники: dist/sources.js %d КБ, dist/scripts/gs-sources.js %d КБ, v=%d" % (len(src_js.encode()) // 1024, len(app_js.encode()) // 1024, v))
 # #GS-7: рендеры раздела «Спектрометр» (подготовлены из model/…png, JPG ≤1000 px) — рядом со страницей в dist/img
 os.makedirs(os.path.join(bp.DIST, "img"), exist_ok=True)
 for fn in sorted(os.listdir(os.path.join(PAGE, "img"))):
     shutil.copy2(os.path.join(PAGE, "img", fn), os.path.join(bp.DIST, "img", fn))
     print("картинка dist/img/%s %d КБ" % (fn, os.path.getsize(os.path.join(PAGE, "img", fn)) // 1024))
+# #GS-79 (оператор 10.10 «делай анг страницу с добавкой в адресе en»): переключатель RU↔EN в шапке и сборка dist/en/
+# (`--lang en`). GS79_NO_SWITCH=1 — русская страница побайтно как до #GS-79 (проверка приёмки «русская не изменилась»).
+import build_page_gs2020_en as en
+if os.environ.get("GS79_NO_SWITCH") != "1":
+    en.ru_switch(bp)
+if "--lang" in sys.argv and sys.argv[sys.argv.index("--lang") + 1] == "en":
+    en.finish(bp, k40, berry)

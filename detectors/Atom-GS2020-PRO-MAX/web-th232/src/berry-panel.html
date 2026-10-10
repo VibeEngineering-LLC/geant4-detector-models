@@ -1,0 +1,169 @@
+<!-- #GS-26: полная панель черники — тот же донорский код, что у K-40 (scripts/g1s-berry.js = g1s-k40.js + patches/berry_terms.json),
+     данные window.GS_BERRY (data-berry.js из gs2020_berry_data.json, export_page_gs2020_berry.py). Все id — с префиксом berry-. -->
+<style>
+#berry-tblM1 td:first-child{white-space:nowrap}
+#berry-tblM2N td:first-child{white-space:nowrap}
+#berry-tblM2 td:nth-child(2){white-space:nowrap}
+#berry-tblM2 td:nth-child(1){white-space:nowrap}
+#berry-viewM2 .scroll{max-height:436px; overflow-y:auto; border:1.5px solid var(--rule-soft); padding:0 .65rem}
+#berry-fwbox canvas{height:clamp(15rem, 30vh, 22rem)}
+#berry-viewCmp figure{display:grid; grid-template-columns:minmax(0,1fr); margin:0 0 1rem}
+#berry-viewCmp img{width:-webkit-fill-available; width:-moz-available; width:stretch; height:auto; display:block; border:1.5px solid var(--rule-soft)}
+#berry-viewCmp canvas{height:200px}
+body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
+</style>
+<div class="top spec-top">
+  <div class="title">
+    <p class="eyebrow">спектр 3 · Cs-137 + K-40 · черника в сосуде Маринелли 2 (объём 1&nbsp;л)</p>
+    <h2 class="spec-h">Первая проба с неизвестной активностью: сушёная черника</h2>
+    <p class="stand">Проба сушёной черники, {{berry_mass}}, объёмом 1&nbsp;л в сосуде Маринелли (уровень {{berry_level}} от среза), насыпная плотность {{berry_rho}}; тот же прибор, сосуд — Маринелли&nbsp;2
+      (геометрия в сборе: <a href="https://github.com/VibeEngineering-LLC/geant4-detector-models/blob/main/detectors/Atom-GS2020-PRO-MAX/geometry/GS2020_marinelli_berry_dry_1000ml.gdml"
+      target="_blank" rel="noopener">GDML</a>).
+      Живое время измерения {{berry_live_h}} ({{berry_dates}}). В спектре — линии цезия-137 и калия-40; непрерывная составляющая описана β-шаблоном стронция-90 с иттрием-90. Вычитается фон Маринелли+вода, приведённый по живому времени и умноженный на r(E):
+      плотность черники меньше плотности воды, и проба ослабляет внешний фон слабее; поправка r(E) рассчитана в Geant4 отдельно для линий фона (пики полного поглощения) и для континуума. Шаблоны Geant4 — в геометрии пробы: полный распад Cs-137
+      (с Ba-137m), K-40, Sr-90 и Y-90. Ширина и форма пиков и эффективность — из набора данных детектора (опорный спектр тория), без подгонки под пробу; шкала энергии — собственная, определяется по положениям пиков этого спектра.</p>
+    <p class="stand">Метод 1 (подгонка полного спектра, ядро свёртки то же, что у тория) дал для Cs-137 {{berry_cs_a}} ({{berry_cs_kg}}); статистическая погрешность {{berry_cs_dstat}}, систематическая погрешность около {{berry_cs_sys}};
+      общий χ²/ν = {{berry_chi2}}, форма пика 661,7&nbsp;кэВ — χ²/ν = {{berry_shape662}}; разброс по всем вариантам подгонки около {{berry_cs_var}}. Для K-40 метод 1 дал {{berry_k_a}} ({{berry_k_kg}}); с погрешностью вычитания фона {{berry_k_noise}}, систематическая погрешность {{berry_k_sys}}: это малая
+      разность пика пробы и фонового калия, она сильно зависит от r(E), поэтому результат по K-40 предварительный. Опорное значение другого прибора
+      (Бета-1С, СпектраЛайн, другая проба): на дату его измерения 01.10.2024 Cs-137 {{berry_sl_cs24}}, K-40 {{berry_sl_k}}; Cs-137, пересчитанный на дату нашего измерения
+      (распад за {{berry_sl_years}}), — {{berry_sl_cs}}; наши значения относятся к ним как {{berry_ratio_cs}} и {{berry_ratio_k}}
+      ({{berry_dev_cs}} и {{berry_dev_k}}); параметры модели по опорному значению не подбирались. Метод 2 (функция ПП × библиотека линий) дал для Cs-137 {{berry_m2_cs_a}} ({{berry_m2_cs_kg}}), для K-40 {{berry_m2_k_a}} ({{berry_m2_k_kg}}); к опорному {{berry_m2_dev_cs}} и {{berry_m2_dev_k}}, χ²/ν = {{berry_m2_chi2}}. β-активность Sr-90+Y-90 — вспомогательный параметр подгонки (параметр модели, необходимый для описания спектра, но не являющийся искомым результатом): электроны тормозятся в пробе, стенке сосуда и корпусе,
+      их тормозное излучение образует широкий непрерывный максимум в области 150–450&nbsp;кэВ; активность Sr-90 по γ-спектру не определяется и не публикуется: β-шаблон подгоняется только как вспомогательная составляющая.</p>
+    <p class="warn"><b>Край Комптона линии 662&nbsp;кэВ (около 477&nbsp;кэВ).</b> Край Комптона в измерении смещён в сторону меньших энергий и шире, чем в модели: на {{berry_edge662}} для линии 662&nbsp;кэВ (у KCl — на {{berry_edge1461}} для линии 1460,8&nbsp;кэВ, край около 1243&nbsp;кэВ). Причина не установлена; рассматривается непропорциональность светового выхода NaI(Tl)
+      (параметры модели непропорциональности (NPSM) для этого кристалла пока не определены). Остаток около −{{berry_resid}} на {{berry_resid_band}}; активности по пикам от него почти не зависят.
+      Ниже {{kp_lo}}&nbsp;кэВ модель не оценивается: окно подгонки — {{kp_lo}}–{{kp_hi}}&nbsp;кэВ.</p>
+  </div>
+</div>
+<div class="panel">
+  <div class="toolbar">
+    <div class="tabs" role="tablist" aria-label="выбор представления, черника" id="berry-tabs">
+      <button type="button" class="btn tab" data-tab="m1" aria-selected="true">метод 1: МК по нуклидам</button>
+      <button type="button" class="btn tab" data-tab="m2" aria-selected="false">метод 2: функция ПП + библиотека</button>
+      <button type="button" class="btn tab" data-tab="cmp" aria-selected="false">сравнение</button>
+      <button type="button" class="btn tab" data-tab="cal" aria-selected="false">калибровка</button>
+    </div>
+    <span class="sp"></span>
+    <div class="seg" id="berry-fwhmseg" role="group" aria-label="вычитаемый фон">
+      <button type="button" class="btn" data-fwhmlaw="cs" aria-pressed="true">фон: Маринелли+вода</button>
+    </div>
+    <button type="button" class="btn" data-berrypop="t-method" aria-expanded="false">как рассчитано</button>
+    <button type="button" class="btn" data-berrypop="t-passport" aria-expanded="false">о пробе</button>
+    <button type="button" class="btn" data-berrypop="t-model" aria-expanded="false">о модели</button>
+    <a class="btn" href="https://github.com/VibeEngineering-LLC/geant4-detector-models" target="_blank" rel="noopener">код на GitHub</a>
+  </div>
+
+  <!-- ============================ Черника, вкладка: метод 1 ============================ -->
+  <div class="stage" id="berry-viewM1">
+    <div class="m1-wrap">
+      <p class="method-lede">Подгонка полного спектра тремя МК-шаблонами Geant4 — полный распад Cs-137, полный распад K-40 и β-распад Sr-90+Y-90 (1:1) — и измеренным фоном Маринелли+вода, приведённым по живому времени и
+      умноженным на r(E); фон не подгоняется. Подгоняются три амплитуды; окно подгонки {{kp_lo}}–{{kp_hi}}&nbsp;кэВ, смоделировано распадов в шаблонах: {{tpl_decays}}. Заливкой показан вклад каждого слоя в модель при найденных амплитудах; измерение — чёрная линия, сумма — пунктир.</p>
+      <div class="summary" id="berry-sumM1"></div>
+      <div class="legendbar" id="berry-legendM1"></div>
+      <div class="plotwrap">
+        <div class="plotbox">
+          <canvas id="berry-cvM1" role="img"
+            aria-label="разложение спектра черники — метод 1: шаблоны Cs-137, K-40, β Sr-90+Y-90 и фон"></canvas>
+          <div class="chart-tip" id="berry-m1-tip" hidden></div>
+        </div>
+      </div>
+      <div class="cursor-line" id="berry-cursorM1">наведите курсор на канал спектра</div>
+      <p class="guard-note">Контур слоя сплошной там, где МК-шаблон содержит не менее {{n_eff_min}}
+      отсчётов на канал, и пунктирный там, где их меньше: ниже порога доля слоя в канале определяется шумом
+      шаблона и не считается измеренной долей. Какая часть вклада слоя лежит ниже порога, показывает
+      подсказка при наведении на слой в легенде.</p>
+      <p class="guard-note">Слой «внешнее тормозное излучение β Sr-90+Y-90 (Geant4)» — электроны распада тормозятся в веществе пробы, сосуда и корпуса; его амплитуда — вспомогательный параметр подгонки, активность Sr-90 не выводится.</p>
+      <div class="scroll"><table class="big" id="berry-tblM1"></table></div>
+    </div>
+  </div>
+
+  <!-- ============================ Черника, вкладка: метод 2 ============================ -->
+  <div class="stage" id="berry-viewM2" hidden>
+    <div class="m1-wrap">
+      <p class="method-lede">Для каждой линии библиотеки — γ-линии или рентгеновской линии — берётся функция отклика детектора на моноэнергетический квант этой энергии
+      (пик полного поглощения, комптоновский континуум, пики вылета, собственные линии детектора), полученная прямыми расчётами Geant4 в той же пробе
+      (узлов сетки: {{berry_m2_nodes}}); она умножается на выход линии, и подгоняется одна амплитуда на нуклид. К ним добавлены внешнее тормозное излучение
+      β-электронов и электронов конверсии Cs-137 и K-40 (отдельные слои) и β-шаблон Sr-90+Y-90 (вспомогательный параметр подгонки); фон тот же, что в методе 1, не подгоняется.
+      Окно подгонки {{kp_lo}}–{{kp_hi}}&nbsp;кэВ, число каналов {{berry_m2_nch}}. Библиотека содержит {{berry_m2_nlines}} линий, из них рентгеновских (Ba у Cs-137 и Ar у K-40): {{berry_m2_nxray}}.</p>
+      <div class="summary" id="berry-sumM2"></div>
+      <div class="legendbar" id="berry-legendM2"></div>
+      <div class="plotwrap">
+        <div class="plotbox">
+          <canvas id="berry-cvM2" role="img"
+            aria-label="разложение спектра черники — метод 2: линии Cs-137 и K-40, внешнее тормозное излучение β и электронов, β Sr-90+Y-90 и фон"></canvas>
+          <div class="chart-tip" id="berry-m2-tip" hidden></div>
+        </div>
+      </div>
+      <div class="cursor-line" id="berry-cursorM2">наведите курсор на канал спектра</div>
+      <p class="guard-note">Слои: линии Cs-137, линии K-40, внешнее тормозное излучение (β/e⁻) Cs-137 и K-40 отдельными слоями, β Sr-90+Y-90 и фон.
+      Форма пика: 661,7&nbsp;кэВ — χ²/ν = {{berry_m2_shape662}}, 1460,8&nbsp;кэВ — χ²/ν = {{berry_m2_shape1460}}. Внутреннее тормозное излучение в расчёт не входит.
+      K-рентгеновское излучение Ar после электронного захвата (около 3&nbsp;кэВ) из пробы до кристалла не доходит: отклик этих линий равен нулю.</p>
+      <div class="scroll"><table class="big" id="berry-tblM2N"></table></div>
+      <p class="guard-note"><b>Библиотека линий.</b> Выход — на распад нуклида; ε<sub>ПП</sub> — эффективность регистрации в пике полного поглощения по откликам Geant4;
+      «по модели» — число нетто-отсчётов, которое линия даёт при найденной активности.</p>
+      <div class="scroll"><table class="big" id="berry-tblM2"></table></div>
+    </div>
+  </div>
+
+  <!-- ============================ Черника, вкладка: сравнение ============================ -->
+  <div class="stage" id="berry-viewCmp" hidden>
+    <div class="cmp-wrap">
+      <p class="method-lede">Оценки на одной шкале: Бета-1С (опорное значение другого прибора), метод 1 и метод 2. Ширина цветной полосы — заявленная неопределённость
+      (у метода 1 — статистическая, умноженная на поправку Бирге, когда χ²/ν больше единицы). Опорное значение приведено для сравнения; параметры модели по нему не подбирались.</p>
+      <h2 class="sec-h">Cs-137</h2>
+      <canvas id="berry-cvCmp" height="200" role="img" aria-label="сравнение оценок активности Cs-137 с их интервалами"></canvas>
+      <h2 class="sec-h">K-40 (предварительно)</h2>
+      <canvas id="berry-cvCmpK" height="200" role="img" aria-label="сравнение оценок активности K-40 с их интервалами"></canvas>
+      <div class="cmp-table" id="berry-cmpTable"></div>
+      <p class="method-lede">Бета-1С — другой прибор и другая проба того же материала (файл данных Бета-1С, кювета 70&nbsp;мм); СпектраЛайн на 01.10.2024 даёт Cs-137 {{berry_sl_cs24}}, на дату нашего измерения (распад за {{berry_sl_years}}) — {{berry_sl_cs}};
+      K-40 — {{berry_sl_k}}. Совпадение в пределах нескольких процентов не гарантирует точности и не используется для подгонки.</p>
+      <figure>
+        <img src="{{berry_beta_img}}" alt="Снимок окна СпектраЛайн: разложение спектра Бета-1С по шаблонам, черника, 01.10.2024">
+        <figcaption>Снимок окна СпектраЛайн (Бета-1С, 01.10.2024): опорное разложение другого прибора.</figcaption>
+      </figure>
+      <p class="guard-note">Фон Маринелли+вода измерен за живое время {{kp_bg_live}}.
+      Систематическая погрешность Cs-137 — около {{berry_cs_sys}} (оценка по разбросу результатов разных путей расчёта и вариантов подгонки; не полный бюджет неопределённости); результат по K-40 зависит от поправки r(E) на ослабление фона пробой: погрешность r, равная 0,01, изменяет активность примерно на 13&nbsp;Бк. Погрешности K-40 разного происхождения и не суммируются: ± в сводках и таблицах — статистическая погрешность подгонки с поправкой Бирге; {{berry_k_noise}} — погрешность вычитания фона; {{berry_k_sys}} — систематическая погрешность.</p>
+    </div>
+  </div>
+
+  <!-- ============================ Черника, вкладка: калибровка ============================ -->
+  <div class="stage" id="berry-viewCal" hidden>
+    <div class="cal-wrap">
+      <p class="method-lede">Спектры пробы (черника) и фона Маринелли+вода. Фон приведён по живому времени к пробе; разность — счёт пробы минус приведённый фон в каждом канале. Шкала энергии у каждого спектра собственная: в файле прибора
+      для черники калибровки нет, шкала — гладкий полином, определяемый по положениям групп пиков этого спектра, подобранным по откликам Geant4; отклонение полинома, представляющего шкалу, от подгонки — до {{kp_cal_repr}}. Опорные линии — линии Cs-137 661,7, K-40 1460,8 и Tl-208 фона.</p>
+      <div class="chartbox" id="berry-calbox">
+        <div class="ctrls" id="berry-cal-ctrls">
+          <label><span class="sw" style="background:#16140f"></span>
+            <input type="checkbox" id="berry-c-smp" checked> проба (черника)</label>
+          <label><span class="sw" style="background:#0f5aa8"></span>
+            <input type="checkbox" id="berry-c-bg" checked> фон (приведён)</label>
+          <label><span class="sw" style="background:#c8541c"></span>
+            <input type="checkbox" id="berry-c-diff"> проба − фон</label>
+          <label><input type="checkbox" id="berry-c-log" checked> логарифмическая шкала</label>
+          <label><input type="checkbox" id="berry-c-anch" checked> опорные линии</label>
+          <button type="button" class="btn" id="berry-cal-reset">весь диапазон</button>
+        </div>
+        <canvas id="berry-cvCal" role="img"
+          aria-label="откалиброванные спектры пробы черники, фона и их разности с опорными линиями; выделение области мышью — масштабирование, двойной щелчок — сброс"></canvas>
+        <div class="chart-tip" id="berry-cal-tip" hidden></div>
+        <div class="readout" id="berry-cal-ro"></div>
+      </div>
+      <div class="scroll"><table class="big" id="berry-tblCal"></table></div>
+
+      <h2 class="sec-h">Калибровка по разрешению</h2>
+      <p class="method-lede">Ширина пиков — характеристика прибора, а не пробы: она определяется один раз по опорному спектру тория-232 того же прибора
+      и применяется ко всем измерениям. Точки получены из таблицы «Параметры пиков» СпектраЛайн по спектру тория умножением на {{kp_fw_scale}}; между точками — интерполяция в логарифмах; на 1460,8&nbsp;кэВ ширина в свёртке равна {{kp_fw_k40_conv}} (СпектраЛайн — {{kp_fw_k40_sl}}).
+      Степенная зависимость ПШПВ(E)&nbsp;=&nbsp;{{fw_k}}·E<sup>{{fw_p}}</sup>&nbsp;кэВ — аппроксимация значений ПШПВ в свёртке (СКО {{fw_rms}}); на 662&nbsp;кэВ она даёт {{fw_662}}, на 1460,8&nbsp;кэВ — {{kp_fw_k40_law}}. Собственного измерения ширины в спектре черники нет; эта ширина используется в свёртке всех шаблонов.</p>
+      <div class="chartbox" id="berry-fwbox">
+        <canvas id="berry-cvFwhm" role="img"
+          aria-label="разрешение прибора в зависимости от энергии: значения ПШПВ в свёртке модели и степенная зависимость"></canvas>
+      </div>
+      <div class="scroll"><table class="big" id="berry-tblFwhm"></table></div>
+    </div>
+  </div>
+</div>
+<footer class="bot berry-foot">
+  <span>Черника: спектр {{date_meas}}, живое время {{tlive}}, реальное {{treal}}.</span>
+  <span>Шаблоны — МК-расчёты Geant4; смоделировано распадов: {{tpl_decays}}.</span>
+  <button type="button" data-pop="t-about" aria-expanded="false">о странице и её числах</button>
+  <button type="button" data-pop="t-refs" aria-expanded="false">источники</button>
+</footer>

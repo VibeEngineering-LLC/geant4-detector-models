@@ -1,0 +1,167 @@
+
+<style>
+#berry-tblM1 td:first-child{white-space:nowrap}
+#berry-tblM2N td:first-child{white-space:nowrap}
+#berry-tblM2 td:nth-child(2){white-space:nowrap}
+#berry-tblM2 td:nth-child(1){white-space:nowrap}
+#berry-viewM2 .scroll{max-height:436px; overflow-y:auto; border:1.5px solid var(--rule-soft); padding:0 .65rem}
+#berry-fwbox canvas{height:clamp(15rem, 30vh, 22rem)}
+#berry-viewCmp figure{display:grid; grid-template-columns:minmax(0,1fr); margin:0 0 1rem}
+#berry-viewCmp img{width:-webkit-fill-available; width:-moz-available; width:stretch; height:auto; display:block; border:1.5px solid var(--rule-soft)}
+#berry-viewCmp canvas{height:200px}
+body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
+</style>
+<div class="top spec-top">
+  <div class="title">
+    <p class="eyebrow">spectrum 3 · Cs-137 + K-40 · dried blueberries in the Marinelli 2 beaker (volume 1&nbsp;L)</p>
+    <h2 class="spec-h">First sample of unknown activity: dried blueberries</h2>
+    <p class="stand">Sample of dried blueberries, {{berry_mass}}, volume 1&nbsp;L in a Marinelli beaker (fill level {{berry_level}} relative to the rim), bulk density {{berry_rho}}; the same spectrometer; the beaker is Marinelli&nbsp;2
+      (assembly geometry: <a href="https://github.com/VibeEngineering-LLC/geant4-detector-models/blob/main/detectors/Atom-GS2020-PRO-MAX/geometry/GS2020_marinelli_berry_dry_1000ml.gdml"
+      target="_blank" rel="noopener">GDML</a>).
+      Live time of the measurement {{berry_live_h}} ({{berry_dates}}). The spectrum contains lines of caesium-137 and potassium-40; the continuous component is described by the β template of strontium-90 with yttrium-90. The Marinelli + water background is subtracted, scaled to live time and multiplied by r(E):
+      the density of blueberries is lower than that of water, and the sample attenuates the external background less; the r(E) correction is calculated in Geant4 separately for the background lines (full-energy peaks) and for the continuum. Geant4 templates — in the sample geometry: full decay of Cs-137
+      (with Ba-137m), K-40, Sr-90 and Y-90. Peak width and shape and efficiency — from the detector data set (thorium reference spectrum), without fitting to the sample; the energy scale is specific to this spectrum and is determined from the positions of its peaks.</p>
+    <p class="stand">Method 1 (full-spectrum fit with the same convolution kernel as for thorium) gave for Cs-137 {{berry_cs_a}} ({{berry_cs_kg}}); statistical uncertainty {{berry_cs_dstat}}, systematic uncertainty about {{berry_cs_sys}};
+      overall χ²/ν = {{berry_chi2}}, peak shape at 661.7&nbsp;keV — χ²/ν = {{berry_shape662}}; scatter across all fit variants about {{berry_cs_var}}. For K-40 Method 1 gave {{berry_k_a}} ({{berry_k_kg}}); with background subtraction uncertainty {{berry_k_noise}}, systematic uncertainty {{berry_k_sys}}: this is a small
+      difference between the sample peak and the background peak and depends strongly on the r(E) correction; the K-40 result is therefore preliminary. Reference value from another instrument
+      (Beta-1S, SpectraLine, different sample): on its measurement date 01.10.2024 Cs-137 {{berry_sl_cs24}}, K-40 {{berry_sl_k}}; Cs-137, decay-corrected to the date of our measurement
+      (decay over {{berry_sl_years}}): {{berry_sl_cs}}; the ratios of our values to these are {{berry_ratio_cs}} and {{berry_ratio_k}}
+      ({{berry_dev_cs}} and {{berry_dev_k}}); the model parameters were not adjusted to the reference value. Method 2 (FEP efficiency function × line library) gave for Cs-137 {{berry_m2_cs_a}} ({{berry_m2_cs_kg}}), for K-40 {{berry_m2_k_a}} ({{berry_m2_k_kg}}); relative to the reference {{berry_m2_dev_cs}} and {{berry_m2_dev_k}}, χ²/ν = {{berry_m2_chi2}}. The β activity of Sr-90+Y-90 is a nuisance parameter (a model parameter required to describe the spectrum but not the quantity of interest): the electrons are stopped in the sample, the beaker wall, and the housing,
+      and their bremsstrahlung forms a broad continuous bump in the 150–450&nbsp;keV region; the activity of Sr-90 is not determined from the γ-ray spectrum and is not published: the β template is fitted only as an auxiliary component.</p>
+    <p class="warn"><b>Compton edge of the 662&nbsp;keV line (about 477&nbsp;keV).</b> The Compton edge in the measurement is shifted towards lower energies and is broader than in the model: by {{berry_edge662}} for the 662&nbsp;keV line (for KCl — by {{berry_edge1461}} for the 1460.8&nbsp;keV line, edge at about 1243&nbsp;keV). The cause has not been established; the scintillation light-yield non-proportionality of NaI(Tl) is being considered
+      (the parameters of the non-proportionality model (NPSM) for this crystal have not yet been determined). The residual is about −{{berry_resid}} at {{berry_resid_band}}; peak-based activities are practically insensitive to it.
+      Below {{kp_lo}}&nbsp;keV the model is not evaluated: fit window — {{kp_lo}}–{{kp_hi}}&nbsp;keV.</p>
+  </div>
+</div>
+<div class="panel">
+  <div class="toolbar">
+    <div class="tabs" role="tablist" aria-label="view selection, blueberries" id="berry-tabs">
+      <button type="button" class="btn tab" data-tab="m1" aria-selected="true">Method 1: nuclide-by-nuclide MC fit</button>
+      <button type="button" class="btn tab" data-tab="m2" aria-selected="false">Method 2: FEP efficiency function + library</button>
+      <button type="button" class="btn tab" data-tab="cmp" aria-selected="false">comparison</button>
+      <button type="button" class="btn tab" data-tab="cal" aria-selected="false">calibration</button>
+    </div>
+    <span class="sp"></span>
+    <div class="seg" id="berry-fwhmseg" role="group" aria-label="subtracted background">
+      <button type="button" class="btn" data-fwhmlaw="cs" aria-pressed="true">background: Marinelli + water</button>
+    </div>
+    <button type="button" class="btn" data-berrypop="t-method" aria-expanded="false">how it is calculated</button>
+    <button type="button" class="btn" data-berrypop="t-passport" aria-expanded="false">about the sample</button>
+    <button type="button" class="btn" data-berrypop="t-model" aria-expanded="false">about the model</button>
+    <a class="btn" href="https://github.com/VibeEngineering-LLC/geant4-detector-models" target="_blank" rel="noopener">code on GitHub</a>
+  </div>
+
+  
+  <div class="stage" id="berry-viewM1">
+    <div class="m1-wrap">
+      <p class="method-lede">Fit of the full spectrum using three Geant4 Monte Carlo response templates — full decay of Cs-137, full decay of K-40, and β-decay of Sr-90+Y-90 (1:1) — and the measured Marinelli + water background, scaled to live time and multiplied by r(E); the background is not fitted. Three amplitudes are fitted; fit window {{kp_lo}}–{{kp_hi}}&nbsp;keV, simulated decays in the templates: {{tpl_decays}}. The shaded areas show the contribution of each component to the model at the fitted amplitudes; the measurement is the black line, the sum is the dashed line.</p>
+      <div class="summary" id="berry-sumM1"></div>
+      <div class="legendbar" id="berry-legendM1"></div>
+      <div class="plotwrap">
+        <div class="plotbox">
+          <canvas id="berry-cvM1" role="img"
+            aria-label="blueberry spectrum decomposition — Method 1: Cs-137, K-40, β Sr-90+Y-90 templates and background"></canvas>
+          <div class="chart-tip" id="berry-m1-tip" hidden></div>
+        </div>
+      </div>
+      <div class="cursor-line" id="berry-cursorM1">hover over a spectrum channel</div>
+      <p class="guard-note">The component outline is solid where the Monte Carlo response template contains at least {{n_eff_min}}
+      counts per channel, and dashed where it contains fewer: below this threshold, the component fraction in a channel is determined by template noise
+      and is not considered a measured fraction. The fraction of the component contribution lying below the threshold is shown in the
+      tooltip when hovering over the component in the legend.</p>
+      <p class="guard-note">The component “external bremsstrahlung of Sr-90+Y-90 β particles (Geant4)”: the decay electrons are stopped in the sample, beaker, and housing; its amplitude is a nuisance (auxiliary) fit parameter, and the Sr-90 activity is not derived.</p>
+      <div class="scroll"><table class="big" id="berry-tblM1"></table></div>
+    </div>
+  </div>
+
+  
+  <div class="stage" id="berry-viewM2" hidden>
+    <div class="m1-wrap">
+      <p class="method-lede">For each line in the library — a γ-ray or an X-ray line — the detector response function to a monoenergetic photon of that energy is taken
+      (full-energy peak, Compton continuum, escape peaks, intrinsic detector lines), obtained by direct Geant4 calculations in the same sample
+      (grid nodes: {{berry_m2_nodes}}); it is multiplied by the emission probability of the line, and one amplitude per nuclide is fitted. External bremsstrahlung of
+      β particles and conversion electrons of Cs-137 and K-40 (separate components) and the Sr-90+Y-90 β template (nuisance fit parameter) are added; the background is the same as in Method 1 and is not fitted.
+      Fit window {{kp_lo}}–{{kp_hi}}&nbsp;keV, number of channels {{berry_m2_nch}}. The library contains {{berry_m2_nlines}} lines, including {{berry_m2_nxray}} X-ray lines (Ba K X-rays from Cs-137, Ar K X-rays from K-40).</p>
+      <div class="summary" id="berry-sumM2"></div>
+      <div class="legendbar" id="berry-legendM2"></div>
+      <div class="plotwrap">
+        <div class="plotbox">
+          <canvas id="berry-cvM2" role="img"
+            aria-label="blueberry spectrum decomposition — Method 2: Cs-137 and K-40 lines, external bremsstrahlung of β particles and conversion electrons, Sr-90+Y-90 β and background"></canvas>
+          <div class="chart-tip" id="berry-m2-tip" hidden></div>
+        </div>
+      </div>
+      <div class="cursor-line" id="berry-cursorM2">hover over a spectrum channel</div>
+      <p class="guard-note">Components: Cs-137 lines, K-40 lines, external bremsstrahlung (β/e⁻) of Cs-137 and K-40 as separate components, Sr-90+Y-90 β, and background.
+      Peak shape in this method: 661.7&nbsp;keV — χ²/ν = {{berry_m2_shape662}}, 1460.8&nbsp;keV — χ²/ν = {{berry_m2_shape1460}}. Internal bremsstrahlung is not included in the calculation.
+      Ar K X-rays following electron capture (about 3&nbsp;keV) do not reach the crystal from the sample: the response of these lines is zero.</p>
+      <div class="scroll"><table class="big" id="berry-tblM2N"></table></div>
+      <p class="guard-note"><b>Line library.</b> Emission probability — per nuclide decay; ε<sub>FEP</sub> — full-energy peak efficiency based on Geant4 responses;
+      “model counts” — the net peak area (counts) that the line yields at the fitted activity.</p>
+      <div class="scroll"><table class="big" id="berry-tblM2"></table></div>
+    </div>
+  </div>
+
+  
+  <div class="stage" id="berry-viewCmp" hidden>
+    <div class="cmp-wrap">
+      <p class="method-lede">Estimates on a common scale: Beta-1S (reference value from another instrument), Method 1, and Method 2. The width of the colored band indicates the stated uncertainty
+      (for Method 1 — statistical uncertainty multiplied by the Birge ratio correction when χ²/ν exceeds one). The reference value is provided for comparison; the model parameters were not adjusted to it.</p>
+      <h2 class="sec-h">Cs-137</h2>
+      <canvas id="berry-cvCmp" height="200" role="img" aria-label="comparison of Cs-137 activity estimates with their intervals"></canvas>
+      <h2 class="sec-h">K-40 (preliminary)</h2>
+      <canvas id="berry-cvCmpK" height="200" role="img" aria-label="comparison of K-40 activity estimates with their intervals"></canvas>
+      <div class="cmp-table" id="berry-cmpTable"></div>
+      <p class="method-lede">Beta-1S — a different instrument and a different sample of the same material (Beta-1S data file, 70&nbsp;mm dish); SpectraLine on 01.10.2024 gives Cs-137 {{berry_sl_cs24}}, decay-corrected to the date of our measurement (decay over {{berry_sl_years}}): {{berry_sl_cs}};
+      K-40 — {{berry_sl_k}}. Agreement within a few percent does not guarantee accuracy and is not used for fitting.</p>
+      <figure>
+        <img src="{{berry_beta_img}}" alt="Screenshot of the SpectraLine window: decomposition of the Beta-1S spectrum into templates, blueberries, 1 October 2024">
+        <figcaption>Screenshot of the SpectraLine window (Beta-1S, 01.10.2024): reference decomposition from another instrument.</figcaption>
+      </figure>
+      <p class="guard-note">The Marinelli + water background was measured over a live time of {{kp_bg_live}}.
+      Systematic uncertainty for Cs-137 — approximately {{berry_cs_sys}} (estimated from the spread of results from different calculation paths and fitting variants; not a complete uncertainty budget); the K-40 result depends on the r(E) correction for background attenuation by the sample: an uncertainty in r of 0.01 changes the activity by approximately 13&nbsp;Bq. The K-40 uncertainties have different origins and are not summed: ± in the summaries and tables is the statistical fit uncertainty with the Birge ratio correction; {{berry_k_noise}} is the background-subtraction uncertainty; {{berry_k_sys}} is the systematic uncertainty.</p>
+    </div>
+  </div>
+
+  
+  <div class="stage" id="berry-viewCal" hidden>
+    <div class="cal-wrap">
+      <p class="method-lede">Spectra of the sample (blueberries) and the Marinelli + water background. The background is scaled to the live time of the sample; the difference is the sample count minus the scaled background in each channel. Each spectrum has its own energy scale: the file recorded by the spectrometer
+      for blueberries contains no calibration; the scale is a smooth polynomial determined from the positions of the peak groups of this spectrum, which are determined from Geant4 responses; the deviation of the polynomial representing the scale from the fit is up to {{kp_cal_repr}}. Reference lines: Cs-137 (661.7 keV), K-40 (1460.8 keV), and the Tl-208 background line.</p>
+      <div class="chartbox" id="berry-calbox">
+        <div class="ctrls" id="berry-cal-ctrls">
+          <label><span class="sw" style="background:#16140f"></span>
+            <input type="checkbox" id="berry-c-smp" checked> sample (blueberries)</label>
+          <label><span class="sw" style="background:#0f5aa8"></span>
+            <input type="checkbox" id="berry-c-bg" checked> background (scaled)</label>
+          <label><span class="sw" style="background:#c8541c"></span>
+            <input type="checkbox" id="berry-c-diff"> sample − background</label>
+          <label><input type="checkbox" id="berry-c-log" checked> logarithmic scale</label>
+          <label><input type="checkbox" id="berry-c-anch" checked> reference lines</label>
+          <button type="button" class="btn" id="berry-cal-reset">full range</button>
+        </div>
+        <canvas id="berry-cvCal" role="img"
+          aria-label="calibrated spectra of the blueberry sample, background, and their difference with reference lines; drag to zoom, double-click to reset"></canvas>
+        <div class="chart-tip" id="berry-cal-tip" hidden></div>
+        <div class="readout" id="berry-cal-ro"></div>
+      </div>
+      <div class="scroll"><table class="big" id="berry-tblCal"></table></div>
+
+      <h2 class="sec-h">Energy resolution calibration</h2>
+      <p class="method-lede">Peak width is a characteristic of the spectrometer, not a sample property: it is determined once from the thorium-232 reference spectrum of the same spectrometer
+      and applied to all measurements. The points are obtained from the SpectraLine “Peak Parameters” table for the thorium spectrum by multiplying by {{kp_fw_scale}}; between the points, log–log interpolation is used; at 1460.8&nbsp;keV the width in the convolution is {{kp_fw_k40_conv}} (SpectraLine: {{kp_fw_k40_sl}}).
+      The power law FWHM(E)&nbsp;=&nbsp;{{fw_k}}·E<sup>{{fw_p}}</sup>&nbsp;keV is an approximation of the FWHM values used in the convolution (RMS deviation {{fw_rms}}); at 662&nbsp;keV it yields {{fw_662}}, at 1460.8&nbsp;keV — {{kp_fw_k40_law}}. No width measurement is available from the blueberry spectrum itself; this width is used in the convolution of all templates.</p>
+      <div class="chartbox" id="berry-fwbox">
+        <canvas id="berry-cvFwhm" role="img"
+          aria-label="spectrometer resolution versus energy: FWHM values used in the convolution and power law"></canvas>
+      </div>
+      <div class="scroll"><table class="big" id="berry-tblFwhm"></table></div>
+    </div>
+  </div>
+</div>
+<footer class="bot berry-foot">
+  <span>Blueberries: spectrum {{date_meas}}, live time {{tlive}}, real time {{treal}}.</span>
+  <span>Templates — Geant4 Monte Carlo calculations; simulated decays: {{tpl_decays}}.</span>
+  <button type="button" data-pop="t-about" aria-expanded="false">about this page and its numbers</button>
+  <button type="button" data-pop="t-refs" aria-expanded="false">sources</button>
+</footer>

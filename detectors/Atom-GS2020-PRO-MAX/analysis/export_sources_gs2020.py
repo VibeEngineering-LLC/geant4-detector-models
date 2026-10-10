@@ -10,8 +10,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import fit_gs2020_kcl as fk
 
-KCL = r"C:\g4work\gs2020\kcl_v4w85_83\fit_kcl_bgw.json"   # Маринелли 2 v4, конус колодца (29.09)
-OUT = r"D:\cloud-folder\work-folder\GEANT4\web\gs2020-th232-page\gs2020_sources.json"
+KCL = r"C:\g4work\gs2020\kcl_1l_v4w85_83\fit_kcl_bgw.json"   # Маринелли 2 v4, конус колодца (29.09)
+OUT = r"<WORKDIR>\GEANT4\web\gs2020-th232-page\gs2020_sources.json"
 
 def f(x, d):
     """Форматирование числа: группировка целой части через U+202F, запятая вместо точки."""
@@ -126,9 +126,9 @@ spectrum = {
 # Формирование fill
 k40_mass = f(fk.MASS_G, 0) + " г"
 k40_vol = f(fk.VOL_ML, 0) + " мл"
-k40_rho = f(fk.MASS_G / fk.VOL_ML, 2) + " г/см³"
+k40_rho = f(fk.MASS_G / fk.VOL_ML, 3) + " г/см³"
 k40_kfrac = f(fk.K_FRAC, 5)
-k40_spec = f(fk.K40_BQ_PER_G_K, 2) + " Бк/г K"
+k40_spec = f(fk.K40_BQ_PER_G_K, 3) + " Бк/г K"
 k40_aexp = f(A_expected_Bq, 0) + " Бк"
 k40_live = f(live_s / 3600, 1) + " ч"
 k40_a = f(A_Bq, 0) + " ± " + f(dA_stat_Bq, 0) + " Бк"
@@ -156,14 +156,14 @@ note2 = f"шаблон полного распада K-40 (Geant4), окно {f(
 note2 = "ядро как у тория (без хвоста, ПШПВ ×1,05); " + note2
 # W-155: вариант с донорским хвостом ядра (run_gs2020_kcl.sh → fit_kcl_bgw_tail.json) — строка чувствительности
 tl = json.load(open(KCL.replace(".json", "_tail.json"), encoding="utf-8"))
-row_tail = {"lab": "метод 1: ядро с хвостом (донор Гамма-1С)", "A": tl["A_Bq"], "dA": tl["dA_stat_Bq"], "ratio": tl["A_Bq"] / tl["A_expected_Bq"],
+row_tail = {"lab": "метод 1: ядро с хвостом (Гамма-1С)", "A": tl["A_Bq"], "dA": tl["dA_stat_Bq"], "ratio": tl["A_Bq"] / tl["A_expected_Bq"],
             "note": "χ²/ν = %s; форма пика 1460,8 кэВ: χ²/ν = %s" % (f(tl["chi2"] / tl["ndof"], 3), f(tl["shape_1460"], 2))}
 fill["k40_tail_ratio"] = f(row_tail["ratio"], 4)
 # #GS-24 (оператор 28.09 «только метод 1 и 2»): метод 2 — fit_gs2020_kcl_m2.py → fit_kcl_m2_bgw.json
 m2 = json.load(open(KCL.replace("fit_kcl_bgw.json", "fit_kcl_m2_bgw.json"), encoding="utf-8"))
 row_m2 = {"lab": "метод 2: линия × отклик Geant4", "A": m2["A_Bq"], "dA": m2["dA_stat_Bq"], "ratio": m2["ratio"],
-          "note": "γ 1460,82 кэВ, выход %s %% (ENSDF, API IAEA); χ²/ν = %s; форма пика: χ²/ν = %s; с выходом %s %% (LNHB-DDEP 2025) — %s от ожидаемой"
-                  % (f(m2["Igamma_pct"], 2), f(m2["chi2"] / m2["ndof"], 3), f(m2["shape_1460"], 2), f(m2["Igamma_lnhb_pct"], 2), f(m2["A_lnhb_Bq"] / m2["A_expected_Bq"], 4))}
+          "note": "γ 1460,82 кэВ, выход %s %% (LNHB-DDEP 2025; в ENSDF — 10,66 %%); χ²/ν = %s; форма пика: χ²/ν = %s; отношение к ожидаемой — %s"
+                  % (f(m2["Igamma_lnhb_pct"], 2), f(m2["chi2"] / m2["ndof"], 3), f(m2["shape_1460"], 2), f(m2["A_lnhb_Bq"] / m2["A_expected_Bq"], 4))}
 fill.update({"k40_m2_a": f(m2["A_Bq"], 0) + " ± " + f(m2["dA_stat_Bq"], 0) + " Бк", "k40_m2_ratio": f(m2["ratio"], 4),
              "k40_m2_chi2": f(m2["chi2"] / m2["ndof"], 2), "k40_ig": f(m2["Igamma_pct"], 2), "k40_ig_lnhb": f(m2["Igamma_lnhb_pct"], 2)})
 
@@ -191,14 +191,14 @@ output_obj = {
     "fill": fill,
     "order": ["th", "k40", "cs137", "ra226"],
     "sources": {
-        "th": {"label": "Th-232", "status": "ready"},   # #GS-29 (оператор 28.09): слово «КИ» по GS2020 не писать нигде
+        "th": {"label": "Th-232", "status": "ready"},   # #GS-29 (запрещённое слово)
         "k40": {
             "label": "K-40 (KCl)",
             "status": "ready",
             "results": results,
             "spectrum": spectrum
         },
-        "cs137": {"label": "Cs-137", "status": "soon"},
+        "cs137": __import__("export_sources_berry").berry_source(),   # #GS-70 черника
         "ra226": {"label": "Ra-226", "status": "soon"}
     }
 }

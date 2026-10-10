@@ -11,6 +11,9 @@ from merge_templates_gs2020 import read_chunk
 m1 = fk.m1; CAL = fk.CAL
 EXT = os.environ.get("GS_EXT_DIR", r"C:\g4work\gs2020\ext")
 SELFTEST = os.environ.get("GS_EXT_SELFTEST") == "1"
+SAMPLE = os.environ.get("GS_EXT_SAMPLE", "kcl")   # #GS-60 (07.10): тег пробы в именах ext_<тег>_E…; kcl = KCl 740 мл (#GS-44)
+TAGSFX = "" if SAMPLE == "kcl" else "_" + SAMPLE
+if os.environ.get("GS_BG_R"): print("ОТКАЗ: GS_BG_R задан — r(E) считается по НЕослабленному фону воды (#GS-60)"); sys.exit(1)
 FIT_LO, FIT_HI = (float(x) for x in os.environ.get("GS_EXT_FIT", "30,2800").split(","))
 BANDS = [(10, 20), (20, 26), (26, 30), (30, 34), (34, 38), (38, 45), (45, 60), (60, 90), (90, 150),
          (150, 300), (300, 600), (600, 1000), (1000, 1500), (1500, 3000), (150, 3000)]
@@ -27,8 +30,11 @@ def main():
     e = np.asarray(r["e"], float); ch_edges = r["ch_edges"]; fw = lambda E: m1.BLUR * r["fwhm"](E)
     bg = np.asarray(r["bg_scaled"], float); k = s.live_time / b.live_time
 
-    j = json.load(open(os.path.join(fk.OUT, "fit_kcl_bgw.json"), encoding="utf-8"))
-    je = np.array(j["e"], float); jnet = np.array(j["net"], float); jmod = np.array(j["model"], float); jbg = np.array(j["bg"], float)
+    if SAMPLE != "kcl":   # #GS-70: «нужно» — диагностика по подгонке KCl; у другой пробы её нет (nan), r(E) от неё не зависит
+        je = e; jnet = jmod = jbg = np.full(len(e), np.nan)
+    else:
+        j = json.load(open(os.path.join(fk.OUT, "fit_kcl_bgw.json"), encoding="utf-8"))
+        je = np.array(j["e"], float); jnet = np.array(j["net"], float); jmod = np.array(j["model"], float); jbg = np.array(j["bg"], float)
     if len(je) != len(e) or max(abs(je - e)) > 1e-6:
         fail("Mismatch in energy arrays from fit_kcl_bgw.json")
 
@@ -41,7 +47,7 @@ def main():
 
     # Step B
     files = glob.glob(os.path.join(EXT, "chunks", "ext_*_E*_*.csv"))
-    pat = re.compile(r"ext_(water|kcl)_E([0-9.]+)_(up|down)\.csv$")
+    pat = re.compile(r"ext_([a-z0-9]+)_E([0-9.]+)_(up|down)\.csv$")
     D = {}
     energies_found = set()
 
@@ -72,7 +78,7 @@ def main():
     energies_sorted = sorted(energies_found, key=float)
     missing = []
     for E in energies_sorted:
-        for g in ("water", "kcl"):
+        for g in ("water", SAMPLE):
             for h in ("up", "down"):
                 if (g, E, h) not in D:
                     missing.append(f"{g}_E{E}_{h}")
@@ -84,7 +90,7 @@ def main():
         for E in energies_sorted:
             for h in ("up", "down"):
                 w_data = D[("water", E, h)]
-                D[("kcl", E, h)] = w_data
+                D[(SAMPLE, E, h)] = w_data
 
     print(f"Files processed: {len(files)}, Energies: {len(energies_sorted)}")
 
@@ -126,16 +132,16 @@ def main():
                 R_E_w = 0.5 * (col_up_w + col_dn_w)
                 V_E_w = 0.25 * (var_up_w + var_dn_w)
 
-                col_up_k, var_up_k, _, _ = D[("kcl", E, "up")]
-                col_dn_k, var_dn_k, _, _ = D[("kcl", E, "down")]
+                col_up_k, var_up_k, _, _ = D[(SAMPLE, E, "up")]
+                col_dn_k, var_dn_k, _, _ = D[(SAMPLE, E, "down")]
                 R_E_k = 0.5 * (col_up_k + col_dn_k)
                 V_E_k = 0.25 * (var_up_k + var_dn_k)
             elif v == "up":
                 R_E_w, V_E_w, _, _ = D[("water", E, "up")]
-                R_E_k, V_E_k, _, _ = D[("kcl", E, "up")]
+                R_E_k, V_E_k, _, _ = D[(SAMPLE, E, "up")]
             else:
                 R_E_w, V_E_w, _, _ = D[("water", E, "down")]
-                R_E_k, V_E_k, _, _ = D[("kcl", E, "down")]
+                R_E_k, V_E_k, _, _ = D[(SAMPLE, E, "down")]
 
             Bw += w[i] * R_E_w
             Vk_total += (w[i]**2) * V_E_k
@@ -146,13 +152,13 @@ def main():
         for i, E in enumerate(energies_sorted):
             if w[i] == 0: continue
             if v == "4pi":
-                col_up_k, _, _, _ = D[("kcl", E, "up")]
-                col_dn_k, _, _, _ = D[("kcl", E, "down")]
+                col_up_k, _, _, _ = D[(SAMPLE, E, "up")]
+                col_dn_k, _, _, _ = D[(SAMPLE, E, "down")]
                 R_E_k = 0.5 * (col_up_k + col_dn_k)
             elif v == "up":
-                R_E_k, _, _, _ = D[("kcl", E, "up")]
+                R_E_k, _, _, _ = D[(SAMPLE, E, "up")]
             else:
-                R_E_k, _, _, _ = D[("kcl", E, "down")]
+                R_E_k, _, _, _ = D[(SAMPLE, E, "down")]
             Bk += w[i] * R_E_k
 
         # Chi2
@@ -216,7 +222,7 @@ def main():
             
             csv_rows.append((g, rb_g, drb_g))
 
-        suffix = "_selftest" if SELFTEST else ""
+        suffix = TAGSFX + ("_selftest" if SELFTEST else "")
         csv_path = os.path.join(EXT, f"r_ext_{v}{suffix}.csv")
         with open(csv_path, "w", encoding="utf-8") as f:
             f.write("E_keV,r,dr\n")
@@ -232,7 +238,7 @@ def main():
         }
 
     # Step G - Photopeak Ratio (4pi only, unbroadened)
-    photopeaks = [609.312, 1764.494, 2614.511]
+    photopeaks = [float(x) for x in energies_sorted] if SAMPLE != "kcl" else [609.312, 1764.494, 2614.511]   # #GS-70: все узлы — для r(E) «линии+континуум» (gs70_r2.py)
     pp_results = {}
     
     for E0 in photopeaks:
@@ -249,8 +255,8 @@ def main():
         # Get raw1 and n for up and down for water and kcl
         _, _, r1_w_up, n_w_up = D[("water", found_E, "up")]
         _, _, r1_w_dn, n_w_dn = D[("water", found_E, "down")]
-        _, _, r1_k_up, n_k_up = D[("kcl", found_E, "up")]
-        _, _, r1_k_dn, n_k_dn = D[("kcl", found_E, "down")]
+        _, _, r1_k_up, n_k_up = D[(SAMPLE, found_E, "up")]
+        _, _, r1_k_dn, n_k_dn = D[(SAMPLE, found_E, "down")]
 
         # Peak window: int(E0) - 2 to int(E0) + 3 (exclusive of end in slice? No, inclusive usually. Python slice [start:end] excludes end. So +3 means up to index+3-1? Let's assume standard peak integration around channel.)
         # Prompt says: sum of raw1[int(E0) - 2 : int(E0) + 3]
@@ -297,7 +303,7 @@ def main():
         "photopeaks": pp_results
     }
     
-    suffix = "_selftest" if SELFTEST else ""
+    suffix = TAGSFX + ("_selftest" if SELFTEST else "")
     json_path = os.path.join(EXT, f"gs44_ext_ratio{suffix}.json")
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(json_out, f, ensure_ascii=False, indent=1)

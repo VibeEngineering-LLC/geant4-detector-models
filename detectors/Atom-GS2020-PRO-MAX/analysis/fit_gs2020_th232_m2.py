@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-r"""Метод 2 (линии библиотеки × прямые моно-γ прогоны сетки grid_mar_E*.csv, сумм-пики с F_B) для КИ Th-232 в
+r"""Метод 2 (линии библиотеки × прямые моно-γ прогоны сетки grid_mar_E*.csv, сумм-пики с F_B) для образца Th-232 в
 Маринелли на GS2020. Импорт донора Gamma-1S/web-th232 (grid_response, run_method2, fit_A2V, fit_E1).
 #XR-1 (оператор 25.09, заменяет прежнее #M2-1): рентген K/L учитывается ВСЕГДА — библиотека `th232_gs2020_lib05.yaml`
 несёт K/L-линии всех звеньев (`make_th232_lib05.add_xray_lines`), узлы сетки под них — jobs_xray.txt (42 энергии).
@@ -9,11 +9,11 @@ import sys, os, json, math
 import numpy as np
 sys.stdout.reconfigure(encoding="utf-8")
 HERE = os.path.dirname(os.path.abspath(__file__))
-DONOR = r"D:\repos-folder\repos\geant4-detector-models\detectors\Gamma-1S\web-th232"
+DONOR = r"<REPOS>\geant4-detector-models\detectors\Gamma-1S\web-th232"
 # GS_M2_CONFIG — своя библиотека (th232_gs2020_lib05.yaml, порог 0,5 %); по умолчанию конфиг донора (порог 2 %)
 FULL_XRAY_CFG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "th232_gs2020_full_xray.yaml")
 os.environ["G4MODELS_SOURCE_CONFIG"] = os.environ.get("GS_M2_CONFIG", FULL_XRAY_CFG)   # #XR-1: 2%-библиотека + рентген, не голый донор
-os.environ.setdefault("SPECTRAVIBE_ROOT", r"D:\cloud-folder\Дозиметрия\ИИ\1 Скилы\0_Work\gamma-spectrum-analysis")
+os.environ.setdefault("SPECTRAVIBE_ROOT", r"<DOSIM>\ИИ\1 Скилы\0_Work\gamma-spectrum-analysis")
 sys.path.insert(0, HERE)
 import fit_gs2020_th232_m1 as m1          # Spec, true_energy, write_fwhm_csv, XML_SAMPLE, XML_BG, OUT, LO, HI, PASSPORT_BQ, PASSPORT_UNC, CHAIN, bm, muc
 sys.path.insert(0, DONOR)
@@ -86,7 +86,7 @@ def main():
         return resp.n_map[Ek]
 
     var2 = {}
-    _, by_nuc_w, lines_m2, n_sum = erd.run_method2(lib_m2, list(ed.SUM_PEAKS) + xg_rows, resp, r["e"], r["ch_edges"], KEYS, var_acc=var2, n_of=n_of)
+    _, by_nuc_w, lines_m2, n_sum = erd.run_method2(lib_m2, list(ed.SUM_PEAKS) + xg_rows, resp, r["e"], r["ch_edges"], KEYS, var_acc=var2, n_of=n_of, var_of=gx.node_var_of(eam.BUILD_OUT, r["ch_edges"], fwhm))   # #GS-63
     print(f"Суммарных пиков: {n_sum}")
 
     # #XR-1 (25.09, «отдельный видимый слой»): второй вызов run_method2 ТОЛЬКО по строкам библиотеки

@@ -1,0 +1,184 @@
+
+<style>
+
+body:has(#src-k40:not([hidden])) footer.bot:not(.k40-foot){display:none}
+#k40-tblM2 td:last-child{text-align:center}
+#k40-tblM1 td:first-child{white-space:nowrap}
+#k40-tblM2 td:nth-child(2){white-space:nowrap}
+#k40-tblM2 td:nth-child(4){white-space:nowrap}
+#k40-viewM2 .scroll{max-height:436px; overflow-y:auto; border:1.5px solid var(--rule-soft); padding:0 .65rem}
+#k40-fwbox canvas{height:clamp(15rem, 30vh, 22rem)}
+</style>
+<div class="panel">
+  <div class="toolbar">
+    <div class="tabs" role="tablist" aria-label="view selection, K-40" id="k40-tabs">
+      <button type="button" class="btn tab" data-tab="m1" aria-selected="true">Method 1: K-40 MC template</button>
+      <button type="button" class="btn tab" data-tab="m2" aria-selected="false">Method 2: FEP efficiency function + line</button>
+      <button type="button" class="btn tab" data-tab="cmp" aria-selected="false">comparison</button>
+      <button type="button" class="btn tab" data-tab="cal" aria-selected="false">calibration</button>
+    </div>
+    <span class="sp"></span>
+    <div class="seg" id="k40-fwhmseg" role="group" aria-label="subtracted background">
+      <button type="button" class="btn" data-fwhmlaw="cs" aria-pressed="true">background: Marinelli + water</button>
+    </div>
+    <button type="button" class="btn" data-k40pop="t-method" aria-expanded="false">how it is calculated</button>
+    <button type="button" class="btn" data-k40pop="t-passport" aria-expanded="false">about the sample</button>
+    <button type="button" class="btn" data-k40pop="t-model" aria-expanded="false">about the model</button>
+    <a class="btn" href="https://github.com/VibeEngineering-LLC/geant4-detector-models" target="_blank" rel="noopener">code on GitHub</a>
+  </div>
+
+  
+  <div class="stage" id="k40-viewM1">
+    <div class="m1-wrap">
+      <p class="method-lede">Fit of the full spectrum with a single Monte Carlo response template for the complete K-40 decay —
+      calculated with Geant4 for a source of K-40 nuclear decays in the KCl sample volume ({{tpl_decays}} simulated decays) — and
+      the measured Marinelli + water background, scaled to live time and not fitted. A single amplitude —
+      the K-40 activity; fit window {{kp_lo}}–{{kp_hi}}&nbsp;keV. The shaded area shows the contribution of the template to the model
+      at the fitted activity.</p>
+      <div class="summary" id="k40-sumM1"></div>
+      <div class="legendbar" id="k40-legendM1"></div>
+      <div class="plotwrap">
+        <div class="plotbox">
+          <canvas id="k40-cvM1" role="img"
+            aria-label="KCl spectrum decomposition — Method 1: K-40 template and background"></canvas>
+          <div class="chart-tip" id="k40-m1-tip" hidden></div>
+        </div>
+      </div>
+      <div class="cursor-line" id="k40-cursorM1">hover over a spectrum channel</div>
+      <p class="guard-note">The component outline is solid where the Monte Carlo response template contains at least {{n_eff_min}}
+      counts per channel, and dashed where it contains fewer: below the threshold, the component fraction in a channel is determined by
+      template noise and is not considered a measured fraction. The fraction of the component contribution lying below the threshold is shown
+      in the tooltip when hovering over the component in the legend.</p>
+      <div class="scroll"><table class="big" id="k40-tblM1"></table></div>
+    </div>
+  </div>
+
+  
+  <div class="stage" id="k40-viewM2" hidden>
+    <div class="m1-wrap">
+      <p class="method-lede">Method 2 — full-energy-peak (FEP) efficiency function × line: the FEP efficiency function is the detection efficiency in the full-energy peak obtained from Geant4 responses to monoenergetic γ rays in the sample geometry.
+      The emission probability of the K-40 1460.8&nbsp;keV γ-ray line ({{k40_ig}}&nbsp;% per decay, LNHB-DDEP 2025) multiplies
+      the detector response function to a monoenergetic photon of this energy (full-energy peak, Compton continuum,
+      escape peaks), obtained by direct Geant4 calculation for a volume source in the same KCl sample (grid nodes:
+      {{kp_nnodes}}). The response weighted by the emission probability is fitted with a single amplitude to the entire spectrum, as in Method 1.
+      K-40 has one γ-ray line and no cascade: the library contains one main line, there are no sum peaks, and no separate
+      “all known lines” variant (as Method 2-2 for thorium) exists.</p>
+      <div class="summary" id="k40-sumM2"></div>
+      <div class="legendbar" id="k40-legendM2"></div>
+      <div class="plotwrap">
+        <div class="plotbox">
+          <canvas id="k40-cvM2" role="img"
+            aria-label="KCl spectrum decomposition — Method 2: 1460.8 keV line response and background"></canvas>
+          <div class="chart-tip" id="k40-m2-tip" hidden></div>
+        </div>
+      </div>
+      <div class="cursor-line" id="k40-cursorM2">hover over a spectrum channel</div>
+      <p class="guard-note">In the Method 2 model, three components share a common amplitude: the response to the
+      1460.8&nbsp;keV γ-ray, external bremsstrahlung of K-40 β particles (its primary decay mode), and Ar K X-rays; internal
+      bremsstrahlung (IB) is not included in the calculation until its contribution is confirmed by a measurement or a verified formula.
+      Ar K X-rays following electron capture (about 3&nbsp;keV) are included in the library, but their response is zero:
+      they do not reach the crystal from the sample, and direct Geant4 calculations yielded no events.</p>
+      <div class="scroll"><table class="big" id="k40-tblM2"></table></div>
+      <p class="guard-note"><b>Intrinsic detector lines.</b> After photoabsorption
+      in the crystal, iodine K X-rays (28.5 and 32.3 keV) can escape the crystal, and the event
+      is registered below the full-energy peak for that energy — an iodine X-ray escape peak. Such
+      peaks are not entered into the line library: they are generated in the Geant4 response of the line. The fractions below are calculated
+      from the grid response (energy deposition before broadening, background subtracted using side windows).</p>
+      <div class="scroll"><table class="big" id="k40-tblDet"></table></div>
+    </div>
+  </div>
+
+  
+  <div class="stage" id="k40-viewCal" hidden>
+    <div class="cal-wrap">
+      <p class="method-lede">Spectra of the KCl sample and the Marinelli + water background. The background is scaled to the live time
+      of the sample; the difference is the sample count minus the scaled background in each channel. Each
+      spectrum has its own energy scale: the spectrometer file for KCl contains no calibration, so the scale correction is smooth (a polynomial) based on the positions
+      of the peak groups of this spectrum, which are determined from Geant4 responses. The table shows the polynomial
+      representing the scale (deviation from it up to {{kp_cal_repr}}). Reference lines are the K-40 line and background lines.</p>
+      <div class="chartbox" id="k40-calbox">
+        <div class="ctrls" id="k40-cal-ctrls">
+          <label><span class="sw" style="background:#16140f"></span>
+            <input type="checkbox" id="k40-c-smp" checked> KCl sample</label>
+          <label><span class="sw" style="background:#0f5aa8"></span>
+            <input type="checkbox" id="k40-c-bg" checked> background (scaled)</label>
+          <label><span class="sw" style="background:#c8541c"></span>
+            <input type="checkbox" id="k40-c-diff"> sample − background</label>
+          <label><input type="checkbox" id="k40-c-log" checked> logarithmic scale</label>
+          <label><input type="checkbox" id="k40-c-anch" checked> reference lines</label>
+          <button type="button" class="btn" id="k40-cal-reset">full range</button>
+        </div>
+        <canvas id="k40-cvCal" role="img"
+          aria-label="calibrated spectra of the KCl sample, background, and their difference with reference lines; drag to zoom, double-click to reset"></canvas>
+        <div class="chart-tip" id="k40-cal-tip" hidden></div>
+        <div class="readout" id="k40-cal-ro"></div>
+      </div>
+      <div class="scroll"><table class="big" id="k40-tblCal"></table></div>
+
+      <h2 class="sec-h">Energy resolution calibration</h2>
+      <p class="method-lede">Peak width is a characteristic of the spectrometer, not a sample property: it is determined once from the
+      Th-232 reference spectrum of the same spectrometer and is then applied to all measurements.
+      The points are obtained from the SpectraLine “Peak Parameters” table for the thorium spectrum multiplied by {{kp_fw_scale}}; between the points,
+      log–log interpolation is used; at 1460.8&nbsp;keV the width in the convolution is {{kp_fw_k40_conv}}. This width is used in the convolution of templates for both
+      methods. For verification, the K-40 peak width was also measured in the KCl spectrum itself: {{kp_fw_own}} (SpectraVibe width measurement: the result is accepted
+      only if three measurement methods agree); it is not used in the convolution. For comparison, the table shows the BecqMoni width
+      calibration from the spectrum file, if recorded in the file (power law in channels, converted to keV using the same scale):
+      {{kp_fw_bm}}. SpectraLine
+      at 1460.8&nbsp;keV gives {{kp_fw_k40_sl}} (K-40 background peak in the thorium spectrum). The power law FWHM(E)&nbsp;=&nbsp;{{fw_k}}·E<sup>{{fw_p}}</sup>&nbsp;keV
+      is an approximation of the FWHM values used in the convolution (RMS deviation {{fw_rms}}); at 662&nbsp;keV it gives {{fw_662}}, at 1460.8&nbsp;keV — {{kp_fw_k40_law}}.</p>
+      <div class="chartbox" id="k40-fwbox">
+        <canvas id="k40-cvFwhm" role="img"
+          aria-label="spectrometer energy resolution as a function of energy: FWHM values used in the convolution and power law"></canvas>
+      </div>
+      <div class="scroll"><table class="big" id="k40-tblFwhm"></table></div>
+    </div>
+  </div>
+
+  
+  <div class="stage" id="k40-viewCmp" hidden>
+    <div class="cmp-wrap">
+      <p class="method-lede">Estimates on a common scale: expected from mass, Method 1, Method 2. The width of the colored band is the stated uncertainty (for the methods, statistical uncertainty multiplied by the Birge ratio correction when χ²/ν exceeds one); relative spread is shown below the scale.</p>
+      <canvas id="k40-cvCmp" height="200" role="img"
+        aria-label="comparison of expected K-40 activity and estimates from two methods with their intervals"></canvas>
+      <div class="cmp-table" id="k40-cmpTable"></div>
+      <p class="method-lede">The expected activity is calculated from mass, without certification: mass × potassium fraction in KCl × K-40 abundance × ln2/T½. Its uncertainty {{aksp_unc}} comprises the uncertainties of the K-40 abundance, the half-life, and the reagent purity tolerance; the uncertainty of the weighing (balance) is unknown and not included. Geant4 does not generate internal bremsstrahlung from β-decay; it is not included in the K-40 calculation (a KUB spectrum-based estimate would reduce the activity by approximately 1&nbsp;% and is not confirmed by measurement). The γ-ray emission probability of K-40 is adopted from LNHB-DDEP 2025 ({{k40_ig_lnhb}}&nbsp;%); in ENSDF it is 10.66&nbsp;%.</p>
+      <p class="guard-note">The Marinelli + water background was measured over a live time of {{kp_bg_live}}. The KCl sample spectrum was measured in two runs (41.5&nbsp;h and 46.8&nbsp;h)
+      with a 2.4&nbsp;h pause; after the pause, the K-40 peak in the second part was located 2.2&nbsp;keV higher (apparently due to a slight increase in the spectrometer gain).
+      Therefore, the second part was shifted to the scale of the first part before summation (based on the peak positions in each part); a simple sum
+      would superimpose two peak positions and distort the scale near the threshold.</p>
+      <p class="guard-note">Reasons for the large χ²/ν value. The fit criterion accounts for the statistical noise of the Geant4 template itself. The noise is accounted for exactly (including template broadening),
+      so the discrepancy between the model and the measurement is visible in the χ²/ν value. The FWHM of the 1460.8&nbsp;keV peak in the model ({{kp_fw_k40_conv}}) and in
+      the measurement ({{kp_fw_own}}) agree within uncertainty, but the K-40 template shape differs — in the model, the full-energy peak is higher than measured, while the
+      150–600&nbsp;keV region is lower. A single amplitude cannot describe both parts of the spectrum simultaneously, so the activity depends on the fit weights.
+      The cause of the shape difference has not been established (under consideration: non-proportionality of the NaI(Tl) light yield, backscatter from the surroundings, housing materials).
+      Sample density, composition, and volume apparently do not explain the discrepancy: the template is calculated in the geometry of the KCl sample itself, and these are
+      accounted for (provided that their values are correct; the moisture content of the sample is unknown). The spectrum energy scale is a smooth polynomial: a piecewise-linear scale produced discontinuities in the template shape
+      (245 and 580&nbsp;keV) and distorted the peak widths in the plot; with a smooth scale, the excess in the 250–650&nbsp;keV region disappeared, but a shape difference remains in the wings of the
+      1460.8&nbsp;keV peak: the measured peak has wider wings than the model (χ²/ν of the peak shape after accounting for gain spread — {{k40_shape}}).
+      This sample serves as an independent check of the detector data set. The data set includes the efficiency curve and the response matrix (Geant4 calculation), and the peak width (from the thorium reference spectrum),
+      as well as the correction for sample density and volume; the data set and the verification report are available in the repository
+      <a href="https://github.com/VibeEngineering-LLC/geant4-detector-models/tree/main/detectors/Atom-GS2020-PRO-MAX/dataset">geant4-detector-models, dataset</a>.</p>
+    </div>
+  </div>
+</div>
+<footer class="bot k40-foot">
+  <span>K-40 (KCl): spectrum {{date_meas}}, live time {{tlive}}, real time {{treal}}.</span>
+  <span>Template — Geant4 Monte Carlo calculation of full K-40 decay in the sample volume; simulated decays: {{tpl_decays}}.</span>
+  <button type="button" data-pop="t-about" aria-expanded="false">about this page and its numbers</button>
+  <button type="button" data-pop="t-refs" aria-expanded="false">sources</button>
+</footer>
+<script>
+window.addEventListener("load", function () {
+  var t = document.getElementById("k40-tblDet"), L = (window.GS_K40 || {}).detector_lines;
+  if (!t || !L) return;
+  function f(x, d) { return x.toFixed(d).replace(".", ","); }
+  var P = "%", h = "<thead><tr><th>line</th><th>nuclide</th><th class='num'>Kα escape-peak energy</th>"
+    + "<th class='num'>Kα escape fraction</th><th class='num'>Kβ escape-peak energy</th><th class='num'>Kβ escape fraction</th></tr></thead><tbody>";
+  L.forEach(function (r) {
+    h += "<tr><td>" + f(r.E_keV, 1) + " keV</td><td>" + r.nuclide + "</td><td class='num'>" + f(r.E_esc_ka, 1)
+      + " keV</td><td class='num'>" + f(100 * r.frac_ka, 2) + " " + P + "</td><td class='num'>" + f(r.E_esc_kb, 1)
+      + " keV</td><td class='num'>" + f(100 * r.frac_kb, 2) + " " + P + "</td></tr>";
+  });
+  t.innerHTML = h + "</tbody>";
+});
+</script>

@@ -1,0 +1,602 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#e6e0d0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e0c08" media="(prefers-color-scheme: dark)">
+<title>Atom GS2020 PRO MAX: spectrometer, Geant4 model, spectra</title>
+<!--@styles-->
+<style>
+.dev{border-bottom:3px solid var(--rule); padding:1.1rem 0 1.3rem}
+.dev p,.dev li,.dev td,.dev th,.dev figcaption{text-align:left}
+.dev-text p{max-width:none; font-size:14px; line-height:1.55; color:var(--ink); margin:.55rem 0; text-wrap:pretty}
+.dev-h{font:800 12px/1.4 var(--sans); letter-spacing:.04em; margin:1.3rem 0 .3rem}
+.dev-t{border-collapse:collapse; margin:.9rem 0; font-size:13px; line-height:1.45; width:-moz-available; width:-webkit-fill-available; width:stretch}
+.dev-t th{font:800 10px/1.3 var(--sans); letter-spacing:.04em; border-bottom:2px solid var(--rule); padding:.4rem .6rem .4rem 0}
+.dev-t td{border-bottom:1px solid var(--rule-soft); padding:.45rem .6rem .45rem 0; vertical-align:top}
+.dev-t td:first-child{font-weight:700; white-space:nowrap}
+.dev-fig{display:grid; grid-template-columns:repeat(auto-fit,minmax(13rem,1fr)); gap:1rem; margin-top:.8rem}
+.dev-fig{align-items:stretch}   
+.dev-fig figure{margin:0; border:2px solid var(--rule); background:var(--paper)}
+.dev-fig img{display:block; width:-moz-available; width:-webkit-fill-available; width:stretch; height:15rem; object-fit:contain; background:#fff}
+.dev-fig img{cursor:zoom-in}
+.dev-photo img{object-fit:cover}
+.lbox{position:fixed; inset:0; z-index:50; background:rgba(14,12,8,.88); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.6rem; padding:1rem; cursor:zoom-out}
+.lbox[hidden]{display:none}
+.lbox img{max-width:calc(100vw - 2rem); max-height:calc(100vh - 5rem); object-fit:contain; background:#fff}
+.lbox p{color:#f0ede3; font-size:13px; max-width:78ch; margin:0; text-align:center}
+.dev-fig figcaption{font-size:12px; line-height:1.45; padding:.45rem .6rem; border-top:2px solid var(--rule); background:var(--paper); color:var(--dim)}
+.spec-top{margin-top:1.2rem}
+.spec-h{font-size:clamp(1.4rem,2.2vw,1.9rem); line-height:1.05; letter-spacing:-.02em; font-weight:800; margin:0}
+@media (max-width:640px){.dev-t,.dev-t tbody,.dev-t tr,.dev-t td{display:block; width:auto} .dev-t thead{display:none} .dev-t td{border:0; padding:.15rem 0; max-width:none} .dev-t tr{border-bottom:1px solid var(--rule-soft); padding:.4rem 0} .dev-t td:first-child{white-space:normal}}
+
+.src-sec{padding-top:1.1rem}
+.srcbar{margin:.5rem 0 0}
+.srcbar .btn[disabled]{opacity:.5; cursor:not-allowed; border-style:dashed}
+.srcbar .btn[disabled]:hover{background:none}
+.src-panel{padding:0 .8rem .8rem}
+.src-panel table.big td:last-child{min-width:18rem}
+.chartbox canvas.src-resid{height:8.5rem; border-top:1px solid var(--rule-soft)}
+</style>
+
+<div class="app">
+
+  <div class="top">
+    <div class="title">
+      <p class="eyebrow">scintillation gamma-ray spectrometer · NaI(Tl) Ø51×51 · SiPM · Geant4 model</p>
+      <h1>Atom GS2020 PRO MAX — spectrometer, model, and spectra</h1>
+      <p class="stand">This working page describes the spectrometer and its
+      Geant4 model, followed by measured spectra and their decomposition. It reports
+      three spectra measured in a Marinelli beaker of nominal volume 1&nbsp;L: a Th-232 reference sample, a potassium chloride
+      (K-40) sample, and a dried blueberry sample (Cs-137 and K-40, as well as the β emitters Sr-90 and Y-90; the first sample with unknown activity). The Ra-226 spectrum will be added later.</p>
+      <p class="ai-note">This page was prepared with the assistance of a
+      large language model-based assistant (Claude, Anthropic) —
+      roles, responsibilities, and data sources are detailed in the sections “About this page
+      and its numbers” and “Sources” at the bottom of the page.</p>
+    </div>
+  </div>
+
+  <section class="dev" aria-labelledby="devH">
+    <h2 class="sec-h" id="devH">Spectrometer</h2>
+    <div class="dev-text">
+      <p>Atom GS2020 PRO MAX — a scintillation gamma-ray spectrometer with a
+      NaI(Tl) 2×2 inch (Ø50.8×50.8&nbsp;mm) crystal. Scintillation light is read out not by a photomultiplier tube (PMT),
+      but by a silicon photomultiplier (SiPM) array at the crystal end face; the amplifier,
+      ADC, and thermal stabilization are housed in the same Ø63&nbsp;mm aluminum housing, with
+      USB Type-C connectivity. The spectrometer is assembled by Gammaspectacular (Australia); on the
+      manufacturer's website it is listed as <a href="https://www.gammaspectacular.com/blue/gamma-spectroscopy/gamma-spectrometers/gs-max-2020-nai-sipm"
+      target="_blank" rel="noopener">GS-MAX-2020-NAI-SIPM</a>.</p>
+      <p><b>Crystal.</b> The manufacturer of the crystal itself is unknown.
+      According to the spectrometer manufacturer, the crystal characteristics are very close to
+      those of the <a href="https://capescint.com/product/scintillation-crystal-nai-51x51/"
+      target="_blank" rel="noopener">Capescint NaI-51×51</a> assembly; the latter is adopted
+      in the model — based on the 3D model and drawing of the assembly manufacturer.</p>
+    </div>
+    <div class="dev-fig dev-photo">
+      <figure><img src="img/photo_side.jpg" alt="side view of the Atom GS2020 PRO MAX spectrometer: aluminum cylinder, USB Type-C connector at the base" loading="lazy" width="1200" height="1600"><figcaption>Spectrometer: Ø63&nbsp;mm aluminum housing, USB Type-C connector at the base</figcaption></figure>
+      <figure><img src="img/photo_scale.jpg" alt="photo of the spectrometer next to a ballpoint pen for scale" loading="lazy" width="1200" height="1600"><figcaption>For scale — a ballpoint pen is placed next to it</figcaption></figure>
+      <figure><img src="img/photo_bottom.jpg" alt="photo of the spectrometer: end face with a threaded hole for a stand" loading="lazy" width="1200" height="1600"><figcaption>End face on the electronics side: thread for a stand</figcaption></figure>
+    </div>
+    <table class="dev-t">
+      <thead><tr><th>parameter</th><th>per spectrometer manufacturer data</th><th>in the Geant4 model of this page</th></tr></thead>
+      <tbody>
+        <tr><td>crystal</td><td>NaI(Tl) 2×2″, hermetically sealed in a capsule</td><td>NaI(Tl) Ø50.8×50.8&nbsp;mm in the Capescint assembly: capsule (1&nbsp;mm Al cup), reflector, Ø57×3&nbsp;mm quartz window — seven solids following the profile of the assembly manufacturer</td></tr>
+        <tr><td>photodetector</td><td>SiPM</td><td>SiPM arrays and boards — per the spectrometer STEP drawing; scintillation-light transport is not modeled; the energy deposited in the crystal is scored</td></tr>
+        <tr><td>housing</td><td>1.6&nbsp;mm aluminum, Ø63×82&nbsp;mm</td><td>per the spectrometer STEP drawing: 41 parts (housing, lid, rings, boards, fasteners); housing height in the model 83&nbsp;mm (82&nbsp;mm according to the datasheet)</td></tr>
+        <tr><td>mass</td><td>550&nbsp;g</td><td>—</td></tr>
+        <tr><td>relative energy resolution (at the 662&nbsp;keV line)</td><td>{{dev_res_mfr}}</td><td>from the SpectraLine “Peak Parameters” table for the thorium reference spectrum: FWHM (full width at half maximum) 24.07&nbsp;keV at 238&nbsp;keV, 40.62 at 583, 57.35 at 911, 107.42 at 2614; in the model convolution the same values are multiplied by 1.05, with log–log interpolation between the points (the power law FWHM(E)&nbsp;=&nbsp;{{fw_k}}·E<sup>{{fw_p}}</sup>&nbsp;keV is their approximation)</td></tr>
+        <tr><td>channels</td><td>up to 8192</td><td>—</td></tr>
+        <tr><td>thermal stabilization</td><td>built-in sensor, from −40 to +50&nbsp;°C</td><td>not modeled</td></tr>
+        <tr><td>software</td><td>BecqMoni Atom, Impulse, Atom-Spectra (Android)</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <h3 class="dev-h">Model geometry</h3>
+    <div class="dev-text">
+      <p>The housing and internals of the spectrometer were imported from the STEP drawing of the assembly
+      (Blender → tessellated GDML solids); the crystal assembly is defined by exact solids
+      of revolution per the manufacturer's profile. In the model, the spectrometer is oriented with the crystal facing up. Hereafter, “capsule” is the aluminum cup containing the crystal (Ø59&nbsp;mm), and “housing” is the outer shell of the spectrometer (Ø63&nbsp;mm).
+      The geometry is validated not only by visualization but also by radiation transport calculations
+      (K-40 volume source, one million events): no stuck tracks caused by geometry errors were recorded, and the 1460.8&nbsp;keV peak
+      is observed at the expected energy. Minor overlaps (up to 0.4&nbsp;mm) between the volumes of drawing parts and
+      the unverified density of the crystal-assembly reflector remain; they are model assumptions.</p>
+      <p>GDML files for the general case:
+      <a href="https://github.com/VibeEngineering-LLC/geant4-detector-models/blob/main/detectors/Atom-GS2020-PRO-MAX/geometry/GS2020_Capescint51x51.gdml"
+      target="_blank" rel="noopener">spectrometer model</a> (without sample) and
+      <a href="https://github.com/VibeEngineering-LLC/geant4-detector-models/blob/main/detectors/Atom-GS2020-PRO-MAX/geometry/GS2020_marinelli_1000ml_water.gdml"
+      target="_blank" rel="noopener">spectrometer with a 1&nbsp;L Marinelli beaker</a>, filled with water (sample volume — <code>LV_SourceMatrix</code>:
+      for your own sample, replace the material and density). Assemblies with specific samples are on the spectrum tabs; all files are in the
+      <a href="https://github.com/VibeEngineering-LLC/geant4-detector-models/tree/main/detectors/Atom-GS2020-PRO-MAX/geometry"
+      target="_blank" rel="noopener">model repository</a>.</p>
+      <p>There are two Marinelli beakers, both of the supplier's “1&nbsp;L Marinelli beaker” type with a screw-on lid
+      (<a href="https://biolight.info/product/0002146" target="_blank" rel="noopener">supplier</a>:
+      dimensions Ø145×110&nbsp;mm, internal opening Ø83×55&nbsp;mm). Marinelli&nbsp;1 is the beaker with the thorium reference sample (well diameter 82&nbsp;mm). Marinelli&nbsp;2 is the beaker for water, KCl, and blueberries: well diameter 79&nbsp;mm,
+      conical beaker body, plastic walls 3&nbsp;mm thick; its cross-section with dimensions is shown in the drawing on the right.</p>
+    </div>
+    <div class="dev-fig">
+      <figure><img src="img/g4_cut34.jpg" alt="cross-section of the Geant4 spectrometer model: housing, crystal assembly, boards" loading="lazy" width="593" height="755"><figcaption>Geant4: cross-section of the spectrometer model, crystal facing up (light blue — NaI(Tl) crystal, light gray — reflector, yellow — quartz window between the crystal and the SiPM, green — SiPM boards, dark gray on top — foam gasket)</figcaption></figure>
+      <figure><img src="img/gs2020_section.png" alt="drawing: axial cross-section of the NaI 51×51 crystal in an aluminum capsule with dimensions" loading="lazy" width="1200" height="757"><figcaption>Crystal in capsule: axial cross-section according to the Geant4 model volumes (NaI(Tl) crystal Ø50.8×50.8&nbsp;mm, reflector, quartz window, epoxy joints, aluminum capsule Ø59&nbsp;mm; crystal assembly height 58&nbsp;mm)</figcaption></figure>
+      <figure><img src="img/gs2020_assembly.png" alt="drawing: axial cross-section of the assembled spectrometer — housing, crystal assembly, boards, SiPM, clamping ring, screws" loading="lazy" width="1200" height="892"><figcaption>Assembled spectrometer: axial cross-section according to the model volumes (spectrometer housing Ø63&nbsp;mm, total height 83&nbsp;mm; under the window — SiPM on an FR4 board, below it a clamping ring, a second board, a lid, and steel screws; on top — a foam gasket)</figcaption></figure>
+      <figure><img src="img/g4_marinelli_cut34.jpg" alt="model cross-section: spectrometer in the re-entrant well of a Marinelli beaker with a sample" loading="lazy" width="819" height="691"><figcaption>Geant4: spectrometer in Marinelli&nbsp;1 (thorium reference sample), cut in half (dark blue — beaker wall, orange — sample, level 1&nbsp;cm below the rim; light bluish-gray layer on top — air above the sample; in the re-entrant well — the spectrometer, yellow — quartz window under the crystal)</figcaption></figure>
+      <figure><img src="img/marinelli2_section.svg" alt="drawing: cross-section of Marinelli 2 with dimensions, KCl sample, and spectrometer in the re-entrant well" loading="lazy" width="840" height="588"><figcaption>Marinelli&nbsp;2: cross-section with dimensions based on refined measurements of 29 September 2026 (plastic 3&nbsp;mm, re-entrant well depth 57&nbsp;mm, from the rim to the re-entrant well 46&nbsp;mm). The K-40 values on the page are calculated using this model (KCl sample 1&nbsp;L, 1085&nbsp;g, layer above the re-entrant well 30.8&nbsp;mm); the re-entrant well is conical: its outer wall Ø85&nbsp;mm at the beaker bottom → Ø83&nbsp;mm at the well bottom, its inner cavity (into which the spectrometer is inserted) Ø79 → Ø77&nbsp;mm</figcaption></figure>
+    </div>
+  </section>
+  <div class="lbox" id="lbox" hidden role="dialog" aria-modal="true" aria-label="enlarged image"><img alt=""><p></p></div>
+  <script>
+  (function () {
+    var box = document.getElementById("lbox"), big = box.querySelector("img"), cap = box.querySelector("p");
+    function close() { box.hidden = true; big.removeAttribute("src"); }
+    document.querySelectorAll(".dev-fig img").forEach(function (im) {
+      im.addEventListener("click", function () {
+        big.src = im.currentSrc || im.src; big.alt = im.alt;
+        var fc = im.parentNode.querySelector("figcaption"); cap.textContent = fc ? fc.textContent : "";
+        box.hidden = false;
+      });
+    });
+    box.addEventListener("click", close);
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !box.hidden) close(); });
+  })();
+  window.addEventListener("load", function () {
+    var t = document.getElementById("tblDet"), L = (window.G1S || {}).detector_lines;
+    if (!t || !L) return;
+    function f(x, d) { return x.toFixed(d).replace(".", ","); }
+    var P = "%", h = "<thead><tr><th>line</th><th>nuclide</th><th class='num'>Kα escape-peak energy</th>"
+      + "<th class='num'>Kα escape fraction</th><th class='num'>Kβ escape-peak energy</th><th class='num'>Kβ escape fraction</th></tr></thead><tbody>";
+    L.forEach(function (r) {
+      h += "<tr><td>" + f(r.E_keV, 1) + " keV</td><td>" + r.nuclide + "</td><td class='num'>" + f(r.E_esc_ka, 1)
+        + " keV</td><td class='num'>" + f(100 * r.frac_ka, 2) + " " + P + "</td><td class='num'>" + f(r.E_esc_kb, 1)
+        + " keV</td><td class='num'>" + f(100 * r.frac_kb, 2) + " " + P + "</td></tr>";
+    });
+    t.innerHTML = h + "</tbody>";
+  });
+</script>
+
+  <section class="src-sec" aria-labelledby="srcH">
+    <h2 class="sec-h" id="srcH">Spectra</h2>
+    <div class="dev-text"><p>Each spectrum was measured in a Marinelli beaker of nominal volume 1&nbsp;L
+    and has its own energy calibration and its own Geant4 model of the beaker and sample (volume, density, composition).
+    Thorium was measured in Marinelli&nbsp;1 (well diameter 82&nbsp;mm); water, KCl, and blueberries were measured in Marinelli&nbsp;2 (well diameter 79&nbsp;mm).
+    Spectrum selection:</p>
+    <p><b>Abbreviations.</b> MC — Monte Carlo method (MC template — full decay spectrum of a nuclide in the sample geometry, calculated by this method); FEP — full-energy peak; “FEP efficiency function” — the detection efficiency ε<sub>FEP</sub> in the full-energy peak as a function of energy; “response” — the energy-deposition spectrum in the detector from a monoenergetic photon (full-energy peak, Compton continuum, escape peaks); FWHM — full width at half maximum; RMS — root-mean-square deviation; ν — number of degrees of freedom in χ²/ν (the number of channels in the fit window minus the number of fitted amplitudes; both methods use the same window);
+    IB — internal bremsstrahlung; KUB — Knipp–Uhlenbeck–Bloch theory of internal bremsstrahlung;
+    NPSM — model of the scintillation light-yield non-proportionality; LSRM — developer of the SpectraLine software (lsrm.ru); LNHB-DDEP — radionuclide decay database of the Henri Becquerel National Laboratory (France); ENSDF — Evaluated Nuclear Structure Data File.
+    The term “sample” refers to the measured samples (KCl, blueberries); “reference sample” refers to the thorium calibration sample;
+    “reference lines” — lines with known energy, used to verify the energy scale.</p></div>
+    <nav class="tabs srcbar" id="srcbar" role="tablist" aria-label="source"></nav>
+  </section>
+
+  <div id="src-th">
+  <div class="top spec-top">
+    <div class="title">
+      <p class="eyebrow">spectrum 1 · Th-232 · Marinelli 1 beaker (nominal volume 1&nbsp;L)</p>
+      <h2 class="spec-h">Decomposition of the thorium-232 spectrum</h2>
+      <p class="stand">Reference sample of known thorium-232 activity in the Marinelli 1 beaker (nominal volume 1&nbsp;L);
+      activity concentration {{aksp}} (relative uncertainty {{aksp_unc}}), mass
+      {{mass}} — total activity {{apass}} {{apass_dev}}. The same two
+      fitting methods as on the page of the Gamma-1S spectrometer of the same project: the fitting code is borrowed from Gamma-1S, the transport model is Geant4, and the geometry is our own. Method 1 — least-squares fit
+      of the full spectrum using calculated MC spectra of the full decay of chain members. Method 2 — full-energy-peak (FEP) efficiency function × line library: the FEP efficiency function is the detection efficiency in the full-energy peak obtained from Geant4 responses to monoenergetic γ rays in the sample geometry; the response to each line (full-energy peak, Compton continuum, escape peaks) is weighted by its emission probability.
+      One of two line libraries is used: the Gamma-1S library of {{m2_nlines}} lines (Method 2)
+      or the library of all known ENSDF lines (IAEA Live Chart database) without an emission-probability
+      threshold, comprising {{m2f_nlines}} lines (Method 2-2); the library is selected by a toggle. Additionally, {{m2_nsum}}
+      sum peaks (true coincidence summing of cascade γ rays) are accounted for. In the convolution, the FWHM is specified by its values at {{fw_nused}} reference
+      points of the SpectraLine “Peak Parameters” table (multiplied by 1.05) with log–log interpolation; the power
+      law FWHM(E) = {{fw_k}}·E<sup>{{fw_p}}</sup> keV is an approximation of these values.</p>
+      <p class="warn"><b>Low-energy region (below 150 keV).</b> In this region, the model
+      and the measurement disagree: below about 60&nbsp;keV the model is lower than the measurement, and in the 60–150&nbsp;keV region it is higher. The cause of the discrepancy has not been established; non-proportionality of the NaI(Tl) light yield
+      and residual unaccounted attenuation of the external background by the sample are being considered. A discrepancy below 150&nbsp;keV is also observed for the KCl sample,
+      but with a different energy dependence (tab “K-40 (KCl)”); the energy scale below 238&nbsp;keV has not been verified. The fit window
+      starts at 150&nbsp;keV, so the effect on the activity is small.</p>
+      <p class="warn"><b>Geometry and background.</b>
+      The liquid with the reference sample fills the beaker to a level 1&nbsp;cm below the rim.
+      Method 1, with subtraction of the background measured with water, yields an activity close to the known value
+      (the exact ratio is given in the “Method 1” tab below).
+      The background, measured in Marinelli&nbsp;2 with distilled water and multiplied by the r(E) correction
+      for the attenuation of the external background by the sample, is subtracted. This beaker has a re-entrant well of Ø79&nbsp;mm, whereas Marinelli&nbsp;1 with thorium has a well of Ø82&nbsp;mm;
+      the live time of this measurement is shorter than that of the laboratory background recorded without the beaker; the background has its own energy calibration, based on five
+      reference lines of this background. The thorium reference sample attenuates
+      the external background more strongly than water, most strongly at 35–70&nbsp;keV (according to the Geant4 calculation of r(E): a minimum of 0.47 at 40&nbsp;keV, r → 1 by 200&nbsp;keV; the composition of the reference sample is not given in the export). The detection efficiency of the model was verified
+      separately by measuring KCl, whose K-40 activity is known from the sample mass (tab “K-40 (KCl)”).</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <div class="tabs" role="tablist" aria-label="view selection" id="tabs">
+        <button type="button" class="btn tab" data-tab="m1" aria-selected="true">Method 1: nuclide-by-nuclide MC fit</button>
+        <button type="button" class="btn tab" data-tab="m2" aria-selected="false">Method 2: FEP efficiency function + library</button>
+        <button type="button" class="btn tab" data-tab="cmp" aria-selected="false">comparison</button>
+        <button type="button" class="btn tab" data-tab="cal" aria-selected="false">calibration</button>
+      </div>
+      <span class="sp"></span>
+      <div class="seg" id="fwhmseg" role="group" aria-label="subtracted background">
+        <button type="button" class="btn" data-fwhmlaw="cs" aria-pressed="true">background: Marinelli + water</button>
+      </div>
+      <button type="button" class="btn" data-pop="t-method" aria-expanded="false">how it is calculated</button>
+      <button type="button" class="btn" data-pop="t-passport" aria-expanded="false">about the reference sample</button>
+      <button type="button" class="btn" data-pop="t-model" aria-expanded="false">about the model</button>
+      <a class="btn" href="https://github.com/VibeEngineering-LLC/geant4-detector-models" target="_blank" rel="noopener">code on GitHub</a>
+    </div>
+
+    
+    <div class="stage" id="viewM1">
+      <div class="m1-wrap">
+        <p class="method-lede">Fit of the full spectrum with a single template
+        of the Th-232 decay chain in secular equilibrium: the sum of MC response templates for the full decay of eight
+        chain members (each member — a separate Geant4 calculation for its nuclide, Tl-208
+        with the Bi-212 branching ratio) and the measured background, scaled to live time
+        and not fitted. A single amplitude is fitted for the entire decay chain. The shaded areas show the contribution
+        of each chain member to the model at the fitted activity.</p>
+        <div class="summary" id="sumM1"></div>
+        <div class="legendbar" id="legendM1"></div>
+        <div class="plotwrap">
+          <div class="plotbox">
+            <canvas id="cvM1" role="img"
+              aria-label="spectrum decomposition by chain members — Method 1"></canvas>
+            <div class="chart-tip" id="m1-tip" hidden></div>
+          </div>
+        </div>
+        <div class="cursor-line" id="cursorM1">hover over a spectrum channel</div>
+        <p class="guard-note">The component outline is solid where the MC response template of the chain member
+        contains at least {{n_eff_min}} counts per channel, and dashed where
+        it contains fewer: below the threshold, the fraction of the chain member in the channel is determined by template noise
+        and is not considered a measured fraction. The fraction of the component contribution lying below
+        the threshold is shown in the tooltip when hovering over the component in the legend.</p>
+        <div class="scroll"><table class="big" id="tblM1"></table></div>
+      </div>
+    </div>
+
+    
+    <div class="stage" id="viewM2" hidden>
+      <div class="m1-wrap">
+        <p class="method-lede">For each γ-ray line in the library, the detector response function to a monoenergetic photon
+        of that energy is taken
+        (full-energy peak, Compton continuum, escape peaks), obtained by direct Geant4 calculation
+        for a volume source in the same beaker at the energy of the line itself; it is multiplied by the emission probability of the line. The sum of
+        responses weighted by emission probabilities is fitted to the entire spectrum with a single decay-chain amplitude,
+        as in Method 1. {{m2_nsum}} sum peaks
+        (true coincidence summing of cascade γ rays) are accounted for separately. Characteristic K and L X-rays
+        of all chain members are included in both libraries
+        as separate entries; the lines themselves lie below the fit window (which starts at 150&nbsp;keV),
+        and only the “X-ray + γ” sum peaks fall within the window.
+        The library is selected by a toggle: the Gamma-1S library of {{m2_nlines}} lines
+        (I<sub>γ</sub> ≥ {{m2_ithresh}}) or the ENSDF library of {{m2f_nlines}} lines,
+        obtained via the API of the IAEA Live Chart of Nuclides database — all known
+        γ-ray lines of the chain members in the fit window without an emission-probability threshold (Method 2-2);
+        a dedicated Geant4 grid node is calculated for each line.</p>
+        <div class="seg" id="libseg" role="group" aria-label="line library composition">
+          <button type="button" class="btn" data-lib="fixed" aria-pressed="true">Method 2: Gamma-1S library</button>
+          <button type="button" class="btn" data-lib="full" aria-pressed="false">Method 2-2: all known ENSDF lines</button>
+        </div>
+        <div class="summary" id="sumM2"></div>
+        <div class="legendbar" id="legendM2"></div>
+        <div class="plotwrap">
+          <div class="plotbox">
+            <canvas id="cvM2" role="img"
+              aria-label="spectrum decomposition by nuclides — Method 2, sum of library lines"></canvas>
+            <div class="chart-tip" id="m2-tip" hidden></div>
+          </div>
+        </div>
+        <div class="cursor-line" id="cursorM2">hover over a spectrum channel</div>
+        <p class="guard-note">The Method 2 model includes external bremsstrahlung of the β particles of each β-emitting chain member (a separate component
+        in the plot); internal bremsstrahlung (IB) is not included in the calculation until its contribution is confirmed by a measurement or a verified formula. The Method 2 model does not include true coincidence summing
+        of cascades, except for the listed sum peaks, and, for the main library, lines with emission probabilities below the threshold;
+        possibly for this reason, for a unit activity, it yields a lower response than the Method 1 model, and the fit overestimates the activity.</p>
+        <div class="seg" id="m2sortseg" role="group" aria-label="line table sorting">
+          <button type="button" class="btn" data-sort="contrib" aria-pressed="true">by contribution</button>
+          <button type="button" class="btn" data-sort="nuclide" aria-pressed="false">by nuclide</button>
+          <button type="button" class="btn" data-sort="energy" aria-pressed="false">by energy</button>
+        </div>
+        <div class="scroll"><table class="big" id="tblM2"></table></div>
+        <p class="guard-note"><b>Intrinsic detector lines.</b> After photoabsorption
+        in the crystal, iodine K X-rays (28.5 and 32.3 keV) can escape the crystal, and the event
+        is registered below the full-energy peak for that energy — an iodine X-ray escape peak. Such
+        peaks are not entered into the line library: they are generated in the Geant4 response of each line. The fractions below are calculated
+        from grid responses (energy deposition before broadening, background subtracted using side windows).</p>
+        <div class="scroll"><table class="big" id="tblDet"></table></div>
+      </div>
+    </div>
+
+    
+    <div class="stage" id="viewCal" hidden>
+      <div class="cal-wrap">
+        <p class="method-lede">Reference-sample and background spectra. The background is scaled to the live time
+        of the reference sample and multiplied by the r(E) correction for attenuation of the external background by the reference sample;
+        the difference is the reference-sample count minus the scaled background in each channel.
+        The energy scale is the polynomial from the spectrometer file with a piecewise-linear correction based on
+        the centroids of its peak table. Reference lines are the γ-ray lines of the Th-232 decay chain.</p>
+        <div class="chartbox" id="calbox">
+          <div class="ctrls" id="cal-ctrls">
+            <label><span class="sw" style="background:#16140f"></span>
+              <input type="checkbox" id="c-smp" checked> reference sample</label>
+            <label><span class="sw" style="background:#0f5aa8"></span>
+              <input type="checkbox" id="c-bg" checked> background (scaled)</label>
+            <label><span class="sw" style="background:#c8541c"></span>
+              <input type="checkbox" id="c-diff"> reference sample − background</label>
+            <label><input type="checkbox" id="c-log" checked> logarithmic scale</label>
+            <label><input type="checkbox" id="c-anch" checked> reference lines</label>
+            <button type="button" class="btn" id="cal-reset">full range</button>
+          </div>
+          <canvas id="cvCal" role="img"
+            aria-label="calibrated sample, background, and difference spectra with Th-232 reference γ-ray lines; drag to zoom, double-click to reset"></canvas>
+          <div class="chart-tip" id="cal-tip" hidden></div>
+          <div class="readout" id="cal-ro"></div>
+        </div>
+        <div class="scroll"><table class="big" id="tblCal"></table></div>
+
+        <h2 class="sec-h">Energy resolution calibration</h2>
+        <p class="method-lede">Line widths in the convolution are taken from the SpectraLine “Peak Parameters” table for this
+        spectrum and multiplied by 1.05 (the multiplier is chosen by minimizing the peak shape residuals); between the points,
+        log–log interpolation is used, and the K-40 background line is not included in the convolution. For comparison, the table lists the width
+        measured in this spectrum using the SpectraVibe width estimator (shown only where the three measurement methods agree within 5&nbsp;%),
+        and the BecqMoni width calibration from the spectrum file (a power law in channels, converted to keV using the same scale).
+        The power law FWHM(E) = k·E<sup>p</sup> is an approximation of the FWHM values used in the convolution (RMS deviation {{fw_rms}}); at 662&nbsp;keV it yields {{fw_662}}.</p>
+        <div class="chartbox" id="fwbox">
+          <canvas id="cvFwhm" role="img"
+            aria-label="spectrometer energy resolution versus energy: peak table points and power law"></canvas>
+        </div>
+        <div class="scroll"><table class="big" id="tblFwhm"></table></div>
+      </div>
+    </div>
+
+    
+    <div class="stage" id="viewCmp" hidden>
+      <div class="cmp-wrap">
+        <p class="method-lede">Estimates on a common scale. The width
+        of the colored band is the stated uncertainty;
+        the relative spread is shown below the scale.</p>
+        <canvas id="cvCmp" height="200" role="img"
+          aria-label="comparison of the known activity and estimates with their intervals"></canvas>
+        <div class="cmp-table" id="cmpTable"></div>
+        <p class="method-lede">With the reference sample filled to 1 cm below the beaker rim, Method 1, with subtraction of the background measured with water, is closest
+        to the known activity and provides the best peak shape agreement. Method 2 with the Gamma-1S library yields an activity markedly
+        higher than the known value, while Method 2-2 (all ENSDF lines) is closer to it (the ratios are given in the table above). The Method 2 model includes external bremsstrahlung
+        of β particles, but internal bremsstrahlung (IB) is not included in the calculation; there is no true coincidence summing of cascades, except
+        for the listed sum peaks, and with the main library, lines with emission probabilities below the threshold are also excluded. Possibly for this reason, per unit
+        activity, the Method 2 model yields a lower response than the Method 1 model, and the fit compensates for this. The detection efficiency in the model was verified separately for K-40 (the “K-40 (KCl)” tab
+        above).</p>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  
+  <div id="src-k40" hidden>
+    <div class="top spec-top">
+      <div class="title">
+        <p class="eyebrow">spectrum 2 · K-40 · KCl in the Marinelli 2 beaker (volume 1&nbsp;L)</p>
+        <h2 class="spec-h">Model efficiency verification for K-40</h2>
+        <p class="stand">Potassium chloride sample, “pure” grade (Russian designation “ch.”): mass {{k40_mass}}, volume in the beaker {{k40_vol}}
+        (bulk density {{k40_rho}}); the same spectrometer; the beaker is Marinelli&nbsp;2
+        (assembly geometry: <a href="https://github.com/VibeEngineering-LLC/geant4-detector-models/blob/main/detectors/Atom-GS2020-PRO-MAX/geometry/GS2020_marinelli_kcl_1000ml.gdml"
+        target="_blank" rel="noopener">GDML</a>).
+        The K-40 activity is known from the mass, without certification: mass × potassium fraction in KCl ({{k40_kfrac}}) ×
+        specific activity of natural potassium ({{k40_spec}}) = {{k40_aexp}}. Live time of the measurement
+        {{k40_live}}; the same Marinelli + water background as for thorium is subtracted, with an r(E) correction for the
+        attenuation of the background by the KCl sample. The Monte Carlo template is a Geant4 calculation of the
+        full decay of K-40 in a sample of the specified KCl volume and density. The energy scale is
+        specific to this spectrum and determined from peak positions: the expected peaks of this spectrum are fitted with Geant4 responses (the
+        spectrometer file contains no calibration).</p>
+        <p class="stand">Method 1 (full-spectrum fit with the same convolution kernel as for thorium) gave
+        {{k40_a}} (here ± is the statistical uncertainty; the summaries, tables, and the “comparison” tab give the uncertainty multiplied by the Birge ratio correction) — {{k40_ratio}} of the expected value; χ²/ν = {{k40_chi2}}, peak shape at 1460.8&nbsp;keV —
+        χ²/ν = {{k40_shape}}; a comparison variant with the tail component of the Gamma-1S model convolution kernel gives {{k40_tail_ratio}} of the expected value. Method 2 (FEP efficiency function × line library: a single
+        1460.8&nbsp;keV line with an emission probability of {{k40_ig}}&nbsp;% according to LNHB-DDEP 2025, multiplied by the direct calculation of the Geant4 response to a monoenergetic γ ray in this sample,
+        plus external bremsstrahlung of β particles with the same amplitude; internal bremsstrahlung is not included in the calculation)
+        gave {{k40_m2_a}} (± is the statistical uncertainty) — {{k40_m2_ratio}} of the expected value, χ²/ν = {{k40_m2_chi2}}. The results of both methods are consistent with
+        each other; their common deviation from the expected activity is possibly due to the model (spectrometer, beaker, sample); its
+        cause has not been established. The K-40 γ emission probability is adopted from LNHB-DDEP 2025 ({{k40_ig_lnhb}}&nbsp;%); in ENSDF and in the
+        Geant4 decay data it is 10.66&nbsp;%, and with it both methods would yield approximately 3&nbsp;% less. The decay
+        template of Method 1 contains the 10.66&nbsp;% emission probability, therefore the Method 1 activity is recalculated by a factor of
+        10.66/{{k40_ig_lnhb}}; in Method 2 the LNHB emission probability is specified in the library itself. The moisture content of the sample is unknown;
+        the expected activity is given for dry KCl, and moisture lowers it.</p>
+        <p class="warn"><b>Low-energy region.</b> Without the correction, the difference “measurement − Marinelli + water background” for KCl at 35–70&nbsp;keV
+        is negative. The sample
+        attenuates the external laboratory background more strongly than the water in the background beaker; the r(E) correction for attenuation is calculated in Geant4
+        (isotropic external field, assembly with the sample relative to the assembly with water; the field spectrum is reconstructed from the water background)
+        and is accounted for: the background on the page and in the fit is multiplied by r(E). After the correction, in the region of about 25–100&nbsp;keV the model is higher than the measurement, while below 25&nbsp;keV
+        the difference “measurement − background” is negative. The cause of the discrepancy has not been established; the non-proportionality of the NaI(Tl) light yield, the lower-level discriminator (LLD) threshold (neither effect is described in the model),
+        and residual unaccounted attenuation of the external background by the sample are being considered. The fit window starts at 150&nbsp;keV, where r(E) is close to one.</p>
+      </div>
+    </div>
+    
+    <!--@k40panel-->
+  </div>
+
+  
+  <div id="src-cs137" hidden>
+    <!--@berrypanel-->
+  </div>
+
+  
+  <section class="dev" aria-labelledby="physH">
+    <h2 class="sec-h" id="physH">Physical model of Methods 1 and 2</h2>
+    <p>The contents of the spectrum model and their sources are the same for thorium, K-40, and blueberries. Method 1 fits
+    the Geant4 full-decay template; Method 2 fits the line library multiplied by the Geant4 response of each line.</p>
+    <div class="scroll"><table class="big">
+      <thead><tr><th>Contribution</th><th>Method 1</th><th>Method 2</th></tr></thead>
+      <tbody>
+      <tr><td>Decay γ-ray lines</td><td>Geant4 calculation of the nuclear decay of each chain member in the sample volume</td><td>ENSDF lines (IAEA Live Chart) × direct Geant4 response to a monoenergetic γ ray in the same sample</td></tr>
+      <tr><td>Characteristic K and L X-ray emission following decay</td><td>within the decay template</td><td>library lines and nodes of the monoenergetic response grid</td></tr>
+      <tr><td>True coincidence summing</td><td>within the full decay template; cascade angular correlation is disabled</td><td>sum peaks of γ+γ pairs with a common level and of “X-ray + γ” pairs from a fixed list (Pb-212, Tl-208, Ac-228); pairs outside the list are not accounted for; angular correlation is not accounted for</td></tr>
+      <tr><td>β particles and their bremsstrahlung in the sample, beaker, and housing</td><td>within the decay template (Geant4, Seltzer–Berger model)</td><td>separate β template: nuclear decay, primary decay photons are removed at the moment of their creation, electrons are transported fully; same amplitude</td></tr>
+      <tr><td>Internal bremsstrahlung (IB)</td><td colspan="2">Geant4 does not generate it. <b>It is not accounted for in any of the methods</b> (K-40 and the Th-232 decay chain: for K-40 there is neither a measurement nor a verified formula; no signs of IB were found in the measured KCl spectrum, and no check against data was performed for the Th-232 chain; description using K-40 as an example — below). An estimate based on the KUB spectrum (Knipp–Uhlenbeck–Bloch theory, 1936) is retained in the calculation scripts as an option for uncertainty assessment</td></tr>
+      <tr><td>Particle transport</td><td colspan="2">Geant4 EmStandard_option4, production cut 0.05&nbsp;mm, fluorescence, Auger electrons, atomic de-excitation (atomic relaxation) below the production cut (PIXE disabled)</td></tr>
+      <tr><td>Intrinsic detector lines</td><td colspan="2">iodine K X-rays of the crystal and iodine X-ray escape peaks — generated in Geant4 (in Method 2 — in the response of each line)</td></tr>
+      <tr><td>Energy resolution</td><td colspan="2">FWHM at the reference points of the SpectraLine “Peak Parameters” table × 1.05 (log–log interpolation between the points) and a gain-spread kernel (w = 0.14 — fraction of events with an additional gain spread, s = 2.8&nbsp;% — its relative standard deviation), common to all fits of the spectrometer</td></tr>
+      <tr><td>Energy scale</td><td colspan="2">each spectrum has its own energy calibration, determined from peak positions (centroids)</td></tr>
+      <tr><td>Background</td><td colspan="2">measurement of Marinelli 2 with distilled water × ratio of live times, not fitted</td></tr>
+      <tr><td>Fit</td><td colspan="2">single amplitude in the fit window (150–3600&nbsp;keV for Th-232, 150–3000&nbsp;keV for K-40 and blueberries); A2 criterion (weighted least-squares fit to the net spectrum with weights that include the Monte Carlo template variance; second criterion — E1, minimum total variation of normalized shapes); Birge ratio correction √(χ²/ν)</td></tr>
+      </tbody></table></div>
+    <p><b>External and internal bremsstrahlung: what is accounted for.</b> External bremsstrahlung of β particles is generated when electrons are decelerated
+    in matter and is calculated by Geant4 during electron transport; internal bremsstrahlung
+    (IB) is generated in the decay process itself, and Geant4 does not generate it. These are two contributions of the same physical process, which are summed in the literature (review
+    Italiano et al., Rep. Prog. Phys. 87, 126301, 2024; for K-40 — Graham, Phys. Med. Biol. 28, 19, 1983).
+    In the β template of Method 2, only primary decay photons (γ rays and characteristic X-rays) are removed: they are excluded from transport at the moment of their creation, whereas bremsstrahlung photons generated by electrons in matter are transported and included in the response.</p>
+    <h3>Internal bremsstrahlung using K-40 as an example</h3>
+    <p><b>Definition.</b> In β⁻ decay <sup>40</sup>K → <sup>40</sup>Ca, the electron is created in the nucleus and leaves it, decelerating in the Coulomb field of the nucleus;
+    simultaneously, the nuclear charge increases by one unit in a time negligible compared to the characteristic times of the atomic shell. The sudden
+    appearance of a moving charge is accompanied by the emission of electromagnetic radiation — internal bremsstrahlung. The probability of emitting
+    one photon per β particle is of the order of the fine-structure constant, α ≈ 1/137. The spectrum of this radiation is continuous, from zero to the β endpoint energy (for K-40 — 1311&nbsp;keV). This is not the 1460.8&nbsp;keV line:
+    it is produced by the γ transition of the daughter argon after electron capture (about 10.4&nbsp;% of decays: according to LNHB-DDEP 2025, 10.34&nbsp;% to the 1460.8&nbsp;keV level and 0.10&nbsp;% to the ground state), not by bremsstrahlung.</p>
+    <p><b>Difference from external bremsstrahlung of β particles.</b> An electron that has already left the nucleus is decelerated in the matter of the sample, beaker, and housing and
+    also emits a continuous spectrum; this is calculated by Geant4 during electron transport. Internal bremsstrahlung is generated in the decay process itself,
+    does not depend on the surrounding matter, and Geant4 does not generate it (verified in the source code of the decay model: the products are only the electron, antineutrino, and ion).</p>
+    <p><b>Calculation methods.</b> The classical Knipp–Uhlenbeck–Bloch (KUB, 1936) theory is derived for allowed transitions and does not account for the Coulomb field
+    of the nucleus; the first-order Coulomb correction and a theory for any degree of forbiddenness were added later. K-40 decays
+    via a third-forbidden unique β⁻ transition — one of the most strongly forbidden. The only known calculation of IB for K-40 (Graham, 1983) was performed using
+    the simple KUB theory; no measurements of K-40 IB are found in the literature (review Italiano et al., 2024, §4.7).</p>
+    <p><b>Estimate of the possible contribution.</b> According to our KUB spectrum table for K-40, the internal bremsstrahlung (IB) yield is on the order of 9·10<sup>−3</sup> photons per decay above 5&nbsp;keV; within the fit window, this corresponds to approximately 2&nbsp;% of the model, and the activity would be approximately 1&nbsp;% lower if IB were included. For forbidden transitions, the measured IB is typically higher than the KUB calculation, particularly at high energies; therefore, this estimate may be an underestimate.</p>
+    <p><b>Why IB is not included in the calculation for K-40.</b> The magnitude and shape of the IB for this transition are not confirmed by either measurement or a validated formula, and no evidence of an IB contribution was found in the measured KCl spectrum (the fit does not improve when IB is included). Consequently, IB is excluded from the model until its contribution is confirmed by a measurement or a verified formula. It may be reinstated once the following conditions are met: a formula for the third-forbidden unique transition, verification on a nuclide of the same class, comparison of calculations with and without IB against the measured spectrum, energy balance and normalization per decay, and a separate decision on electron capture.</p>
+    <p><b>Not accounted for or simplified.</b> The low-energy region below 150&nbsp;keV is not included in the fit.
+    Attenuation of the external background by the sample is accounted for in the calculation (r(E) correction); below 150&nbsp;keV a discrepancy between the model and the measurement remains,
+    whose sign and size depend on the sample and the energy region; its cause has not been established. The scintillation light-yield non-proportionality of NaI(Tl) and the lower-level discriminator (LLD) threshold are not described.
+    The KUB IB spectrum is derived for allowed transitions; for K-40 (third-forbidden unique), the theory for any degree of forbiddenness
+    is not used in the calculation, and the shape correction and the forbidden matrix element are not accounted for — the magnitude and shape of the IB are known
+    only as an estimate, and its uncertainty cannot be reduced to a single number. Internal bremsstrahlung from electron capture
+    in K-40 (approximately 10.4&nbsp;% of decays) is not added; an approximate estimate without Coulomb corrections gives a negligible photon yield, but it is
+    unreliable (for other nuclei, experimental values exceed such theoretical calculations by several times). The energy carried away by the IB photon is not subtracted from
+    the β particle — according to the calculation, this is approximately 0.01–0.03&nbsp;% of the model. External bremsstrahlung of β particles in matter is reproduced by Geant4 with an accuracy of the order of 10–50&nbsp;% (Pandola et al., 2015), meaning the uncertainty in its contribution to
+    the activity is on the order of fractions of a percent — less than the possible contribution of internal bremsstrahlung (about 1&nbsp;% in activity). The agreement between Method 1 and Method 2 on KCl is a check of implementation consistency, not of the physical model:
+    both use the same Geant4 and the same geometry.</p>
+  </section>
+
+
+  <footer class="bot">
+    <span>Th-232: spectrum {{date_meas}}, live time {{tlive}}, real time {{treal}}.</span>
+    <span>Templates: eight Geant4 Monte Carlo calculations, one per chain member; simulated decays per member: {{tpl_decays}}.</span>
+    <button type="button" data-pop="t-about" aria-expanded="false">about this page and its numbers</button>
+    <button type="button" data-pop="t-refs" aria-expanded="false">sources</button>
+  </footer>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<div class="pop" id="pop" hidden role="dialog" aria-modal="true" aria-labelledby="popTitle"></div>
+<!--@k40pops-->
+<!--@berrypops-->
+
+<!--@script-->
+<!--@sources-->
+<!--@k40-->
+<!--@berry-->
+
+
+
+<template id="t-method">
+  <h2 id="popTitle">Two methods on one spectrum</h2>
+
+  <h3>Method 1: Monte Carlo templates per chain member</h3>
+  <p>The decay-chain template is the sum of Monte Carlo templates for the full decay of the chain members
+  ({{nuclide_list}}); each member is a separate Geant4 calculation for a source of
+  nuclear decays of its nuclide in the beaker volume with a decay chain limitation
+  (the nucleusLimits parameter of the Geant4 package), so that adjacent members do not contribute. The number
+  of simulated decays for a member is proportional to its branching ratio ({{tpl_decays}}), so the sum
+  of the unprocessed histograms yields the decay-chain template in equilibrium. Geant4 does not generate internal bremsstrahlung
+  (IB), and it is not included in the calculation until its contribution is confirmed
+  by a measurement or a verified formula. The template is broadened
+  according to the FWHM(E) function (values at the reference points, log–log interpolation) and fitted with a single amplitude according to two criteria: A2 — weighted least-squares fit to the net spectrum
+  without truncation, where the channel weight accounts for the measurement variance and the template variance; E1 — minimum total variation
+  of the normalized shapes subject to the equality of the sums of the model and the net spectrum. The uncertainty from A2 is multiplied by the Birge ratio correction
+  √(χ²/ν) when χ²/ν is greater than one.</p>
+
+  <h3>Method 2: full-energy-peak (FEP) efficiency function × line library</h3>
+  <p>The FEP efficiency function is the detection efficiency in the full-energy peak obtained from Geant4 responses to monoenergetic γ rays in the sample geometry. For each library energy and each summing peak energy, a direct Geant4 calculation was performed for a monoenergetic volume source in the beaker;
+  its full energy-deposition spectrum, broadened with the same FWHM(E) function, is multiplied by
+  the γ-ray emission probability and the branching ratio of the chain member. A weighted
+  β component was added for each chain member — a calculation of the nuclear decay in which primary decay photons are removed
+  at the moment of their creation, while electrons are transported fully (their bremsstrahlung in the sample and beaker).
+  Internal bremsstrahlung (IB) is not included in the calculation. The “chain” column is the sum
+  over chain members, and the node variance is the sum of squared weights. The fit is performed with a single
+  amplitude, as in Method 1.</p>
+
+  <h3>Background</h3>
+  <p>The background is subtracted using a fixed
+  coefficient — the ratio of live times — and is not fitted. The beaker with the reference sample attenuates
+  the external background at the spectrometer; therefore subtracting the spectrum of the laboratory background (recorded without the beaker) leads to over-subtraction.
+  For this reason, a different measurement is used — the Marinelli 2 beaker
+  with distilled water (instead of the Marinelli 1 beaker with thorium). The background spectrum is placed on the energy scale using the reference lines of this spectrum
+  and scaled to the live time of the reference sample by the same live-time ratio. The multiplier for the scaled background in the summary is fixed at one. This is a direct
+  measurement of background attenuation by water; the difference between the sample and water is accounted for by the calculated
+  r(E) correction (Geant4, external isotropic field, separate assembly for each sample).
+  The live time of this measurement is shorter than that of the laboratory background recorded without the beaker.</p>
+
+  <h3>True coincidence summing</h3>
+  <p>Pairs of cascade γ rays from a single decay, registered together,
+  contribute at the sum energy; pairs with a confirmed common
+  decay scheme level are accounted for. In Method 2, “X-ray + γ” pairs are accounted for from a fixed list (Pb-212, Tl-208, Ac-228); pairs outside the list are not accounted for. Cascade angular correlation is not accounted for in any method. In Method 1,
+  summing is automatically accounted for in the full decay templates.</p>
+
+  <h3>Common elements of both methods</h3>
+  <p>FWHM(E) function; background; energy scale; spectrometer geometry,
+  beaker, and sample density — one model for all calculations.</p>
+</template>
+
+<template id="t-passport">
+  <h2 id="popTitle">Reference sample of known activity</h2>
+  <dl class="specs">
+    <div><dt>Nuclide</dt><dd>Th-232</dd></div>
+    <div><dt>Activity concentration</dt><dd>{{aksp}} (relative uncertainty {{aksp_unc}})</dd></div>
+    <div><dt>Mass</dt><dd>{{mass}}</dd></div>
+    <div><dt>Density in the model</dt><dd>ρ&nbsp;=&nbsp;{{matrix_rho}}&nbsp;g/cm³
+      — mass divided by the sample volume at a level 1&nbsp;cm below the beaker rim
+      (according to the model geometry, this volume is about 1.16&nbsp;L for a nominal beaker volume of 1&nbsp;L); above the sample — air.</dd></div>
+    <div><dt>Total activity</dt><dd>{{apass}} {{apass_dev}}</dd></div>
+  </dl>
+  <p>Secular equilibrium of the chain was not measured but assumed. Decay of Th-232 during the time from
+  activity certification to measurement is neglected.</p>
+</template>
+
+<template id="t-model">
+  <h2 id="popTitle">Spectrometer and beaker model</h2>
+  <p>Atom GS2020 PRO MAX spectrometer: NaI(Tl) Capescint crystal Ø51×51&nbsp;mm
+  based on the assembly manufacturer’s 3D model, housing — based on the spectrometer STEP drawing.
+  The spectrometer is oriented with the crystal upwards. The Marinelli 1 beaker (nominal volume 1&nbsp;L; polypropylene, 2&nbsp;mm thick at the bottom
+  of the well) is placed over the spectrometer so that the bottom of its re-entrant well rests on the housing. The spectrometer position in the well and wall thickness
+  were verified by model cross-sections. Physics — Geant4, physics list
+  EmStandard_option4, production cut 0.05&nbsp;mm, atomic de-excitation (atomic relaxation)
+  enabled.</p>
+  <p>The detection efficiency of the model has not been verified with a reference sample of known activity in this
+  geometry; this check is provided by the KCl measurement.</p>
+</template>
+
+<template id="t-about">
+  <h2 id="popTitle">About this page and its numbers</h2>
+  <p>The layout and code of the page are borrowed from the Gamma-1S page “Decomposition of the
+  thorium-232 spectrum” with modifications; the data — an export of the fit results of this work in the same
+  format. All numbers — activities, ratios, total counts, line widths,
+  live times — are taken from the export of fit results or calculated on the page from it.</p>
+  <p><b>Text check.</b> Before publication, the page is automatically checked for template placeholders left
+  unreplaced and for hard-coded calculated numbers, as well as for local file paths, email addresses, and access keys.</p>
+  <p><b>Numerical checks.</b> An independent recalculation of the activity from the net peak areas
+  did not confirm the fit result: the simple peak-area method at this energy resolution
+  yields a biased estimate, and after applying a bias correction determined from a simulated spectrum with
+  a known activity, the peak areas indicate a discrepancy between the model and the background. The background measured
+  in the beaker with water was adopted rather than the laboratory background without the beaker: with it, Method 1 yields an activity close to the known value and the best peak shape agreement.
+  The fill level of the reference sample (1&nbsp;cm below the beaker rim) was adopted from the measurement author.</p>
+  <h3>AI Use Statement</h3>
+  <p><b>Model and roles.</b> The work was performed in the Claude Code environment using
+  models from the Claude family (Anthropic). The assistant performed: the geometry and
+  physics of the Geant4 model, Monte Carlo calculations, fitting and analysis, code
+  for data export and page assembly, and draft explanatory text. Part of the code
+  was generated by a local language model based on the assistant's specifications.</p>
+  <p><b>Measurement author.</b> Problem formulation; measurement of the sample and background spectra;
+  beaker dimensions and spectrometer position in the re-entrant well; acceptance of the geometry based on visualizations and
+  intermediate results. The measurement author is responsible for the published values and their
+  application.</p>
+  <p><b>Revision history.</b> Until 09.10.2026, the statistical noise of the Geant4 template was included in the fit criterion without accounting for template broadening;
+  from 09.10.2026, it is accounted for exactly. From 10.10.2026, the energy scale of the KCl spectrum is a smooth polynomial instead of a piecewise-linear one.</p>
+  <p><b>External verification.</b> The page has not
+  undergone independent peer review.</p>
+</template>
+
+<template id="t-refs">
+  <h2 id="popTitle">Sources</h2>
+  <p>γ-ray line library — evaluated nuclear data from ENSDF (IAEA Live Chart
+  of Nuclides, <a href="https://nds.iaea.org/relnsd/" target="_blank"
+  rel="noopener">nds.iaea.org/relnsd</a>) and the Gamma-1S page library,
+  cross-checked with LNHB/DDEP (<a href="https://www.lnhb.fr/nuclides/"
+  target="_blank" rel="noopener">lnhb.fr/nuclides</a>).</p>
+  <p>Radiation transport — Geant4: J. Allison et al., Recent developments
+  in Geant4, Nucl. Instrum. Methods Phys. Res. A 835
+  (2016) 186–225, doi:
+  <a href="https://doi.org/10.1016/j.nima.2016.06.125" target="_blank"
+  rel="noopener">10.1016/j.nima.2016.06.125</a>.</p>
+  <p>Primary data — sample and background spectra recorded with the Atom GS2020 PRO MAX
+  and the known activity of the sample, provided by the measurement author.</p>
+  <p>Internal bremsstrahlung and bremsstrahlung of β particles: Italiano et al., Rep. Prog. Phys. 87, 126301, 2024 (review); Graham, Phys. Med. Biol. 28, 19, 1983 (calculation for K-40); Pandola L. et al., arXiv:1410.2002 (Geant4 validation for thick-target bremsstrahlung). K-40 lines from ENSDF — Chen, 2015 (the reference is given in the page data, via the IAEA Live Chart).</p>
+</template>

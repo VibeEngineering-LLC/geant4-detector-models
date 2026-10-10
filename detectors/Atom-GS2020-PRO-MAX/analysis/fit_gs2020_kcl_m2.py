@@ -5,9 +5,9 @@ import sys, os, json, math
 import numpy as np
 sys.stdout.reconfigure(encoding="utf-8")
 HERE = os.path.dirname(os.path.abspath(__file__))
-DONOR = r"D:\repos-folder\repos\geant4-detector-models\detectors\Gamma-1S\web-th232"
+DONOR = r"<REPOS>\geant4-detector-models\detectors\Gamma-1S\web-th232"
 os.environ.setdefault("G4MODELS_SOURCE_CONFIG", os.path.join(HERE, "configs", "th232_gs2020_full_xray.yaml"))  # нужен донору при импорте
-os.environ.setdefault("SPECTRAVIBE_ROOT", r"D:\cloud-folder\Дозиметрия\ИИ\1 Скилы\0_Work\gamma-spectrum-analysis")
+os.environ.setdefault("SPECTRAVIBE_ROOT", r"<DOSIM>\ИИ\1 Скилы\0_Work\gamma-spectrum-analysis")
 sys.path.insert(0, HERE)
 import fit_gs2020_th232_m1 as m1
 import fit_gs2020_kcl as fk
@@ -70,7 +70,7 @@ def main():
     lib = LIB + (LIB_AR_XR if gx.ENABLED and "xr" in PARTS else [])
     print(f"Строк-рентгена в библиотеке (#XR-1): {sum('#XR-1' in ln[3] for ln in lib)}")
     var2 = {}
-    _, by_nuc_w, lines_m2, n_sum = erd.run_method2(lib, [], resp, r["e"], r["ch_edges"], KEYS, var_acc=var2, n_of=n_of)
+    _, by_nuc_w, lines_m2, n_sum = erd.run_method2(lib, [], resp, r["e"], r["ch_edges"], KEYS, var_acc=var2, n_of=n_of, var_of=gx.node_var_of(eam.BUILD_OUT, r["ch_edges"], fwhm))   # #GS-63
 
     W2 = np.array([by_nuc_w["K40"]])
     V2 = np.array([var2["K40"]])

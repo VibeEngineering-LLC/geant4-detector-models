@@ -1,0 +1,67 @@
+
+<div class="scrim" id="berry-scrim" hidden></div>
+<div class="pop" id="berry-pop" hidden role="dialog" aria-modal="true" aria-labelledby="berry-popTitle"></div>
+
+<template id="berry-t-method">
+  <h2 id="berry-popTitle">Two methods on the blueberry spectrum</h2>
+
+  <h3>Method 1: Monte Carlo templates of full decay</h3>
+  <p>Three Geant4 calculations in the sample geometry: Cs-137 decaying through Ba-137m; K-40; Sr-90 and Y-90, combined in a 1:1 ratio into a single β template.
+  Simulated decays: {{tpl_decays}}. The Iγ emission probability of the 662&nbsp;keV line in the Cs-137 template is normalized to the LNHB value. The fit is performed with three amplitudes using the A2 criterion
+  (least-squares fit to the net spectrum; the channel weight accounts for the measurement variance and the template variance); the uncertainty is multiplied by the Birge ratio correction when χ²/ν is greater than one.</p>
+
+  <h3>Background</h3>
+  <p>A Marinelli beaker with distilled water, with its own energy calibration; it is subtracted with a fixed coefficient (the ratio of live times)
+  and is not fitted (the multiplier for the scaled background in the summary is fixed at one). The coefficient includes the r(E) correction for the attenuation of the external background by the blueberry sample (sample density is lower than water density), calculated in Geant4
+  separately for the full-energy peaks of the background and for its continuum (external field). Note: r(E) was redefined after the first calculation, when the result was already known;
+  one reason was the fit quality, the other
+  the oscillations of the previous r(E) between grid nodes.</p>
+
+  <h3>Components in the plot</h3>
+  <p>Method 1: Cs-137; K-40; “external bremsstrahlung of Sr-90+Y-90 β particles (Geant4)” (nuisance fit parameter; the Sr-90 activity is not determined
+  from the γ-ray spectrum). Method 2: Cs-137 lines; K-40 lines; external bremsstrahlung (β/e⁻) of Cs-137 and K-40 as separate components; the same Sr-90+Y-90 β component; background.</p>
+
+  <h3>Method 2: full-energy-peak (FEP) efficiency function × line library</h3>
+  <p>The FEP efficiency function is the detection efficiency in the full-energy peak obtained from Geant4 responses to monoenergetic γ rays in the sample geometry. The library comprises {{berry_m2_nlines}} lines of two nuclides: for Cs-137, the 661.7&nbsp;keV γ-ray line and the Ba K X-ray lines; for K-40, the 1460.8&nbsp;keV γ-ray line and the Ar K X-ray lines
+  ({{berry_m2_nxray}} of them are X-ray lines; X-ray emission is always accounted for). For each line, a direct Geant4 calculation for a monoenergetic volume source in the same sample
+  yields the full energy deposition spectrum (grid nodes: {{berry_m2_nodes}}); it is broadened according to the same FWHM(E) function and multiplied by the emission probability of the line.
+  External bremsstrahlung of β particles and conversion electrons is added to the responses with the same amplitude, as separate components for Cs-137 and K-40.
+  Sr-90+Y-90 is included with the same β template as in Method 1, as a nuisance fit parameter. Internal bremsstrahlung is not included in the calculation.
+  The fit uses three amplitudes in the same window as in Method 1; the uncertainty is multiplied by the Birge ratio correction. Ar K X-rays do not reach the crystal.
+  Result: Cs-137 {{berry_m2_cs_a}}, K-40 {{berry_m2_k_a}}, χ²/ν = {{berry_m2_chi2}}.</p>
+
+  <h3>Common elements of all templates</h3>
+  <p>The FWHM(E) function from the detector data set (values at the reference points from the thorium reference spectrum, log–log interpolation) with a gain-spread kernel: w = {{berry_gain_w}} — the fraction of events with additional gain spread, s = {{berry_gain_s}} — its relative standard deviation (as a fraction of the event energy);
+  parameters were selected by iterating over variants based on the peak shapes in the thorium-232 spectrum and applied to all GS2020 spectra; own energy calibration; geometry.</p>
+</template>
+
+<template id="berry-t-passport">
+  <h2 id="berry-popTitle">Sample: dried blueberries</h2>
+  <dl class="specs">
+    <div><dt>Sample</dt><dd>dried blueberries, activity unknown</dd></div>
+    <div><dt>Mass</dt><dd>{{berry_mass}}</dd></div>
+    <div><dt>Volume in the beaker</dt><dd>1&nbsp;L (fill level {{berry_level}} relative to the rim)</dd></div>
+    <div><dt>Density and composition in the model</dt><dd>ρ&nbsp;=&nbsp;{{berry_rho}}; {{matrix_comp}} by mass</dd></div>
+    <div><dt>Measurement</dt><dd>{{berry_live_h}} live time, {{berry_dates}}</dd></div>
+    <div><dt>Reference value</dt><dd>Beta-1S, SpectraLine: Cs-137 {{berry_sl_cs}} at the measurement date ({{berry_sl_cs24}} at 01.10.2024),
+    K-40 {{berry_sl_k}}; different sample and different instrument</dd></div>
+  </dl>
+  <p>No certified activity is available. Cs-137 — Method 1 (Method 2: {{berry_m2_cs_a}}), systematic uncertainty approximately {{berry_cs_sys}}. K-40 — Method 1 preliminary;
+  background subtraction uncertainty {{berry_k_noise}}, systematic uncertainty {{berry_k_sys}}.
+  In the model, the sample contains potassium {{berry_kfrac_model}} by mass; the fit result corresponds to approximately {{berry_kfrac_found}};
+  the effect on self-absorption was not evaluated (expected to be small).</p>
+</template>
+
+<template id="berry-t-model">
+  <h2 id="berry-popTitle">Spectrometer, beaker, and sample model</h2>
+  <p>The spectrometer is the same Geant4 model as for thorium: NaI(Tl) Capescint crystal Ø51×51&nbsp;mm,
+  housing according to the spectrometer STEP drawing. The beaker is Marinelli&nbsp;2 (not the one used for thorium), based on measurements of 29.09.2026: a 1&nbsp;L beaker with a conical
+  re-entrant well. Dimensions: inner cavity of the well Ø79 → Ø77&nbsp;mm, outer wall Ø85 → Ø83&nbsp;mm (from the beaker bottom to the well bottom), well depth 57&nbsp;mm, conical cavity, from Ø136&nbsp;mm
+  at the bottom to Ø141&nbsp;mm at the top, inside height 103&nbsp;mm, plastic 3&nbsp;mm thick throughout, including the lid.
+  The spectrometer is fully inserted into the re-entrant well (the housing rests on the well bottom). The sample is dried blueberries
+  ({{matrix_comp}} by mass) with a density of {{berry_rho}} and a fill height corresponding to a volume of
+  1&nbsp;L. Physics — Geant4, physics list EmStandard_option4, production cut 0.05&nbsp;mm, atomic de-excitation
+  (atomic relaxation) enabled.</p>
+  <p>This is the first sample of unknown activity following the reference thorium and KCl verification;
+  the detector data set (efficiency curve and response matrix — Geant4 calculation; peak width — from the thorium reference spectrum) is applied without refitting.</p>
+</template>

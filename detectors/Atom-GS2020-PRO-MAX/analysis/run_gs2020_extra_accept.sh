@@ -4,7 +4,7 @@
 # Запуск: bash run_gs2020_extra_accept.sh 0|1 <метка>
 set -u
 X="$1"; TAG="$2"; S="<WORKDIR>/GEANT4/scripts"
-K=/c/g4work/gs2020/kcl_v4w85_83; T=/c/g4work/gs2020/run_marinelli/out_v5_oisn10
+K=/c/g4work/gs2020/kcl_1l_v4w85_83; T=/c/g4work/gs2020/run_marinelli/out_v5_oisn10
 cd "$S" || exit 1
 . ./gs2020_fit_env.sh; export GS_CAL_SHAPE=1 GS_EXTRA="$X"
 DK="$K/gs42_extra${X}_$TAG"; DT="$T/gs42_extra${X}_$TAG"; mkdir -p "$DK" "$DT"

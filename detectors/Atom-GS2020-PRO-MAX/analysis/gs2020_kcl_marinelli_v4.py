@@ -32,5 +32,10 @@ for name, new in (("VesselWall_solid", wall), ("SourceMatrix_solid", mat), ("Hea
 if MAT == "water":
     t, n = re.subn(r'(<volume name="LV_SourceMatrix"><materialref ref=")Epoxy_crumb(")', r"\1G4_WATER\2", t)
     if n != 1: raise SystemExit("ОТКАЗ: материал пробы заменён %d раз" % n)
+# #GS-47 (07.10): GS_RHO — плотность KCl, г/см³ (KCl 1 л 1085 г → 1.085); без ключа — из SRC (829/740 = 1,1203)
+RHO = __import__("os").environ.get("GS_RHO")
+if MAT == "kcl" and RHO:
+    t, n = re.subn(r'(<material name="Epoxy_crumb" state="solid"><D value=")[0-9.]+(")', r"\g<1>%s\2" % float(RHO), t)
+    if n != 1: raise SystemExit("ОТКАЗ: плотность KCl заменена %d раз" % n)
 if DST: open(DST, "w", encoding="utf-8", newline="").write(t)
-print("%s %g мл: верх z=%.2f (слой над колодцем %.2f мм), плотность %s; 1 л: %.1f мм ниже среза (замер 16,5); полость %.0f мл -> %s" % ("KCl" if MAT == "kcl" else "вода", FILL, top, top - ZW, "%.4f" % (829 / 740) if MAT == "kcl" else "G4_WATER", ZT - lit, vol(ZT), DST))
+print("%s %g мл: верх z=%.2f (слой над колодцем %.2f мм), плотность %s; 1 л: %.1f мм ниже среза (замер 16,5); полость %.0f мл -> %s" % ("KCl" if MAT == "kcl" else "вода", FILL, top, top - ZW, "%.4f" % (float(RHO) if RHO else 829 / 740) if MAT == "kcl" else "G4_WATER", ZT - lit, vol(ZT), DST))

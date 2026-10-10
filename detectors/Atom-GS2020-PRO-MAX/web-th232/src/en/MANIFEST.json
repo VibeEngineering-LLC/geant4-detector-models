@@ -1,0 +1,42 @@
+{
+ "k40-pops.html": {
+  "ru_sha256": "13421c60bf4c31fde8197739f7fb30deef68dbd825c9cfb45b6f33fd6a485045",
+  "model": "qwen3.8:27b",
+  "prompt": "gs79-v3",
+  "date": "2026-10-11 00:53",
+  "chunks": 2,
+  "fixes": 3
+ },
+ "index.html": {
+  "ru_sha256": "31142e42dc3b92d8456dabec5d9def9bcfd9ebd330670d8b42221c924c950220",
+  "model": "qwen3.8:27b",
+  "prompt": "gs79-v3",
+  "date": "2026-10-11 00:53",
+  "chunks": 13,
+  "fixes": 21
+ },
+ "k40-panel.html": {
+  "ru_sha256": "46c69dc17e840705db87e9a24a7e7420230302c4b70761025cd3e61183153642",
+  "model": "qwen3.8:27b",
+  "prompt": "gs79-v3",
+  "date": "2026-10-11 00:53",
+  "chunks": 4,
+  "fixes": 11
+ },
+ "berry-panel.html": {
+  "ru_sha256": "cbcfb325741f891e0a7a03da982f404b7c7857f7c24be1ba6012e1abff17d305",
+  "model": "qwen3.8:27b",
+  "prompt": "gs79-v3",
+  "date": "2026-10-11 00:53",
+  "chunks": 4,
+  "fixes": 12
+ },
+ "berry-pops.html": {
+  "ru_sha256": "d1b801856ae8570e44b3975de5380f16acef896a5251e1b5aa15c9c9f00d417b",
+  "model": "qwen3.8:27b",
+  "prompt": "gs79-v3",
+  "date": "2026-10-11 00:53",
+  "chunks": 3,
+  "fixes": 2
+ }
+}

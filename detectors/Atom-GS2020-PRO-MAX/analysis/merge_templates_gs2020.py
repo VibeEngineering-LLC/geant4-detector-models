@@ -288,8 +288,8 @@ def main():
         print(f"Группа {group_name}: файл {out_name}, отрезков {len(paths)}, событий {n_processed}, сумма edep {total_edep_count}")
 
     # Build chain (только если в папке есть отрезки mix_*: у beta_/ib_/grid_ своей цепочки нет)
-    if not any(g.startswith("mix_") for g in merged):
-        print("Цепочка Th-232: не собирается — групп mix_* нет"); return
+    if "mix_Th232" not in merged:   # #GS-70: у черники (Cs/K/Sr/Y) цепочки Th-232 нет
+        print("Цепочка Th-232: не собирается — группы mix_Th232 нет"); return
     N, total_chain_edep, total_chain_light = build_chain(out_dir, merged)
     print(f"Цепочка Th-232: событий {N}, сумма edep {total_chain_edep}, сумма light {total_chain_light}")
 

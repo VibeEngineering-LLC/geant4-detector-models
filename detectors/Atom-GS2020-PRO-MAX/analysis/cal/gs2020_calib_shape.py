@@ -67,6 +67,10 @@ GROUPS_DEF = [
     {"name": "2204", "lo": 2100, "hi": 2320, "comps": [("Bi-214","214bi","g")], "cdeg": 2},
     {"name": "2614", "lo": 2400, "hi": 2850, "comps": [("Tl-208","208tl","g"), ("Bi-214","214bi","g")], "cdeg": 2},
 ]
+BASE_GROUPS = list(GROUPS_DEF)
+# #GS-70 черника: группа Cs-137 600–720 перекрывает 609 и 727 — у черники их нет (Cs-137 на 2 порядка сильнее Bi-214 609)
+BERRY_GROUPS = [g for g in BASE_GROUPS if g["name"] not in ("609", "727")] + [
+    {"name": "662", "lo": 600, "hi": 720, "comps": [("Cs-137","137cs","g"), ("Bi-214","214bi","g")], "cdeg": 2}]
 
 # --- Сетка и кэш отклика ---
 GRID = {}
@@ -575,6 +579,7 @@ def main():
     for tag in tags:
         print(f"\n== {tag} ==")
         KNOTS, NP = list(ALL_KNOTS), len(ALL_KNOTS) if ALL_KNOTS else DEG + 1   # полный набор узлов для каждого тега
+        GROUPS_DEF[:] = BERRY_GROUPS if tag == "berry" else BASE_GROUPS
         
         # Чтение данных или генерация
         if is_synth:
@@ -659,7 +664,9 @@ def main():
                 print(f"      {p} кэВ: {d_curve[idx]:.3f} ± {sd_curve[idx]:.3f}")
                 
             # Сравнение со своей шкалой
-            E_own = C.energy_axis(tag, n_channels)
+            try: E_own = C.energy_axis(tag, n_channels)
+            except KeyError:   # #GS-70: у нового тега нет шкалы по реперам — сравнение со шкалой самого файла (#CAL-0)
+                E_own = C.s.channel_to_energy(np.arange(n_channels), d["coeffs"]); print("   (шкалы по реперам нет — «своя» = шкала файла)")
             E_file_ch = C.s.channel_to_energy(np.arange(n_channels), coeffs)
             diff_own = E_own - E_file_ch
             
@@ -776,7 +783,9 @@ def main():
     if is_synth:
         base, ext = os.path.splitext(OUT_JSON)
         json_path = f"{base}_synth{ext}"
-        
+    elif os.environ.get("GS_SHAPE_MERGE") == "1" and os.path.exists(json_path):   # #GS-70: дописать теги, не затирая прочие
+        with open(json_path, encoding="utf-8") as f: out_data = {**json.load(f), **out_data}
+
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(out_data, f, ensure_ascii=False, indent=1)
         

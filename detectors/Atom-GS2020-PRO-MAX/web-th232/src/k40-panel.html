@@ -1,0 +1,191 @@
+<!-- #GS-26: полная панель K-40 — тот же донорский код, что у тория (scripts/g1s-k40.js = g1s-th232.js + patches/k40_terms.json),
+     данные window.GS_K40 (data-k40.js из gs2020_k40_data.json, export_page_gs2020_k40.py). Все id — с префиксом k40-. -->
+<style>
+/* #GS-73: общий подвал страницы — данные тория; на вкладке K-40 показывается свой (k40-foot) */
+body:has(#src-k40:not([hidden])) footer.bot:not(.k40-foot){display:none}
+#k40-tblM2 td:last-child{text-align:center}
+#k40-tblM1 td:first-child{white-space:nowrap}
+#k40-tblM2 td:nth-child(2){white-space:nowrap}
+#k40-tblM2 td:nth-child(4){white-space:nowrap}
+#k40-viewM2 .scroll{max-height:436px; overflow-y:auto; border:1.5px solid var(--rule-soft); padding:0 .65rem}
+#k40-fwbox canvas{height:clamp(15rem, 30vh, 22rem)}
+</style>
+<div class="panel">
+  <div class="toolbar">
+    <div class="tabs" role="tablist" aria-label="выбор представления, K-40" id="k40-tabs">
+      <button type="button" class="btn tab" data-tab="m1" aria-selected="true">метод 1: МК-шаблон K-40</button>
+      <button type="button" class="btn tab" data-tab="m2" aria-selected="false">метод 2: функция ПП + линия</button>
+      <button type="button" class="btn tab" data-tab="cmp" aria-selected="false">сравнение</button>
+      <button type="button" class="btn tab" data-tab="cal" aria-selected="false">калибровка</button>
+    </div>
+    <span class="sp"></span>
+    <div class="seg" id="k40-fwhmseg" role="group" aria-label="вычитаемый фон">
+      <button type="button" class="btn" data-fwhmlaw="cs" aria-pressed="true">фон: Маринелли+вода</button>
+    </div>
+    <button type="button" class="btn" data-k40pop="t-method" aria-expanded="false">как рассчитано</button>
+    <button type="button" class="btn" data-k40pop="t-passport" aria-expanded="false">о пробе</button>
+    <button type="button" class="btn" data-k40pop="t-model" aria-expanded="false">о модели</button>
+    <a class="btn" href="https://github.com/VibeEngineering-LLC/geant4-detector-models" target="_blank" rel="noopener">код на GitHub</a>
+  </div>
+
+  <!-- ============================ K-40, вкладка: метод 1 ============================ -->
+  <div class="stage" id="k40-viewM1">
+    <div class="m1-wrap">
+      <p class="method-lede">Подгонка полного спектра одним МК-шаблоном полного распада K-40 —
+      расчётом Geant4 для источника распадов ядер K-40 в объёме пробы KCl (смоделировано распадов: {{tpl_decays}}) — и
+      измеренным фоном Маринелли+вода, приведённым по живому времени и не подгоняемым. Амплитуда одна —
+      активность K-40; окно подгонки {{kp_lo}}–{{kp_hi}}&nbsp;кэВ. Заливкой показан вклад шаблона в модель
+      при найденной активности.</p>
+      <div class="summary" id="k40-sumM1"></div>
+      <div class="legendbar" id="k40-legendM1"></div>
+      <div class="plotwrap">
+        <div class="plotbox">
+          <canvas id="k40-cvM1" role="img"
+            aria-label="разложение спектра KCl — метод 1: шаблон K-40 и фон"></canvas>
+          <div class="chart-tip" id="k40-m1-tip" hidden></div>
+        </div>
+      </div>
+      <div class="cursor-line" id="k40-cursorM1">наведите курсор на канал спектра</div>
+      <p class="guard-note">Контур слоя сплошной там, где МК-шаблон содержит не менее {{n_eff_min}}
+      отсчётов на канал, и пунктирный там, где их меньше: ниже порога доля слоя в канале определяется шумом
+      шаблона и не считается измеренной долей. Какая часть вклада слоя лежит ниже порога, показывает
+      подсказка при наведении на слой в легенде.</p>
+      <div class="scroll"><table class="big" id="k40-tblM1"></table></div>
+    </div>
+  </div>
+
+  <!-- ============================ K-40, вкладка: метод 2 ============================ -->
+  <div class="stage" id="k40-viewM2" hidden>
+    <div class="m1-wrap">
+      <p class="method-lede">Метод 2 — функция полного поглощения (ПП) × линия: функция ПП — эффективность регистрации в пике полного поглощения по откликам Geant4 на моноэнергетические γ-кванты в геометрии пробы.
+      Выход γ-линии K-40 1460,8&nbsp;кэВ ({{k40_ig}}&nbsp;% на распад, LNHB-DDEP 2025) умножается
+      на функцию отклика детектора на моноэнергетический квант этой энергии — пик полного поглощения, комптоновский континуум,
+      пики вылета, — полученную прямым расчётом Geant4 для объёмного источника в той же пробе KCl (узлов сетки:
+      {{kp_nnodes}}). Отклик с весом выхода подгоняется одной амплитудой ко всему спектру, как в методе 1.
+      У K-40 одна γ-линия и нет каскада: библиотека содержит одну основную линию, пиков суммирования нет, отдельного варианта
+      «все известные линии» (метод 2-2 у тория) нет.</p>
+      <div class="summary" id="k40-sumM2"></div>
+      <div class="legendbar" id="k40-legendM2"></div>
+      <div class="plotwrap">
+        <div class="plotbox">
+          <canvas id="k40-cvM2" role="img"
+            aria-label="разложение спектра KCl — метод 2: отклик линии 1460,8&nbsp;кэВ и фон"></canvas>
+          <div class="chart-tip" id="k40-m2-tip" hidden></div>
+        </div>
+      </div>
+      <div class="cursor-line" id="k40-cursorM2">наведите курсор на канал спектра</div>
+      <p class="guard-note">В модели метода 2 три компонента с общей амплитудой: отклик на γ-квант
+      1460,8&nbsp;кэВ, внешнее тормозное излучение β-частиц K-40 (основной канал его распада) и K-рентгеновское излучение Ar; внутреннее
+      тормозное излучение (IB) в расчёт не входит, пока его вклад не подтверждён измерением или проверенной формулой.
+      K-рентгеновское излучение Ar после электронного захвата (около 3&nbsp;кэВ) входит в библиотеку, но его отклик равен нулю:
+      из пробы до кристалла оно не доходит, прямые расчёты Geant4 не дали ни одного события.</p>
+      <div class="scroll"><table class="big" id="k40-tblM2"></table></div>
+      <p class="guard-note"><b>Собственные линии детектора.</b> После фотопоглощения
+      в кристалле K-рентгеновское излучение иода (28,5 и 32,3&nbsp;кэВ) может покинуть кристалл, и событие
+      регистрируется ниже пика полного поглощения на эту энергию — пик вылета. В библиотеку линий такие
+      пики не вносятся: они рождаются в отклике Geant4 линии. Доли ниже рассчитаны
+      по отклику сетки (энерговыделение до уширения, подложка вычтена по боковым окнам).</p>
+      <div class="scroll"><table class="big" id="k40-tblDet"></table></div>
+    </div>
+  </div>
+
+  <!-- ============================ K-40, вкладка: калибровка ============================ -->
+  <div class="stage" id="k40-viewCal" hidden>
+    <div class="cal-wrap">
+      <p class="method-lede">Спектры пробы KCl и фона Маринелли+вода. Фон приведён по живому времени
+      к пробе; разность — счёт пробы минус приведённый фон в каждом канале. Шкала энергии у каждого
+      спектра собственная: в файле прибора для KCl калибровки нет, поправка шкалы — гладкая (полином) по положениям
+      групп пиков этого спектра, подобранным по откликам Geant4. В таблице — полином,
+      представляющий шкалу (отклонение от неё до {{kp_cal_repr}}). Опорные линии — линия K-40 и линии фона.</p>
+      <div class="chartbox" id="k40-calbox">
+        <div class="ctrls" id="k40-cal-ctrls">
+          <label><span class="sw" style="background:#16140f"></span>
+            <input type="checkbox" id="k40-c-smp" checked> проба KCl</label>
+          <label><span class="sw" style="background:#0f5aa8"></span>
+            <input type="checkbox" id="k40-c-bg" checked> фон (приведён)</label>
+          <label><span class="sw" style="background:#c8541c"></span>
+            <input type="checkbox" id="k40-c-diff"> проба − фон</label>
+          <label><input type="checkbox" id="k40-c-log" checked> логарифмическая шкала</label>
+          <label><input type="checkbox" id="k40-c-anch" checked> опорные линии</label>
+          <button type="button" class="btn" id="k40-cal-reset">весь диапазон</button>
+        </div>
+        <canvas id="k40-cvCal" role="img"
+          aria-label="откалиброванные спектры пробы KCl, фона и их разности с опорными линиями; выделение области мышью — масштабирование, двойной щелчок — сброс"></canvas>
+        <div class="chart-tip" id="k40-cal-tip" hidden></div>
+        <div class="readout" id="k40-cal-ro"></div>
+      </div>
+      <div class="scroll"><table class="big" id="k40-tblCal"></table></div>
+
+      <h2 class="sec-h">Калибровка по разрешению</h2>
+      <p class="method-lede">Ширина пиков — характеристика прибора, а не пробы: она определяется один раз по опорному
+      спектру тория-232 того же прибора и дальше применяется ко всем измерениям.
+      Точки получены из таблицы «Параметры пиков» СпектраЛайн по спектру тория умножением на {{kp_fw_scale}}; между точками —
+      интерполяция в логарифмах; на 1460,8&nbsp;кэВ ширина в свёртке равна {{kp_fw_k40_conv}}. Эта ширина используется в свёртке шаблонов обоих
+      методов. Для проверки ширина пика K-40 измерена и в самом спектре KCl: {{kp_fw_own}} (измеритель ширины SpectraVibe: результат принимается,
+      только если три способа измерения согласуются); в свёртке она не используется. Для сравнения в таблице — калибровка ширины
+      BecqMoni из файла спектра, если она записана в файле (степенная зависимость в каналах, переведённая в кэВ той же шкалой):
+      {{kp_fw_bm}}. СпектраЛайн
+      на 1460,8&nbsp;кэВ даёт {{kp_fw_k40_sl}} (пик K-40 фона в спектре тория). Степенная зависимость ПШПВ(E)&nbsp;=&nbsp;{{fw_k}}·E<sup>{{fw_p}}</sup>&nbsp;кэВ —
+      аппроксимация значений ПШПВ в свёртке (СКО {{fw_rms}}); на 662&nbsp;кэВ она даёт {{fw_662}}, на 1460,8&nbsp;кэВ — {{kp_fw_k40_law}}.</p>
+      <div class="chartbox" id="k40-fwbox">
+        <canvas id="k40-cvFwhm" role="img"
+          aria-label="разрешение прибора в зависимости от энергии: значения ПШПВ в свёртке модели и степенная зависимость"></canvas>
+      </div>
+      <div class="scroll"><table class="big" id="k40-tblFwhm"></table></div>
+    </div>
+  </div>
+
+  <!-- ============================ K-40, вкладка: сравнение ============================ -->
+  <div class="stage" id="k40-viewCmp" hidden>
+    <div class="cmp-wrap">
+      <p class="method-lede">Оценки на одной шкале: ожидаемая по массе, метод 1, метод 2. Ширина
+      цветной полосы — заявленная неопределённость (у методов — статистическая, умноженная на поправку
+      Бирге, когда χ²/ν больше единицы); относительный разброс — под шкалой.</p>
+      <canvas id="k40-cvCmp" height="200" role="img"
+        aria-label="сравнение ожидаемой активности K-40 и оценок двух методов с их интервалами"></canvas>
+      <div class="cmp-table" id="k40-cmpTable"></div>
+      <p class="method-lede">Ожидаемая активность рассчитана по массе, без аттестации: масса × доля калия
+      в KCl × распространённость K-40 × ln2/T½. Её неопределённость {{aksp_unc}} складывается из неопределённостей
+      распространённости K-40, периода полураспада и допуска чистоты реактива; погрешность весов неизвестна
+      и не включена. Внутреннее тормозное излучение β-распада Geant4 не генерирует; в расчёт K-40 оно не
+      входит (оценка по спектру KUB снижала бы активность примерно на 1&nbsp;% и не подтверждена измерением). Выход γ-линии K-40 принят по LNHB-DDEP 2025 ({{k40_ig_lnhb}}&nbsp;%); в ENSDF он равен 10,66&nbsp;%.</p>
+      <p class="guard-note">Фон Маринелли+вода измерен за живое время {{kp_bg_live}}. Спектр пробы KCl измерялся в два приёма (41,5&nbsp;ч и 46,8&nbsp;ч)
+      с паузой 2,4&nbsp;ч; после паузы пик K-40 во второй части находился на 2,2&nbsp;кэВ выше (по-видимому, из-за небольшого роста усиления прибора).
+      Поэтому вторая часть перед сложением перенесена на шкалу первой (по положениям пиков каждой части); простая сумма
+      дала бы наложение двух положений пиков и исказила бы шкалу у порога.</p>
+      <p class="guard-note">Причины большого значения χ²/ν. Критерий подгонки учитывает статистический шум самого шаблона Geant4. Шум учитывается точно (с учётом уширения шаблона),
+      поэтому расхождение модели с измерением видно в значении χ²/ν. ПШПВ пика 1460,8&nbsp;кэВ в модели ({{kp_fw_k40_conv}}) и в
+      измерении ({{kp_fw_own}}) совпадает в пределах погрешности, но форма шаблона K-40 отличается — в модели пик полного поглощения выше измеренного, а область
+      150–600&nbsp;кэВ ниже. Одна амплитуда не может описать обе части спектра одновременно, поэтому активность зависит от весов подгонки.
+      Причина различия формы не установлена (рассматриваются: непропорциональность светового выхода NaI(Tl), обратное рассеяние на окружении, материалы корпуса).
+      Плотность, состав и объём пробы расхождение, по-видимому, не объясняют: шаблон рассчитан в геометрии самой пробы KCl, и они в нём
+      учтены (при условии, что их значения верны; влажность пробы неизвестна). Шкала энергии спектра — гладкий полином: кусочно-линейная шкала давала разрывы формы шаблона
+      (245 и 580&nbsp;кэВ) и искажала ширину пиков на графике; на гладкой шкале избыток 250–650&nbsp;кэВ исчез, а у пика
+      1460,8&nbsp;кэВ остаётся различие формы в области крыльев: у измеренного пика они шире, чем в модели (χ²/ν формы пика после учёта разброса усиления — {{k40_shape}}).
+      Эта проба — независимая проверка набора данных детектора. В набор входят кривая эффективности и матрица отклика (расчёт Geant4), ширина пика (по опорному спектру тория),
+      а также поправка на плотность и объём пробы; набор и отчёт о проверке размещены в репозитории
+      <a href="https://github.com/VibeEngineering-LLC/geant4-detector-models/tree/main/detectors/Atom-GS2020-PRO-MAX/dataset">geant4-detector-models, dataset</a>.</p>
+    </div>
+  </div>
+</div>
+<footer class="bot k40-foot">
+  <span>K-40 (KCl): спектр {{date_meas}}, живое время {{tlive}}, реальное {{treal}}.</span>
+  <span>Шаблон — МК-расчёт Geant4 полного распада K-40 в объёме пробы; смоделировано распадов: {{tpl_decays}}.</span>
+  <button type="button" data-pop="t-about" aria-expanded="false">о странице и её числах</button>
+  <button type="button" data-pop="t-refs" aria-expanded="false">источники</button>
+</footer>
+<script>
+window.addEventListener("load", function () {   // #GS-21/#GS-26: пики вылета иода линии K-40 из GS_K40.detector_lines
+  var t = document.getElementById("k40-tblDet"), L = (window.GS_K40 || {}).detector_lines;
+  if (!t || !L) return;
+  function f(x, d) { return x.toFixed(d).replace(".", ","); }
+  var P = "%", h = "<thead><tr><th>линия</th><th>нуклид</th><th class='num'>вылет Kα</th>"
+    + "<th class='num'>доля Kα</th><th class='num'>вылет Kβ</th><th class='num'>доля Kβ</th></tr></thead><tbody>";
+  L.forEach(function (r) {
+    h += "<tr><td>" + f(r.E_keV, 1) + " кэВ</td><td>" + r.nuclide + "</td><td class='num'>" + f(r.E_esc_ka, 1)
+      + " кэВ</td><td class='num'>" + f(100 * r.frac_ka, 2) + " " + P + "</td><td class='num'>" + f(r.E_esc_kb, 1)
+      + " кэВ</td><td class='num'>" + f(100 * r.frac_kb, 2) + " " + P + "</td></tr>";
+  });
+  t.innerHTML = h + "</tbody>";
+});
+</script>

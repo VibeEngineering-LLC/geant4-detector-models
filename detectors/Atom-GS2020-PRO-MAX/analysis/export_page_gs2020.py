@@ -20,9 +20,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fit_gs2020_th232_m1 as m1      # bm, Spec, true_energy, XML_SAMPLE, XML_BG, PEAK_TABLE, CHAIN, PASSPORT_BQ, PASSPORT_UNC, LO, HI
 
 OUT = m1.OUT
-PAGE = r"D:\cloud-folder\work-folder\GEANT4\web\gs2020-th232-page"
+PAGE = r"<WORKDIR>\GEANT4\web\gs2020-th232-page"
 DST = os.path.join(PAGE, "gs2020_th232_data.json")
-DONOR_CFG = r"D:\repos-folder\repos\geant4-detector-models\detectors\Gamma-1S\web-th232\configs\th232.yaml"
+DONOR_CFG = r"<REPOS>\geant4-detector-models\detectors\Gamma-1S\web-th232\configs\th232.yaml"
 LIB2_CFG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "th232_gs2020_full_xray.yaml")   # #XR-1: донор + рентген, не голый DONOR_CFG
 # #GS-19 (оператор 27.09: «2-2 это все известные линии»): метод 2-2 = библиотека ENSDF БЕЗ порога (342 линии)
 LIB05_CFG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "th232_gs2020_full_noThresh.yaml")
@@ -213,7 +213,16 @@ def fwhm_cal():
             residuals.append((pred / f) - 1.0)
         rms_dev_pct = 100.0 * math.sqrt(sum(r**2 for r in residuals) / len(residuals))
 
+    # #GS-61 (оператор 09.10): для сравнения — своя ширина пика в этом спектре (gs61_own_fwhm.py, только надёжные: разброс
+    # методов ≤ 5 %, неопределённость ≤ 5 %) и калибровка BecqMoni из файла; в свёртку тория они НЕ идут (там СпектраЛайн × 1,05)
+    import csv
+    own_csv = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "results", "gs61_own_fwhm", "sample.csv")
+    own = {float(r["E_nominal"]): r for r in csv.DictReader(open(own_csv, encoding="utf-8"))} if os.path.exists(own_csv) else {}
     for q in pts:  # закон в точке и отклонение — поля таблицы ширин донора
+        r = own.get(q["E_nominal"]) or {}
+        ok = r.get("status") == "успех" and float(r["spread_pct"]) <= 5 and float(r["unc_keV"]) <= 0.05 * float(r["fwhm_keV"])
+        q.update(own_keV=float(r["fwhm_keV"]) if ok else None, own_unc_keV=float(r["unc_keV"]) if ok else None, own_used=False,
+                 becqmoni_keV=float(r["becqmoni_keV"]) if r.get("becqmoni_keV") else None, fwhm_sl_keV=m1.FWHM_SL[q["E_nominal"]])
         q["fwhm_model_keV"] = k * q["E_nominal"] ** p
         q["dev_pct"] = 100.0 * (q["fwhm_keV"] / q["fwhm_model_keV"] - 1.0)
     fwhm662_law = k * (661.657 ** p)
@@ -290,16 +299,16 @@ def main():
     nuclides = []
     for n in donor_cfg_data["nuclides"]:
         nuclides.append({"key": n["key"], "label_ru": n["label_ru"], "label_en": n["label_en"], "color": n["color"], "note": n.get("note_ru", ""), "branching": n["br"]})
-    nuclides.append({"key": "BG", "label_ru": "фон (приведён)", "label_en": "background", "color": "#b8b2a2", "note": "фон лаборатории × отношение живых времён; в альтернативном режиме — прямое измерение фона в сосуде Маринелли с дист. водой (промежуточный замер 11,7 ч), × отношение живых времён", "branching": 1.0})
-    nuclides.append({"key": "XRAY", "label_ru": "K-рентген", "label_en": "K X-rays", "color": "#6b5f4a",
+    nuclides.append({"key": "BG", "label_ru": "фон (приведён)", "label_en": "background", "color": "#b8b2a2", "note": "фон лаборатории × отношение живых времён; в альтернативном режиме — прямое измерение фона в сосуде Маринелли с дистиллированной водой (промежуточное измерение 11,7 ч), × отношение живых времён" + (" × r(E) — расчётное ослабление внешнего фона пробой против воды (Geant4, #GS-60)" if m1.BG_R else ""), "branching": 1.0})
+    nuclides.append({"key": "XRAY", "label_ru": "K-рентгеновское излучение", "label_en": "K X-rays", "color": "#6b5f4a",
                       "note": "в методе 1 отдельно не выделяется (рождается внутри общего шаблона звена, "
                               "не отделим без нового прогона); в методе 2 — сумма строк библиотеки #XR-1", "branching": 1.0})
     # GS-42 п.2: тормозное β и внутреннее тормозное (IB) — отдельные слои спектра (цвета вне палитры звеньев/XRAY/BG).
-    nuclides.append({"key": "BETA", "label_ru": "тормозное β", "label_en": "β bremsstrahlung", "color": "#2b6cb0",
+    nuclides.append({"key": "BETA", "label_ru": "тормозное излучение β", "label_en": "β bremsstrahlung", "color": "#2b6cb0",
                       "note": "в методе 1 отдельно не выделяется (уже внутри шаблона распада иона, не отделим без "
                               "нового прогона); в методе 2 — тормозное излучение электронов β-распада (Geant4)", "branching": 1.0})
-    nuclides.append({"key": "IB", "label_ru": "внутреннее тормозное (IB)", "label_en": "internal bremsstrahlung (IB)",
-                      "color": "#c0392b", "note": "фотоны внутреннего тормозного при β-распаде по таблице KUB; "
+    nuclides.append({"key": "IB", "label_ru": "внутреннее тормозное излучение (IB)", "label_en": "internal bremsstrahlung (IB)",
+                      "color": "#c0392b", "note": "фотоны внутреннего тормозного излучения при β-распаде по таблице KUB; "
                               "Geant4 их не рождает, добавлены отдельно (#GS-42)", "branching": 1.0})
 
     # #GS-6 (оператор 27.09 «тик частить линиями не нужно, только значимые»): на калибровочном

@@ -154,8 +154,35 @@ def fold(comp, broaden, ch_edges, fwhm):
     for key in ("beta", "ib"):
         pt = comp[key]
         col = np.zeros(len(ch_edges) - 1) if pt is None else broaden(pt["hist"], 1.0, ch_edges, fwhm) / pt["n_eff"]
-        res[key] = (col, col / pt["n_eff"] if pt is not None else col.copy())
+        if pt is None:
+            var = col.copy()
+        elif os.environ.get("GS_TVAR", "exact") == "raw":
+            var = col / pt["n_eff"]   # прежнее: верно только без размытия
+        else:   # #GS-63: точная дисперсия размытой части Σ N_E·f_i(E)²/n_eff² (mix_unfold_core.template_var)
+            import mix_unfold_core
+            var = mix_unfold_core.template_var(pt["hist"], pt["n_eff"], ch_edges, fwhm, broaden)
+        res[key] = (col, var)
     return res
+
+
+def node_var_of(build_out, ch_edges, fwhm):
+    """#GS-63: var_of для run_method2 — точная дисперсия размытой формы узла сетки на событие² (тот же отбор бинов ≥ 1 кэВ
+    и та же свёртка g1s.broaden, что grid_response); GS_TVAR=raw — None (прежняя shape/n)."""
+    if os.environ.get("GS_TVAR", "exact") == "raw":
+        return None
+    import mix_unfold_core as muc
+    files = {float(os.path.basename(p)[len("grid_mar_E"):-len(".csv")]): p for p in glob.glob(os.path.join(build_out, "grid_mar_E*.csv"))}
+    cache = {}
+
+    def var_of(E):
+        k = min(files, key=lambda x: abs(x - E))
+        if abs(k - E) > 0.01:
+            _fail("нет прогона сетки для %.3f кэВ (ближайший %.3f)" % (E, k))
+        if k not in cache:
+            hist, n, _ = muc.g1s.read_template(files[k])
+            cache[k] = muc.template_var({a: v for a, v in hist.items() if a >= 1.0}, n, ch_edges, fwhm)
+        return cache[k]
+    return var_of
 
 
 def band_counts(col, e, sel):

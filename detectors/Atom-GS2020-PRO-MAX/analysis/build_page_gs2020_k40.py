@@ -15,7 +15,7 @@ import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-PAGE = r"D:\cloud-folder\work-folder\GEANT4\web\gs2020-th232-page"
+PAGE = r"<WORKDIR>\GEANT4\web\gs2020-th232-page"
 DATA_JSON = os.path.join(PAGE, "gs2020_k40_data.json")
 TERMS_JSON = os.path.join(HERE, "patches", "k40_terms.json")
 SRC_TH_JS = os.path.join(PAGE, "src", "scripts", "g1s-th232.js")
@@ -51,6 +51,10 @@ def word_counts(txt, words):
 def build_js():
     txt = read(SRC_TH_JS)
     terms = json.loads(read(TERMS_JSON))["terms"]
+    import ru_rules as RU   # #GS-78: база g1s-th232.js уже прошла правила вычитки, поэтому old/new замен приводятся к тому же виду
+    for t in terms:
+        t["old"] = RU.js(t["old"])
+        t["new"] = RU.js(t["new"]) if "new" in t else None
     for i, t in enumerate(terms):
         c = txt.count(t["old"])
         if c != t["n"]:
@@ -93,7 +97,7 @@ def make_fill(bp, d):
         return bp.rnum(fw["k40_law_keV"], 2) + " кэВ"
 
     def _kp_cal_repr():
-        return bp.rnum(meta["cal_sample"]["repr_max_dev_keV"], 1) + " кэВ"
+        return bp.rnum(meta["cal_sample"]["repr_max_dev_keV"], 3) + " кэВ"
 
     def _kp_lo():
         return bp.rkev(m1["E_fit_lo"])
@@ -110,14 +114,26 @@ def make_fill(bp, d):
     f["kp_fw_scale"] = _kp_fw_scale
     f["kp_fw_k40_sl"] = _kp_fw_k40_sl
     f["kp_fw_k40_conv"] = _kp_fw_k40_conv
+    # #GS-61: своя ширина пика K-40 в спектре KCl (замер SpectraVibe) и BecqMoni в кэВ той же шкалой
+    k40pt = next(q for q in fw["points"] if abs(q["E_nominal"] - 1460.822) < 1e-3)
+    if k40pt.get("own_used"):   # #DET-1 (оператор 09.10): ширина — из референса тория; свой замер только рядом
+        refuse("#DET-1: в свёртке своя ширина пика 1460,8 (GS_FWHM_OWN задан) — разметка написана под ширину тория")
+    if k40pt.get("own_keV") is None:
+        refuse("#DET-1: нет своего замера ширины 1460,8 для сравнения (results\\gs61_own_fwhm\\kcl.csv)")
+    f["kp_fw_own"] = lambda: bp.rnum(k40pt["own_keV"], 2) + " ± " + bp.rnum(k40pt["own_unc_keV"], 2) + "&nbsp;кэВ"
+    f["kp_fw_bm"] = lambda: ("в файле KCl её нет" if k40pt.get("becqmoni_keV") is None
+                             else "на 1460,8&nbsp;кэВ " + bp.rnum(k40pt["becqmoni_keV"], 2) + "&nbsp;кэВ")
     f["kp_fw_k40_law"] = _kp_fw_k40_law
     f["kp_cal_repr"] = _kp_cal_repr
+    f["matrix_rho"] = lambda: bp.rnum(meta["matrix_density_g_cm3"], 3)   # #GS-78: плотность KCl 1,085 (= 1085 г / 1000 мл), не 1,08
     f["kp_lo"] = _kp_lo
     f["kp_hi"] = _kp_hi
     f["kp_nnodes"] = _kp_nnodes
     f["kp_bg_live"] = _kp_bg_live
 
-    return f
+    _td = f["tpl_decays"]   # #GS-78 r6: у K-40 один шаблон — пометка «(K-40)» после числа лишняя (скобка в скобке)
+    f["tpl_decays"] = lambda: __import__("re").sub(r"\s+для\s.*$", "", _td())
+    return __import__("ru_rules").fill(f)   # #GS-78 r6: тысячи неразрывным пробелом
 
 
 def render(bp, path, fill):

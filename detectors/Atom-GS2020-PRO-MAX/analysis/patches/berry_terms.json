@@ -1,0 +1,27 @@
+{
+  "_doc": "#GS-72: замены поверх src/scripts/g1s-k40.js (его пишет build_page_gs2020_k40.finish) -> g1s-berry.js, вкладка «Черника». Применяются ПО ПОРЯДКУ; n — число вхождений old на момент применения (иначе ОТКАЗ). new_file — подставить содержимое файла из этого каталога (patches/). Функции fillSummaries/buildM1/cmpItems/fillCmpTable/drawCmp переопределяются блоком berry_overrides.js (повторное объявление функции в той же области видимости — последнее побеждает).",
+  "terms": [
+    {"old": "/* Вкладка K-40 (KCl) страницы GS2020 — второй экземпляр кода донорской страницы Гамма-1С.\n   Данные — window.GS_K40 (собраны build_page_gs2020_k40.py из export_page_gs2020_k40.py).",
+     "new": "/* Вкладка «Черника» страницы GS2020 — третий экземпляр кода донорской страницы Гамма-1С (через g1s-k40.js).\n   Данные — window.GS_BERRY (собраны build_page_gs2020_berry.py из export_page_gs2020_berry.py).",
+     "n": 1, "why": "шапка файла"},
+    {"old": "var D = window.GS_K40; var PFX = \"k40-\";\n  if (!D) { console.error(\"Нет window.GS_K40\"); return; }",
+     "new": "var D = window.GS_BERRY; var PFX = \"berry-\";\n  if (!D) { console.error(\"Нет window.GS_BERRY\"); return; }",
+     "n": 1, "why": "свой объект данных и префикс id"},
+    {"old": "\"#k40-tabs .tab\"", "new": "\"#berry-tabs .tab\"", "n": 2, "why": "подвкладки"},
+    {"old": "\"#k40-fwhmseg .btn\"", "new": "\"#berry-fwhmseg .btn\"", "n": 2, "why": "переключатель фона"},
+    {"old": "\"#k40-libseg .btn\"", "new": "\"#berry-libseg .btn\"", "n": 2, "why": "в разметке нет"},
+    {"old": "\"#k40-m2sortseg .btn\"", "new": "\"#berry-m2sortseg .btn\"", "n": 2, "why": "в разметке нет"},
+    {"old": "#src-k40 .stage:not([hidden])", "new": "#src-cs137 .stage:not([hidden])", "n": 1, "why": "redraw: видимая подвкладка своей панели"},
+    {"old": "data-k40pop", "new": "data-berrypop", "n": 2, "why": "кнопки всплывающих окон своей панели"},
+    {"old": "document.querySelector(\"#src-k40\")", "new": "document.querySelector(\"#src-cs137\")", "n": 1, "why": "перерисовка при показе вкладки"},
+    {"old": "<th>проба (KCl)</th>", "new": "<th>проба (черника)</th>", "n": 1, "why": "таблица калибровки"},
+    {"old": "    arrL.sort(function (a, b) { return (b.s - a.s) || (a.i - b.i); });",
+     "new": "    arrL = arrL.filter(function (o) { return !stkL || !!stkL[o.n.key]; });   // #GS-74: слои метода 2 не попадают в легенду метода 1 и наоборот\n    arrL.sort(function (a, b) { return (b.s - a.s) || (a.i - b.i); });",
+     "n": 1, "why": "легенда показывает только слои своего стека"},
+    {"old": "  /* ── события ────────────────────────────────────────────────── */\n  function wire() {",
+     "new_file": "berry_overrides.js", "append_old": true, "n": 1, "why": "блок переопределений перед разделом событий"},
+    {"old": "  /* ── события ────────────────────────────────────────────────── */\n  function wire() {",
+     "new_file": "berry_m2_block.js", "append_old": true, "n": 1, "why": "#GS-74: сводка и таблица нуклидов метода 2 (после overrides: функции вызываются из fillSummaries)"},
+    {"old": "m2sort: \"contrib\",", "new": "m2sort: \"nuclide\",", "n": 1, "why": "#GS-81 (оператор 10.10): таблица линий метода 2 — по нуклиду, затем по энергии"}
+  ]
+}

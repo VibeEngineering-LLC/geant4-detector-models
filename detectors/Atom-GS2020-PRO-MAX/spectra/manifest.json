@@ -1,0 +1,75 @@
+{
+  "generated_by": "export_spectra_csv.py",
+  "files": [
+    {
+      "csv": "th232_reference_marinelli_1l.csv",
+      "csv_sha256": "14ce78078c7d0a9ec7f43d128454fafc3b72d93c04eb8fe6408ce2a8d8e269ea",
+      "csv_bytes": 72042,
+      "source_name": "Калибровка Th-232 (без вычета фона).xml",
+      "source_sha256": "284e03eb11c88f0948a7e4e7039ac2369f481ff52072b9d77aeda5ce73eb8982",
+      "derived": false,
+      "counts_sum": 16600563.0,
+      "live_time_s": 57436.7
+    },
+    {
+      "csv": "bg_marinelli_water_1l_33.2h.csv",
+      "csv_sha256": "ba288673919b45a617a1fa8a2eabd49984eeb1fb2043c224f89e6866a0a29dce",
+      "csv_bytes": 69963,
+      "source_name": "Фон Маринелли 1 л вода дист (33,2 ч, 25-26.09).xml",
+      "source_sha256": "feab6780d640d5e9fcd2698663287ebdcedeefd0f0ec4bbf2b0b45268b765e36",
+      "derived": false,
+      "counts_sum": 20324070.0,
+      "live_time_s": 119423.3
+    },
+    {
+      "csv": "kcl_1l_1085g_41.5h_part1.csv",
+      "csv_sha256": "0537b820093560370778f4f3f75cae2f6bdb9312e48f8d15bec30ddf035c9ee9",
+      "csv_bytes": 71376,
+      "source_name": "KCl ч 1 л 1085 г (41,5 ч, 05-07.10).xml",
+      "source_sha256": "6bfb2fa9a698f450322d789eebcf988236b75dec9b158a4a1ccedcefb0865ba6",
+      "derived": false,
+      "counts_sum": 36291294.0,
+      "live_time_s": 149331.7
+    },
+    {
+      "csv": "kcl_1l_1085g_88.3h_cumulative.csv",
+      "csv_sha256": "ad08d7ff59ba9e0129882b315c75e24a5dd37c890af73641bb3921b706d820f9",
+      "csv_bytes": 73997,
+      "source_name": "KCl ч 1 л 1085 г (88,3 ч, 05-09.10).xml",
+      "source_sha256": "7ce1853dd4e1414989f83fc88750b8b0585a92c78dfaccd38b71c92f0a4008c1",
+      "derived": false,
+      "counts_sum": 77230714.0,
+      "live_time_s": 317835.5
+    },
+    {
+      "csv": "kcl_1l_1085g_part2.csv",
+      "csv_sha256": "4010eb489655ae1d2674007c7001c9f10fac44b73fb3ce59e657674a3c685209",
+      "csv_bytes": 72118,
+      "source_name": "KCl ч 1 л 1085 г часть 2 (88,3 − 41,5 ч).xml",
+      "source_sha256": "e2994a0906c5c5db5a6c5952cdb69d19b241fd869d36879031ca93004ecf2d11",
+      "derived": true,
+      "counts_sum": 40939420.0,
+      "live_time_s": 168503.8
+    },
+    {
+      "csv": "kcl_1l_1085g_aligned_sum_88.3h.csv",
+      "csv_sha256": "176b5f245ad528fb7fc9dc5d1fe1a202aca067683e13f332d8737de932d03b04",
+      "csv_bytes": 130756,
+      "source_name": "KCl ч 1 л 1085 г сумма выровненная (88,3 ч).xml",
+      "source_sha256": "9c1246920d5589e50b327a62b2b7efea305d155c4f8a15779d8e6a0c0d23c97e",
+      "derived": true,
+      "counts_sum": 77230713.999992,
+      "live_time_s": 317835.5
+    },
+    {
+      "csv": "berry_dried_marinelli_1l_482g_20.2h.csv",
+      "csv_sha256": "a10399c1529315b381742a55919726967fb7d0d195be43d7f978abbfb5d9ea2b",
+      "csv_bytes": 69121,
+      "source_name": "Черника Маринелли 1 л 482 г (20,2 ч, 09-10.10).xml (исходное имя файла не публикуется)",
+      "source_sha256": "12eaa2f31e777e9c19f12e32f1fe354322598ea69655e5abfc67da9e10a08b8b",
+      "derived": false,
+      "counts_sum": 18439170.0,
+      "live_time_s": 72547.5
+    }
+  ]
+}

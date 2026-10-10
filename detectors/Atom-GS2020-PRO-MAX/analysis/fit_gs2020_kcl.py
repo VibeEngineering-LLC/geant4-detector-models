@@ -5,7 +5,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fit_gs2020_th232_m1 as m1; CAL = m1.CAL
 import gs2020_extra_components as gx   # #GS-42: IB K-40 в шаблон М1 (β уже в распаде иона); GS_EXTRA=0 — прежнее поведение
-MASS_G = 829.0; VOL_ML = 740.0
+MASS_G = float(os.environ.get("GS_KCL_MASS", "1085")); VOL_ML = float(os.environ.get("GS_KCL_VOL", "1000"))   # #GS-47 07.10: KCl 1 л 1085 г; прежний 829 / 740
 K_FRAC = 39.0983 / 74.551
 # #GS-45 (оператор 30.09.2026: база выходов LNHB-DDEP 2025, LNHB K-40_tables.pdf с.1-2). GS_K40_DB=ensdf — прежние константы.
 K40_DB = os.environ.get("GS_K40_DB", "lnhb")
@@ -16,16 +16,15 @@ K40_BQ_PER_G_K = 6.02214076e23 / 39.0983 * ABUND_K40 * math.log(2) / (T12_K40_Y 
 A_EXP = MASS_G * K_FRAC * K40_BQ_PER_G_K; LO, HI = 150.0, 3000.0; OUT = m1.OUT
 # #GS-44 (29.09): GS_BG_R=<csv E_keV,r,dr> — фон воды × r(E), отношение откликов внешнего поля KCl/вода (gs44_ext_ratio.py);
 # JSON с суффиксом _r, основной не перезаписывается. Дисперсия фона остаётся k·bg (при r<1 — завышена в 1/r, консервативно).
-BG_R = os.environ.get("GS_BG_R"); SUF = "_r" if BG_R else ""
+# #GS-60 (08.10): r(E) теперь применяет m1.Spec для тегов bg/bgw (одно место для М1/М2/страницы); здесь — только
+# заглушка, иначе поправка легла бы дважды. Суффикс _r снят: опубликованные JSON перезаписываются (копии keep_pre_gs60_2026-10-08).
+BG_R = os.environ.get("GS_BG_R"); SUF = ""
 def apply_bg_r(b):
-    if not BG_R: return
-    t = np.genfromtxt(BG_R, delimiter=",", names=True); rr = lambda E: float(np.interp(E, t["E_keV"], t["r"]))
-    b.counts = [c * rr(b.channel_to_energy(i)) for i, c in enumerate(b.counts)]
-    print("ФОН × r(E) (#GS-44): %s; r(30)=%.3f r(60)=%.3f r(200)=%.3f r(1460.8)=%.3f r(2614.5)=%.3f" % (BG_R, *(rr(x) for x in (30, 60, 200, 1460.8, 2614.5))))
+    return
 def main():
     s = m1.Spec(m1.bm.read(CAL.PATHS["kcl"])[0], "kcl")
     b = m1.Spec(m1.bm.read(CAL.BKG_WATER_XML)[0], "bgw"); apply_bg_r(b)
-    fwhm_csv = os.path.join(OUT, "fwhm_points_gs2020.csv"); m1.write_fwhm_csv(fwhm_csv)
+    fwhm_csv = os.path.join(OUT, "fwhm_points_gs2020.csv"); m1.write_fwhm_csv(fwhm_csv, strict=True)   # #DET-1: KCl — проверка, ширина только из карточки
     tpl = os.path.join(OUT, "mix_K40_npsmoff.csv")
     if not os.path.exists(tpl): raise SystemExit("ОТКАЗ: нет шаблона " + tpl)
     bg_e = np.array([b.channel_to_energy(i) for i in range(b.n_channels)])
@@ -44,7 +43,7 @@ def main():
         items.append(({"ib": gx.load("K40", OUT, beta=True)["beta"]}, wb))
         print("ДОЛИВ β (#GS-45): вес %.4f на распад шаблона (β⁻ LNHB %.4f·%.4f против %.4f в шаблоне Geant4)" % (wb, BETA_DB, K40_SCALE, BETA_G4))
     with gx.m1_ib(m1.muc.g1s, {tpl: items} if items else {}):
-        r = m1.muc.unfold(s, b, [("K40", tpl)], fwhm_csv, lo=LO, hi=HI, bg_energy_of_ch=bg_e, verbose=False, blur=m1.BLUR, tail=m1.TAIL)
+        r = m1.muc.unfold(s, b, [("K40", tpl)], fwhm_csv, lo=LO, hi=HI, bg_energy_of_ch=bg_e, verbose=False, blur=m1.BLUR, tail=m1.TAIL, tvar=m1.TVAR)
     A = float(r["activities"][0]) * K40_SCALE; dA = float(r["sd"][0]) / s.live_time * K40_SCALE
     model = (r["cols"] * r["coef"][:, None]).sum(axis=0); sel = r["sel"]; net = r["net"]; var = r["var"]; e = r["e"]
     extra = None
@@ -65,6 +64,8 @@ def main():
     def FWHM(E): return float(np.interp(E, fwhm_data[:, 0], fwhm_data[:, 1]))
     m1.SHAPE_PEAKS = [1460.822]; shp, _ = m1.shape_residual(e, net, var, model, FWHM)
     print(f"ФОРМА ПИКОВ (#SHAPE-1, χ²/ν в окне ±1,5 ПШПВ): 1460.8 → {shp[1460.822]:.2f}")
+    shp3, _ = m1.shape_residual(e, net, var, model, FWHM, 3.0)
+    print(f"ФОРМА ПИКОВ ±3 (#GS-68, χ²/ν в окне ±3 ПШПВ, с крыльями): 1460.8 → {shp3[1460.822]:.2f}")
     print(f"K-40 (метод 1): A {A:.1f} ± {dA:.1f} (стат) Бк; ожидается по массе {A_EXP:.1f} Бк; отношение {A / A_EXP:.4f}; χ²/ν {chi2 / ndof:.3f}")
     # #GS-31 (оператор 28.09 «отклонился от МЕТОДА. никаких площадей, только метод 1 и 2»): пересчёт по площади пика снят
     with open(os.path.join(OUT, "fit_kcl_bgw%s.json" % SUF), "w", encoding="utf-8") as f:

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-r"""Метод 1 (шаблоны полного распада 8 звеньев) для КИ Th-232 в Маринелли на GS2020. Подгонка — импорт
+r"""Метод 1 (шаблоны полного распада 8 звеньев) для образца Th-232 в Маринелли на GS2020. Подгонка — импорт
 mix_unfold_core.unfold (критерий A2 + E1, фон с фиксированным k). Спека: scripts\specs\SPEC-fit_gs2020_th232_m1.md"""
 
 import sys
@@ -10,11 +10,11 @@ import numpy as np
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-os.environ.setdefault("SPECTRAVIBE_ROOT", r"D:\cloud-folder\Дозиметрия\ИИ\1 Скилы\0_Work\gamma-spectrum-analysis")
-sys.path.insert(0, r"D:\repos-folder\repos\geant4-detector-models\common\py")
+os.environ.setdefault("SPECTRAVIBE_ROOT", r"<DOSIM>\ИИ\1 Скилы\0_Work\gamma-spectrum-analysis")
+sys.path.insert(0, r"<REPOS>\geant4-detector-models\common\py")
 import becqmoni as bm
 
-sys.path.insert(0, r"D:\repos-folder\repos\geant4-detector-models\detectors\Gamma-1S\analysis")
+sys.path.insert(0, r"<REPOS>\geant4-detector-models\detectors\Gamma-1S\analysis")
 import mix_unfold_core as muc
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "cal"))
 import gs2020_calib as CAL
@@ -24,11 +24,11 @@ CAL_OWN = json.load(open(CAL.OUT_JSON, encoding="utf-8")) if os.path.exists(CAL.
 print("ШКАЛА: %s" % CAL.OUT_JSON)   # #GS-28: какой файл своих шкал взят (база / гибрид) — артефакт в логе каждой подгонки
 muc.g1s.FINE_E_MAX = 4800.0   # #SUM-1 (оператор 25.09): сетка размытия донора кончалась на 3300 кэВ и срезала сумм-пики Tl-208 3197/3475
 
-REF = r"D:\cloud-folder\Дозиметрия\Спектры\Atom GS2020 PRO MAX\Референсы"
+REF = r"<DOSIM>\Спектры\Atom GS2020 PRO MAX\Референсы"
 XML_SAMPLE = os.path.join(REF, "Калибровка Th-232 (без вычета фона).xml")
 XML_BG = os.path.join(REF, "Фон лаба S31_18.xml")
 BG_TAG = "bg"
-# GS_BG_WATER=1 (оператор 26.09: «КИ с торием считать именно с фоном с водой»): фон — Маринелли 1 л с дист. водой,
+# GS_BG_WATER=1 (оператор 26.09: «образец с торием считать именно с фоном с водой»): фон — Маринелли 1 л с дист. водой,
 # своя шкала по его реперам (тег "bgw" в cal/gs2020_calib.py); модельное ослабление GS_BG_T при этом запрещено.
 BG_WATER = os.environ.get("GS_BG_WATER") == "1"
 if BG_WATER:
@@ -80,6 +80,11 @@ SL_PEAKS = [(543.253, 238.632), (1297.795, 583.187), (1986.459, 911.204), (2098.
 # GS_CAL_SUM="6765:3187" — репер выше 2614: горб суммирования Tl-208 (канал — центр в измерении, энергия — центр
 # того же горба в шаблоне Geant4 цепочки; оба не зависят от шкалы). Шкала файла ставит этот канал на ~3400 кэВ.
 CAL_SUM = [tuple(float(x) for x in p.split(":")) for p in os.environ.get("GS_CAL_SUM", "").split(",") if p]
+# #GS-60 (08.10, оператор «Встроить и опубликовать»): GS_BG_R=<csv E_keV,r,dr> — фон × r(E), ослабление внешнего фона
+# пробой против воды (gs44_ext_ratio.py, GS_EXT_SAMPLE). Применяется ЗДЕСЬ, к тегам фона bg/bgw, — одинаково для подгонок
+# М1/М2 и выгрузки страницы. Дисперсия фона в подгонке остаётся k·bg·r (консервативно не раздувается).
+BG_R = os.environ.get("GS_BG_R")
+_BG_R_T = np.genfromtxt(BG_R, delimiter=",", names=True) if BG_R else None
 
 
 class Spec:
@@ -105,6 +110,12 @@ class Spec:
             self._e = self._e + np.where(ch <= c0, 0.0, a * (ch - c0) ** 2)
             print("#GS-37 шкала образца по форме + горб суммы: " + "; ".join("кан %.0f %+.1f кэВ" % q for q in nodes)
                   + "; E(кан 7016)=%.1f" % self._e[min(7016, len(sp.n) - 1)])
+        # #GS-60: фон × r(E) по СВОЕЙ шкале фона; r — относительно ВОДЫ, поэтому только фон с водой (bgw, либо bg при GS_BG_WATER=1)
+        if _BG_R_T is not None and (tag == "bgw" or (tag == "bg" and BG_WATER)):
+            rr = np.interp(self._e, _BG_R_T["E_keV"], _BG_R_T["r"])
+            s0 = sum(self.counts); self.counts = [c * r for c, r in zip(self.counts, rr)]
+            print("ФОН × r(E) (#GS-60, тег %s): %s; r(30)=%.3f r(60)=%.3f r(200)=%.3f r(1460.8)=%.3f; сумма фона %.0f → %.0f"
+                  % (tag, BG_R, *(float(np.interp(x, _BG_R_T["E_keV"], _BG_R_T["r"])) for x in (30, 60, 200, 1460.8)), s0, sum(self.counts)))
 
     def channel_to_energy(self, c):
         return float(self._e[int(c)])
@@ -127,15 +138,23 @@ FWHM_K40 = os.environ.get("GS_FWHM_K40") == "1"
 BLUR = float(os.environ.get("GS_BLUR", "1.0"))
 # GS_TAIL — параметр левого хвоста ядра (донор Гамма-1С: TAIL_T=0.75, mix_unfold_g1s.py:24); не задан — донорский
 TAIL = float(os.environ["GS_TAIL"]) if os.environ.get("GS_TAIL") else None
+# #GS-63 (оператор 09.10 «Сначала честный критерий»): дисперсия размытого шаблона — точная (mix_unfold_core.template_var); GS_TVAR=raw — прежняя cols/n
+TVAR = None if os.environ.get("GS_TVAR", "exact") == "raw" else "exact"
 
 
 # ПШПВ по таблице СпектраЛайн (оператор 26.09 «точнее сделал»; README-референсы.md, скрин рядом) — по умолчанию.
 # GS_FWHM_OLD=1 — прежние ПШПВ из PEAK_TABLE (таблица прибора 25.09; 2614: 121,205 против 107,420).
-FWHM_SL = {238.632: 24.073, 583.187: 40.624, 911.204: 57.351, 964.766: 59.686, 968.971: 59.867,
-           1460.822: 70.963, 2614.511: 107.420}
+# #DET-1 (оператор 09.10): значения — из КАРТОЧКИ ДЕТЕКТОРА (референс тория; scripts\detector_card.py, make_detector_card.py),
+# единственный источник ширины для всех проб; точка 1460,8 — «excluded» карточки, только для показа (FWHM_K40).
+import detector_card as dc
+CARD = dc.load_card()
+FWHM_SL = {float(E): float(w) for E, w in CARD["fwhm"]["points_sl"]}
+FWHM_SL.update({float(x["E"]): float(x["fwhm_sl"]) for x in CARD["fwhm"].get("excluded", [])})
 FWHM_OLD = os.environ.get("GS_FWHM_OLD") == "1"
-# GS_FWHM_SCALE="238.632:1.05,583.187:1.12" — поточечные множители ПШПВ (#SHAPE-1: кривая из минимумов невязки формы)
-FWHM_SCALE = {float(k): float(v) for k, v in (p.split(":") for p in os.environ.get("GS_FWHM_SCALE", "").split(",") if p)}
+# GS_FWHM_SCALE="238.632:1.05,583.187:1.12" — поточечные множители ПШПВ (#SHAPE-1: кривая из минимумов невязки формы);
+# не задан — множители карточки
+FWHM_SCALE = {float(k): float(v) for k, v in (p.split(":") for p in os.environ.get("GS_FWHM_SCALE", "").split(",") if p)} \
+    or {float(k): float(v) for k, v in CARD["fwhm"]["scale"].items()}
 
 
 # GS_FWHM_CFW=1 — гладкий закон СпектраЛайн из Референсы\Calibr.cfw, секция [Calibration]: ПШПВ = Σ cᵢ·(√E)ⁱ
@@ -148,30 +167,59 @@ def cfw_law():
     return lambda E: sum(ci * math.sqrt(E) ** i for i, ci in enumerate(c))
 
 
-def write_fwhm_csv(path):
+def write_fwhm_csv(path, strict=False):
+    """strict=True (#DET-1: проверочные и неизвестные пробы) — любое отклонение точек от карточки детектора → отказ;
+    False (референс тория) — отклонение допустимо (сканы #SHAPE-1), но печатается."""
+    written = []
     with open(path, "w", encoding="utf-8") as f:
         f.write("E_keV,fwhm_keV\n")
         if FWHM_CFW:
             law = cfw_law()
             for E in np.arange(30.0, 4001.0, 10.0):
                 f.write(f"{E},{law(E):.4f}\n")
-            return
+            return card_check(None, strict)
+        own = own_fwhm_points()
         for _, e_lib, fwhm_old in PEAK_TABLE:
-            fwhm = (fwhm_old if FWHM_OLD else FWHM_SL[e_lib]) * FWHM_SCALE.get(e_lib, 1.0)
-            if e_lib == 1460.822 and not FWHM_K40:
+            fwhm = own.get(e_lib, (fwhm_old if FWHM_OLD else FWHM_SL[e_lib]) * FWHM_SCALE.get(e_lib, 1.0))
+            if e_lib == 1460.822 and not FWHM_K40 and e_lib not in own:
                 continue
             f.write(f"{e_lib},{fwhm}\n")
+            written.append((e_lib, fwhm))
+    card_check(written, strict)
+
+
+def card_check(written, strict):
+    """#DET-1: записанные точки ширины против карточки детектора (None — закон CFW, точек нет)."""
+    if written is not None and sorted(written) == dc.effective_points(CARD):
+        print("КАРТОЧКА ДЕТЕКТОРА (#DET-1): точки ширины = референс, sha256 " + CARD["fwhm"]["sha256"][:12]); return
+    if strict:
+        raise SystemExit("ОТКАЗ #DET-1: точки ширины отличаются от карточки детектора (GS_FWHM_OWN/GS_FWHM_SCALE/GS_FWHM_OLD/"
+                         "GS_FWHM_CFW/GS_FWHM_K40?) — для проверочных и неизвестных проб ширина только из референса")
+    print("ОТКЛОНЕНИЕ от карточки детектора (#DET-1, допустимо только для референса): %s" % ("закон CFW" if written is None else sorted(written)))
+
+
+# #GS-61 (оператор 09.10 «давай попробуем»: ширина из каждого спектра отдельно). GS_FWHM_OWN=<csv gs61_own_fwhm.py>:
+# точка, измеренная в САМОМ спектре измерителем SpectraVibe, заменяет точку СпектраЛайн (без множителя). Только надёжные:
+# статус «успех», разброс методов ≤ 5 %, неопределённость ≤ 5 % ширины, энергия — из PEAK_TABLE.
+def own_fwhm_points():
+    if not os.environ.get("GS_FWHM_OWN"):
+        return {}
+    import csv
+    pts = {float(r["E_nominal"]): float(r["fwhm_keV"]) for r in csv.DictReader(open(os.environ["GS_FWHM_OWN"], encoding="utf-8"))
+           if r["status"] == "успех" and float(r["spread_pct"]) <= 5 and float(r["unc_keV"]) <= 0.05 * float(r["fwhm_keV"])}
+    print("ПШПВ СВОЯ (#GS-61): " + (", ".join("%g → %.2f кэВ" % kv for kv in sorted(pts.items())) or "нет надёжных точек"))
+    return pts
 
 
 SHAPE_PEAKS = [238.632, 338.32, 583.187, 727.33, 911.204, 968.971, 1592.5, 2614.511]
 
 
-def shape_residual(e, net, var, model, fwhm_f):
+def shape_residual(e, net, var, model, fwhm_f, win=1.5):
     """#SHAPE-1: невязка ФОРМЫ пиков. В окне ±1,5 ПШПВ модель подгоняется к нетто как a·модель + b + c·(E−E0)
     (площадь и подложка свободны) — остаётся только форма. Возвращает ({E0: χ²/ν окна}, общий χ²/ν окон)."""
     out, X2, NU = {}, 0.0, 0
     for E0 in SHAPE_PEAKS:
-        m = np.abs(e - E0) < 1.5 * fwhm_f(E0)
+        m = np.abs(e - E0) < win * fwhm_f(E0)   # #GS-68: win=3 — с крыльями
         w = 1.0 / np.sqrt(np.maximum(var[m], 1.0))
         A = np.vstack([model[m], np.ones(int(m.sum())), e[m] - E0]).T
         p = np.linalg.lstsq(A * w[:, None], net[m] * w, rcond=None)[0]
@@ -201,7 +249,7 @@ def main():
             print(f"  {tg}: File: {q['mu_file']:.3f}, Lib: {q['E_lib']:.3f}, Resid (leave-one-out): {q['resid_keV']:+.3f}")
 
     os.makedirs(OUT, exist_ok=True)
-    fwhm_csv = os.path.join(OUT, "fwhm_points_gs2020.csv")
+    fwhm_csv = os.environ.get("GS_FWHM_CSV") or os.path.join(OUT, "fwhm_points_gs2020.csv")   # #GS-68: свой файл у задания перебора
     write_fwhm_csv(fwhm_csv)
 
     templates = [(k, os.path.join(OUT, "mix_%s_npsmoff.csv" % k)) for k, _ in CHAIN]
@@ -217,7 +265,7 @@ def main():
         print("ФИЗИКА (#GS-42): GS_EXTRA=0 — IB выключен (прежнее поведение)")
     plan_links = {p: [(comps[k], 1.0)] for k, p in templates if k in comps and comps[k]["ib"]}
     with gx.m1_ib(muc.g1s, plan_links):
-        r = muc.unfold(s, b, templates, fwhm_csv, lo=LO, hi=HI, bg_energy_of_ch=bg_e, verbose=True, blur=BLUR, tail=TAIL)
+        r = muc.unfold(s, b, templates, fwhm_csv, lo=LO, hi=HI, bg_energy_of_ch=bg_e, verbose=True, blur=BLUR, tail=TAIL, tvar=TVAR)
 
     names = r["names"]
     activities_A2 = r["activities"]
@@ -348,7 +396,7 @@ def main():
     ib_items = [(k, br, comps[k]) for k, br in CHAIN + EXTRA_CHAIN_ONLY if k in comps and comps[k]["ib"]]
     with gx.m1_ib(muc.g1s, {chain_tpl: [(c, br) for _, br, c in ib_items]} if ib_items else {}):
         rc = muc.unfold(s, b, [("Th232chain", chain_tpl)], fwhm_csv,
-                        lo=LO, hi=HI, bg_energy_of_ch=bg_e, verbose=False, blur=BLUR, tail=TAIL)
+                        lo=LO, hi=HI, bg_energy_of_ch=bg_e, verbose=False, blur=BLUR, tail=TAIL, tvar=TVAR)
     mc = rc["cols"][0] * rc["coef"][0]
     chi2c = float(np.sum((mc[rc["sel"]] - rc["net"][rc["sel"]]) ** 2 / rc["var"][rc["sel"]]))
     ndofc = int(rc["sel"].sum()) - 1
@@ -357,6 +405,9 @@ def main():
                                   muc.g1s.make_fwhm(fwhm_csv))
     print("ФОРМА ПИКОВ (#SHAPE-1, χ²/ν в окнах ±1,5 ПШПВ): всего %.3f; " % shp_all
           + "; ".join("%.1f → %.2f" % (k, v) for k, v in shp.items()))
+    shp3, shp3_all = shape_residual(np.asarray(rc["e"]), np.asarray(rc["net"]), np.asarray(rc["var"]), mc, muc.g1s.make_fwhm(fwhm_csv), 3.0)
+    print("ФОРМА ПИКОВ ±3 (#GS-68, χ²/ν в окнах ±3 ПШПВ, с крыльями): всего %.3f; " % shp3_all
+          + "; ".join("%.1f → %.2f" % (k, v) for k, v in shp3.items()))
     Ac, dAc = float(rc["activities"][0]), float(rc["sd"][0] / s.live_time)
     Ae1 = float(rc["e1"]["activities"][0])
     print("\nЦЕПОЧКА В РАВНОВЕСИИ (метод 1): A2 %.1f ± %.1f (стат) ± %.1f (Бирге %.2f) Бк; E1 %.1f Бк; паспорт %.1f ± %.1f; "
@@ -384,7 +435,7 @@ def main():
     PW = float(os.environ.get("GS_PEAKWIN", "0"))
     if PW > 0:
         import yaml
-        cfg = r"D:\repos-folder\repos\geant4-detector-models\detectors\Gamma-1S\web-th232\configs\th232.yaml"
+        cfg = r"<REPOS>\geant4-detector-models\detectors\Gamma-1S\web-th232\configs\th232.yaml"
         with open(cfg, encoding="utf-8") as fh:
             lines = [float(l["e_kev"]) for l in yaml.safe_load(fh)["library"]["lines"]]
         fw = muc.g1s.make_fwhm(fwhm_csv)

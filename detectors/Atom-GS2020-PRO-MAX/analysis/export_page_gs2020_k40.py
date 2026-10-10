@@ -7,6 +7,7 @@ r"""#GS-26: выгрузка данных вкладки K-40 (KCl) страни
 Запуск: GS_OUT=C:\g4work\gs2020\kcl GS_CAL_SHAPE=1 PYTHONIOENCODING=utf-8 python export_page_gs2020_k40.py"""
 
 import sys
+import csv
 import os
 import re
 import json
@@ -22,7 +23,7 @@ import fit_gs2020_th232_m1 as m1      # bm, Spec, CAL, CAL_OWN, OUT, FWHM_SL, mu
 import fit_gs2020_kcl as fk           # MASS_G, VOL_ML, K_FRAC, K40_BQ_PER_G_K, A_EXP
 
 OUT = m1.OUT
-PAGE = r"D:\cloud-folder\work-folder\GEANT4\web\gs2020-th232-page"
+PAGE = r"<WORKDIR>\GEANT4\web\gs2020-th232-page"
 DST = os.path.join(PAGE, "gs2020_k40_data.json")
 
 F_M1 = os.path.join(OUT, "fit_kcl_bgw.json")
@@ -159,6 +160,15 @@ def fwhm_cal():
             pass
 
     law_conv = m1.muc.g1s.make_fwhm(F_FWHM)
+    # #GS-61: своя ширина (замер в этом спектре, gs61_own_fwhm.py) и BecqMoni — рядом со СпектраЛайн; own — что ушло в свёртку
+    own = m1.own_fwhm_points()   # то, что ушло в свёртку (#GS-63: по умолчанию пусто — ширина тория)
+    show = os.environ.get("GS_FWHM_OWN") or os.environ.get("GS_FWHM_OWN_SHOW", r"<WORKDIR>\GEANT4\results\gs61_own_fwhm\kcl.csv")
+    _o = os.environ.get("GS_FWHM_OWN"); os.environ["GS_FWHM_OWN"] = show; own_show = m1.own_fwhm_points()   # свой замер — только показать рядом
+    os.environ.pop("GS_FWHM_OWN") if _o is None else os.environ.__setitem__("GS_FWHM_OWN", _o)
+    own_rows = {float(r["E_nominal"]): r for r in csv.DictReader(open(show, encoding="utf-8"))} if os.path.exists(show) else {}
+    if any(abs(k - E_K40) < 1e-3 for k in conv) != (E_K40 in own):
+        refuse("#GS-61: точка 1460,8 в свёртке без GS_FWHM_OWN (или наоборот) — выгрузка с тем же ключом, что подгонка")
+    fnum = lambda r, k: float(r[k]) if r and r.get(k) else None
 
     points = []
     used_points_E = []
@@ -176,8 +186,8 @@ def fwhm_cal():
         if found_key is not None:
             used = True
             fwhm = conv[found_key]
-            scale = fwhm / sl
-            scales.append(scale)
+            scale = fwhm / sl if E not in own else None   # #GS-61: своя точка — не СпектраЛайн × множитель
+            if scale is not None: scales.append(scale)
             used_points_E.append(E)
             used_points_fwhm.append(fwhm)
         else:
@@ -185,7 +195,7 @@ def fwhm_cal():
             fwhm = sl
             scale = None
         
-        Ec = SL_CENTROID.get(E, E)
+        Ec = fnum(own_rows.get(E), "centroid_keV") if E in own else SL_CENTROID.get(E, E)   # #GS-61: своя — центроида этого спектра
         
         # Placeholder for model values, will be filled after polyfit if needed, 
         # but spec says calculate law first. We need to store points then fill model/dev later?
@@ -196,11 +206,14 @@ def fwhm_cal():
             "E_nominal": E, 
             "E_centroid": Ec, 
             "fwhm_keV": fwhm, 
-            "d_fwhm_keV": 0.0, 
+            "d_fwhm_keV": (fnum(own_rows.get(E), "unc_keV") or 0.0) if E in own else 0.0,
             "res_pct": 100 * fwhm / Ec, 
             "shift_keV": Ec - E,
-            "fwhm_sl_keV": sl, 
-            "scale": scale, 
+            "fwhm_sl_keV": sl,
+            "own_keV": own_show.get(E), "own_unc_keV": fnum(own_rows.get(E), "unc_keV") if E in own_show else None,   # только надёжные
+            "becqmoni_keV": fnum(own_rows.get(E), "becqmoni_keV"), "own_used": E in own,
+            "own_reason": (own_rows.get(E) or {}).get("reason", ""),
+            "scale": scale,
             "used": used, 
             "n_lines_window": 1,
             "fwhm_model_keV": None, # To be filled
@@ -476,7 +489,7 @@ def main():
         "date_measured": (t0[:10] + " — " + t1[:10]) if (t0 and t1) else "не найдено в файле", 
         "decay_factor": 1.0,
         "unc_components_pct": {"abundance": 100 * U_THETA, "half_life": 100 * U_THALF, "purity": 100 * U_PUR},
-        "center_note": "чистота KCl в центральном значении принята полной (audit/GS-26-k40-expected-unc.md: вопрос о поправке 0,995 открыт)"
+        "center_note": "чистота KCl в центральном значении принята полной (расчёт ожидаемой неопределённости — см. раздел о пробе KCl; вопрос о поправке 0,995 открыт)"
     }
 
     cal = m1.CAL_OWN
@@ -512,12 +525,12 @@ def main():
         {"key": "K40", "label_ru": "K-40", "label_en": "K-40", "color": COLOR_K40,
          "note": "МК-шаблон полного распада K-40 (Geant4, ионный источник Z = 19, A = 40) в объёме пробы KCl", "branching": 1.0},
         {"key": "BG", "label_ru": "фон (приведён)", "label_en": "background", "color": COLOR_BG,
-         "note": "фон — сосуд Маринелли 1 л с дистиллированной водой, своя шкала энергии, × отношение живых времён; не подгоняется", "branching": 1.0},
+         "note": "фон — сосуд Маринелли 1 л с дистиллированной водой, своя шкала энергии, × отношение живых времён" + (" × r(E) — расчётное ослабление внешнего фона пробой KCl против воды (Geant4, #GS-60)" if m1.BG_R else "") + "; не подгоняется", "branching": 1.0},
         # GS-42 п.2: тормозное β и внутреннее тормозное (IB) — отдельные слои (см. export_page_gs2020.py)
-        {"key": "BETA", "label_ru": "тормозное β", "label_en": "β bremsstrahlung", "color": "#2b6cb0",
+        {"key": "BETA", "label_ru": "тормозное излучение β", "label_en": "β bremsstrahlung", "color": "#2b6cb0",
          "note": "в методе 1 отдельно не выделяется (уже внутри шаблона распада иона); в методе 2 — тормозное излучение электронов β-распада (Geant4)", "branching": 1.0},
-        {"key": "IB", "label_ru": "внутреннее тормозное (IB)", "label_en": "internal bremsstrahlung (IB)", "color": "#c0392b",
-         "note": "фотоны внутреннего тормозного при β-распаде по таблице KUB; Geant4 их не рождает, добавлены отдельно (#GS-42)", "branching": 1.0}
+        {"key": "IB", "label_ru": "внутреннее тормозное излучение (IB)", "label_en": "internal bremsstrahlung (IB)", "color": "#c0392b",
+         "note": "фотоны внутреннего тормозного излучения при β-распаде по таблице KUB; Geant4 их не рождает, добавлены отдельно (#GS-42)", "branching": 1.0}
     ]
 
     contrib = {"K40": sum(sb["stack"]["K40"]), "BG": sum(bg), "BETA": sum(sb["stack2"]["BETA"]), "IB": sum(sb["stack"]["IB"])}

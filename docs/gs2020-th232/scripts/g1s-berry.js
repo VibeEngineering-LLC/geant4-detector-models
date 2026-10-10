@@ -1430,7 +1430,7 @@ function fillSummaries() {
   var html = "";
   html += cell("активность Cs-137", cnt(cs.A_Bq) + " Бк <em>± " + cnt(cs.dA_Bq) + " Бк</em> <em>· " + cnt(cs.per_kg) + " Бк/кг</em>", true);
   html += cell("активность K-40, предварительно", cnt(k.A_Bq) + " Бк <em>± " + cnt(k.dA_Bq) + " Бк</em> <em>· " + cnt(k.per_kg) + " Бк/кг</em>", true);
-  html += cell("к Бета-1С (СпектраЛайн, на дату измерения)", "Cs-137 " + num(cs.ref_ratio, 3) + " (" + signedPct(cs.ref_ratio) + "); K-40 " + num(k.ref_ratio, 3) + " (" + signedPct(k.ref_ratio) + ")");
+  html += cell("к Бета-1С (СпектраЛайн; его значение пересчитано на дату нашего замера 09.10.2026)", "Cs-137 " + num(cs.ref_ratio, 3) + " (" + signedPct(cs.ref_ratio) + "); K-40 " + num(k.ref_ratio, 3) + " (" + signedPct(k.ref_ratio) + ")");
   html += cell("χ²/ν", num(m1.chi2_ndof, 2));
   html += cell("каналов в подгонке", cnt(m1.ndof));
   html += cell("диапазон", num(m1.E_fit_lo, 0) + "–" + num(m1.E_fit_hi, 0) + " кэВ");
@@ -1573,7 +1573,7 @@ function fillM2Summary() {
     var html = "";
     html += cell("активность Cs-137", cnt(cs.A_Bq) + " Бк <em>± " + cnt(cs.dA_Bq) + " Бк</em> <em>· " + cnt(cs.per_kg) + " Бк/кг</em>", true);
     html += cell("активность K-40, предварительно", cnt(k.A_Bq) + " Бк <em>± " + cnt(k.dA_Bq) + " Бк</em> <em>· " + cnt(k.per_kg) + " Бк/кг</em>", true);
-    html += cell("к Бета-1С (СпектраЛайн, на дату измерения)", "Cs-137 " + num(cs.ref_ratio, 3) + " (" + signedPct(cs.ref_ratio) + "); K-40 " + num(k.ref_ratio, 3) + " (" + signedPct(k.ref_ratio) + ")");
+    html += cell("к Бета-1С (СпектраЛайн; его значение пересчитано на дату нашего замера 09.10.2026)", "Cs-137 " + num(cs.ref_ratio, 3) + " (" + signedPct(cs.ref_ratio) + "); K-40 " + num(k.ref_ratio, 3) + " (" + signedPct(k.ref_ratio) + ")");
     html += cell("χ²/ν", num(m2.chi2_ndof, 2));
     html += cell("каналов в подгонке", cnt(m2.n_channels_fit));
     html += cell("диапазон", num(m2.E_fit_lo, 0) + "–" + num(m2.E_fit_hi, 0) + " кэВ");

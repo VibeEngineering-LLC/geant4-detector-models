@@ -2510,6 +2510,36 @@
    "en": "4110 Bq/kg of dried sample; systematic uncertainty ±4 %; χ²/ν 1.774; peak shape at 661.7 keV: χ²/ν 3.05",
    "manual": true,
    "why": "#GS-78 r6"
+  },
+  {
+   "ru": "4 108 Бк/кг сушёной пробы; систематическая погрешность ±4 %; χ²/ν 2,440, форма пика 661,7 кэВ χ²/ν 5,55",
+   "en": "4108 Bq/kg of dried sample; systematic uncertainty ±4 %; χ²/ν 2.440; peak shape at 661.7 keV: χ²/ν 5.55",
+   "manual": true,
+   "why": "#GS-87 спектр 49,8 ч"
+  },
+  {
+   "ru": "249 Бк/кг (120 Бк); погрешность вычитания фона ±7 Бк, систематическая погрешность ±30 Бк (в абсолютных значениях активности пробы; зависит от поправки r(E) на ослабление фона); предварительно",
+   "en": "249 Bq/kg (120 Bq); background-subtraction uncertainty ±7 Bq, systematic uncertainty ±30 Bq (both expressed as absolute sample activity; depends on the r(E) correction for attenuation of the background); preliminary",
+   "manual": true,
+   "why": "#GS-87 спектр 49,8 ч"
+  },
+  {
+   "ru": "накопление 20,2 ч: площадь по СпектраЛайн 1 632 436 × ε 1,1965·10⁻² × f(ρ) 1,132 (экстраполяция ниже 0,70 г/см³)",
+   "en": "20.2 h acquisition: SpectraLine peak area 1 632 436 × ε 1.1965·10⁻² × f(ρ) 1.132 (extrapolation below 0.70 g/cm³)",
+   "manual": true,
+   "why": "#GS-87: строка относится к накоплению 20,2 ч"
+  },
+  {
+   "ru": "накопление 20,2 ч: собственная подгонка пика, неопределённость ±4–5 %",
+   "en": "20.2 h acquisition: separate peak fit, uncertainty ±4–5 %",
+   "manual": true,
+   "why": "#GS-87: строка относится к накоплению 20,2 ч"
+  },
+  {
+   "ru": "накопление 20,2 ч: 155–162 Бк, нетто пика 1461 минус фоновый пик × r 1,058–1,063",
+   "en": "20.2 h acquisition: 155–162 Bq, net peak 1461 minus background peak × r 1.058–1.063",
+   "manual": true,
+   "why": "#GS-87: строка относится к накоплению 20,2 ч"
   }
  ],
  "fill": [

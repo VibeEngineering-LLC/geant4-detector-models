@@ -33,9 +33,12 @@ BG_COLOR = "#b8b2a2"
 SL_CS_PER_KG_2024, SL_CS_UNC_PCT, SL_K_PER_KG, SL_K_UNC_PCT = 4190.0, 3.0, 264.0, 9.0   # results\ref_beta1s\README.md
 SL_YEARS = 2.018       # от 01.10.2024 до 09.10.2026 (README.md, шапка таблицы)
 T_HALF_CS = 30.08      # лет, LNHB-DDEP
-FACTS = {"edge_662_pct": 2.5, "edge_1461_pct": 1.75, "resid_pct": 14.0, "resid_lo_keV": 450, "resid_hi_keV": 550,
-         "cs_sys_pct": 4.0, "k_noise_Bq": 14.0, "k_sys_Bq": 30.0, "variants_cs_pct": 2.0, "gain_w": 0.14, "gain_s_pct": 2.8,
-         "level_mm": -16.5, "k_frac_model_pct": 0.6, "k_frac_found_pct": 0.9}   # results\RESULT-2026-10-10-berry-gs70.md, «Оговорки»
+FACTS = {"edge_662_pct": 2.44, "edge_1461_pct": 1.75, "resid_pct": 14.2, "resid_lo_keV": 450, "resid_hi_keV": 550,
+         "cs_sys_pct": 4.0, "k_noise_Bq": 7.2, "k_sys_Bq": 30.0, "variants_cs_pct": 2.3, "gain_w": 0.14, "gain_s_pct": 2.8,
+         "level_mm": -16.5, "k_frac_model_pct": 0.6, "k_frac_found_pct": 0.8}   # results\RESULT-2026-10-10-berry-gs70.md, «Оговорки»;
+# #GS-87 (спектр 49,8 ч, audit\GS-87-berry-49h-report.md): edge_662 — gs71_edge.py (−11,8 / 484,3 кэВ), resid — (net−model)/model в 450–550 кэВ,
+# k_noise — σ амплитуды K-40 с дисперсией приведённого фона (scripts\gs87_k40_bgnoise.py; прежние 14 Бк этим путём не воспроизводятся: 8,4),
+# variants_cs — наибольшее отклонение Cs-137 четырёх вариантов β от принятого, k_frac_found — 120 Бк / 31,0 Бк/г K / 482 г; k_sys, cs_sys — от r(E) и f(ρ), не от спектра
 
 NUC = [
     ("CS137", "Cs137", "mix_Cs137_npsmoff.csv", CS_SCALE, "Cs-137", "#b8860b", "МК-шаблон полного распада Cs-137 (до Ba-137m) в объёме пробы; K-рентгеновское излучение Ba — внутри шаблона"),
@@ -296,8 +299,8 @@ def main():
     if "berry" not in cal or "bgw" not in cal:
         refuse("cal не содержит berry/bgw")
     k_bg = s.live_time / b.live_time
-    if abs(k_bg / 0.6075 - 1) > 1e-3:
-        refuse("k_bg не совпадает с 0.6075")
+    if abs(k_bg / (179131.2 / 119423.3) - 1) > 1e-3:   # #GS-87: спектр 49,8 ч (было 0,6075 у 20,2 ч)
+        refuse("k_bg не совпадает с 179131,2 / 119423,3")
 
     rows = esb.berry_source()["results"]
     pick = {r["lab"]: r for r in rows}

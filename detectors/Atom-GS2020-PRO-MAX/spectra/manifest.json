@@ -63,13 +63,23 @@
     },
     {
       "csv": "berry_dried_marinelli_1l_482g_20.2h.csv",
-      "csv_sha256": "a10399c1529315b381742a55919726967fb7d0d195be43d7f978abbfb5d9ea2b",
-      "csv_bytes": 69121,
+      "csv_sha256": "3c29eeb09498b1c46441c0456ab078b9e7d92652851df6df680fbab1888282b6",
+      "csv_bytes": 68789,
       "source_name": "Черника Маринелли 1 л 482 г (20,2 ч, 09-10.10).xml (исходное имя файла не публикуется)",
       "source_sha256": "12eaa2f31e777e9c19f12e32f1fe354322598ea69655e5abfc67da9e10a08b8b",
       "derived": false,
       "counts_sum": 18439170.0,
       "live_time_s": 72547.5
+    },
+    {
+      "csv": "berry_dried_marinelli_1l_482g_49.8h.csv",
+      "csv_sha256": "70124e1dd1eae69f3b0e766f9e51e2e20ba8a70d36ccb96f659766718141c955",
+      "csv_bytes": 72002,
+      "source_name": "Черника Маринелли 1 л 482 г (49,8 ч, 09-11.10).xml (исходное имя файла не публикуется)",
+      "source_sha256": "1d96eb520117350ea0495759621dc4c63e5e43021b095a45388888f7e0ca2cd6",
+      "derived": false,
+      "counts_sum": 45453534.0,
+      "live_time_s": 179131.2
     }
   ]
 }

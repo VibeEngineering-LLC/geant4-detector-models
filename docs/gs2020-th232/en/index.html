@@ -4,7 +4,7 @@
 <meta name="theme-color" content="#e6e0d0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0e0c08" media="(prefers-color-scheme: dark)">
 <title>Atom GS2020 PRO MAX: spectrometer, Geant4 model, spectra</title>
-<link rel="stylesheet" href="../styles/g1s-th232.css?v=1791669193">
+<link rel="stylesheet" href="../styles/g1s-th232.css?v=1791729671">
 <style>
 .dev{border-bottom:3px solid var(--rule); padding:1.1rem 0 1.3rem}
 .dev p,.dev li,.dev td,.dev th,.dev figcaption{text-align:left}
@@ -605,17 +605,17 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
     <p class="stand">Sample of dried blueberries, 482 g, volume 1&nbsp;L in a Marinelli beaker (fill level −16.5 mm relative to the rim), bulk density 0.482 g/cm³; the same spectrometer; the beaker is Marinelli&nbsp;2
       (assembly geometry: <a href="https://github.com/VibeEngineering-LLC/geant4-detector-models/blob/main/detectors/Atom-GS2020-PRO-MAX/geometry/GS2020_marinelli_berry_dry_1000ml.gdml"
       target="_blank" rel="noopener">GDML</a>).
-      Live time of the measurement 20.2 h (9–10 October 2026). The spectrum contains lines of caesium-137 and potassium-40; the continuous component is described by the β template of strontium-90 with yttrium-90. The Marinelli + water background is subtracted, scaled to live time and multiplied by r(E):
+      Live time of the measurement 49.8 h (9–11 October 2026). The spectrum contains lines of caesium-137 and potassium-40; the continuous component is described by the β template of strontium-90 with yttrium-90. The Marinelli + water background is subtracted, scaled to live time and multiplied by r(E):
       the density of blueberries is lower than that of water, and the sample attenuates the external background less; the r(E) correction is calculated in Geant4 separately for the background lines (full-energy peaks) and for the continuum. Geant4 templates — in the sample geometry: full decay of Cs-137
       (with Ba-137m), K-40, Sr-90 and Y-90. Peak width and shape and efficiency — from the detector data set (thorium reference spectrum), without fitting to the sample; the energy scale is specific to this spectrum and is determined from the positions of its peaks.</p>
-    <p class="stand">Method 1 (full-spectrum fit with the same convolution kernel as for thorium) gave for Cs-137 1981 Bq (4110 Bq/kg); statistical uncertainty ± 1.5 Bq, systematic uncertainty about 4 %;
-      overall χ²/ν = 1.77, peak shape at 661.7&nbsp;keV — χ²/ν = 3.05; scatter across all fit variants about 2 %. For K-40 Method 1 gave 136 Bq (282 Bq/kg); with background subtraction uncertainty ± 14 Bq, systematic uncertainty ± 30 Bq: this is a small
+    <p class="stand">Method 1 (full-spectrum fit with the same convolution kernel as for thorium) gave for Cs-137 1980 Bq (4108 Bq/kg); statistical uncertainty ± 1.1 Bq, systematic uncertainty about 4 %;
+      overall χ²/ν = 2.44, peak shape at 661.7&nbsp;keV — χ²/ν = 5.55; scatter across all fit variants about 2 %. For K-40 Method 1 gave 120 Bq (249 Bq/kg); with background subtraction uncertainty ± 7 Bq, systematic uncertainty ± 30 Bq: this is a small
       difference between the sample peak and the background peak and depends strongly on the r(E) correction; the K-40 result is therefore preliminary. Reference value from another instrument
       (Beta-1S, SpectraLine, different sample): on its measurement date 1 October 2024 Cs-137 4190 Bq/kg, K-40 264 Bq/kg; Cs-137, decay-corrected to the date of our measurement
-      (decay over 2.018 years): 3999.6 Bq/kg; the ratios of our values to these are 1.028 and 1.069
-      (+2.8 % and +6.9 %); the model parameters were not adjusted to the reference value. Method 2 (FEP efficiency function × line library) gave for Cs-137 1983 Bq (4113 Bq/kg), for K-40 137 Bq (283 Bq/kg); relative to the reference +2.8 % (Cs-137) and +7.4 % (K-40), χ²/ν = 1.80. The β activity of Sr-90+Y-90 is a nuisance parameter (a model parameter required to describe the spectrum but not the quantity of interest): the electrons are stopped in the sample, the beaker wall, and the housing,
+      (decay over 2.018 years): 3999.6 Bq/kg; the ratios of our values to these are 1.027 and 0.944
+      (+2.7 % and −5.6 %); the model parameters were not adjusted to the reference value. Method 2 (FEP efficiency function × line library) gave for Cs-137 1981 Bq (4110 Bq/kg), for K-40 121 Bq (250 Bq/kg); relative to the reference +2.8 % (Cs-137) and −5.1 % (K-40), χ²/ν = 2.52. The β activity of Sr-90+Y-90 is a nuisance parameter (a model parameter required to describe the spectrum but not the quantity of interest): the electrons are stopped in the sample, the beaker wall, and the housing,
       and their bremsstrahlung forms a broad continuous bump in the 150–450&nbsp;keV region; the activity of Sr-90 is not determined from the γ-ray spectrum and is not published: the β template is fitted only as an auxiliary component.</p>
-    <p class="warn"><b>Compton edge of the 662&nbsp;keV line (about 477&nbsp;keV).</b> The Compton edge in the measurement is shifted towards lower energies and is broader than in the model: by 2.5 % for the 662&nbsp;keV line (for KCl — by 1.75 % for the 1460.8&nbsp;keV line, edge at about 1243&nbsp;keV). The cause has not been established; the scintillation light-yield non-proportionality of NaI(Tl) is being considered
+    <p class="warn"><b>Compton edge of the 662&nbsp;keV line (about 477&nbsp;keV).</b> The Compton edge in the measurement is shifted towards lower energies and is broader than in the model: by 2.4 % for the 662&nbsp;keV line (for KCl — by 1.75 % for the 1460.8&nbsp;keV line, edge at about 1243&nbsp;keV). The cause has not been established; the scintillation light-yield non-proportionality of NaI(Tl) is being considered
       (the parameters of the non-proportionality model (NPSM) for this crystal have not yet been determined). The residual is about −14 % at 450–550 keV; peak-based activities are practically insensitive to it.
       Below 150&nbsp;keV the model is not evaluated: fit window — 150–3000&nbsp;keV.</p>
   </div>
@@ -668,7 +668,7 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
       (full-energy peak, Compton continuum, escape peaks, intrinsic detector lines), obtained by direct Geant4 calculations in the same sample
       (grid nodes: 14); it is multiplied by the emission probability of the line, and one amplitude per nuclide is fitted. External bremsstrahlung of
       β particles and conversion electrons of Cs-137 and K-40 (separate components) and the Sr-90+Y-90 β template (nuisance fit parameter) are added; the background is the same as in Method 1 and is not fitted.
-      Fit window 150–3000&nbsp;keV, number of channels 5996. The library contains 11 lines, including 9 X-ray lines (Ba K X-rays from Cs-137, Ar K X-rays from K-40).</p>
+      Fit window 150–3000&nbsp;keV, number of channels 5999. The library contains 11 lines, including 9 X-ray lines (Ba K X-rays from Cs-137, Ar K X-rays from K-40).</p>
       <div class="summary" id="berry-sumM2"></div>
       <div class="legendbar" id="berry-legendM2"></div>
       <div class="plotwrap">
@@ -680,7 +680,7 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
       </div>
       <div class="cursor-line" id="berry-cursorM2">hover over a spectrum channel</div>
       <p class="guard-note">Components: Cs-137 lines, K-40 lines, external bremsstrahlung (β/e⁻) of Cs-137 and K-40 as separate components, Sr-90+Y-90 β, and background.
-      Peak shape in this method: 661.7&nbsp;keV — χ²/ν = 3.06, 1460.8&nbsp;keV — χ²/ν = 0.86. Internal bremsstrahlung is not included in the calculation.
+      Peak shape in this method: 661.7&nbsp;keV — χ²/ν = 5.59, 1460.8&nbsp;keV — χ²/ν = 0.86. Internal bremsstrahlung is not included in the calculation.
       Ar K X-rays following electron capture (about 3&nbsp;keV) do not reach the crystal from the sample: the response of these lines is zero.</p>
       <div class="scroll"><table class="big" id="berry-tblM2N"></table></div>
       <p class="guard-note"><b>Line library.</b> Emission probability — per nuclide decay; ε<sub>FEP</sub> — full-energy peak efficiency based on Geant4 responses;
@@ -706,7 +706,7 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
         <figcaption>Screenshot of the SpectraLine window (Beta-1S, 1 October 2024): reference decomposition from another instrument.</figcaption>
       </figure>
       <p class="guard-note">The Marinelli + water background was measured over a live time of 119 423 s.
-      Systematic uncertainty for Cs-137 — approximately 4 % (estimated from the spread of results from different calculation paths and fitting variants; not a complete uncertainty budget); the K-40 result depends on the r(E) correction for background attenuation by the sample: an uncertainty in r of 0.01 changes the activity by approximately 13&nbsp;Bq. The K-40 uncertainties have different origins and are not summed: ± in the summaries and tables is the statistical fit uncertainty with the Birge ratio correction; ± 14 Bq is the background-subtraction uncertainty; ± 30 Bq is the systematic uncertainty.</p>
+      Systematic uncertainty for Cs-137 — approximately 4 % (estimated from the spread of results from different calculation paths and fitting variants; not a complete uncertainty budget); the K-40 result depends on the r(E) correction for background attenuation by the sample: an uncertainty in r of 0.01 changes the activity by approximately 13&nbsp;Bq. The K-40 uncertainties have different origins and are not summed: ± in the summaries and tables is the statistical fit uncertainty with the Birge ratio correction; ± 7 Bq is the background-subtraction uncertainty; ± 30 Bq is the systematic uncertainty.</p>
     </div>
   </div>
 
@@ -714,7 +714,7 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
   <div class="stage" id="berry-viewCal" hidden>
     <div class="cal-wrap">
       <p class="method-lede">Spectra of the sample (blueberries) and the Marinelli + water background. The background is scaled to the live time of the sample; the difference is the sample count minus the scaled background in each channel. Each spectrum has its own energy scale: the file recorded by the spectrometer
-      for blueberries contains no calibration; the scale is a smooth polynomial determined from the positions of the peak groups of this spectrum, which are determined from Geant4 responses; the deviation of the polynomial representing the scale from the fit is up to 0.013 keV. Reference lines: Cs-137 (661.7 keV), K-40 (1460.8 keV), and the Tl-208 background line.</p>
+      for blueberries contains no calibration; the scale is a smooth polynomial determined from the positions of the peak groups of this spectrum, which are determined from Geant4 responses; the deviation of the polynomial representing the scale from the fit is up to 0.014 keV. Reference lines: Cs-137 (661.7 keV), K-40 (1460.8 keV), and the Tl-208 background line.</p>
       <div class="chartbox" id="berry-calbox">
         <div class="ctrls" id="berry-cal-ctrls">
           <label><span class="sw" style="background:#16140f"></span>
@@ -747,7 +747,7 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
   </div>
 </div>
 <footer class="bot berry-foot">
-  <span>Blueberries: spectrum 9–10 October 2026, live time 72 548 s, real time 72 599 s.</span>
+  <span>Blueberries: spectrum 9–11 October 2026, live time 179 131 s, real time 179 258 s.</span>
   <span>Templates — Geant4 Monte Carlo calculations; simulated decays: 100 000 000 for Sr-90+Y-90; 20 000 000 for Cs-137, K-40.</span>
   <button type="button" data-pop="t-about" aria-expanded="false">about this page and its numbers</button>
   <button type="button" data-pop="t-refs" aria-expanded="false">sources</button>
@@ -914,7 +914,7 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
   External bremsstrahlung of β particles and conversion electrons is added to the responses with the same amplitude, as separate components for Cs-137 and K-40.
   Sr-90+Y-90 is included with the same β template as in Method 1, as a nuisance fit parameter. Internal bremsstrahlung is not included in the calculation.
   The fit uses three amplitudes in the same window as in Method 1; the uncertainty is multiplied by the Birge ratio correction. Ar K X-rays do not reach the crystal.
-  Result: Cs-137 1983 Bq, K-40 137 Bq, χ²/ν = 1.80.</p>
+  Result: Cs-137 1981 Bq, K-40 121 Bq, χ²/ν = 2.52.</p>
 
   <h3>Common elements of all templates</h3>
   <p>The FWHM(E) function from the detector data set (values at the reference points from the thorium reference spectrum, log–log interpolation) with a gain-spread kernel: w = 0.14 — the fraction of events with additional gain spread, s = 2.8 % — its relative standard deviation (as a fraction of the event energy);
@@ -928,13 +928,13 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
     <div><dt>Mass</dt><dd>482 g</dd></div>
     <div><dt>Volume in the beaker</dt><dd>1&nbsp;L (fill level −16.5 mm relative to the rim)</dd></div>
     <div><dt>Density and composition in the model</dt><dd>ρ&nbsp;=&nbsp;0.482 g/cm³; H 7.1 %, C 38.6 %, N 0.5 %, O 53.2 %, K 0.6 % by mass</dd></div>
-    <div><dt>Measurement</dt><dd>20.2 h live time, 9–10 October 2026</dd></div>
+    <div><dt>Measurement</dt><dd>49.8 h live time, 9–11 October 2026</dd></div>
     <div><dt>Reference value</dt><dd>Beta-1S, SpectraLine: Cs-137 3999.6 Bq/kg at the measurement date (4190 Bq/kg at 1 October 2024),
     K-40 264 Bq/kg; different sample and different instrument</dd></div>
   </dl>
-  <p>No certified activity is available. Cs-137 — Method 1 (Method 2: 1983 Bq), systematic uncertainty approximately 4 %. K-40 — Method 1 preliminary;
-  background subtraction uncertainty ± 14 Bq, systematic uncertainty ± 30 Bq.
-  In the model, the sample contains potassium 0.6 % by mass; the fit result corresponds to approximately 0.9 %;
+  <p>No certified activity is available. Cs-137 — Method 1 (Method 2: 1981 Bq), systematic uncertainty approximately 4 %. K-40 — Method 1 preliminary;
+  background subtraction uncertainty ± 7 Bq, systematic uncertainty ± 30 Bq.
+  In the model, the sample contains potassium 0.6 % by mass; the fit result corresponds to approximately 0.8 %;
   the effect on self-absorption was not evaluated (expected to be small).</p>
 </template>
 
@@ -953,14 +953,14 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
 </template>
 
 
-<script src="data.js?v=1791669193"></script>
-<script src="scripts/g1s-th232.js?v=1791669193"></script>
-<script src="sources.js?v=1791669193"></script>
-<script src="scripts/gs-sources.js?v=1791669193"></script>
-<script src="data-k40.js?v=1791669193"></script>
-<script src="scripts/g1s-k40.js?v=1791669193"></script>
-<script src="data-berry.js?v=1791669193"></script>
-<script src="scripts/g1s-berry.js?v=1791669193"></script>
+<script src="data.js?v=1791729671"></script>
+<script src="scripts/g1s-th232.js?v=1791729671"></script>
+<script src="sources.js?v=1791729671"></script>
+<script src="scripts/gs-sources.js?v=1791729671"></script>
+<script src="data-k40.js?v=1791729671"></script>
+<script src="scripts/g1s-k40.js?v=1791729671"></script>
+<script src="data-berry.js?v=1791729671"></script>
+<script src="scripts/g1s-berry.js?v=1791729671"></script>
 
 
 

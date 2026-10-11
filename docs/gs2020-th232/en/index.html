@@ -714,7 +714,7 @@ body:has(#src-cs137:not([hidden])) footer.bot:not(.berry-foot){display:none}
   <div class="stage" id="berry-viewCal" hidden>
     <div class="cal-wrap">
       <p class="method-lede">Spectra of the sample (blueberries) and the Marinelli + water background. The background is scaled to the live time of the sample; the difference is the sample count minus the scaled background in each channel. Each spectrum has its own energy scale: the file recorded by the spectrometer
-      for blueberries contains no calibration; the scale is a smooth polynomial determined from the positions of the peak groups of this spectrum, which are determined from Geant4 responses; the deviation of the polynomial representing the scale from the fit is up to 0.014 keV. Reference lines: Cs-137 (661.7 keV), K-40 (1460.8 keV), and the Tl-208 background line.</p>
+      for blueberries contains only the factory scale, which is corrected: the final scale is a smooth polynomial determined from the positions of the peak groups of this spectrum, which are determined from Geant4 responses; the deviation of the polynomial representing the scale from the fit is up to 0.014 keV. Reference lines: Cs-137 (661.7 keV), K-40 (1460.8 keV), and the Tl-208 background line.</p>
       <div class="chartbox" id="berry-calbox">
         <div class="ctrls" id="berry-cal-ctrls">
           <label><span class="sw" style="background:#16140f"></span>

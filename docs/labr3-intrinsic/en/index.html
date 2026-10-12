@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LaBr3 Intrinsic Background</title>
+<link rel="stylesheet" href="../styles/base.css">
+<link rel="stylesheet" href="../styles/gagg.css">
+</head>
+<body>
+<div class="app">
+<div class="top">
+<div class="title">
+<p class="eyebrow">AtomNano 5 PRO LaBr3 · 8192 channels · Geant4 templates, model v8</p>
+<h1>Intrinsic background of the LaBr3(Ce) crystal: template decomposition of the house background (lead shielding)</h1>
+<p class="stand">The spectrum &quot;Фон домик 8192.xml&quot; (live time 1 460 692 s, 3 431 021 counts in 100–3000 keV) was recorded inside lead shielding (operator&#x27;s statement; no lead was put into the instrument model). It is decomposed into a linear combination of Geant4 templates (instrument model v8) of the intrinsic radioactivity of the 14 × 25.4 × 14 mm crystal: La-138 decays (2·10⁷ histories) and the Ac-227 chain (4.8·10⁶ histories) inside the crystal, plus a smooth external continuum. The energy scale is taken from the file itself (smp.coef). The templates are convolved with the Nano 5 reference FWHM(E). The main La-138 template variant is &quot;both&quot;: the β⁻ spectrum shape is reweighted by C_exp(W) = 1 + aW + bW² (a = −1.319, b = 0.4982; Quarati 2016, Sandler 2019) and the capture ratio L/K is set to 0.391. The other variants are in the tables below.</p>
+<p class="stand"><strong>Result for the La-138 activity: first-principles expectation 7.62 Bq (range 7.27–7.83); fit 6.693 ± 0.012 (2025 background) and 6.677 ± 0.011 (2026 background) decays/s, ratio 0.878 and 0.876. An independent recalculation of the expectation (audit\sterile-act-2026-10-12.md) confirmed it. The 12 % deficit is not explained (see Assumptions).</strong></p>
+<p class="stand" id="status"></p>
+<p class="stand">
+<span class="nav-link"><a href="index.html">House background</a></span> | 
+<span class="nav-link"><a href="kcl.html">Electrode and KCl</a></span> | 
+<span class="nav-link"><a href="../">Русский</a></span>
+</p>
+</div>
+</div>
+<div class="panel">
+<div class="toolbar" role="toolbar">
+<span class="grp">
+<span class="seg-label">Energy</span>
+<div class="seg" id="ctl-range" role="group">
+<button type="button" class="btn" data-range="all" aria-pressed="true">100–3000</button>
+<button type="button" class="btn" data-range="low" aria-pressed="false">100–300</button>
+<button type="button" class="btn" data-range="mid" aria-pressed="false">700–1600</button>
+<button type="button" class="btn" data-range="alpha" aria-pressed="false">1800–3000</button>
+<button type="button" class="btn" data-range="k40" aria-pressed="false">1350–1600 keV</button>
+
+</div>
+</span>
+</div>
+<div class="m1-wrap">
+<h2>Spectrum and Geant4 templates</h2>
+<p class="method-lede">Blue line: measured spectrum, counts per second per keV (log scale), fit range 100–3000 keV; red: model sum; thin coloured lines: component contributions: La-138 (Geant4 template), Ac-227 and daughters (gamma and electrons; alpha with an external quenching coefficient), smooth external continuum. Pb K X-rays and the K-40 line are not in the model in the 100–3000 keV window (separate Pb block below).</p>
+<div class="plotwrap" id="wrap-main">
+<div class="plotbox">
+<canvas id="cv" tabindex="0"></canvas>
+<div class="chart-tip" id="tip" hidden></div>
+</div>
+</div>
+<h2>Fit components (2025 background, 100–3000 keV window, template &quot;both&quot;)</h2>
+<p>Template parameter: activity in parent decays per second (La-138; the Ac-227 chain has one activity for the gamma/electron and alpha parts); external shapes: area in counts. &quot;Counts in window&quot; is the number of counts per second the component gives inside the 100–3000 keV fit window; it equals the activity times the window fraction (La-138: 0.2826), so it differs from the activity. Area and fraction: integral of the component model in the window. Errors come from the covariance of the weighted non-negative fit, inflated by √(χ²/ndf) when χ²/ndf exceeds 1; template-shape systematics (assumptions below) are not included.</p>
+<div class="scroll">
+<table class='big'><thead><tr><th>Component</th><th>Parameter ± σ</th><th>Area ± σ, counts</th><th>Counts in window, s⁻¹</th><th>Fraction, %</th></tr></thead><tbody><tr><td>La-138 (Geant4 template)</td><td>6.693 ± 0.01213 s⁻¹</td><td>2 762 475 ± 5 005</td><td>1.89</td><td>80.5 %</td></tr><tr><td>Ac-227 chain (template: gamma/e + alpha)</td><td>0.003887 ± 0.00009917 s⁻¹</td><td>27 880 ± 711.3</td><td>0.0191</td><td>0.813 %</td></tr><tr><td>continuum exp(-E/150)</td><td>505 357 ± 3 763</td><td>505 357 ± 3 763</td><td>0.346</td><td>14.7 %</td></tr><tr><td>continuum exp(-E/1000)</td><td>98 511 ± 3 987</td><td>98 511 ± 3 987</td><td>0.0674</td><td>2.87 %</td></tr><tr><td>constant background</td><td>22 790 ± 1 949</td><td>22 790 ± 1 949</td><td>0.0156</td><td>0.664 %</td></tr><tr><td>511 keV annihilation line (external shape)</td><td>3 623 ± 335.4</td><td>3 623 ± 335.4</td><td>0.00248</td><td>0.106 %</td></tr><tr><td>Pb-214 351.9 keV (external line)</td><td>1 388 ± 343.2</td><td>1 388 ± 343.2</td><td>0.000951</td><td>0.0405 %</td></tr><tr><td>Bi-214 609.3 keV (external line)</td><td>2 095 ± 336.6</td><td>2 095 ± 336.6</td><td>0.00143</td><td>0.0610 %</td></tr></tbody></table>
+</div>
+<p class='method-lede'>q = 0.4800; α extra FWHM fraction = 0.09100; χ²/ndf = 2.389; ndf = 2888; bins = 3000; unexplained remainder = 6 901 counts (0.2011 %)</p>
+<p class='method-lede'>FWHM(E): Nano 5 reference from 'Electrode and KCl' spectrum (Pb-212 238.6; Tl-208 583.2; Ac-228 911.2; Tl-208 2614.5 keV), model FWHM² = a + b·E + c·E², a = 13.04, b = 0.4257, c = 0.00007141 (fwhm_points_nano5.json)</p>
+<h2>Residuals by window (2025 background)</h2>
+<p>Window is an energy range; z = (measured − model)/√model; χ²/bin over 1 keV bins inside the window.</p>
+<table class='big'><thead><tr><th>Window, keV</th><th>Measured</th><th>Model</th><th>z</th><th>χ²/bin</th></tr></thead><tbody><tr><td>100–300</td><td>1 831 017</td><td>1 812 193</td><td>13.98</td><td>7.573</td></tr><tr><td>300–700</td><td>745 083</td><td>755 578</td><td>-12.07</td><td>2.392</td></tr><tr><td>700–850</td><td>209 042</td><td>204 971</td><td>8.992</td><td>1.684</td></tr><tr><td>850–1050</td><td>256 176</td><td>254 160</td><td>3.998</td><td>1.035</td></tr><tr><td>1050–1380</td><td>223 585</td><td>224 035</td><td>-0.9507</td><td>1.816</td></tr><tr><td>1380–1540</td><td>122 274</td><td>131 315</td><td>-24.95</td><td>8.610</td></tr><tr><td>1540–2300</td><td>19 797</td><td>19 198</td><td>4.327</td><td>1.219</td></tr><tr><td>2300–3000</td><td>24 046</td><td>22 670</td><td>9.141</td><td>1.523</td></tr></tbody></table>
+<h2>La-138 activity: fit, first-principles estimate, independent fit</h2>
+<p>The table is in decays per second (template parameter). &quot;Window fraction&quot; is counts in the window per decay. First-principles estimate: V·ρ·w_La/M_La·N_A·x(La-138)·ln 2/T½ with the crystal volume 14 × 25.4 × 14 mm from the model, density 5.08 g/cm³ (5.06–5.29 in the sources), abundance x = 0.0008881 and CIAAW (IUPAC) atomic masses, T½ = 1.03·10¹¹ y (ENSDF) or 1.06·10¹¹ y (CIAAW); the range 7.27–7.83 Bq reflects T½ from 1.01 to 1.07·10¹¹ y and the 0.8 % abundance uncertainty; the density range 5.06–5.29 g/cm³ is not included. The ratio of the &quot;both&quot; fit (2025) to the estimate is 0.878, of the variant without reweighting 0.853, of the independent fit 0.827. The difference of the two backgrounds (2025 − 2026, &quot;both&quot;) is 0.01601 ± 0.017 (0.96 σ), consistent with zero.</p>
+<h3>La-138 activity by template variant and background</h3>
+<div class='scroll'><table class='big'>
+<thead><tr><th>Variant</th><th>Activity ± σ, decays/s</th><th>Window fraction</th><th>χ²/ndf</th><th>Activity ± σ, decays/s</th><th>Window fraction</th><th>χ²/ndf</th></tr></thead>
+<tbody>
+<tr><td>no reweighting (Geant4 as is)</td><td>6.499 ± 0.013</td><td>0.2889</td><td>2.66</td><td>6.490 ± 0.012</td><td>0.2950</td><td>2.93</td></tr>
+<tr><td>β shape by C_exp</td><td>6.695 ± 0.012</td><td>0.2825</td><td>2.41</td><td>6.678 ± 0.011</td><td>0.2883</td><td>2.48</td></tr>
+<tr><td>L/K = 0.391</td><td>6.497 ± 0.012</td><td>0.2890</td><td>2.64</td><td>6.489 ± 0.012</td><td>0.2951</td><td>2.89</td></tr>
+<tr><td>C_exp and L/K ("both")</td><td>6.693 ± 0.012</td><td>0.2826</td><td>2.39</td><td>6.677 ± 0.011</td><td>0.2884</td><td>2.44</td></tr>
+<tr><td>First-principles estimate, Bq (range)</td><td>7.62 (7.27–7.83)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>Independent fit (sterile pass), 100–3000 window</td><td>6.303 ± 0.0069</td><td>—</td><td>48.9</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>Difference 2025 − 2026 ("both")</td><td>0.01601 ± 0.017 (0.96 σ)</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+</tbody></table></div>
+<h2>Doublet 1431/1465 keV: double ratio Q with covariance</h2>
+<p>Q = A2/A1 is the ratio of the areas of the two doublet peaks; Q_data comes from the two-peak fit of the data, Q_model from the same fit of the template; double ratio = Q_data/Q_model. The errors include the correlation of A1 and A2 inside each fit (about +0.99 in the data). Variants &quot;L/K&quot; and &quot;both&quot; use L/K = 0.391: only they bring the double ratio back to one. K-40 is degenerate with the second peak in these fits; for 2026 its area sits at the bound, so the errors are formal.</p>
+<h3>Background 2025</h3>
+<div class='scroll'><table class='big'>
+<thead><tr><th>Variant</th><th>Q data ± σ</th><th>Q model ± σ</th><th>Double ratio ± σ</th><th>Deviation from 1, σ</th><th>Correlation A1, A2</th><th>A3 (K-40) ± σ</th></tr></thead>
+<tbody>
+<tr><td>no reweighting (Geant4 as is)</td><td>1.872 ± 0.053</td><td>1.715 ± 0.014</td><td>1.091 ± 0.032</td><td>2.8</td><td>0.986</td><td>2 321 ± 6 930</td></tr>
+<tr><td>L/K = 0.391</td><td>1.885 ± 0.051</td><td>1.860 ± 0.015</td><td>1.013 ± 0.029</td><td>0.46</td><td>0.988</td><td>572.5 ± 7 509</td></tr>
+<tr><td>C_exp and L/K ("both")</td><td>1.885 ± 0.050</td><td>1.860 ± 0.015</td><td>1.013 ± 0.028</td><td>0.47</td><td>0.988</td><td>534.3 ± 7 497</td></tr>
+</tbody></table></div>
+<h3>Background 2026 (embedded in the &quot;Electrode and KCl&quot; file)</h3>
+<div class='scroll'><table class='big'>
+<thead><tr><th>Variant</th><th>Q data ± σ</th><th>Q model ± σ</th><th>Double ratio ± σ</th><th>Deviation from 1, σ</th><th>Correlation A1, A2</th><th>A3 (K-40) ± σ</th></tr></thead>
+<tbody>
+<tr><td>no reweighting (Geant4 as is)</td><td>1.929 ± 0.061</td><td>1.715 ± 0.013</td><td>1.125 ± 0.037</td><td>3.4</td><td>0.989</td><td>0 ± 9 172 (at bound)</td></tr>
+<tr><td>L/K = 0.391</td><td>1.929 ± 0.053</td><td>1.860 ± 0.014</td><td>1.037 ± 0.030</td><td>1.2</td><td>0.989</td><td>0 ± 8 859 (at bound)</td></tr>
+<tr><td>C_exp and L/K ("both")</td><td>1.929 ± 0.053</td><td>1.860 ± 0.014</td><td>1.037 ± 0.030</td><td>1.3</td><td>0.989</td><td>0 ± 8 876 (at bound)</td></tr>
+</tbody></table></div>
+
+<h2>Templates v8 versus v7</h2>
+<p>Comparison of the summed La-138 templates (2·10⁷ versus 2·10⁷ histories) and Ac-227 templates (4.8·10⁶ versus 4.8·10⁶), normalised per decay; z = (n_v8 − n_v7)/√(n_v8 + n_v7). The control splits the v7 template into independent parts (La-138: one 10⁶ chunk against the other 19; Ac-227: 8 chunks against 8). Model v8 differs from v7 by two FR4 bodies (PCB_main_tab_A_22, PCB_main_tab_B_23). All 36 chunks of the v8 run finished with exit code 0 at the first attempt; the physics string is the same in every log (option4, deex=max, cut 0.05 mm). Events with an extra cluster: 14 of 2·10⁷; β⁻ branch fraction 34.5 %.</p>
+<h3>La-138 template, column vis_eg: v8 against v7 by window</h3>
+<div class='scroll'><table class='big'>
+<thead><tr><th>Window, keV</th><th>v8</th><th>v7</th><th>Difference, %</th><th>σ, %</th><th>z</th></tr></thead>
+<tbody>
+<tr><td>[20,100)</td><td>9 374 287</td><td>9 372 673</td><td>0.0172</td><td>0.0462</td><td>0.373</td></tr>
+<tr><td>[100,300)</td><td>3 170 060</td><td>3 166 798</td><td>0.103</td><td>0.0795</td><td>1.30</td></tr>
+<tr><td>[300,700)</td><td>1 204 831</td><td>1 203 500</td><td>0.111</td><td>0.129</td><td>0.858</td></tr>
+<tr><td>[700,850)</td><td>370 972.0</td><td>370 780.0</td><td>0.0518</td><td>0.232</td><td>0.223</td></tr>
+<tr><td>[850,1050)</td><td>515 112.0</td><td>514 510.0</td><td>0.117</td><td>0.197</td><td>0.593</td></tr>
+<tr><td>[1050,1380)</td><td>438 067.0</td><td>436 901.0</td><td>0.267</td><td>0.214</td><td>1.25</td></tr>
+<tr><td>[1380,1540)</td><td>257 648.0</td><td>258 161.0</td><td>-0.199</td><td>0.278</td><td>-0.714</td></tr>
+<tr><td>[1540,3000)</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>37 keV peak [30,45)</td><td>7 323 878</td><td>7 324 830</td><td>-0.0130</td><td>0.0523</td><td>-0.249</td></tr>
+<tr><td>β edge [750,830)</td><td>200 416.0</td><td>200 239.0</td><td>0.0884</td><td>0.316</td><td>0.280</td></tr>
+<tr><td>doublet [1425,1485)</td><td>255 120.0</td><td>255 761.0</td><td>-0.251</td><td>0.280</td><td>-0.897</td></tr>
+</tbody></table></div>
+<p>Agreement over bins: v8 against v7: χ²/ndf = 1.046, p = 0.110; control (v7 split): χ²/ndf = 1.056, p = 0.0743. Conclusion: difference not significant</p>
+<h3>Ac-227 template: alpha band 1800–3000 keV, v8 against v7</h3>
+<div class='scroll'><table class='big'>
+<thead><tr><th>Column</th><th>v8</th><th>v7</th><th>Difference, %</th><th>z</th><th>χ²/ndf v8–v7</th><th>p</th><th>χ²/ndf control</th><th>Conclusion</th></tr></thead>
+<tbody>
+<tr><td>vis (all)</td><td>12 851.0</td><td>12 594.0</td><td>2.04</td><td>1.61</td><td>1.015</td><td>0.248</td><td>1.002</td><td>difference not significant</td></tr>
+<tr><td>raw (deposited energy)</td><td>12 999.0</td><td>12 810.0</td><td>1.48</td><td>1.18</td><td>0.9957</td><td>0.577</td><td>1.001</td><td>difference not significant</td></tr>
+<tr><td>vis_alpha (alpha)</td><td>12 815.0</td><td>12 532.0</td><td>2.26</td><td>1.78</td><td>0.9716</td><td>0.888</td><td>0.9779</td><td>difference not significant</td></tr>
+</tbody></table></div>
+<h3>Mutation check of the comparison</h3>
+<div class='scroll'><table class='big'>
+<thead><tr><th>Check</th><th>z without the artificial change</th><th>z with the change</th><th>Change</th></tr></thead>
+<tbody>
+<tr><td>La-138, vis_eg, window 700–850 keV</td><td>0.223</td><td>4.52</td><td>× 1.01 in the 700–850 keV window</td></tr>
+<tr><td>Ac-227, vis_alpha, band 1800–3000 keV</td><td>1.78</td><td>5.73</td><td>× 1.05 in the 1800–3000 keV band</td></tr>
+</tbody></table></div>
+<h3>Where the fit χ²/ndf shift comes from: one template at a time (variant &quot;both&quot;, 100–3000 window)</h3>
+<div class='scroll'><table class='big'>
+<thead><tr><th>Template combination</th><th>χ²/ndf, 2025 background</th><th>χ²/ndf, 2026 background</th><th>La-138 activity, 2025</th></tr></thead>
+<tbody>
+<tr><td>La v7 + Ac v7</td><td>2.482</td><td>2.504</td><td>6.694 ± 0.012</td></tr>
+<tr><td>La v8 + Ac v7</td><td>2.389</td><td>2.441</td><td>6.693 ± 0.012</td></tr>
+<tr><td>La v7 + Ac v8</td><td>2.482</td><td>2.504</td><td>6.694 ± 0.012</td></tr>
+<tr><td>La v8 + Ac v8</td><td>2.389</td><td>2.441</td><td>6.693 ± 0.012</td></tr>
+</tbody></table></div>
+
+<h2>Lead-shield lines in the fit (60 keV window, separate variant)</h2>
+<p>The house background was recorded inside a lead shield (operator&#x27;s statement). In this separate variant the fit window is lowered to 60 keV and Pb K lines are added as Gaussians with the Nano 5 reference FWHM(E); line positions are fixed on the file scale, amplitudes are free. &quot;Legacy lines&quot; are the 72.805/74.970 keV pair and a single 84.9 keV line, &quot;handbook&quot; uses energies and shares from the X-Ray Data Booklet (table below). The main result of the page is the 100–3000 keV window without Pb lines; the La-138 activity from the 60 keV window with Pb lines (6.7 ± 0.014 decays/s) differs only slightly from the main one, while without Pb lines in the 60 keV window (7.0 ± 0.040) it is overestimated; below 100 keV the model does not describe the data (χ²/bin [60,100) = 67.0).</p>
+<h3>Background 2025</h3>
+<div class='scroll'><table class='big'>
+<thead><tr><th>Quantity</th><th>main 100–3000 window, no Pb</th><th>60 window, no Pb lines</th><th>60 window, legacy Pb lines</th><th>60 window, handbook lines</th></tr></thead>
+<tbody>
+<tr><td>Fit window, keV</td><td>100–3000</td><td>60–3000</td><td>60–3000</td><td>60–3000</td></tr>
+<tr><td>χ²/ndf</td><td>2.39</td><td>26.6</td><td>3.52</td><td>3.45</td></tr>
+<tr><td>ndf</td><td>2888</td><td>2931</td><td>2928</td><td>2928</td></tr>
+<tr><td>g0, keV</td><td>-1.991 ± 0.23</td><td>-8.671 ± 0.67</td><td>-0.4246 ± 0.036</td><td>-0.4736 ± 0.036</td></tr>
+<tr><td>g1</td><td>0.99529 ± 0.00017</td><td>0.99991 ± 0.00050</td><td>0.99417 ± 0.000071</td><td>0.99421 ± 0.000070</td></tr>
+<tr><td>La-138 activity, decays/s</td><td>6.693 ± 0.012</td><td>6.980 ± 0.040</td><td>6.717 ± 0.014</td><td>6.715 ± 0.014</td></tr>
+<tr><td>Ac-227 activity, decays/s</td><td>0.003887 ± 0.000099</td><td>0.002326 ± 0.00029</td><td>0.003716 ± 0.00012</td><td>0.003729 ± 0.00012</td></tr>
+<tr><td>Pb Kα, area, counts</td><td>—</td><td>—</td><td>151 935 ± 1 194</td><td>152 115 ± 1 182</td></tr>
+<tr><td>Pb Kβ, area, counts</td><td>—</td><td>—</td><td>66 603 ± 1 023</td><td>68 965 ± 1 039</td></tr>
+<tr><td>Kβ/Kα, area ratio</td><td>—</td><td>—</td><td>0.44</td><td>0.45</td></tr>
+<tr><td>Fraction of the two exponentials, %</td><td>17.6</td><td>19.8</td><td>17.0</td><td>17.0</td></tr>
+<tr><td>Doublet double ratio</td><td>1.013 ± 0.028</td><td>1.013 ± 0.029</td><td>1.014 ± 0.027</td><td>1.014 ± 0.027</td></tr>
+<tr><td>z in the 60–100 keV window</td><td>—</td><td>216</td><td>30.1</td><td>28.0</td></tr>
+<tr><td>χ²/bin in the 60–100 keV window</td><td>—</td><td>1 540</td><td>70.8</td><td>67.0</td></tr>
+</tbody></table></div>
+<h3>Background 2026 (embedded in the &quot;Electrode and KCl&quot; file)</h3>
+<div class='scroll'><table class='big'>
+<thead><tr><th>Quantity</th><th>main 100–3000 window, no Pb</th><th>60 window, no Pb lines</th><th>60 window, legacy Pb lines</th><th>60 window, handbook lines</th></tr></thead>
+<tbody>
+<tr><td>Fit window, keV</td><td>100–3000</td><td>60–3000</td><td>60–3000</td><td>60–3000</td></tr>
+<tr><td>χ²/ndf</td><td>2.44</td><td>28.6</td><td>3.60</td><td>3.51</td></tr>
+<tr><td>ndf</td><td>2888</td><td>2931</td><td>2927</td><td>2927</td></tr>
+<tr><td>g0, keV</td><td>1.910 ± 0.22</td><td>-4.958 ± 0.66</td><td>2.780 ± 0.036</td><td>2.734 ± 0.036</td></tr>
+<tr><td>g1</td><td>0.99595 ± 0.00016</td><td>1.0007 ± 0.00049</td><td>0.99532 ± 0.000068</td><td>0.99535 ± 0.000067</td></tr>
+<tr><td>La-138 activity, decays/s</td><td>6.677 ± 0.011</td><td>6.972 ± 0.038</td><td>6.701 ± 0.014</td><td>6.698 ± 0.013</td></tr>
+<tr><td>Ac-227 activity, decays/s</td><td>0.004104 ± 0.000094</td><td>0.002287 ± 0.00026</td><td>0.003872 ± 0.00011</td><td>0.003884 ± 0.00011</td></tr>
+<tr><td>Pb Kα, area, counts</td><td>—</td><td>—</td><td>170 204 ± 1 296</td><td>170 436 ± 1 280</td></tr>
+<tr><td>Pb Kβ, area, counts</td><td>—</td><td>—</td><td>72 589 ± 1 111</td><td>75 217 ± 1 126</td></tr>
+<tr><td>Kβ/Kα, area ratio</td><td>—</td><td>—</td><td>0.43</td><td>0.44</td></tr>
+<tr><td>Fraction of the two exponentials, %</td><td>17.8</td><td>19.8</td><td>17.4</td><td>17.4</td></tr>
+<tr><td>Doublet double ratio</td><td>1.037 ± 0.030</td><td>1.037 ± 0.031</td><td>1.037 ± 0.029</td><td>1.037 ± 0.029</td></tr>
+<tr><td>z in the 60–100 keV window</td><td>—</td><td>221</td><td>32.3</td><td>30.2</td></tr>
+<tr><td>χ²/bin in the 60–100 keV window</td><td>—</td><td>1 655</td><td>74.9</td><td>70.1</td></tr>
+</tbody></table></div>
+
+<h3>Pb K lines from the X-Ray Data Booklet</h3>
+<p>Source: X-Ray Data Booklet, Lawrence Berkeley National Laboratory, table 1-3 (https://xdb.lbl.gov/Section1/Table_1-3.pdf); intensity 100 is assigned to the strongest line of the shell. Pb L lines (9.2–14.8 keV) and the Pb backscatter hump (about 180–250 keV) were not put into the model: the window was not lowered below 60 keV, and at 190–260 keV the data do not exceed the model.</p>
+<div class='scroll'><table class='big'>
+<thead><tr><th>Line</th><th>E, keV</th><th>Relative intensity</th></tr></thead>
+<tbody>
+<tr><td>Kα2</td><td>72.80</td><td>60</td></tr>
+<tr><td>Kα1</td><td>74.97</td><td>100</td></tr>
+<tr><td>Kβ3</td><td>84.45</td><td>12</td></tr>
+<tr><td>Kβ1</td><td>84.94</td><td>23</td></tr>
+<tr><td>Kβ2</td><td>87.32</td><td>8</td></tr>
+</tbody></table></div>
+<h2>Assumptions and what was not verified</h2>
+<ul class='notes'><li>No nonproportionality: electron and gamma light is taken proportional to the deposited energy, the Ce activator was not modelled. This is the main cause of residuals below 100 keV and near the edges.</li><li>The La-138 β⁻ shape in Geant4 (per the source code: a &quot;classical&quot; sampler on a 101-node grid, piecewise-constant density) is assumed to coincide with the classical shape, and the empirical correction C_exp(W) (Quarati, Sandler) is applied as a weight. It was not verified independently: the downloaded Mougeot papers (2014, 2015) give no closed expressions for F0, L0, λ2(W), λ3(W); a Dirac-equation solver and the Behrens–Bühring book were not used. The sampler-grid correction worsened χ²/ndf by 0.061.</li><li>The cause of the χ²/ndf shift of the v8 template relative to v7 (a decrease by 0.093 in 2025 and by 0.063 in 2026, χ²/ndf 2.39 and 2.44) is not established: the shift comes entirely from the La-138 template (0.093), the Ac-227 template gives 0.000123. It may be the two FR4 bodies or the statistics of the new template (other seeds); the two can be separated only by a v7 rerun with other seeds, which was not done.</li><li>The Pb Kβ/Kα area ratio in the fit is 0.45 (2025) and 0.44 (2026) against 0.27 expected from the handbook&#x27;s relative intensities: the discrepancy is not explained.</li><li>Lead is a fact of the measurement; it was not put into the instrument model, the Pb lines are Gaussians with the reference FWHM. Below 100 keV (37 keV peak, instrument threshold) the model does not describe the data, so the main fit starts at 100 keV.</li><li>THE La-138 ACTIVITY DEFICIT IS NOT EXPLAINED: the fit gives 6.693 ± 0.012 and 6.677 ± 0.011 decays/s against the expected 7.62 Bq (range 7.27–7.83), ratio 0.878 and 0.876, deficit 12 % and 12 %. The expectation was recalculated independently (audit\sterile-act-2026-10-12.md) and confirmed. The size and density of the real instrument&#x27;s crystal were not checked (taken from the model); the density 5.08 g/cm³ was found on a supplier page, not in a manufacturer&#x27;s document.</li><li>The independent fit (6.303 ± 0.0069 decays/s) differs from the main one by 3.1–6.2 %; its χ²/ndf 48.9 is explained by the data binning (0.37 keV channels were put into 1 keV bins without redistribution, 2 and 3 channels in neighbouring bins), not by the component set.</li><li>The K-40 column in the model is zero; the only K-40 estimate is the area A3 in the doublet fit (534.3 ± 7 497 in 2025, at the bound in 2026), indistinguishable from zero. The 2026 double ratio has formal errors: A3 sits at the bound.</li><li>The source is decays inside the crystal only; the surroundings (housing, reflector, board) come from the GDML model v8; external gamma lines other than Pb were not put into the fit; the external continuum is described by smooth shapes.</li><li>Geant4 version 11.2.1 (the project&#x27;s GDML build); it has a known instability of option4 with PIXE, run chunks were restarted; there were no restarts in the v8 run. The origin of the 14 events with an extra cluster is not established; the rate on v8 equals the rate on v7 within counting statistics (13 and 14 per 2·10⁷).</li><li>Alpha quenching is an external coefficient q (a common factor on the energy axis of the alpha template) chosen by the fit; its energy dependence is not modelled. Absolute detection efficiency was not used.</li><li>FWHM(E) is a model from the Nano 5 reference points (fwhm_points_nano5.json); the peak shape and resolution are not recomputed for each spectrum (#DET-1).</li><li>Reproducibility of chunks by seed and the bias of restarts were not checked; the geometry of v8 was compared with v7 only by the list of bodies and the summary.</li></ul>
+<h2>Comparison with the analytic decomposition</h2>
+<p>The earlier decomposition by Gaussians on a background (2025 house background, no templates) is shown for comparison only and is not the result. Centroids and areas come from intrinsic_shape package functions.</p>
+<table class='big'><thead><tr><th>Structure</th><th>E, keV (analytic)</th><th>Area (analytic)</th></tr></thead><tbody><tr><td>37 keV peak</td><td>37.19 ± 0.003488</td><td>3 332 619 ± 4 702</td></tr><tr><td>74 keV peak</td><td>73.65 ± 0.07795</td><td>89 596 ± 1 792</td></tr><tr><td>84 keV peak</td><td>84.85 ± 0.1817</td><td>18 821 ± 2 629</td></tr><tr><td>sum peak</td><td>1 466 ± 0.2848</td><td>50 707 ± 699.8</td></tr><tr><td>Tl-208 alpha1</td><td>2 709 ± 2.436</td><td>10 478 ± 642.5</td></tr><tr><td>Tl-208 alpha2</td><td>3 138 ± 2.411</td><td>13 730 ± 1 084</td></tr><tr><td>Tl-208 alpha3</td><td>3 508 ± 1.677</td><td>5 432 ± 293.9</td></tr><tr><td>La beta edge</td><td>783.8 ± 0.3671</td><td>— ± —</td></tr><tr><td>Compton edge 1435</td><td>1 236 ± 1.690</td><td>— ± —</td></tr></tbody></table>
+<h2>Sources</h2>
+<ul class='notes'><li>Spectra (AtomNano 5 PRO LaBr3 instrument files): «Фон домик 8192.xml» (house background, low load), «Электрод и KCl.xml» (electrode and KCl).</li><li>La-138 decay scheme: ENSDF, Adopted Levels 138La, Jun Chen, Nuclear Data Sheets 146, 1 (2017), https://www.nndc.bnl.gov/ensnds/138/La/adopted.pdf: T½ = 1.03·10¹¹ y, β⁻ 34.5 (4) %, ε+β⁺ 65.5 (4) %. La-138 abundance 0.0008881 (71), standard atomic weights of La and Br, T½ = 1.06 (4)·10¹¹ y: CIAAW (IUPAC), https://ciaaw.org/lanthanum.htm, https://ciaaw.org/bromine.htm.</li><li>β⁻ spectrum shape: Quarati, Dorenbos, Mougeot, Appl. Radiat. Isot. 108, 30 (2016); Sandler et al., Phys. Rev. C 100, 014308 (2019), arXiv:1904.12076; Mougeot, Phys. Rev. C 91, 055504 (2015); Mougeot, Bisch, Phys. Rev. A 90, 012501 (2014).</li><li>Lead K lines: X-Ray Data Booklet, LBNL, table 1-3, https://xdb.lbl.gov/Section1/Table_1-3.pdf.</li><li>Geant4 data: RadioactiveDecay 6.1.2 (z57.a138, z89.a227).</li><li>Run configuration: CFG1-2026-10-12-v8-recount.md; code and run reports are kept in the project working files.</li></ul>
+<h2>Potassium zone 1350–1600 keV</h2><img src='../img/zone_k40.png' alt='Potassium zone 1350–1600 keV' style='width:100%;height:auto'><table class='big'><thead><tr><th></th><th>Peak 1, keV</th><th>Peak 2, keV</th><th>FWHM 1, keV</th><th>FWHM 2, keV</th><th>Area 1</th><th>Area 2</th><th>χ²/ndf</th><th>37 keV peak residual, keV</th></tr></thead><tbody><tr><td>House background 2025</td><td>1 432</td><td>1 465</td><td>28.60</td><td>28.12</td><td>22 160</td><td>40 634</td><td>1.303</td><td>-0.1955</td></tr><tr><td>Embedded background 2026</td><td>1 437</td><td>1 470</td><td>29.68</td><td>28.21</td><td>26 747</td><td>48 178</td><td>0.9881</td><td>2.634</td></tr><tr><td>Electrode and KCl</td><td>1 435</td><td>1 464</td><td>25.98</td><td>35.47</td><td>3 973</td><td>24 050</td><td>0.9769</td><td>2.679</td></tr></tbody></table><p>Neither of the two background peaks coincides with the K-40 position: K-40 lies between them (on the sample − background difference, the K-40 centroid is 10.65 keV below the second peak); both peaks are part of the La-138 structure (peak separation in data 33.48 keV vs 33.05 keV in the Geant4 template). The conclusion relies on the scale shift; the uncertainty of the lower scale shift is up to 2–3 keV.</p><p>K-40 on the &quot;sample − background&quot; difference (the &quot;Electrode and KCl&quot; spectrum minus the house background): the centroid 1 459 ± 0.27 keV on the file scale lies between the two peaks of the house-background doublet (1 432 and 1 465 keV): neither background peak is K-40, both are La-138 structure. In the doublet fit the K-40 area (parameter A3) is 534.3 ± 7 497 counts, indistinguishable from zero.</p>
+</div>
+</div>
+<footer class="bot">
+<p>Geant4 calculation, instrument model v8; template fit of the spectra, La-138 and Ac-227 chain activities as given in the tables of this page · 12 Oct 2026 · <a href="../../">all project pages</a></p>
+</footer>
+</div>
+<script src="../spectrum_house.js"></script>
+<script src="data.js"></script>
+<script src="../chart.js"></script>
+</body>
+</html>

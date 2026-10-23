@@ -1,7 +1,16 @@
 #!/usr/bin/env python3
-"""Binary STL -> GDML tessellated. See ../docs/GEANT4-MODEL.md."""
+"""Binary STL -> GDML tessellated. See ../docs/GEANT4-MODEL.md.
+
+Standard GDML: vertices are <position name="v<N>" .../> in <define>
+(deduplicated by coordinates), facets are
+<triangular vertex1= vertex2= vertex3= type="ABSOLUTE"/>.
+(Until 2026-10-24 the generator wrote nested <point> elements, which
+G4GDMLParser reads as (0,0,0); previous version:
+stl_to_gdml.pre_std_2026-10-24.py.)
+"""
 from __future__ import annotations
 
+import argparse
 import re
 import struct
 import sys
@@ -35,7 +44,39 @@ def read_stl_triangles(path: Path) -> list[tuple[tuple[float, float, float], ...
     return tris
 
 
+def index_vertices(tris: list) -> tuple[list[tuple[str, str, str]], list[tuple[int, int, int]]]:
+    seen: dict[tuple[str, str, str], int] = {}
+    verts: list[tuple[str, str, str]] = []
+    faces: list[tuple[int, int, int]] = []
+    for tri in tris:
+        face_indices = []
+        for v in tri:
+            key = (f"{v[0]:.6f}", f"{v[1]:.6f}", f"{v[2]:.6f}")
+            if key not in seen:
+                seen[key] = len(verts)
+                verts.append(key)
+            face_indices.append(seen[key])
+        faces.append((face_indices[0], face_indices[1], face_indices[2]))
+    return verts, faces
+
+
+def vertex_positions_block(verts: list[tuple[str, str, str]], indent: str = "    ") -> str:
+    lines = []
+    for i, (x, y, z) in enumerate(verts):
+        lines.append(f'{indent}<position name="v{i}" x="{x}" y="{y}" z="{z}" unit="mm"/>\n')
+    return "".join(lines)
+
+
+def write_tessellated_block(faces: list[tuple[int, int, int]]) -> str:
+    lines = ['    <tessellated aunit="deg" lunit="mm" name="Case_STL_mesh">']
+    for a, b, c in faces:
+        lines.append(f'      <triangular vertex1="v{a}" vertex2="v{b}" vertex3="v{c}" type="ABSOLUTE"/>')
+    lines.append("    </tessellated>")
+    return "\n".join(lines) + "\n"
+
+
 def write_mesh_gdml(tris: list, out_path: Path) -> None:
+    verts, faces = index_vertices(tris)
     n = len(tris)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8", newline="\n") as f:
@@ -47,7 +88,10 @@ def write_mesh_gdml(tris: list, out_path: Path) -> None:
             "http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd"
             '">\n\n'
         )
-        f.write("  <define><position name=\"p_origin\" x=\"0\" y=\"0\" z=\"0\" unit=\"mm\"/></define>\n\n")
+        f.write("  <define>\n")
+        f.write('    <position name="p_origin" x="0" y="0" z="0" unit="mm"/>\n')
+        f.write(vertex_positions_block(verts))
+        f.write("  </define>\n\n")
         f.write("  <materials>\n")
         f.write('    <material Z="6" name="Case_ABS" state="solid">\n')
         f.write('      <D unit="g/cm3" value="1.05"/>\n')
@@ -64,11 +108,8 @@ def write_mesh_gdml(tris: list, out_path: Path) -> None:
         f.write("  <solids>\n")
         f.write('    <box lunit="mm" name="WorldBox" x="400" y="400" z="400"/>\n')
         f.write('    <tessellated aunit="deg" lunit="mm" name="Case_STL_mesh">\n')
-        for v1, v2, v3 in tris:
-            f.write('      <triangular type="ABSOLUTE">\n')
-            for vx, vy, vz in (v1, v2, v3):
-                f.write(f'        <point x="{vx:.6f}" y="{vy:.6f}" z="{vz:.6f}" unit="mm"/>\n')
-            f.write("      </triangular>\n")
+        for a, b, c in faces:
+            f.write(f'      <triangular vertex1="v{a}" vertex2="v{b}" vertex3="v{c}" type="ABSOLUTE"/>\n')
         f.write("    </tessellated>\n  </solids>\n\n")
         f.write("  <structure>\n")
         f.write('    <volume name="Case_STL_log"><materialref ref="Case_ABS"/><solidref ref="Case_STL_mesh"/></volume>\n')
@@ -109,18 +150,8 @@ def filter_structure_shell(structure: str) -> str:
     )
 
 
-def write_tessellated_block(tris: list) -> str:
-    lines = ['    <tessellated aunit="deg" lunit="mm" name="Case_STL_mesh">']
-    for v1, v2, v3 in tris:
-        lines.append('      <triangular type="ABSOLUTE">')
-        for vx, vy, vz in (v1, v2, v3):
-            lines.append(f'        <point x="{vx:.6f}" y="{vy:.6f}" z="{vz:.6f}" unit="mm"/>')
-        lines.append("      </triangular>")
-    lines.append("    </tessellated>")
-    return "\n".join(lines) + "\n"
-
-
 def write_full_gdml(tris: list, out_path: Path) -> None:
+    verts, faces = index_vertices(tris)
     n = len(tris)
     det = DETECTOR_GDML.read_text(encoding="utf-8")
     define = extract_gdml_section(det, "define")
@@ -145,17 +176,35 @@ def write_full_gdml(tris: list, out_path: Path) -> None:
             "http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd"
             '">\n\n'
         )
-        f.write(f"  <define>{define}  </define>\n\n")
+        f.write(f"  <define>{define}")
+        f.write(vertex_positions_block(verts))
+        f.write("  </define>\n\n")
         f.write(f"  <materials>{materials}  </materials>\n\n")
         f.write("  <solids>\n")
         f.write(solids)
-        f.write(write_tessellated_block(tris))
+        f.write(write_tessellated_block(faces))
         f.write("  </solids>\n\n")
         f.write(f"  <structure>{structure}  </structure>\n\n")
         f.write('  <setup name="Default" version="1.0"><world ref="World"/></setup>\n</gdml>\n')
 
 
 def main() -> int:
+    global STL_PATH, DETECTOR_GDML, OUT_MESH, OUT_FULL
+
+    parser = argparse.ArgumentParser(description="Convert STL to GDML")
+    parser.add_argument("--stl", type=Path, default=None)
+    parser.add_argument("--detector", type=Path, default=None)
+    parser.add_argument("--out-dir", type=Path, default=None)
+    args = parser.parse_args()
+
+    if args.stl:
+        STL_PATH = args.stl
+    if args.detector:
+        DETECTOR_GDML = args.detector
+    if args.out_dir:
+        OUT_MESH = args.out_dir / "RC110_case_mesh.gdml"
+        OUT_FULL = args.out_dir / "RC110_full.gdml"
+
     tris = read_stl_triangles(STL_PATH)
     print(f"Triangles: {len(tris)}", file=sys.stderr)
     write_mesh_gdml(tris, OUT_MESH)

@@ -40,8 +40,10 @@ common/
   cmake/   shared build template
   py/      parsing library: becqmoni.py, contam.py, paths.py
   docs/    methodology, pitfalls, verification protocol — shared across all models
+method/      law of the spectrum-unfolding method (LAW), response physics layers (PHYSICS), stages (STAGES) — shared across all detectors (Russian only)
 detectors/<instrument>/
   geometry/ macros/ drivers/ analysis/ results/ reference/ drawings/
+  method/   instrument annex to the method law (spectrum roles, anchors, criteria status; Russian only)
 geometries/  shared sample geometries: Marinelli, "Denta", Petri dish, point source
 materials/   shared sample matrices: OISN-16, RISN-379, water
 ```

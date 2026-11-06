@@ -14,22 +14,22 @@
 namespace {
 struct Geo1Tube { const char* name; const char* mat; double rin, rout, z0, z1; const char* group; bool lid; };
 const Geo1Tube kGeo1Tubes[] = {
-  {"St_platform", "G4_STAINLESS-STEEL", 0.0, 147.5, -431.9, -423.9, "steel", false},
-  {"St_cup", "G4_STAINLESS-STEEL", 140.5, 147.5, -423.9, -55.9, "steel", false},
-  {"St_chamber", "G4_STAINLESS-STEEL", 143.5, 147.5, -55.9, 101.1, "steel", false},
-  {"St_spool1_tube", "G4_STAINLESS-STEEL", 45.3, 50.3, -175.9, -36.9, "steel", false},
-  {"St_spool1_flange_bot", "G4_STAINLESS-STEEL", 50.3, 90.3, -175.9, -170.9, "steel", false},
-  {"St_spool1_flange_top", "G4_STAINLESS-STEEL", 50.3, 93.5, -41.9, -36.9, "steel", false},
-  {"St_spool2_tube", "G4_STAINLESS-STEEL", 45.3, 50.3, -423.9, -175.9, "steel", false},
-  {"St_spool2_flange_bot", "G4_STAINLESS-STEEL", 50.3, 85.3, -423.9, -418.9, "steel", false},
-  {"St_spool2_flange_top", "G4_STAINLESS-STEEL", 50.3, 85.3, -180.9, -175.9, "steel", false},
+  {"St_platform", "Steel_St3", 0.0, 147.5, -431.9, -423.9, "steel", false},
+  {"St_cup", "Steel_St3", 140.5, 147.5, -423.9, -55.9, "steel", false},
+  {"St_chamber", "Steel_St3", 143.5, 147.5, -55.9, 101.1, "steel", false},
+  {"St_spool1_tube", "Steel_St3", 45.3, 50.3, -175.9, -36.9, "steel", false},
+  {"St_spool1_flange_bot", "Steel_St3", 50.3, 90.3, -175.9, -170.9, "steel", false},
+  {"St_spool1_flange_top", "Steel_St3", 50.3, 93.5, -41.9, -36.9, "steel", false},
+  {"St_spool2_tube", "Steel_St3", 45.3, 50.3, -423.9, -175.9, "steel", false},
+  {"St_spool2_flange_bot", "Steel_St3", 50.3, 85.3, -423.9, -418.9, "steel", false},
+  {"St_spool2_flange_top", "Steel_St3", 50.3, 85.3, -180.9, -175.9, "steel", false},
   {"Pb_middle", "G4_Pb", 50.3, 90.3, -170.9, -41.9, "pb_middle", false},
   {"Pb_lower", "G4_Pb", 50.3, 85.3, -418.9, -180.9, "pb_lower", false},
   {"Pb_plug", "G4_Pb", 0.0, 45.3, -423.9, -372.0, "pb_plug", false},
-  {"St_lid_bot", "G4_STAINLESS-STEEL", 0.0, 147.5, 101.1, 106.1, "steel", true},
+  {"St_lid_bot", "Steel_St3", 0.0, 147.5, 101.1, 106.1, "steel", true},
   {"Pb_lid", "G4_Pb", 0.0, 143.5, 106.1, 151.1, "pb_lid", true},
-  {"St_lid_side", "G4_STAINLESS-STEEL", 143.5, 147.5, 106.1, 151.1, "steel", true},
-  {"St_lid_top", "G4_STAINLESS-STEEL", 0.0, 147.5, 151.1, 156.1, "steel", true}
+  {"St_lid_side", "Steel_St3", 143.5, 147.5, 106.1, 151.1, "steel", true},
+  {"St_lid_top", "Steel_St3", 0.0, 147.5, 151.1, 156.1, "steel", true}
 };
 const double kGeo1PbR = 93.5;
 const double kGeo1FloorPb = -36.9;

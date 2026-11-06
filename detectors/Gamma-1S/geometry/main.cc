@@ -1095,7 +1095,7 @@ public:
       if (m) {
         const G4String& mn = m->GetName();
         if (mn == "G4_Pb" || mn == "G4_Cd" || mn == "G4_Cu" ||
-            mn == "G4_STAINLESS-STEEL")
+            mn == "G4_STAINLESS-STEEL" || mn == "Steel_St3")
           fEvt->fShieldSeen.insert(s->GetTrack()->GetTrackID());
       }
       return;

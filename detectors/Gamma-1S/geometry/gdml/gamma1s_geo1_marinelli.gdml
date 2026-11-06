@@ -28,6 +28,36 @@
       <D unit="g/cm3" value="11.35"/>
       <fraction n="1" ref="Pb"/>
     </material>
+    <isotope N="12" Z="6" name="C12">
+      <atom unit="g/mole" value="12"/>
+    </isotope>
+    <isotope N="13" Z="6" name="C13">
+      <atom unit="g/mole" value="13.0034"/>
+    </isotope>
+    <element name="C">
+      <fraction n="0.9893" ref="C12"/>
+      <fraction n="0.0107" ref="C13"/>
+    </element>
+    <isotope N="55" Z="25" name="Mn55">
+      <atom unit="g/mole" value="54.938"/>
+    </isotope>
+    <element name="Mn">
+      <fraction n="1" ref="Mn55"/>
+    </element>
+    <isotope N="28" Z="14" name="Si28">
+      <atom unit="g/mole" value="27.9769"/>
+    </isotope>
+    <isotope N="29" Z="14" name="Si29">
+      <atom unit="g/mole" value="28.9765"/>
+    </isotope>
+    <isotope N="30" Z="14" name="Si30">
+      <atom unit="g/mole" value="29.9738"/>
+    </isotope>
+    <element name="Si">
+      <fraction n="0.922296077703922" ref="Si28"/>
+      <fraction n="0.0468319531680468" ref="Si29"/>
+      <fraction n="0.0308719691280309" ref="Si30"/>
+    </element>
     <isotope N="54" Z="26" name="Fe54">
       <atom unit="g/mole" value="53.9396"/>
     </isotope>
@@ -46,53 +76,14 @@
       <fraction n="0.02119" ref="Fe57"/>
       <fraction n="0.00282" ref="Fe58"/>
     </element>
-    <isotope N="50" Z="24" name="Cr50">
-      <atom unit="g/mole" value="49.946"/>
-    </isotope>
-    <isotope N="52" Z="24" name="Cr52">
-      <atom unit="g/mole" value="51.9405"/>
-    </isotope>
-    <isotope N="53" Z="24" name="Cr53">
-      <atom unit="g/mole" value="52.9407"/>
-    </isotope>
-    <isotope N="54" Z="24" name="Cr54">
-      <atom unit="g/mole" value="53.9389"/>
-    </isotope>
-    <element name="Cr">
-      <fraction n="0.04345" ref="Cr50"/>
-      <fraction n="0.83789" ref="Cr52"/>
-      <fraction n="0.09501" ref="Cr53"/>
-      <fraction n="0.02365" ref="Cr54"/>
-    </element>
-    <isotope N="58" Z="28" name="Ni58">
-      <atom unit="g/mole" value="57.9353"/>
-    </isotope>
-    <isotope N="60" Z="28" name="Ni60">
-      <atom unit="g/mole" value="59.9308"/>
-    </isotope>
-    <isotope N="61" Z="28" name="Ni61">
-      <atom unit="g/mole" value="60.9311"/>
-    </isotope>
-    <isotope N="62" Z="28" name="Ni62">
-      <atom unit="g/mole" value="61.9283"/>
-    </isotope>
-    <isotope N="64" Z="28" name="Ni64">
-      <atom unit="g/mole" value="63.928"/>
-    </isotope>
-    <element name="Ni">
-      <fraction n="0.680769" ref="Ni58"/>
-      <fraction n="0.262231" ref="Ni60"/>
-      <fraction n="0.011399" ref="Ni61"/>
-      <fraction n="0.036345" ref="Ni62"/>
-      <fraction n="0.009256" ref="Ni64"/>
-    </element>
-    <material name="G4_STAINLESS-STEEL" state="solid">
+    <material name="Steel_St3" state="solid">
       <T unit="K" value="293.15"/>
-      <MEE unit="eV" value="282.97693634122"/>
-      <D unit="g/cm3" value="8"/>
-      <fraction n="0.746212874621521" ref="Fe"/>
-      <fraction n="0.169001044311525" ref="Cr"/>
-      <fraction n="0.0847860810669534" ref="Ni"/>
+      <MEE unit="eV" value="284.893879474641"/>
+      <D unit="g/cm3" value="7.85"/>
+      <fraction n="0.0018" ref="C"/>
+      <fraction n="0.0052" ref="Mn"/>
+      <fraction n="0.0022" ref="Si"/>
+      <fraction n="0.9908" ref="Fe"/>
     </material>
     <isotope N="106" Z="48" name="Cd106">
       <atom unit="g/mole" value="105.906"/>
@@ -220,16 +211,6 @@
       <fraction n="0.999885" ref="H1"/>
       <fraction n="0.000115" ref="H2"/>
     </element>
-    <isotope N="12" Z="6" name="C12">
-      <atom unit="g/mole" value="12"/>
-    </isotope>
-    <isotope N="13" Z="6" name="C13">
-      <atom unit="g/mole" value="13.0034"/>
-    </isotope>
-    <element name="C">
-      <fraction n="0.9893" ref="C12"/>
-      <fraction n="0.0107" ref="C13"/>
-    </element>
     <material name="G4_RUBBER_NATURAL" state="solid">
       <T unit="K" value="293.15"/>
       <MEE unit="eV" value="59.8"/>
@@ -285,20 +266,6 @@
     </isotope>
     <element name="Al">
       <fraction n="1" ref="Al27"/>
-    </element>
-    <isotope N="28" Z="14" name="Si28">
-      <atom unit="g/mole" value="27.9769"/>
-    </isotope>
-    <isotope N="29" Z="14" name="Si29">
-      <atom unit="g/mole" value="28.9765"/>
-    </isotope>
-    <isotope N="30" Z="14" name="Si30">
-      <atom unit="g/mole" value="29.9738"/>
-    </isotope>
-    <element name="Si">
-      <fraction n="0.922296077703922" ref="Si28"/>
-      <fraction n="0.0468319531680468" ref="Si29"/>
-      <fraction n="0.0308719691280309" ref="Si30"/>
     </element>
     <isotope N="39" Z="19" name="K39">
       <atom unit="g/mole" value="38.9637"/>
@@ -424,39 +391,39 @@
       <solidref ref="Pb_chamber_wall"/>
     </volume>
     <volume name="St_platform">
-      <materialref ref="G4_STAINLESS-STEEL"/>
+      <materialref ref="Steel_St3"/>
       <solidref ref="St_platform"/>
     </volume>
     <volume name="St_cup">
-      <materialref ref="G4_STAINLESS-STEEL"/>
+      <materialref ref="Steel_St3"/>
       <solidref ref="St_cup"/>
     </volume>
     <volume name="St_chamber">
-      <materialref ref="G4_STAINLESS-STEEL"/>
+      <materialref ref="Steel_St3"/>
       <solidref ref="St_chamber"/>
     </volume>
     <volume name="St_spool1_tube">
-      <materialref ref="G4_STAINLESS-STEEL"/>
+      <materialref ref="Steel_St3"/>
       <solidref ref="St_spool1_tube"/>
     </volume>
     <volume name="St_spool1_flange_bot">
-      <materialref ref="G4_STAINLESS-STEEL"/>
+      <materialref ref="Steel_St3"/>
       <solidref ref="St_spool1_flange_bot"/>
     </volume>
     <volume name="St_spool1_flange_top">
-      <materialref ref="G4_STAINLESS-STEEL"/>
+      <materialref ref="Steel_St3"/>
       <solidref ref="St_spool1_flange_top"/>
     </volume>
     <volume name="St_spool2_tube">
-      <materialref ref="G4_STAINLESS-STEEL"/>
+      <materialref ref="Steel_St3"/>
       <solidref ref="St_spool2_tube"/>
     </volume>
     <volume name="St_spool2_flange_bot">
-      <materialref ref="G4_STAINLESS-STEEL"/>
+      <materialref ref="Steel_St3"/>
       <solidref ref="St_spool2_flange_bot"/>
     </volume>
     <volume name="St_spool2_flange_top">
-      <materialref ref="G4_STAINLESS-STEEL"/>
+      <materialref ref="Steel_St3"/>
       <solidref ref="St_spool2_flange_top"/>
     </volume>
     <volume name="Pb_middle">
@@ -472,7 +439,7 @@
       <solidref ref="Pb_plug"/>
     </volume>
     <volume name="St_lid_bot">
-      <materialref ref="G4_STAINLESS-STEEL"/>
+      <materialref ref="Steel_St3"/>
       <solidref ref="St_lid_bot"/>
     </volume>
     <volume name="Pb_lid">
@@ -480,11 +447,11 @@
       <solidref ref="Pb_lid"/>
     </volume>
     <volume name="St_lid_side">
-      <materialref ref="G4_STAINLESS-STEEL"/>
+      <materialref ref="Steel_St3"/>
       <solidref ref="St_lid_side"/>
     </volume>
     <volume name="St_lid_top">
-      <materialref ref="G4_STAINLESS-STEEL"/>
+      <materialref ref="Steel_St3"/>
       <solidref ref="St_lid_top"/>
     </volume>
     <volume name="Cd_side">

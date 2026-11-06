@@ -103,6 +103,15 @@ void G1SDetector::DefineMaterials() {
   nist->FindOrBuildMaterial("G4_Cd");
   nist->FindOrBuildMaterial("G4_Cu");
   nist->FindOrBuildMaterial("G4_STAINLESS-STEEL");
+  // #GS-96 (оператор 06.11.2026: «там черная сталь»): углеродистая сталь защиты geo1. Марка не указана —
+  // допущение Ст3сп (ГОСТ 380), середины диапазонов: C 0,18 %, Mn 0,52 %, Si 0,22 %, остальное Fe; ρ 7,85.
+  if (!G4Material::GetMaterial("Steel_St3", false)) {
+    auto* st3 = new G4Material("Steel_St3", 7.85 * g / cm3, 4);
+    st3->AddElement(nist->FindOrBuildElement("C"), 0.0018);
+    st3->AddElement(nist->FindOrBuildElement("Mn"), 0.0052);
+    st3->AddElement(nist->FindOrBuildElement("Si"), 0.0022);
+    st3->AddElement(nist->FindOrBuildElement("Fe"), 0.9908);
+  }
   nist->FindOrBuildMaterial("G4_Pyrex_Glass");
   nist->FindOrBuildMaterial("G4_RUBBER_NATURAL");
   nist->FindOrBuildMaterial("G4_Galactic");

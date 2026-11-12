@@ -34,5 +34,17 @@ PETG = C₁₀H₈O₄ (звено ПЭТ), ρ = 1,27 г/см³. Это допу
 - `G4GDMLParser` (Geant4 11.2.1) читает файл. У обоих тел материал PETG и тип `G4TessellatedSolid`. Объёмы, которые считает Geant4, совпадают с объёмами по STL (trimesh) в пределах 0,05 мм³.
 - `G4PVPlacement::CheckOverlaps` для банки и крышки всех трёх размеров выдаёт OK.
 
+## Исходные STL
+Лежат в `stl/`: банка (Can) и крышка (Cap) каждого размера в положении для печати, мм. Это файлы автора без изменений. Хеши sha256 (первые 16 знаков):
+
+| файл | sha256 |
+|---|---|
+| RC110 - M120 - Can.stl | 47430bbd8cd15905 |
+| RC110 - M120 - Cap.stl | fe3385787e8964bf |
+| RC110 - M200 - Can.stl | 6e9dfd3898233042 |
+| RC110 - M200 - Cap.stl | f2199a1f34abe9f1 |
+| RC110 - M380 - Can.stl | 8e7a50cc6a278c45 |
+| RC110 - M380 - Cap.stl | a7c4ccc199516793 |
+
 ## Как получено
 Генератор — `geant4/scripts/marinelli_gdml.py <can.stl> <cap.stl> <размер> <out_dir>`, сечение для проверки — `geant4/scripts/gdml_section.py` (`section_all.png`). Рядом с каждым GDML лежит JSON с параметрами сборки и перебором угла.

@@ -70,6 +70,7 @@ def main():
     ap.add_argument("--out-dir", required=True, help="Directory with template CSVs")
     ap.add_argument("--fit-dir", required=True, help="Directory with fit_<prefix>.json")
     ap.add_argument("--dest", required=True, help="Path to output data.js")
+    ap.add_argument("--curves", required=True, help="curves_th232.json from dump_curves.py (measured spectrum, background, fitted models)")
     ap.add_argument("--text", required=True, help="page_text.json (page prose, embedded as window.G1SD_TEXT)")
     args = ap.parse_args()
 
@@ -189,7 +190,11 @@ def main():
         "fits": fits,
         "peaks": peaks,
         "spectra": spectra,
+        "meas": None,
     }
+    cv = json.loads(pathlib.Path(args.curves).read_text(encoding="utf-8"))
+    data["meas"] = {"e": cv["e"], "counts": cv["counts"], "bg": cv["bg"], "model": cv["model"],
+                    "lo_keV": fit_meta["lo_keV"], "hi_keV": fit_meta["hi_keV"], "live_s": cv["live_s"]}
     data = clean(data)
 
     dest.parent.mkdir(parents=True, exist_ok=True)

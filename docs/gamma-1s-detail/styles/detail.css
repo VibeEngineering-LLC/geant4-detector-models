@@ -18,3 +18,7 @@ p,li,figcaption,dd{text-align:left !important; hyphens:manual}
 .chartbox{position:relative; margin:.4rem 0}
 .chartbox canvas{width:100%; cursor:crosshair}
 .toolbar .btn{text-decoration:none}
+.figpair{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1rem; max-width:720px; margin:.8rem 0}
+.figpair .fig{margin:0}
+.figpair .fig img{width:100%; height:auto}
+.figpair .fig figcaption{text-align:center; font-weight:700}

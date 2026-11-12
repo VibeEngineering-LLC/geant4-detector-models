@@ -220,7 +220,7 @@ function init() {
       var lab = T.labels[pfx] || pfx;
       var lbl = document.createElement("label"); lbl.className = "chip";
       var inp = document.createElement("input"); inp.type = "checkbox"; inp.setAttribute("data-p", pfx);
-      inp.checked = true;
+      inp.checked = (pfx === "dtF" || pfx === "dtP");
       var sw = document.createElement("span"); sw.className = "sw"; sw.style.background = COL[pfx] || "#888";
       var txt = document.createElement("span"); txt.textContent = lab;
       lbl.appendChild(inp); lbl.appendChild(sw); lbl.appendChild(txt);
@@ -241,7 +241,7 @@ function init() {
     el.appendChild(cursorLine);
 
     // State
-    var S = {zoom: null, drag: null, dragging: false, cursorE: null, on: {dtF: true, dtP: true, dtH: true, dtE1: true, dtE2: true, dtE3: true, dtE4: true, k24g1t: true}};
+    var S = {zoom: null, drag: null, dragging: false, cursorE: null, on: {dtF: true, dtP: true, dtH: false, dtE1: false, dtE2: false, dtE3: false, dtE4: false}};
 
     // Data reference
     var meas = D.meas;

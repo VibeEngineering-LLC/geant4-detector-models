@@ -11,7 +11,7 @@ for p in sys.argv[2:]:
     os.environ["TPL_PREFIX"] = p; cap.clear(); res = fk.fit_one(row, fk.BLUR_2024, verbose=False); r = cap["r"]
     m = (r["cols"] * r["coef"][:, None]).sum(axis=0) + r["bg_scaled"]
     out["model"][p] = [round(float(x), 2) for x in m]; out["A"][p] = {g: v["A_over_passport"] for g, v in res["groups"].items()}
-out["e"] = [round(float(x), 2) for x in r["e"]]; out["counts"] = [float(x) for x in r["counts"]]
+out["e"] = [round(float(r["spec"].channel_to_energy(i + fk.CH_OFFSET)), 2) for i in range(len(r["counts"]))]; out["counts"] = [float(x) for x in r["counts"]]
 out["bg"] = [round(float(x), 2) for x in r["bg_scaled"]]; out["live_s"] = res["live_s"]
 idx = [i for i, s in enumerate(r["sel"]) if s]; out["sel"] = [idx[0], idx[-1]]
 json.dump(out, open(sys.argv[1], "w", encoding="utf-8"), ensure_ascii=False)

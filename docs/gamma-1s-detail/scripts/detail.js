@@ -441,7 +441,7 @@ function init() {
         var rmd = models[ratioPrefixes[rpi]];
         if (!rmd) continue;
         for (var rci = iLo; rci <= iHi; rci++) {
-          if (eArr[rci] < fitLo || eArr[rci] > fitHi) continue;
+          if (eArr[rci] < 30) continue;
           var sumM = 0, sumC = 0;
           for (var k = -2; k <= 2; k++) {
             var idx = rci + k;
@@ -492,7 +492,7 @@ function init() {
       ctx2.save(); ctx2.globalAlpha = 0.25; ctx2.fillStyle = bgGrey;
       var bandPath = [];
       for (var bci = iLo; bci <= iHi; bci++) {
-        if (eArr[bci] < fitLo || eArr[bci] > fitHi) continue;
+        if (eArr[bci] < 30) continue;
         var sumC2 = 0;
         for (var k2 = -2; k2 <= 2; k2++) {
           var idx2 = bci + k2;
@@ -523,7 +523,7 @@ function init() {
         ctx2.lineWidth = (rmp === "dtF") ? 2 : 1.25;
         var rStarted = false;
         for (var rci2 = iLo; rci2 <= iHi; rci2++) {
-          if (eArr[rci2] < fitLo || eArr[rci2] > fitHi) { rStarted = false; continue; }
+          if (eArr[rci2] < 30) { rStarted = false; continue; }
           var sumM2 = 0, sumC3 = 0;
           for (var k3 = -2; k3 <= 2; k3++) {
             var idx3 = rci2 + k3;

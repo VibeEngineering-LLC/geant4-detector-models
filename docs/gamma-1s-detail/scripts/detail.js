@@ -189,7 +189,7 @@ function init() {
     var inkColor = inkVar || "#16140f";
     var bgGrey = "#9a9a9a";
 
-    var prefixes = D.variants.concat([D.control]);
+    var prefixes = ["dtF"].concat(D.variants);
     var M = {l: 62, r: 14, t: 12, b: 34};
     var bodyFont = cs.getPropertyValue("font-family").trim() || "sans-serif";
     var ruleSoft = cs.getPropertyValue("--rule-soft").trim() || "#ccc";
@@ -214,16 +214,13 @@ function init() {
     var f1 = document.createElement("span"); f1.className = "chip fixed";
     f1.innerHTML = '<span class="sw" style="background:' + inkColor + '"></span><span>измерение</span>';
     chips.appendChild(f1);
-    var f2 = document.createElement("span"); f2.className = "chip fixed";
-    f2.innerHTML = '<span class="sw" style="background:' + bgGrey + '"></span><span>фон</span>';
-    chips.appendChild(f2);
     // checkbox entries
     for (var ci = 0; ci < prefixes.length; ci++) {
       var pfx = prefixes[ci];
       var lab = T.labels[pfx] || pfx;
       var lbl = document.createElement("label"); lbl.className = "chip";
       var inp = document.createElement("input"); inp.type = "checkbox"; inp.setAttribute("data-p", pfx);
-      if (pfx === "dtP" || pfx === "dtE2" || pfx === "dtE4") inp.checked = true;
+      inp.checked = true;
       var sw = document.createElement("span"); sw.className = "sw"; sw.style.background = COL[pfx] || "#888";
       var txt = document.createElement("span"); txt.textContent = lab;
       lbl.appendChild(inp); lbl.appendChild(sw); lbl.appendChild(txt);
@@ -244,7 +241,7 @@ function init() {
     el.appendChild(cursorLine);
 
     // State
-    var S = {zoom: null, drag: null, dragging: false, cursorE: null, on: {dtP: true, dtE2: true, dtE4: true}};
+    var S = {zoom: null, drag: null, dragging: false, cursorE: null, on: {dtF: true, dtP: true, dtH: true, dtE1: true, dtE2: true, dtE3: true, dtE4: true, k24g1t: true}};
 
     // Data reference
     var meas = D.meas;
@@ -315,7 +312,7 @@ function init() {
         if (counts[yi] > 0) { if (counts[yi] < yMin) yMin = counts[yi]; if (counts[yi] > yMax) yMax = counts[yi]; }
       }
       // include models
-      var modelPrefixes = ["dtF"];
+      var modelPrefixes = [];
       for (var mp = 0; mp < prefixes.length; mp++) { if (S.on[prefixes[mp]]) modelPrefixes.push(prefixes[mp]); }
       for (var mi = 0; mi < modelPrefixes.length; mi++) {
         var md = models[modelPrefixes[mi]];
@@ -373,17 +370,6 @@ function init() {
         ctx1.textAlign = "center"; ctx1.fillText("вне окна подгонки", M.l + (fitXL - M.l) / 2, M.t + 14);
         ctx1.restore();
       }
-
-      // Background line (grey, width 1)
-      ctx1.beginPath(); ctx1.strokeStyle = bgGrey; ctx1.lineWidth = 1;
-      var bgStarted = false;
-      for (var bi = iLo; bi <= iHi; bi++) {
-        if (bgArr[bi] > 0) {
-          var bx = xP(eArr[bi]), by = yP(bgArr[bi]);
-          if (!bgStarted) { ctx1.moveTo(bx, by); bgStarted = true; } else ctx1.lineTo(bx, by);
-        } else { bgStarted = false; }
-      }
-      ctx1.stroke();
 
       // Model lines
       for (var mi2 = 0; mi2 < modelPrefixes.length; mi2++) {
@@ -446,7 +432,7 @@ function init() {
       function xP2(E) { return M.l + (E - lo) / (hi - lo) * plotW2; }
 
       // Compute ratios (smoothed 5-channel)
-      var ratioPrefixes = ["dtF"];
+      var ratioPrefixes = [];
       for (var rp = 0; rp < prefixes.length; rp++) { if (S.on[prefixes[rp]]) ratioPrefixes.push(prefixes[rp]); }
 
       // Y range from visible finite ratios inside fit window
@@ -618,11 +604,6 @@ function init() {
         if (d < bestD) { bestD = d; iNearest = ni; }
       }
       var txt = "канал " + iNearest + " \u00B7 " + fmt(eArr[iNearest], 1) + " кэВ \u00B7 измерение " + Math.round(counts[iNearest]) + " \u00B7 фон " + fmt(bgArr[iNearest], 1);
-      // dtF
-      var mDtF = models["dtF"];
-      if (mDtF && mDtF[iNearest] != null) {
-        txt += " \u00B7 " + (T.labels["dtF"] || "dtF") + " " + fmt(mDtF[iNearest], 1);
-      }
       // checked prefixes
       for (var cp = 0; cp < prefixes.length; cp++) {
         var cpfx = prefixes[cp];

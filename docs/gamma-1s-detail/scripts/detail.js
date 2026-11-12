@@ -200,7 +200,7 @@ function init() {
     // Build DOM
     var ctrl = document.createElement("div"); ctrl.className = "ctrl";
     var seg = document.createElement("div"); seg.className = "seg"; seg.id = "rangeSeg";
-    var ranges = [["30-3000","весь"],["30-300","30–300 кэВ"],["300-1000","300–1000 кэВ"],["1000-2800","1–2,8 МэВ"]];
+    var ranges = [["30-3000","весь спектр"],["30-300","30–300 кэВ"],["300-1000","300–1000 кэВ"],["1000-2800","1–2,8 МэВ"]];
     for (var ri = 0; ri < ranges.length; ri++) {
       var btn = document.createElement("button");
       btn.className = "btn"; btn.setAttribute("data-range", ranges[ri][0]);
@@ -325,11 +325,13 @@ function init() {
         }
       }
       if (yMin === Infinity) { yMin = 1; yMax = 10; }
-      yMin = Math.max(0.1, yMin * 0.7);
-      yMax = yMax * 1.4;
+      var lin = !!S.lin;
+      yMin = lin ? 0 : Math.max(0.1, yMin * 0.7);
+      yMax = yMax * (lin ? 1.05 : 1.4);
       var logMin = Math.log(yMin) / Math.LN10, logMax = Math.log(yMax) / Math.LN10;
       function yP(v) {
-        if (v <= 0) return -1;
+        if (v <= 0 && !lin) return -1;
+        if (lin) return H1 - M.b - (v - yMin) / (yMax - yMin) * plotH;
         var lv = Math.log(v) / Math.LN10;
         return H1 - M.b - (lv - logMin) / (logMax - logMin) * plotH;
       }
@@ -337,13 +339,15 @@ function init() {
       // Grid and y-axis (powers of 10)
       ctx1.font = "11px " + bodyFont;
       ctx1.fillStyle = inkColor; ctx1.strokeStyle = ruleSoft;
-      var expMin = Math.ceil(logMin), expMax = Math.floor(logMax);
-      for (var ex = expMin; ex <= expMax; ex++) {
-        var val = Math.pow(10, ex);
+      var expMin = Math.ceil(logMin), expMax = Math.floor(logMax), yTicks = [];
+      if (lin) { var ys = niceStep(yMax - yMin); for (var tv = 0; tv <= yMax; tv += ys) yTicks.push(tv); }
+      else { for (var te = expMin; te <= expMax; te++) yTicks.push(Math.pow(10, te)); }
+      for (var ex = 0; ex < yTicks.length; ex++) {
+        var val = yTicks[ex];
         var yy = yP(val);
         if (yy < M.t - 2 || yy > H1 - M.b + 2) continue;
         ctx1.beginPath(); ctx1.moveTo(M.l, yy); ctx1.lineTo(W1 - M.r, yy); ctx1.stroke();
-        var label = "10" + sup(ex);
+        var label = lin ? thin(Math.round(val)) : "10" + sup(Math.round(Math.log(val) / Math.LN10));
         ctx1.textAlign = "right"; ctx1.textBaseline = "middle";
         ctx1.fillText(label, M.l - 4, yy);
       }

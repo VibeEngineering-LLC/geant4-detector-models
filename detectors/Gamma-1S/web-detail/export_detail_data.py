@@ -1,4 +1,4 @@
-import json
+import json, os
 import math
 import sys
 import pathlib
@@ -10,7 +10,7 @@ PREFIXES = ["k24g1t", "dtF", "dtP", "dtH", "dtE1", "dtE2", "dtE3", "dtE4"]
 VARIANTS = ["dtP", "dtH", "dtE1", "dtE2", "dtE3", "dtE4"]
 CONTROL = "k24g1t"
 CHAINS = ["Th228chain", "Ra228chain"]
-VM = "marinelli_OISN16_2016"
+VM = os.environ["G1S_TEMPLATE_SUFFIX"]  # хвост имени файлов шаблонов: <сосуд>_<матрица>
 PEAKS = {"Th228chain": [238.6, 583.2, 727.3, 2614.5], "Ra228chain": [338.3, 911.2, 969.0]}
 BANDS = [[50, 150], [150, 260], [300, 500], [700, 1500], [1600, 2600]]
 

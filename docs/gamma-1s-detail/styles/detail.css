@@ -22,3 +22,5 @@ p,li,figcaption,dd{text-align:left !important; hyphens:manual}
 .figpair .fig{margin:0}
 .figpair .fig img{width:min(100%,300px); height:auto; cursor:zoom-in; margin:0 auto}
 .figpair .fig figcaption{text-align:center !important; font-weight:700}
+.title h1{text-wrap:wrap; max-width:none; line-height:1.1; margin:.1rem 0 .2rem}
+.title .eyebrow{margin-bottom:.5em}

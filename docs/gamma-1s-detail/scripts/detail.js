@@ -73,7 +73,7 @@ function init() {
   /* ---- 5a. tbl-fits ---- */
   function buildFits(el) {
     var rows = ["k24g1t", "dtF", "dtP"];
-    var h = "<thead><tr><th>Шаблоны</th><th>A(Ra-228)/паспорт</th><th>Δ к полной, %</th><th>A(Th-228)/паспорт</th><th>Δ к полной, %</th><th>χ²_ref/ν</th></tr></thead>";
+    var h = "<thead><tr><th>Шаблоны</th><th>A(Ra-228)/A₀</th><th>Δ к полной, %</th><th>A(Th-228)/A₀</th><th>Δ к полной, %</th><th>χ²_ref/ν</th></tr></thead>";
     var b = "<tbody>";
     for (var i = 0; i < rows.length; i++) {
       var p = rows[i], f = D.fits[p];
@@ -98,7 +98,7 @@ function init() {
   /* ---- 5b. tbl-nodes ---- */
   function buildNodes(el) {
     var rows = ["dtF", "dtH", "dtE1", "dtE2", "dtE3", "dtE4", "dtP"];
-    var h = "<thead><tr><th>Вариант (от полной модели)</th><th>A(Ra-228)/паспорт</th><th>Δ, %</th><th>A(Th-228)/паспорт</th><th>Δ, %</th><th>χ²_ref/ν</th><th>пики, %</th><th>50–260 кэВ, %</th></tr></thead>";
+    var h = "<thead><tr><th>Вариант (от полной модели)</th><th>A(Ra-228)/A₀</th><th>Δ, %</th><th>A(Th-228)/A₀</th><th>Δ, %</th><th>χ²_ref/ν</th><th>пики, %</th><th>50–260 кэВ, %</th></tr></thead>";
     var b = "<tbody>";
     for (var i = 0; i < rows.length; i++) {
       var p = rows[i], f = D.fits[p];

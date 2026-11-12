@@ -21,4 +21,4 @@ p,li,figcaption,dd{text-align:left !important; hyphens:manual}
 .figpair{display:grid; grid-template-columns:1fr 1fr; gap:1rem; justify-items:center; margin:.8rem 0}
 .figpair .fig{margin:0}
 .figpair .fig img{width:min(100%,300px); height:auto; cursor:zoom-in; margin:0 auto}
-.figpair .fig figcaption{text-align:center; font-weight:700}
+.figpair .fig figcaption{text-align:center !important; font-weight:700}

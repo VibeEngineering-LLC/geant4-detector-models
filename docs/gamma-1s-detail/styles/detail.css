@@ -1,0 +1,20 @@
+/* Детализация геометрии Гамма-1С: дополнения к донорскому g1s-th232.css */
+p,li,figcaption,dd{text-align:left !important; hyphens:manual}
+.doc{padding:1rem 1.2rem 2rem}
+.sec{border-top:2px solid var(--rule); padding:1rem 0 1.2rem}
+.sec:first-child{border-top:none; padding-top:.4rem}
+.sec-h{font:800 1.15rem/1.3 var(--sans); margin:0 0 .6rem}
+.sec-body p,.sec-body li{font:500 15px/1.55 var(--sans); max-width:none; margin:.45rem 0}
+.sec-body ul{padding-left:1.2rem; margin:.3rem 0}
+.fig{margin:.8rem 0}
+.fig img{display:block; max-width:100%; height:auto; border:2px solid var(--rule); background:#fff}
+.fig figcaption{font:600 12px/1.45 var(--sans); color:var(--dim); margin-top:.35rem}
+.tbl-cap{font:700 13px/1.4 var(--sans); margin:.9rem 0 .3rem}
+.widget .scroll{margin:.5rem 0}
+.ctrl{display:flex; flex-wrap:wrap; gap:.5rem .8rem; align-items:center; margin:.6rem 0}
+.chips{display:flex; flex-wrap:wrap; gap:.3rem .8rem; font:600 13px/1.4 var(--sans)}
+.chip{display:inline-flex; align-items:center; gap:.35rem; cursor:pointer}
+.chip .sw{display:inline-block; width:.8rem; height:.8rem}
+.chartbox{position:relative; margin:.4rem 0}
+.chartbox canvas{width:100%; cursor:crosshair}
+.toolbar .btn{text-decoration:none}

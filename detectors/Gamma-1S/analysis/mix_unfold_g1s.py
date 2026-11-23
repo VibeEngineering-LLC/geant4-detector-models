@@ -22,6 +22,13 @@ PASSPORT = {"Am241": 4106.6, "Ti44chain": 1808.8,
 # R.1). Для Гамма-1С своё значение НЕ измерялось — берётся как априор и
 # проверяется прогоном; переопределяется ключом --tail.
 TAIL_T = 0.75
+# #GS-68: разброс усиления ∝ E (доля событий GS_GAIN_W, σ = GS_GAIN_S·E); по умолчанию выключен
+GAIN_W = float(os.environ.get("GS_GAIN_W", "0"))
+GAIN_S = float(os.environ.get("GS_GAIN_S", "0"))
+PEAK = os.environ.get("GS_PEAK", "gauss")   # gauss | ege | pvoigt — см. _kern
+EGE_KL = float(os.environ.get("GS_EGE_KL", "2")); EGE_KR = float(os.environ.get("GS_EGE_KR", "2"))
+PV_ETA = float(os.environ.get("GS_PV_ETA", "0.1"))
+FWHM_CURVE = os.environ.get("GS_FWHM_CURVE", "interp")   # interp | sqrt | sqrtpoly | power — см. make_fwhm
 # Верх мелкой сетки broaden(), кэВ. 3300 — прежнее зашитое значение (Гамма-1С не меняется);
 # спектры шире (GS2020 до ~4770 кэВ, сумм-пики Tl-208 3197/3475) поднимают его у себя (#SUM-1, 25.09.2026).
 FINE_E_MAX = 3300.0
@@ -191,7 +198,18 @@ def make_fwhm(points_csv):
     
     log_e = np.log(energies)
     log_fwhm = np.log(fwhms)
-    
+    # #GS-68: гладкие кривые BecqMoni по тем же точкам (МНК): sqrt — a·√E; sqrtpoly — √(a + b·E + c·E²)
+    # (МНК по ПШПВ²); power — a·E^p (МНК в логарифмах). interp — прежняя кусочная интерполяция (по умолчанию).
+    if FWHM_CURVE == "sqrt":
+        a = float(np.sum(fwhms * np.sqrt(energies)) / np.sum(energies))
+        return lambda E: a * np.sqrt(E)
+    if FWHM_CURVE == "sqrtpoly":
+        c2 = np.linalg.lstsq(np.vstack([np.ones_like(energies), energies, energies ** 2]).T, fwhms ** 2, rcond=None)[0]
+        return lambda E: float(np.sqrt(max(c2[0] + c2[1] * E + c2[2] * E * E, 1e-6)))
+    if FWHM_CURVE == "power":
+        p, la = np.polyfit(log_e, log_fwhm, 1)
+        return lambda E: float(np.exp(la) * E ** p)
+
     def fwhm(E):
         if E < energies[0]:
             # Экстраполяция по логарифмическим точкам
@@ -241,6 +259,24 @@ def broaden_ch(hist, n_events, e_of_ch, fwhm, file_e, blur=1.0, sub=20):
     return out.reshape(n, sub).sum(axis=1) / n_events
 
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); from d10_shape import SH_W0, SH_P, SH_R, sh_f as _sh_f  # D10
+
+
+def _kern(z):
+    """Форма пика по z = (E−E0)/σ. GS_PEAK (#GS-68, варианты BecqMoni): gauss — гаусс с левым хвостом TAIL_T
+    (прежнее, по умолчанию); ege — Exp-Gauss-Exp, хвосты GS_EGE_KL слева и GS_EGE_KR справа (в σ);
+    pvoigt — η·Лоренц + (1−η)·гаусс одной ПШПВ, η = GS_PV_ETA."""
+    if PEAK == "ege":
+        return np.where(z < -EGE_KL, np.exp(np.clip(0.5 * EGE_KL ** 2 + EGE_KL * z, -700, 0)),
+                        np.where(z > EGE_KR, np.exp(np.clip(0.5 * EGE_KR ** 2 - EGE_KR * z, -700, 0)), np.exp(-0.5 * z * z)))
+    if PEAK == "pvoigt":
+        gam = 2.3548 / 2.0   # полуширина Лоренца в σ, ПШПВ та же
+        return (1 - PV_ETA) * np.exp(-0.5 * z * z) + PV_ETA / (1 + (z / gam) ** 2)
+    if TAIL_T <= 0:
+        return np.exp(-0.5 * z * z)
+    return np.where(z >= -TAIL_T, np.exp(-0.5 * z * z), np.exp(np.clip(TAIL_T * z + 0.5 * TAIL_T * TAIL_T, -700.0, 0.0)))
+
+
 def broaden(hist, n_events, ch_edges, fwhm):
     """Раскладывает линии по каналам с учётом ширины."""
     # Мелкая сетка для интегрирования
@@ -252,6 +288,13 @@ def broaden(hist, n_events, ch_edges, fwhm):
     for energy, count in hist.items():
         sigma = fwhm(energy) / 2.3548
         if sigma <= 0:
+            continue
+        if SH_W0 > 0 and energy > 0:
+            # D10 (06.11.2026): плечи пика при той же ПШПВ — (1−w)·N(σc) + w·N(R·σc), σc из ПШПВ смеси = ПШПВ(E).
+            w = round(min(0.9, SH_W0 * (energy / 2614.5) ** SH_P), 3); sc = sigma * 2.3548 / _sh_f(w); d = fine_grid - energy
+            g = (1 - w) * np.exp(-.5 * (d / sc) ** 2) / sc + w * np.exp(-.5 * (d / (SH_R * sc)) ** 2) / (SH_R * sc)
+            if g.sum() > 0:
+                broadened += count * g / g.sum()
             continue
         
         # Ядро отклика: гаусс с ЛЕВЫМ экспоненциальным хвостом (peak-image
@@ -265,15 +308,16 @@ def broaden(hist, n_events, ch_edges, fwhm):
         # ширине 6–8 кэВ, и разделение их площадей зависит от ФОРМЫ крыла:
         # чистый гаусс отдаёт левому соседу меньше, чем есть на самом деле.
         z = (fine_grid - energy) / sigma
-        if TAIL_T <= 0:
-            g = np.exp(-0.5 * z * z)
-        else:
-            g = np.where(z >= -TAIL_T, np.exp(-0.5 * z * z),
-                         np.exp(np.clip(TAIL_T * z + 0.5 * TAIL_T * TAIL_T,
-                                        -700.0, 0.0)))
+        g = _kern(z)
         s = np.sum(g)
         if s > 0:
-            broadened += count * g / s
+            if GAIN_W > 0:
+                # #GS-68 (10.10): разброс усиления у доли GAIN_W событий — вторая компонента с шириной
+                # √(σ² + (GAIN_S·E)²), та же форма; площадь сохраняется. Выключено (0) — ядро прежнее побитово.
+                g2 = _kern((fine_grid - energy) / np.hypot(sigma, GAIN_S * energy))
+                broadened += count * ((1 - GAIN_W) * g / s + GAIN_W * g2 / np.sum(g2))
+            else:
+                broadened += count * g / s
     
     # Интегрируем по каналам.
     # ⚠ Здесь было ДВА дефекта генерации. Первый: границы канала брались

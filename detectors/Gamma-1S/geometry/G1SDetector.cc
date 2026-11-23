@@ -268,6 +268,16 @@ G4Material* G1SDetector::MakeMatrix(const G4String& matrix, double rho,
     return m;
   }
 
+  // Матрица «кирпич Белые Столбы» (atom-nano5-labr CFG1-2026-10-16-brick-grid.md): ДОПУЩЕНИЕ — состав NIST G4_CONCRETE
+  // (как кирпич комнаты в run_roomfield), состав реального кирпича не измерялся; плотность — из пробы (масса/объём).
+  if (matrix == "brick_g4concrete") {
+    auto* m = new G4Material(g4name, rho * g / cm3, 10);
+    const char* el[] = {"H", "C", "O", "Na", "Mg", "Al", "Si", "K", "Ca", "Fe"};
+    const double w[] = {0.01, 0.001, 0.529107, 0.016, 0.002, 0.033872, 0.337021, 0.013, 0.044, 0.014};
+    for (int i = 0; i < 10; ++i) m->AddElement(nist->FindOrBuildElement(el[i]), w[i]);
+    return m;
+  }
+
   if (matrix != "OISN16") {
     G4Exception("G1SDetector::MakeMatrix", "g1s002", FatalException,
                 ("неизвестная матрица: " + matrix).c_str());

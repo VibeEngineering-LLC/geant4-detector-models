@@ -68,14 +68,32 @@ def fit_B(cols, counts, bg_scaled, k, n_events, sel):
     return a, sd, {}
 
 
-def _iter_template_var(C, y, var, C_tmpl, n_events, a0, n_iter=6):
+def weight_mode():
+    """GS_WEIGHT=obs|model (P0-CLOSE п.1): вес A2 по наблюдаемому p (прежнее, по умолчанию) либо по модели a·C + b + k·b."""
+    m = os.environ.get("GS_WEIGHT", "obs")
+    if m not in ("obs", "model"):
+        raise SystemExit("ОТКАЗ: GS_WEIGHT должен быть obs или model, получено %r" % (m,))
+    return m
+
+
+def model_var_fn(C, b, k):
+    """Дисперсия нетто по модели: max(C@a + b + k·b, 1) — var_fn для _iter_template_var при GS_WEIGHT=model."""
+    def f(a):
+        return np.maximum(C @ np.asarray(a, dtype=float) + b + k * b, 1.0)
+    return f
+
+
+def _iter_template_var(C, y, var, C_tmpl, n_events, a0, n_iter=6, var_fn=None):
     """Итерации: w = 1/sqrt(var + model_var), model_var = (C_tmpl/n_events) @ a_tmpl**2.
-    C_tmpl — первые K столбцов C (шаблоны); столбцы подложки D дисперсии не имеют."""
+    C_tmpl — первые K столбцов C (шаблоны); столбцы подложки D дисперсии не имеют.
+    var_fn(a) — если задана (GS_WEIGHT=model), var пересчитывается по текущей a на каждой итерации.
+    """
     n_ev = np.asarray(n_events, dtype=float)[None, :]
     K = C_tmpl.shape[1]
     a = np.asarray(a0, dtype=float)
     sd = None
     for _ in range(n_iter):
+        if var_fn is not None: var = var_fn(a)
         model_var = (C_tmpl / n_ev) @ (a[:K] ** 2)
         w = 1.0 / np.sqrt(var + model_var)
         a, sd = _nnls_w(C, y, w)
@@ -86,7 +104,8 @@ def fit_A2(cols, counts, bg_scaled, k, n_events, sel):
     """A2 — A1 + дисперсия шаблонов var_k = cols_k/n_events_k, 6 итераций, старт с A1."""
     C, p, b = _prep(cols, counts, bg_scaled, sel)
     a1, _, ex1 = fit_A1(cols, counts, bg_scaled, k, n_events, sel)
-    a, sd = _iter_template_var(C, p - b, ex1["var"], C, n_events, a1)
+    vf = model_var_fn(C, b, k) if weight_mode() == "model" else None
+    a, sd = _iter_template_var(C, p - b, ex1["var"], C, n_events, a1, var_fn=vf)
     return a, sd, {"iterations": 6}
 
 
@@ -96,7 +115,8 @@ def fit_A2V(cols, counts, bg_scaled, k, V, sel):
     K = cols.shape[0]
     a1, _, ex1 = fit_A1(cols, counts, bg_scaled, k, np.ones(K), sel)
     C, p, b = _prep(cols, counts, bg_scaled, sel)
-    a, sd = _iter_template_var(C, p - b, ex1["var"], np.asarray(V)[:, sel].T, np.ones(K), a1)
+    vf = model_var_fn(C, b, k) if weight_mode() == "model" else None
+    a, sd = _iter_template_var(C, p - b, ex1["var"], np.asarray(V)[:, sel].T, np.ones(K), a1, var_fn=vf)
     return a, sd, {"iterations": 6}
 
 

@@ -159,13 +159,16 @@ def unfold(spe, bg, templates, fwhm_points, lo=40.0, hi=1500.0,
     # слагаемое шаблонов — той же формулой, что внутри A2.
     var_a1 = cb.fit_A1(cols_arr, counts_arr, bg_scaled, k_bg, n_events, sel)[2]["var"]
     var_tpl = V[:, sel].T @ (coef ** 2)
-    chi2 = float(np.sum((model[sel] - net[sel]) ** 2 / (var_a1 + var_tpl)))
+    # P0-CLOSE п.1: GS_WEIGHT=model — дисперсия нетто по модели (та же, что вес подгонки); obs — прежняя (по p).
+    var_obs_full = np.maximum(counts_arr + k_bg * bg_scaled, 1.0)
+    var_w_full = np.maximum(model + bg_scaled + k_bg * bg_scaled, 1.0) if cb.weight_mode() == "model" else var_obs_full
+    chi2 = float(np.sum((model[sel] - net[sel]) ** 2 / (var_w_full[sel] + var_tpl)))
     # Единая метрика сравнения критериев (дисперсия A1) — ею меряются все восемь в #CRIT-1.
     chi2_ref = float(np.sum((model[sel] - net[sel]) ** 2 / var_a1))
     # Дисперсия критерия НА ВСЕХ каналах — нужна долям полос. Считать вклад полосы по одним
     # весам, а делить на χ² по другим нельзя: 12.09.2026 это дало долю 120 % у полосы 40–90
     # (поймано прогоном командной строки сразу после переноса критерия).
-    var = np.maximum(counts_arr + k_bg * bg_scaled, 1.0) + V.T @ (coef ** 2)
+    var = var_w_full + V.T @ (coef ** 2)
     ndof = int(np.sum(sel)) - len(coef)   # честное ν: параметры ЭТОГО критерия (D-020, п. 4)
 
     # Вторая мера — E1: минимум полной вариации между нормированными формами при условии

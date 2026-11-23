@@ -47,7 +47,7 @@ class MinimalPhysList : public G4VModularPhysicsList {};
 int main(int argc, char** argv) {
   if (argc < 3) {
     std::fprintf(stderr, "usage: gdml_vis.exe <in.gdml> <out.png> "
-                          "[W] [H] [thetaDeg] [phiDeg]\n");
+                          "[W] [H] [thetaDeg] [phiDeg] [macro.mac]\n");
     return 2;
   }
   const std::string gdmlPath = argv[1];
@@ -75,6 +75,9 @@ int main(int argc, char** argv) {
   ui->ApplyCommand("/vis/viewer/set/viewpointThetaPhi " + theta + " " + phi +
                     " deg");
   ui->ApplyCommand("/vis/drawVolume");
+  // 7-й аргумент (необязательный, 2026-09-24): макрос после drawVolume —
+  // цвета /vis/geometry/set/colour, стиль, разрезы /vis/viewer/addCutawayPlane.
+  if (argc > 7) ui->ApplyCommand(std::string("/control/execute ") + argv[7]);
   ui->ApplyCommand("/vis/viewer/rebuild");
 
   std::fprintf(stdout, "EXITCODE=0 gdml=%s out=%s\n", gdmlPath.c_str(),

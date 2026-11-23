@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Шаблон «сосуд Маринелли + проба» для детектора Atom GS2020 PRO MAX (ЧЕРНОВИК).
+     Пользователь меняет ТОЛЬКО блок «ПАРАМЕТРЫ ПОЛЬЗОВАТЕЛЯ» и материал Sample_material.
+     Прибор подставляется скриптом make_client_gdml.py без изменений из ../GS2020_Capescint51x51.gdml
+     (на месте строк-маркеров DEVICE_DEFINE, DEVICE_MATERIALS, DEVICE_SOLIDS, DEVICE_VOLUMES, DEVICE_PHYSVOLS,
+     обрамлённых знаком «at»). Единицы: длины мм, плотности г/см3, углы градусы.
+     Система координат — как в модели прибора: начало в точке оси z, принятой в модели прибора
+     (кристалл занимает z = -17,25 .. +33,55 мм), верх корпуса z = +41,5 мм; ось сосуда совпадает с осью кристалла. -->
+<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd">
+<define>
+  <!-- ===== ПАРАМЕТРЫ ПОЛЬЗОВАТЕЛЯ (значения по умолчанию = референсная геометрия набора, 1161 мл) ===== -->
+  <constant name="cav_R"       value="70.5"/>   <!-- внутренний радиус полости сосуда, мм -->
+  <constant name="cav_H"       value="105.0"/>  <!-- внутренняя высота полости (от внутреннего дна до внутреннего верха), мм -->
+  <constant name="well_R"      value="41.0"/>   <!-- радиус отверстия колодца под детектор (в стенке), мм -->
+  <constant name="well_depth"  value="55.5"/>   <!-- глубина колодца от наружного дна, мм -->
+  <constant name="wall_t"      value="2.0"/>    <!-- толщина стенки сосуда (боковая, дно, крышка, стенка колодца), мм -->
+  <constant name="fill_height" value="95.0"/>   <!-- высота заполнения пробой от внутреннего дна, мм -->
+  <constant name="sample_rho"  value="0.9061"/> <!-- плотность пробы, г/см3 (используется в Sample_material) -->
+  <constant name="pp_rho"      value="0.905"/>  <!-- плотность стенки сосуда (полипропилен), г/см3 -->
+  <!-- ===== ФИКСИРОВАННЫЕ (привязка к прибору; не менять) ===== -->
+  <constant name="device_top_z" value="41.5"/>  <!-- верх корпуса прибора в системе модели прибора, мм -->
+  <!-- ===== ПРОИЗВОДНЫЕ (не править) ===== -->
+  <constant name="cav_half"   value="cav_H/2"/>
+  <constant name="outer_half" value="cav_H/2+wall_t"/>
+  <constant name="outer_R"    value="cav_R+wall_t"/>
+  <constant name="well_R_in"  value="well_R+wall_t"/>
+  <constant name="hole_top"   value="-outer_half+well_depth"/>
+  <constant name="roof_in"    value="hole_top+wall_t"/>
+  <constant name="fill_top"   value="-cav_half+fill_height"/>
+  <constant name="vessel_pos_z" value="device_top_z-hole_top"/>
+@DEVICE_DEFINE@
+</define>
+<materials>
+@DEVICE_MATERIALS@
+  <material name="Vessel_PP" state="solid"><D value="pp_rho" unit="g/cm3"/><fraction n="1.0" ref="G4_POLYPROPYLENE"/></material>
+  <!-- Материал пробы. Массовые доли ОБЯЗАНЫ давать сумму 1. По умолчанию — состав ОИСН-10 набора.
+       Вместо блока можно в LV_SourceMatrix указать готовый материал NIST (например ref="G4_WATER"); тогда sample_rho не используется. -->
+  <material name="Sample_material" state="solid"><D value="sample_rho" unit="g/cm3"/>
+    <fraction n="0.044" ref="G4_H"/><fraction n="0.310" ref="G4_C"/><fraction n="0.036" ref="G4_N"/>
+    <fraction n="0.120" ref="G4_O"/><fraction n="0.490" ref="G4_Fe"/></material>
+</materials>
+<solids>
+  <box name="WorldBox" x="500.0" y="500.0" z="500.0" lunit="mm"/>
+@DEVICE_SOLIDS@
+  <polycone name="VesselWall_solid" startphi="0" deltaphi="360" aunit="deg" lunit="mm">
+    <zplane z="-outer_half" rmin="well_R" rmax="outer_R"/><zplane z="hole_top" rmin="well_R" rmax="outer_R"/>
+    <zplane z="hole_top" rmin="0" rmax="outer_R"/><zplane z="outer_half" rmin="0" rmax="outer_R"/></polycone>
+  <polycone name="SourceMatrix_solid" startphi="0" deltaphi="360" aunit="deg" lunit="mm">
+    <zplane z="-cav_half" rmin="well_R_in" rmax="cav_R"/><zplane z="roof_in" rmin="well_R_in" rmax="cav_R"/>
+    <zplane z="roof_in" rmin="0" rmax="cav_R"/><zplane z="fill_top" rmin="0" rmax="cav_R"/></polycone>
+  <polycone name="Headspace_solid" startphi="0" deltaphi="360" aunit="deg" lunit="mm">
+    <zplane z="fill_top" rmin="0" rmax="cav_R"/><zplane z="cav_half" rmin="0" rmax="cav_R"/></polycone>
+</solids>
+<structure>
+@DEVICE_VOLUMES@
+  <volume name="LV_SourceMatrix"><materialref ref="Sample_material"/><solidref ref="SourceMatrix_solid"/></volume>
+  <volume name="LV_Headspace"><materialref ref="G4_AIR"/><solidref ref="Headspace_solid"/></volume>
+  <volume name="LV_VesselWall"><materialref ref="Vessel_PP"/><solidref ref="VesselWall_solid"/>
+    <physvol name="PV_LV_SourceMatrix"><volumeref ref="LV_SourceMatrix"/><position name="pos_SourceMatrix" x="0" y="0" z="0" unit="mm"/></physvol>
+    <physvol name="PV_LV_Headspace"><volumeref ref="LV_Headspace"/><position name="pos_Headspace" x="0" y="0" z="0" unit="mm"/></physvol>
+  </volume>
+  <volume name="World"><materialref ref="G4_AIR"/><solidref ref="WorldBox"/>
+@DEVICE_PHYSVOLS@
+    <physvol name="PV_LV_VesselWall"><volumeref ref="LV_VesselWall"/><position name="pos_VesselWall" x="0" y="0" z="vessel_pos_z" unit="mm"/></physvol>
+  </volume>
+</structure>
+<setup name="Default" version="1.0"><world ref="World"/></setup>
+</gdml>

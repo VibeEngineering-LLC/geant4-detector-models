@@ -1,0 +1,123 @@
+{
+  "spectrum": "C:\\g4work\\measured\\RadiaCode-103\\Фон 7 дней без домика.xml",
+  "device_coef": [
+    3.140712,
+    2.3905482,
+    0.00037844872
+  ],
+  "lines": [
+    {
+      "name": "Pb K-alpha (72.80+74.97, смесь)",
+      "energy_keV": 74.2,
+      "channel": null,
+      "fwhm_keV": null,
+      "significance_sigma": null,
+      "status": "не измерена"
+    },
+    {
+      "name": "Pb K-beta (84.94+87.3, смесь)",
+      "energy_keV": 85.5,
+      "channel": null,
+      "fwhm_keV": null,
+      "significance_sigma": null,
+      "status": "не измерена"
+    },
+    {
+      "name": "Ra-226 186.2 + U-235 185.7 (смесь)",
+      "energy_keV": 186.0,
+      "channel": null,
+      "fwhm_keV": null,
+      "significance_sigma": null,
+      "status": "не измерена"
+    },
+    {
+      "name": "Pb-212",
+      "energy_keV": 238.63,
+      "channel": null,
+      "fwhm_keV": null,
+      "significance_sigma": null,
+      "status": "не измерена"
+    },
+    {
+      "name": "Pb-214",
+      "energy_keV": 295.22,
+      "channel": null,
+      "fwhm_keV": null,
+      "significance_sigma": null,
+      "status": "не измерена"
+    },
+    {
+      "name": "Pb-214",
+      "energy_keV": 351.93,
+      "channel": null,
+      "fwhm_keV": null,
+      "significance_sigma": null,
+      "status": "не измерена"
+    },
+    {
+      "name": "аннигиляция",
+      "energy_keV": 511.0,
+      "channel": null,
+      "fwhm_keV": null,
+      "significance_sigma": null,
+      "status": "не измерена"
+    },
+    {
+      "name": "Tl-208",
+      "energy_keV": 583.19,
+      "channel": 239.28861870606306,
+      "fwhm_keV": 52.719324901702585,
+      "significance_sigma": 9.68655529115092,
+      "status": "измерена"
+    },
+    {
+      "name": "Bi-214",
+      "energy_keV": 609.31,
+      "channel": 239.53792482057693,
+      "fwhm_keV": 52.27603768459358,
+      "significance_sigma": 9.841824350670556,
+      "status": "измерена"
+    },
+    {
+      "name": "Ac-228",
+      "energy_keV": 911.2,
+      "channel": null,
+      "fwhm_keV": null,
+      "significance_sigma": null,
+      "status": "не измерена"
+    },
+    {
+      "name": "Bi-214",
+      "energy_keV": 1120.29,
+      "channel": null,
+      "fwhm_keV": null,
+      "significance_sigma": null,
+      "status": "не измерена"
+    },
+    {
+      "name": "K-40",
+      "energy_keV": 1460.82,
+      "channel": 558.8556499159572,
+      "fwhm_keV": 74.19193128906727,
+      "significance_sigma": 20.953510925172576,
+      "status": "измерена"
+    },
+    {
+      "name": "Bi-214",
+      "energy_keV": 1764.49,
+      "channel": null,
+      "fwhm_keV": null,
+      "significance_sigma": null,
+      "status": "не измерена"
+    },
+    {
+      "name": "Tl-208",
+      "energy_keV": 2614.51,
+      "channel": null,
+      "fwhm_keV": null,
+      "significance_sigma": null,
+      "status": "не измерена"
+    }
+  ],
+  "models": {}
+}

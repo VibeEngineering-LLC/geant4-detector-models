@@ -1,5 +1,4 @@
-/* Статуэтка из уранового стекла: разложение спектра. Отрисовка, легенда, курсор и зум —
-   код донора docs/gs2020-th232/scripts/g1s-th232.js (#CHART-1), вставлен срезами без правок. */
+ 
 (function () {
   "use strict";
   var D = window.G1S;
@@ -10,7 +9,6 @@
   function STACK2() { return STACK1(); }
   function TRUST_MASK() { return null; }
   function syncLegends() {}
-/* donor g1s-th232.js:16-34 */
   function num(x, d) {
     if (d === undefined) d = 1;
     return (Number(x)).toFixed(d).replace(".", ",");
@@ -30,12 +28,7 @@
     return String(s === undefined || s === null ? "" : s)
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
-/* donor g1s-th232.js:76-383 */
-  /* ── HiDPI-canvas ───────────────────────────────────────────── */
   function fit(cv) {
-    // Стиль canvas НЕ трогаем: правило CSS растягивает его на всю
-    // плот-область; заданная в пикселях cv.style.width переопределила бы
-    // его и заморозила размер до применения раскладки.
     var dpr = window.devicePixelRatio || 1;
     var r = cv.getBoundingClientRect();
     var w = Math.max(200, Math.floor(r.width));
@@ -47,8 +40,6 @@
     g.clearRect(0, 0, w, h);
     return { g: g, w: w, h: h };
   }
-
-  /* ── палитра ────────────────────────────────────────────────── */
   function css(name, fallback) {
     var v = getComputedStyle(document.documentElement).getPropertyValue(name);
     return (v || "").trim() || fallback;
@@ -60,13 +51,9 @@
       faint: css("--faint", "#6a6558"),
       grid:  css("--grid",  "#dcd7c8"),
       paper: css("--paper", "#f5f2ea"),
-      // Суммарная кривая разложения (R79) — красным, отдельно от черноты
-      // измеренного спектра, с которым её и сравнивают.
       sum:   css("--sum-line", "#d21f1f"),
     };
   }
-
-  /* ── шкалы ─────────────────────────────────────────────────── */
   function mapX(v, lo, hi, x0, x1) {
     return x0 + (v - lo) / (hi - lo) * (x1 - x0);
   }
@@ -93,8 +80,6 @@
              "6":"⁶","7":"⁷","8":"⁸","9":"⁹"};
     return String(n).split("").map(function (c) { return d[c] || c; }).join("");
   }
-
-  /* ── стек ───────────────────────────────────────────────────── */
   function stackTotal(stk, i) {
     var acc = 0;
     for (var j = 0; j < D.nuclides.length; j++) {
@@ -104,10 +89,6 @@
     }
     return acc;
   }
-
-  /* ── общая отрисовка спектра с разложением ──────────────────── */
-  // Один код на три вкладки: меняются только источник стека (метод 1 или
-  // метод 2) и набор дополнительных кривых поверх заливок.
   function drawSpectrum(cvId, stk, extra) {
     var cv = document.getElementById(cvId);
     if (!cv) return null;
@@ -118,7 +99,6 @@
     var e = D.spectrum.e_of_ch;
     var yy = D.spectrum.counts;
     var xLo = ST.zoom ? ST.zoom.xLo : 25, xHi = ST.zoom ? ST.zoom.xHi : e[e.length - 1];
-
     var vMax = 1;
     for (var i0 = 0; i0 < e.length; i0++) {
       if (e[i0] < 30 || e[i0] > 3500) continue;
@@ -126,8 +106,6 @@
       if (v0 > vMax) vMax = v0;
     }
     var Y = makeY(ST.log, ST.log ? 0.5 : 0, vMax * (ST.log ? 2.0 : 1.1));
-
-    // сетка
     g.strokeStyle = p.grid; g.lineWidth = 1; g.beginPath();
     var xTicks = [250, 500, 750, 1000, 1250, 1500, 1750, 2000,
                   2250, 2500, 2750, 3000, 3250, 3500];
@@ -150,8 +128,6 @@
       g.moveTo(m.l, yg); g.lineTo(W - m.r, yg);
     }
     g.stroke();
-
-    // подписи осей
     g.fillStyle = p.faint;
     g.font = "11px system-ui, sans-serif";
     g.textAlign = "center"; g.textBaseline = "top";
@@ -168,23 +144,9 @@
     }
     g.textAlign = "center"; g.textBaseline = "bottom";
     g.fillText("энергия, кэВ", (m.l + W - m.r) / 2, H - 2);
-
     g.strokeStyle = p.rule; g.lineWidth = 2;
     g.strokeRect(m.l, m.t, W - m.r - m.l, H - m.b - m.t);
     g.save(); g.beginPath(); g.rect(m.l, m.t, W - m.r - m.l, H - m.b - m.t); g.clip();
-
-    // Заливки — НЕЗАВИСИМЫМ НАЛОЖЕНИЕМ, каждая от нижней границы окна до
-    // СВОЕГО значения. Прежде здесь был накопительный стек: слой рисовался
-    // поверх суммы предыдущих, поэтому по картинке нельзя было прочитать
-    // вклад нуклида — он ехал вверх вместе с соседями, а включение второго
-    // флажка визуально «поднимало» первый. Двигаться при переключении
-    // флажков должна СУММАРНАЯ кривая, а сами шаблоны стоять на месте.
-    //
-    // Порядок: сначала самые крупные (уходят назад), мелкие рисуются
-    // последними и оказываются впереди. При обратном порядке крупный слой
-    // накрыл бы мелкие целиком — они заливаются от одного и того же низа.
-    // Ранжирование — по интегралу в видимой полосе, а не по порядку в
-    // легенде: порядок ряда и порядок по величине вклада не совпадают.
     var order = [];
     for (var ni = 0; ni < D.nuclides.length; ni++) {
       var nk = D.nuclides[ni].key;
@@ -197,19 +159,6 @@
       order.push({ nuc: D.nuclides[ni], area: s });
     }
     order.sort(function (a, b) { return b.area - a.area; });
-
-    // Сторож статистики (R66). Долю нуклида в канале определяет его МК-шаблон;
-    // там, где шаблон набран единицами отсчётов, доля — пуассоновский шум, а не
-    // отклик детектора. Умноженная на большой полный отклик, она повторяет его
-    // форму, и на логарифмической шкале это читается как физические пики
-    // (тот же класс дефекта, что пойман в слое рентгена, R76). Поэтому ниже
-    // порога заливки нет — только тонкий пунктир: значение из данных не
-    // выброшено (сумма слоёв обязана сходиться с полным откликом, и суммарная
-    // кривая считается по всем каналам), но читателю видно, где числу верить.
-    //
-    // Отрезок по каналам берётся ПО ГРАНИЦАМ бинов, а не по их центрам: иначе
-    // одиночный достоверный канал вырождается в отрезок нулевой ширины и
-    // пропадает с рисунка совсем.
     function edgeLo(i) {
       return mapX(i > 0 ? (e[i - 1] + e[i]) / 2 : e[0], xLo, xHi, m.l, W - m.r);
     }
@@ -217,9 +166,6 @@
       return mapX(i + 1 < e.length ? (e[i] + e[i + 1]) / 2 : e[e.length - 1],
                   xLo, xHi, m.l, W - m.r);
     }
-    // Разбиение канальной оси на отрезки постоянного статуса достоверности.
-    // Маски нет (старые данные без сторожа) — весь диапазон считается
-    // достоверным, страница ведёт себя как до R66.
     function runs(msk, want) {
       var out = [], i2 = 0, n2 = e.length;
       while (i2 < n2) {
@@ -241,7 +187,6 @@
         if (q === b) g.lineTo(edgeHi(b), y);
       }
     }
-
     var yBase = Y.map(Y.lo, m.t, H - m.b);
     function fillRuns(vec, rr, style) {
       g.fillStyle = style;
@@ -257,18 +202,9 @@
       var kf = order[oi].nuc.key;
       var vec = stk[kf];
       var mf = TRUST_MASK(kf);
-      // Заливка ОДИНАКОВАЯ на всём слое (директива оператора 09.08.2026).
-      // Отметка сторожа R66 держится только на контуре: достоверный участок
-      // сплошной линией, недостоверный — пунктиром. Пробовали и разрыв
-      // заливки, и штриховку: разрыв читался как дефект отрисовки, штриховка
-      // на логарифмической шкале занимала треть картинки при вкладе в доли
-      // процента. Числовая мера недостоверности осталась в подсказке легенды.
       fillRuns(vec, [[0, e.length - 1]], order[oi].nuc.color);
       strokeLayer(oi);
     }
-    // Контур каждого шаблона своим цветом ПОВЕРХ всех заливок: там, где
-    // мелкий слой локально выше крупного, заливка крупного перекрыта, и
-    // без контура его ход в этом месте не прочитать.
     function strokeLayer(oj) {
       var ks = order[oj].nuc.key;
       var vs = stk[ks];
@@ -286,7 +222,6 @@
       }
       g.setLineDash([]);
     }
-
     function trace(getV, color, width, dash) {
       g.strokeStyle = color; g.lineWidth = width;
       if (dash) g.setLineDash(dash);
@@ -302,12 +237,7 @@
       g.stroke();
       if (dash) g.setLineDash([]);
     }
-
-    // суммарный слой — верхняя граница стека отмеченных нуклидов
     if (ST.sum) {
-      // Считается по ВСЕМ каналам, включая помеченные сторожем (R66):
-      // сумма слоёв обязана сходиться с полным откликом, иначе кривая
-      // перестанет быть моделью, к которой велась подгонка.
       trace(function (i) { return stackTotal(stk, i); }, p.sum, 1.8, [6, 3]);
     }
     (extra || []).forEach(function (ex) {
@@ -315,10 +245,7 @@
       trace(function (i) { return ex.arr[i]; }, ex.color, ex.width || 1.4,
             ex.dash);
     });
-
-    // измерение поверх всего
     trace(function (i) { return yy[i]; }, p.ink, 0.8);
-
     if (ST.cursorE !== null) {
       var xC = mapX(ST.cursorE, xLo, xHi, m.l, W - m.r);
       g.strokeStyle = p.rule; g.lineWidth = 1; g.setLineDash([4, 4]);
@@ -339,19 +266,11 @@
     g.strokeRect(m.l, m.t, W - m.r - m.l, H - m.b - m.t);
     return { m: m, W: W, H: H, xLo: xLo, xHi: xHi, Y: Y };
   }
-/* donor g1s-th232.js:386-465 */
-  // Сколько каналов шаблона набрано выше порога сторожа (R66). null — маски
-  // нет (данные посчитаны до введения сторожа), тогда легенда без пометок.
   function nucOf(key) {
     for (var i = 0; i < D.nuclides.length; i++)
       if (D.nuclides[i].key === key) return D.nuclides[i];
     return null;
   }
-  // Доля ИНТЕГРАЛА слоя, лежащая в недостоверной области. Считать каналы
-  // нельзя: у нуклида с короткой шкалой (Pb-212 обрывается на 479 кэВ) почти
-  // все каналы пусты по физике, и счёт каналов объявил бы ненадёжными 89 %
-  // шаблона, надёжного на 99,7 % по вкладу. null — маски нет (данные
-  // посчитаны до введения сторожа), тогда легенда без пометок.
   function noiseFrac(key) {
     var nf = SPEC().noise_frac || D.spectrum.noise_frac;
     if (!nf || !(key in nf)) return null;
@@ -368,24 +287,12 @@
     if (!el || el.dataset.built) return;
     el.dataset.built = "1";
     var html = "";
-    // #GS-45 (30.09, оператор «да»): легенда по вкладу слоёв (интеграл стека), как порядок отрисовки на графике
     var stkL = (elId === 'legendM2') ? STACK2() : STACK1();
     var arrL = D.nuclides.map(function (n, i) { var v = stkL && stkL[n.key], s = 0;
       if (v) for (var q = 0; q < v.length; q++) s += v[q]; return { n: n, s: s, i: i }; });
     arrL.sort(function (a, b) { return (b.s - a.s) || (a.i - b.i); });
     arrL.map(function (o) { return o.n; }).forEach(function (nuc) {
-      // SECOND (вторичные пики) — временная сущность метода 2 (R33/R37),
-      // отдельный чекбокс убран директивой R47: с переходом метода 2 на
-      // полную матрицу отклика (R45) вторичные войдут в шаблон каждого
-      // нуклида естественно, отдельной сущности не будет вовсе. До тех
-      // пор вклад остаётся включённым в общую сумму (ST.on["SECOND"]
-      // не трогается, по умолчанию true, см. инициализацию ST.on) — без
-      // переключателя, но и без потери из total/«сумма».
       if (nuc.key === "SECOND") return;
-      // Сторож статистики (R66) в легенде. Шаблон, нигде не набранный до
-      // порога, помечается штриховкой вместо сплошного цвета: на графике
-      // такой слой идёт одним пунктиром, без единой заливки, и без метки в
-      // легенде читатель принял бы это за «нуклида просто мало».
       var nf = noiseFrac(nuc.key);
       var sw = nuc.color;
       var hint = (nf === null) ? "" : " title='" + esc(guardHint(nf)) + "'";
@@ -420,14 +327,11 @@
       });
     });
   }
-/* donor g1s-th232.js:490-494 */
   function cell(lab, val, big, hint) {
     return "<div" + (hint ? " title='" + hint + "'" : "") + "><span class='lab'>"
          + lab + "</span><span class='val"
          + (big ? " big-num" : "") + "'>" + val + "</span></div>";
   }
-/* donor g1s-th232.js:670-784 */
-  /* ── курсорные строки ───────────────────────────────────────── */
   function cursorText(elId, stk, tipId) {
     var el = document.getElementById(elId);
     if (!el) return;
@@ -459,7 +363,6 @@
     var tip = document.getElementById(tipId);
     if (tip) tip.textContent = num(e[i], 0) + " кэВ · " + cnt(meas);
   }
-
   function attachCursor(cvId, tipId, onMove) {
     var cv = document.getElementById(cvId);
     var tip = document.getElementById(tipId);
@@ -487,7 +390,6 @@
       if (tip) tip.hidden = true;
     });
   }
-
 function zEfromX(x, rectWidth) {
   var e = D.spectrum.e_of_ch;
   var xLo = ST.zoom ? ST.zoom.xLo : 25;
@@ -495,14 +397,12 @@ function zEfromX(x, rectWidth) {
   var m = { l: 62, r: 14 };
   return xLo + ((x - m.l) / (rectWidth - m.r - m.l)) * (xHi - xLo);
 }
-
 function wireZoom(cvId) {
   var cv = document.getElementById(cvId);
   if (!cv) return;
   var dragging = false;
   var dragState = null;
   var m = { l: 62, r: 14 };
-
   cv.addEventListener("mousedown", function (ev) {
     var r = cv.getBoundingClientRect();
     var x = ev.clientX - r.left;
@@ -513,7 +413,6 @@ function wireZoom(cvId) {
     ST.drag = { e0: zEfromX(x, r.width), e1: zEfromX(x, r.width) };
     redraw();
   });
-
   document.addEventListener("mousemove", function (ev) {
     if (!dragging) return;
     var r = cv.getBoundingClientRect();
@@ -524,7 +423,6 @@ function wireZoom(cvId) {
     ST.drag.e1 = zEfromX(x, r.width);
     redraw();
   });
-
   document.addEventListener("mouseup", function () {
     if (!dragging) return;
     dragging = false;
@@ -536,7 +434,6 @@ function wireZoom(cvId) {
                 xHi: zEfromX(Math.max(x0, x1), w) };
     redraw();
   });
-
   cv.addEventListener("dblclick", function () {
     ST.zoom = null;
     redraw();
@@ -557,7 +454,7 @@ function wireZoom(cvId) {
     });
   });
   buildLegend("legendM1");
-  document.querySelectorAll("#legendM1 label.chip[data-nuc]").forEach(function (lb) {  // #UI-2: не обнаруженные группы в легенду не выводятся
+  document.querySelectorAll("#legendM1 label.chip[data-nuc]").forEach(function (lb) {   
     var k = lb.getAttribute("data-nuc");
     if ((D.undetected || []).indexOf(k) >= 0) { ST.on[k] = false; lb.remove(); }
   });
